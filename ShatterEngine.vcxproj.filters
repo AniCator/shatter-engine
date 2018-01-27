@@ -5,10 +5,6 @@
       <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
       <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
     </Filter>
-    <Filter Include="Resource Files">
-      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
-      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
-    </Filter>
     <Filter Include="Source Files\ThirdParty">
       <UniqueIdentifier>{61d479fd-ef5b-41cf-a199-757fba9ff9ef}</UniqueIdentifier>
     </Filter>
@@ -41,12 +37,6 @@
     </Filter>
     <Filter Include="Source Files\Engine\Utility\Math">
       <UniqueIdentifier>{25b4290f-11fc-4a6b-8ee3-f1482ad4148f}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Game\CauseEffect">
-      <UniqueIdentifier>{fe8e7a3d-7dad-4e3d-b3b3-3d65a9997f51}</UniqueIdentifier>
-    </Filter>
-    <Filter Include="Source Files\Game\AICritters">
-      <UniqueIdentifier>{78910a85-8b13-4411-a49f-7a302453fc55}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -106,12 +96,6 @@
     </ClCompile>
     <ClCompile Include="Utility\Math\SIMDVector.cpp">
       <Filter>Source Files\Engine\Utility\Math</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\AICritters\AICritters.cpp">
-      <Filter>Source Files\Game\AICritters</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\CauseEffect\CauseEffect.cpp">
-      <Filter>Source Files\Game\CauseEffect</Filter>
     </ClCompile>
     <ClCompile Include="Game\GameModule.cpp">
       <Filter>Source Files\Game</Filter>
@@ -183,12 +167,6 @@
     </ClInclude>
     <ClInclude Include="Utility\Math\SIMDVector.h">
       <Filter>Source Files\Engine\Utility\Math</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\AICritters\AICritters.h">
-      <Filter>Source Files\Game\AICritters</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\CauseEffect\CauseEffect.h">
-      <Filter>Source Files\Game\CauseEffect</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

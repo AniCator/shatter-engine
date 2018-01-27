@@ -658,3 +658,10 @@ int CGrid::GetCellSize() const
 {
 	return CellSize;
 }
+
+extern void EngineMain();
+
+void main()
+{
+	EngineMain();
+}
