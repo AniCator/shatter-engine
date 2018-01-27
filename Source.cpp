@@ -156,7 +156,7 @@ void Initialize()
 	GameLayersInstance->RegisterGameLayers();
 }
 
-void EngineMain()
+void main()
 {
 	Log::Event( "%s (Build: %i)\n\n", pszWindowTitle, nBuildNumber );
 	Initialize();
@@ -241,9 +241,4 @@ void EngineMain()
 	Log::Event( "Meshes created: %i\n", MainWindow.GetRenderer().MeshCount() );
 
 	MainWindow.Terminate();
-}
-
-void main()
-{
-	EngineMain();
 }

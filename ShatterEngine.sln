@@ -5,42 +5,16 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShatterEngine", "ShatterEngine.vcxproj", "{543705ED-F464-4739-A2A8-ACC9E4A5A467}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AICritters", "Game\AICritters\AICritters.vcxproj", "{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CauseEffect", "Game\CauseEffect\CauseEffect.vcxproj", "{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
-		Debug|x86 = Debug|x86
 		Release|x64 = Release|x64
-		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Debug|x64.ActiveCfg = Debug|x64
 		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Debug|x64.Build.0 = Debug|x64
-		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Debug|x86.ActiveCfg = Debug|Win32
-		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Debug|x86.Build.0 = Debug|Win32
 		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Release|x64.ActiveCfg = Release|x64
 		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Release|x64.Build.0 = Release|x64
-		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Release|x86.ActiveCfg = Release|Win32
-		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Release|x86.Build.0 = Release|Win32
-		{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}.Debug|x64.ActiveCfg = Debug|x64
-		{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}.Debug|x64.Build.0 = Debug|x64
-		{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}.Debug|x86.ActiveCfg = Debug|Win32
-		{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}.Debug|x86.Build.0 = Debug|Win32
-		{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}.Release|x64.ActiveCfg = Release|x64
-		{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}.Release|x64.Build.0 = Release|x64
-		{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}.Release|x86.ActiveCfg = Release|Win32
-		{5C154836-9AC9-4B71-9E65-7CDCA7966FD9}.Release|x86.Build.0 = Release|Win32
-		{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}.Debug|x64.ActiveCfg = Debug|x64
-		{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}.Debug|x64.Build.0 = Debug|x64
-		{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}.Debug|x86.ActiveCfg = Debug|Win32
-		{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}.Debug|x86.Build.0 = Debug|Win32
-		{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}.Release|x64.ActiveCfg = Release|x64
-		{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}.Release|x64.Build.0 = Release|x64
-		{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}.Release|x86.ActiveCfg = Release|Win32
-		{41B0F8B9-4947-49F2-AC70-D7845CFB89A8}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
