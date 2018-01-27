@@ -1,0 +1,194 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{4FC737F1-C7A5-4376-A066-2A32D752A2FF}</UniqueIdentifier>
+      <Extensions>cpp;c;cc;cxx;def;odl;idl;hpj;bat;asm;asmx</Extensions>
+    </Filter>
+    <Filter Include="Resource Files">
+      <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
+      <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty">
+      <UniqueIdentifier>{61d479fd-ef5b-41cf-a199-757fba9ff9ef}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty\glad">
+      <UniqueIdentifier>{a5b8330d-43a9-49fb-b4be-f463038713f7}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty\imgui">
+      <UniqueIdentifier>{08df6da9-ed67-43cf-bd0f-8ceb2e5439b6}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game">
+      <UniqueIdentifier>{bc526fbb-8f00-4cc5-81fc-e07c5222ec54}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine">
+      <UniqueIdentifier>{e742f670-d24e-4f16-9af6-e31621e894b9}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Utility">
+      <UniqueIdentifier>{bb6ebd86-1d2c-4c17-993c-07b3f2d3ed57}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Debugging">
+      <UniqueIdentifier>{4e5ac7c9-bf51-4714-a46e-4a235c8c7451}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Display">
+      <UniqueIdentifier>{a7e1b419-4aac-4b69-866a-522756f07663}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Display\Rendering">
+      <UniqueIdentifier>{ae6025bb-7b55-482b-beba-29413a3ad6e8}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Configuration">
+      <UniqueIdentifier>{d832880e-1784-4b0c-b3f8-af7bca157d66}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Utility\Math">
+      <UniqueIdentifier>{25b4290f-11fc-4a6b-8ee3-f1482ad4148f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game\CauseEffect">
+      <UniqueIdentifier>{fe8e7a3d-7dad-4e3d-b3b3-3d65a9997f51}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game\AICritters">
+      <UniqueIdentifier>{78910a85-8b13-4411-a49f-7a302453fc55}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\glad\src\glad.c">
+      <Filter>Source Files\ThirdParty\glad</Filter>
+    </ClCompile>
+    <ClCompile Include="Profiling\Logging.cpp">
+      <Filter>Source Files\Engine\Debugging</Filter>
+    </ClCompile>
+    <ClCompile Include="Profiling\Profiling.cpp">
+      <Filter>Source Files\Engine\Debugging</Filter>
+    </ClCompile>
+    <ClCompile Include="Configuration\Configuration.cpp">
+      <Filter>Source Files\Engine\Configuration</Filter>
+    </ClCompile>
+    <ClCompile Include="Display\Window.cpp">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="Display\Rendering\Renderer.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Display\Rendering\Renderable.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Display\Rendering\Mesh.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Display\Rendering\Shader.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\File.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Display\Rendering\Camera.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-1.52\imgui_demo.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-1.52\imgui_draw.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-1.52\imgui_impl_glfw_gl3.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Game.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Input.cpp">
+      <Filter>Source Files\Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Utility\Math\SIMDVector.cpp">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\AICritters\AICritters.cpp">
+      <Filter>Source Files\Game\AICritters</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\CauseEffect\CauseEffect.cpp">
+      <Filter>Source Files\Game\CauseEffect</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\GameModule.cpp">
+      <Filter>Source Files\Game</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Profiling\Profiling.h">
+      <Filter>Source Files\Engine\Debugging</Filter>
+    </ClInclude>
+    <ClInclude Include="Profiling\Logging.h">
+      <Filter>Source Files\Engine\Debugging</Filter>
+    </ClInclude>
+    <ClInclude Include="Configuration\Configuration.h">
+      <Filter>Source Files\Engine\Configuration</Filter>
+    </ClInclude>
+    <ClInclude Include="Display\Window.h">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Display\Rendering\Renderer.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Display\Rendering\Renderable.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Display\Rendering\Mesh.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Display\Rendering\Shader.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\File.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Display\Rendering\Camera.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.52\imgui.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.52\imgui_internal.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.52\stb_rect_pack.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.52\stb_textedit.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.52\stb_truetype.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.52\imgui_impl_glfw_gl3.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Game.h">
+      <Filter>Source Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\RingBuffer.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Input.h">
+      <Filter>Source Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Math.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Utility\Math\SIMDVector.h">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\AICritters\AICritters.h">
+      <Filter>Source Files\Game\AICritters</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\CauseEffect\CauseEffect.h">
+      <Filter>Source Files\Game\CauseEffect</Filter>
+    </ClInclude>
+  </ItemGroup>
+</Project>
