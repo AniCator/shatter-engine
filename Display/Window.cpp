@@ -179,7 +179,6 @@ void CWindow::RenderFrame()
 	Renderer.DrawQueuedRenderables();
 
 #ifdef IMGUI_ENABLED
-	ImGui::ShowTestWindow();
 	ImGui::Render();
 #endif
 

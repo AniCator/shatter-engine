@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{543705ED-F464-4739-A2A8-ACC9E4A5A467}</ProjectGuid>
-    <RootNamespace>AICritters3</RootNamespace>
+    <RootNamespace>ShatterEngine</RootNamespace>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
-    <ProjectName>AICritters3</ProjectName>
+    <ProjectName>ShatterEngine</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
