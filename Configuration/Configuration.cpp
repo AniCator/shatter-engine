@@ -6,6 +6,9 @@
 #include <fstream>
 #include <sstream>
 
+static const char* DefaultEngineConfigurationFile = "ShatterEngine.default.ini";
+static const char* EngineConfigurationFile = "ShatterEngine.ini";
+
 bool CConfiguration::IsValidKey( const char* KeyName )
 {
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
@@ -64,46 +67,81 @@ float CConfiguration::GetFloat( const char* KeyName )
 	return static_cast<float>( GetDouble( KeyName ) );
 }
 
-void CConfiguration::Initialize( std::string FilePath )
+void CConfiguration::Initialize()
 {
 	ProfileBare( __FUNCTION__ );
 
 	Log::Event( "Loading configuration.\n" );
 
-	FileName = FilePath;
-	std::ifstream configurationFileStream;
-	configurationFileStream.open( FileName.c_str(), std::ios::binary );
-	if( configurationFileStream.fail() )
-	{
-		Log::Event( "Missing configuration file.\n" );
+	Reload();
+}
 
-		configurationFileStream.open( "AICritters3.default.ini" );
-		if( configurationFileStream.fail() )
-		{
-			Log::Event( Log::Fatal, "Missing default configuration file.\n" );
-		}
+void CConfiguration::AppendFile( std::string FilePath )
+{
+	FilePaths.push_back( FilePath );
+}
+
+void CConfiguration::Reload()
+{
+	if( !Initialized )
+	{
+		// Make sure the engine configuration file is loaded first.
+		AppendFile( EngineConfigurationFile );
+		Initialized = true;
 	}
 
 	StoredSettings.clear();
 
-	Log::Event( "\nSettings:\n" );
-
-	std::regex FilterSettings = ConfigureFilter( "(.*)" );
-
-	std::string line;
-	while( std::getline( configurationFileStream, line ) )
+	bool IsFirstFile = true;
+	for( int Index = 0; Index < FilePaths.size(); Index++ )
 	{
-		std::smatch match;
-		if( std::regex_search( line, match, FilterSettings ) )
+		std::string& FilePath = FilePaths[Index];
+		const char* FilePathCharacterString = FilePath.c_str();
+		Log::Event( "Loading \"%s\".\n", FilePathCharacterString );
+
+		std::ifstream configurationFileStream;
+		configurationFileStream.open( FilePathCharacterString, std::ios::binary );
+		if( configurationFileStream.fail() )
 		{
-			Log::Event( "%s = %s\n", match[1].str().c_str(), match[2].str().c_str() );
-			StoredSettings.insert_or_assign( match[1].str(), match[2].str() );
+			Log::Event( "Could not find configuration file \"%s\".\n", FilePathCharacterString );
+
+			if( IsFirstFile )
+			{
+				configurationFileStream.open( DefaultEngineConfigurationFile, std::ios::binary );
+				if( configurationFileStream.fail() )
+				{
+					Log::Event( Log::Fatal, "Cannot restore engine configuration file because \"%s\" is missing.\n", DefaultEngineConfigurationFile );
+				}
+				else
+				{
+					std::ofstream defaultConfigurationStream( FilePathCharacterString, std::ios::binary );
+					defaultConfigurationStream << configurationFileStream.rdbuf();
+					defaultConfigurationStream.close();
+				}
+			}
 		}
+
+		Log::Event( "\nSettings:\n" );
+
+		std::regex FilterSettings = ConfigureFilter( "(.*)" );
+
+		std::string line;
+		while( std::getline( configurationFileStream, line ) )
+		{
+			std::smatch match;
+			if( std::regex_search( line, match, FilterSettings ) )
+			{
+				Log::Event( "%s = %s\n", match[1].str().c_str(), match[2].str().c_str() );
+				StoredSettings.insert_or_assign( match[1].str(), match[2].str() );
+			}
+		}
+
+		Log::Event( "\n" );
+
+		configurationFileStream.close();
+
+		IsFirstFile = false;
 	}
-
-	Log::Event( "\n" );
-
-	configurationFileStream.close();
 }
 
 std::regex CConfiguration::ConfigureFilter( const char* KeyName )
@@ -129,5 +167,6 @@ std::string CConfiguration::GetValue( const char* KeyName )
 
 CConfiguration::CConfiguration()
 {
-	Initialize( "AICritters3.ini" );
+	Initialized = false;
+	Initialize();
 }

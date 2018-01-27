@@ -15,7 +15,9 @@
 
 CAICritters::CAICritters()
 {
-
+	CConfiguration& Configuration = CConfiguration::GetInstance();
+	Configuration.AppendFile( "AICritters.ini" );
+	Configuration.Reload();
 }
 
 CAICritters::~CAICritters()

@@ -49,7 +49,7 @@ void InputPauseGameDisable()
 
 void InputReloadConfiguration()
 {
-	CConfiguration::GetInstance().Initialize( "AICritters3.ini" );
+	CConfiguration::GetInstance().Reload();
 }
 
 void InputRestartGameLayers()
@@ -112,6 +112,8 @@ void InputMoveCameraHigher()
 
 void Initialize()
 {
+	CConfiguration::GetInstance().Initialize();
+
 	char szTitle[256];
 	sprintf_s( szTitle, "%s (Build: %i)", pszWindowTitle, nBuildNumber );
 

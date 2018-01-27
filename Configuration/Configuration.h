@@ -15,14 +15,17 @@ public:
 	double GetDouble( const char* KeyName );
 	float GetFloat( const char* KeyName );
 
-	void Initialize( std::string FilePath );
+	void Initialize();
+	void AppendFile( std::string FilePath );
+	void Reload();
 
 private:
 	std::regex ConfigureFilter( const char* KeyName );
 	std::string GetValue( const char* KeyName );
 
-	std::string FileName;
+	std::vector<std::string> FilePaths;
 	std::map<std::string, std::string> StoredSettings;
+	bool Initialized;
 
 public:
 	static CConfiguration& GetInstance()
