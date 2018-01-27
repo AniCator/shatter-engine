@@ -1,6 +1,8 @@
 # Shatter Engine™
 This is a small game engine framework that is used to power some of my smaller scale projects.
 
+[![AICritters](aicritters-example.png)
+
 # Third Party
 The engine requires a couple of third party libraries which aren't available in this repository.
 
