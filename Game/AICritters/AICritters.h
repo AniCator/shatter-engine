@@ -2,9 +2,10 @@
 #pragma once
 
 #include <Game/Game.h>
-#include <Display/Rendering/Renderable.h>
 
 static size_t MaximumCritters = 512;
+
+class CRenderable;
 
 class CCritter
 {

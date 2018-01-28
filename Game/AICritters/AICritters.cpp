@@ -3,7 +3,10 @@
 
 #include <Profiling/Profiling.h>
 #include <Profiling/Logging.h>
+
 #include <Display/Window.h>
+#include <Display/Rendering/Renderable.h>
+
 #include <Configuration/Configuration.h>
 
 #include <Utility/Math.h>
