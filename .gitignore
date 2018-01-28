@@ -30,3 +30,17 @@
 *.exe
 *.out
 *.app
+
+# Visual Studio
+*.sdf
+*.db
+*.opendb
+*.user
+
+*.ipdb
+*.iobj
+*.pdb
+
+# Project specific
+/x64
+/ThirdParty
