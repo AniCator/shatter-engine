@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vector>
+#include "glm/glm.hpp"
 
 #ifdef GetCurrentTime
 #undef GetCurrentTime
