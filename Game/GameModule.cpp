@@ -10,8 +10,14 @@ CAICritters* AICrittersInstance = new CAICritters();
 #include <Game/CauseEffect/CauseEffect.h>
 CCauseEffect* CauseEffectInstance = new CCauseEffect();
 
+#include <Utility/Test/PerformanceStringTest.h>
+
+extern CStringPerformanceTest StringPerformanceTest;
+
 void CGameLayers::RegisterGameLayers()
 {
+	StringPerformanceTest.Run();
+
 	GameLayersInstance->Add( AICrittersInstance );
 
 	GameLayersInstance->Add( CauseEffectInstance );
