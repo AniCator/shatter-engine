@@ -36,6 +36,7 @@
 *.db
 *.opendb
 *.user
+*.suo
 
 *.ipdb
 *.iobj
