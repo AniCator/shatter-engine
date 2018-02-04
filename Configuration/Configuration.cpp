@@ -100,21 +100,21 @@ void CConfiguration::Reload()
 		Log::Event( "Loading \"%s\".\n", FilePathCharacterString );
 
 		std::ifstream configurationFileStream;
-		configurationFileStream.open( FilePathCharacterString, std::ios::binary );
+		configurationFileStream.open( FilePathCharacterString );
 		if( configurationFileStream.fail() )
 		{
 			Log::Event( "Could not find configuration file \"%s\".\n", FilePathCharacterString );
 
 			if( IsFirstFile )
 			{
-				configurationFileStream.open( DefaultEngineConfigurationFile, std::ios::binary );
+				configurationFileStream.open( DefaultEngineConfigurationFile );
 				if( configurationFileStream.fail() )
 				{
 					Log::Event( Log::Fatal, "Cannot restore engine configuration file because \"%s\" is missing.\n", DefaultEngineConfigurationFile );
 				}
 				else
 				{
-					std::ofstream defaultConfigurationStream( FilePathCharacterString, std::ios::binary );
+					std::ofstream defaultConfigurationStream( FilePathCharacterString );
 					defaultConfigurationStream << configurationFileStream.rdbuf();
 					defaultConfigurationStream.close();
 				}

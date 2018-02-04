@@ -122,6 +122,9 @@
     <ClCompile Include="Utility\Test\PerformanceStringTest.cpp">
       <Filter>Source Files\Engine\Utility\Test</Filter>
     </ClCompile>
+    <ClCompile Include="Utility\StringPool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Profiling\Profiling.h">
@@ -206,5 +209,8 @@
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
     <ClInclude Include="Utility\Test\PerformanceStringTest.h" />
+    <ClInclude Include="Utility\StringPool.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

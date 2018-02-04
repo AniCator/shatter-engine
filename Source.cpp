@@ -158,6 +158,52 @@ void Initialize()
 	GameLayersInstance->RegisterGameLayers();
 }
 
+void DebugMenu()
+{
+	if( ImGui::BeginMainMenuBar() )
+	{
+		if( ImGui::BeginMenu( "Shatter 0.1.0" ) )
+		{
+			ImGui::MenuItem( "I made this", NULL, false, false );
+
+			if( ImGui::MenuItem( "Quit", "Escape" ) )
+			{
+				glfwSetWindowShouldClose( MainWindow.Handle(), true );
+			}
+
+			ImGui::EndMenu();
+		}
+
+		if( ImGui::BeginMenu( "Commands" ) )
+		{
+			if( ImGui::MenuItem( "Pause", NULL, PauseGame ) )
+			{
+				PauseGame = !PauseGame;
+			}
+
+			if( ImGui::MenuItem( "Slow Motion", NULL, ScaleTime ) )
+			{
+				ScaleTime = !ScaleTime;
+			}
+
+			ImGui::Separator();
+
+			if( ImGui::MenuItem( "Reload Configuration", "H" ) )
+			{
+				InputReloadConfiguration();
+			}
+
+			if( ImGui::MenuItem( "Restart Game Layers", "G" ) )
+			{
+				InputRestartGameLayers();
+			}
+
+			ImGui::EndMenu();
+		}
+		ImGui::EndMainMenuBar();
+	}
+}
+
 void main()
 {
 	Log::Event( "%s (Build: %i)\n\n", pszWindowTitle, nBuildNumber );
@@ -229,8 +275,11 @@ void main()
 
 		{
 			GameLayersInstance->Frame();
+
 #ifdef IMGUI_ENABLED
 			CProfileVisualisation::GetInstance().Display();
+
+			DebugMenu();
 #endif
 
 			MainWindow.RenderFrame();
