@@ -26,6 +26,7 @@ CCamera DefaultCamera = CCamera();
 FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
 bool PauseGame = false;
 bool ScaleTime = false;
+bool CursorVisible = false;
 
 void InputScaleTimeEnable()
 {
@@ -110,6 +111,13 @@ void InputMoveCameraHigher()
 	Setup.CameraPosition[2] += Speed;
 }
 
+void InputToggleMouse()
+{
+	CursorVisible = !CursorVisible;
+
+	MainWindow.EnableCursor( CursorVisible );
+}
+
 void Initialize()
 {
 	CConfiguration::GetInstance().Initialize();
@@ -149,6 +157,10 @@ void Initialize()
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_D, GLFW_PRESS, InputMoveCameraRight );
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_R, GLFW_PRESS, InputMoveCameraLower );
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_F, GLFW_PRESS, InputMoveCameraHigher );
+
+	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_ESCAPE, GLFW_RELEASE, InputToggleMouse );
+
+	MainWindow.EnableCursor( CursorVisible );
 
 	if( !GameLayersInstance )
 	{

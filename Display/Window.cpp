@@ -33,6 +33,7 @@ void DebugCallbackGLFW( int error, const char* description )
 CWindow::CWindow()
 {
 	Initialized = false;
+	ShowCursor = false;
 }
 
 void CWindow::Create( const char* Title )
@@ -155,9 +156,11 @@ void CWindow::ProcessInput()
 {
 	glfwPollEvents();
 
-	if( glfwGetKey( WindowHandle, GLFW_KEY_ESCAPE ) )
+	glfwSetInputMode( WindowHandle, GLFW_CURSOR, ShowCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED );
+
+	if( !ShowCursor )
 	{
-		glfwSetWindowShouldClose( WindowHandle, true );
+		glfwSetCursorPos( WindowHandle, Width * 0.5, Height * 0.5 );
 	}
 
 	CInput::GetInstance().Tick();
@@ -193,6 +196,16 @@ bool CWindow::Valid() const
 bool CWindow::ShouldClose() const
 {
 	return glfwWindowShouldClose( WindowHandle ) > 0;
+}
+
+void CWindow::EnableCursor( bool Enabled )
+{
+	ShowCursor = Enabled;
+}
+
+bool CWindow::IsCursorEnabled() const
+{
+	return ShowCursor;
 }
 
 CRenderer& CWindow::GetRenderer()

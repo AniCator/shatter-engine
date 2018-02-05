@@ -22,6 +22,9 @@ public:
 	bool Valid() const;
 	bool ShouldClose() const;
 
+	void EnableCursor( bool Enabled );
+	bool IsCursorEnabled() const;
+
 	CRenderer& GetRenderer();
 
 	inline int GetWidth() { return Width; };
@@ -32,6 +35,7 @@ private:
 	CRenderer Renderer;
 
 	bool Initialized;
+	bool ShowCursor;
 
 	int Width;
 	int Height;
