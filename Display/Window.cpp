@@ -14,7 +14,7 @@
 
 #ifdef IMGUI_ENABLED
 #include <ThirdParty/imgui-1.52/imgui.h>
-#include <ThirdParty/imgui-1.52/imgui_impl_glfw_gl3.h>
+#include "imgui_impl_glfw_gl3.h"
 #endif
 
 static void DebugCallbackOpenGL( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam )

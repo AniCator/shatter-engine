@@ -7,7 +7,7 @@
 
 #ifdef IMGUI_ENABLED
 #include <ThirdParty/imgui-1.52/imgui.h>
-#include <ThirdParty/imgui-1.52/imgui_impl_glfw_gl3.h>
+#include <Display/imgui_impl_glfw_gl3.h>
 #endif
 
 CInput& InputInstance = CInput::GetInstance();

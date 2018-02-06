@@ -138,6 +138,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Configuration\Configuration.cpp" />
+    <ClCompile Include="Display\imgui_impl_glfw_gl3.cpp" />
     <ClCompile Include="Display\Rendering\Camera.cpp" />
     <ClCompile Include="Display\Rendering\Mesh.cpp" />
     <ClCompile Include="Display\Rendering\Renderable.cpp" />
@@ -156,7 +157,6 @@
     <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui-1.52\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\imgui-1.52\imgui_draw.cpp" />
-    <ClCompile Include="ThirdParty\imgui-1.52\imgui_impl_glfw_gl3.cpp" />
     <ClCompile Include="Utility\File.cpp" />
     <ClCompile Include="Utility\Math\SIMDVector.cpp" />
     <ClCompile Include="Utility\StringPool.cpp" />
@@ -164,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Configuration\Configuration.h" />
+    <ClInclude Include="Display\imgui_impl_glfw_gl3.h" />
     <ClInclude Include="Display\Rendering\Camera.h" />
     <ClInclude Include="Display\Rendering\Mesh.h" />
     <ClInclude Include="Display\Rendering\Renderable.h" />
@@ -179,7 +180,6 @@
     <ClInclude Include="Profiling\Profiling.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\imgui.h" />
-    <ClInclude Include="ThirdParty\imgui-1.52\imgui_impl_glfw_gl3.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\imgui_internal.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\stb_rect_pack.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\stb_textedit.h" />
