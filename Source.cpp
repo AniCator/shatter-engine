@@ -174,7 +174,7 @@ void DebugMenu()
 {
 	if( ImGui::BeginMainMenuBar() )
 	{
-		if( ImGui::BeginMenu( "Shatter 0.1.0" ) )
+		if( ImGui::BeginMenu( "Shatter 0.0.0" ) )
 		{
 			ImGui::MenuItem( "I made this", NULL, false, false );
 
