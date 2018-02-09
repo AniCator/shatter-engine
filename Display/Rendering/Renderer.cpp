@@ -7,6 +7,8 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <glm/gtx/quaternion.hpp>
+
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
@@ -249,6 +251,16 @@ void CRenderer::DrawQueuedRenderables()
 		glm::mat4 ModelMatrix = glm::mat4( 1.0f );
 
 		ModelMatrix = glm::translate( ModelMatrix, RenderData.Position );
+
+		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
+		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
+		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
+		
+		const glm::quat ModelQuaternion = glm::quat( RenderData.Orientation );
+		const glm::mat4 RotationMatrix = glm::toMat4( ModelQuaternion );
+
+		ModelMatrix *= RotationMatrix;
+
 		ModelMatrix = glm::scale( ModelMatrix, RenderData.Size );
 
 		glm::mat4 ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
