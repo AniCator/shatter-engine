@@ -176,7 +176,7 @@ void DebugMenu()
 	{
 		if( ImGui::BeginMenu( "Shatter 0.0.0" ) )
 		{
-			ImGui::MenuItem( "I made this", NULL, false, false );
+			ImGui::MenuItem( "2017 \xc2\xa9 Christiaan Bakker", NULL, false, false );
 
 			if( ImGui::MenuItem( "Quit", "Escape" ) )
 			{
@@ -212,6 +212,19 @@ void DebugMenu()
 
 			ImGui::EndMenu();
 		}
+
+		if( ImGui::BeginMenu( "Profiler" ) )
+		{
+			CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+			const bool Enabled = Profiler.IsEnabled();
+			if( ImGui::MenuItem( "Toggle", NULL, Enabled ) )
+			{
+				Profiler.SetEnabled( !Enabled );
+			}
+
+			ImGui::EndMenu();
+		}
+
 		ImGui::EndMainMenuBar();
 	}
 }
@@ -245,7 +258,8 @@ void main()
 	while( !MainWindow.ShouldClose() )
 	{
 		MainWindow.BeginFrame();
-		Profile( "Frametime" );
+		// Profile( "Frametime" );
+		CTimerScope Scope_Frametime( "Frametime", false );
 
 		const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 		if( InputDeltaTime >= MaximumInputTime )

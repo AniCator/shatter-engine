@@ -32,9 +32,14 @@ public:
 	void Display();
 	void Clear();
 
+	bool IsEnabled() const;
+	void SetEnabled( const bool EnabledIn );
+
 private:
 	std::map<std::string, CRingBuffer<int64_t, TimeWindow>> TimeEntries;
 	std::map<std::string, int64_t> TimeCounters;
+
+	bool Enabled;
 
 public:
 	static CProfileVisualisation& GetInstance()
@@ -61,8 +66,6 @@ private:
 
 	bool TextOnly;
 };
-
-#define ProfileBuild
 
 #ifdef ProfileBuild
 #define Profile( Name ) CTimerScope Scope_( Name, false )

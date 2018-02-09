@@ -6,7 +6,11 @@
 
 CProfileVisualisation::CProfileVisualisation()
 {
-	
+#ifdef ProfileBuild
+	Enabled = true;
+#else
+	Enabled = false;
+#endif
 }
 
 CProfileVisualisation::~CProfileVisualisation()
@@ -31,6 +35,9 @@ void CProfileVisualisation::AddTimeEntry( FProfileTimeEntry& TimeEntry )
 
 void CProfileVisualisation::AddCounterEntry( FProfileTimeEntry& TimeEntry )
 {
+	if( !Enabled )
+		return;
+
 	auto Iterator = TimeCounters.find( TimeEntry.Name );
 	if( Iterator == TimeCounters.end() )
 	{
@@ -44,6 +51,9 @@ void CProfileVisualisation::AddCounterEntry( FProfileTimeEntry& TimeEntry )
 
 void CProfileVisualisation::AddCounterEntry( const char* NameIn, int TimeIn )
 {
+	if( !Enabled )
+		return;
+
 	auto Iterator = TimeCounters.find( NameIn );
 	if( Iterator == TimeCounters.end() )
 	{
@@ -61,56 +71,76 @@ void CProfileVisualisation::Display()
 	ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
 	if( ImGui::Begin( "Profiler", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
 	{
-		ImGui::Text( "Graphs" );
-		int EntryIndex = 0;
-		for( auto TimeEntry : TimeEntries )
+		if( TimeEntries.size() > 0 )
 		{
-			const char* TimeEntryName = TimeEntry.first.c_str();
-			CRingBuffer<int64_t, TimeWindow>& Buffer = TimeEntry.second;
-
-			float TimeValues[TimeWindow];
-			for( size_t j = 0; j < TimeWindow; j++ )
+			if( Enabled )
 			{
-				TimeValues[j] = static_cast<float>( Buffer.Get( j ) );
+				ImGui::Text( "Time Entries" );
+				ImGui::Separator();
 			}
 
-			static const size_t AverageWindow = 32;
-			float Average = 0.0f;
-			int64_t Peak = 0;
-			for( size_t j = 0; j < AverageWindow; j++ )
+			int EntryIndex = 0;
+			for( auto TimeEntry : TimeEntries )
 			{
-				int64_t Time = Buffer.Get( Buffer.Offset( -static_cast<int>( j ) ) );
-				Average += Time;
+				const char* TimeEntryName = TimeEntry.first.c_str();
+				CRingBuffer<int64_t, TimeWindow>& Buffer = TimeEntry.second;
 
-				if( Time > Peak )
+				float TimeValues[TimeWindow];
+				for( size_t j = 0; j < TimeWindow; j++ )
 				{
-					Peak = Time;
+					TimeValues[j] = static_cast<float>( Buffer.Get( j ) );
 				}
-			}
 
-			Average /= AverageWindow;
+				static const size_t AverageWindow = 32;
+				float Average = 0.0f;
+				int64_t Peak = 0;
+				for( size_t j = 0; j < AverageWindow; j++ )
+				{
+					int64_t Time = Buffer.Get( Buffer.Offset( -static_cast<int>( j ) ) );
+					Average += Time;
 
-			if( EntryIndex > 0 )
-			{
-				ImGui::Text( "%s: %ims (Peak: %ims)", TimeEntryName, static_cast<int64_t>( Average ), Peak );
-			}
-			else
-			{
-				ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Lowest): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
-				ImGui::PushItemWidth( -1 );
-				ImGui::PlotHistogram( "", TimeValues, static_cast<int>( TimeWindow ), static_cast<int>( Buffer.Offset() ), "", 0.0f, 33.3f, ImVec2( 500.0f, 100.0f ) );
-				ImGui::Text( "" );
-			}
+					if( Time > Peak )
+					{
+						Peak = Time;
+					}
+				}
 
-			EntryIndex++;
+				Average /= AverageWindow;
+
+				if( EntryIndex > 0 )
+				{
+					ImGui::Text( "%s: %ims (Peak: %ims)", TimeEntryName, static_cast<int64_t>( Average ), Peak );
+				}
+				else
+				{
+					if( Enabled )
+					{
+						ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Lowest): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
+						ImGui::PushItemWidth( -1 );
+						ImGui::PlotHistogram( "", TimeValues, static_cast<int>( TimeWindow ), static_cast<int>( Buffer.Offset() ), "", 0.0f, 33.3f, ImVec2( 500.0f, 100.0f ) );
+						ImGui::Text( "" );
+					}
+					else
+					{
+						ImGui::Text( "%s: %ims (Peak: %ims)\n", TimeEntryName, static_cast<int64_t>( Average ), Peak );
+					}
+				}
+
+				EntryIndex++;
+			}
 		}
 
-		ImGui::Text( "\nCounters" );
-		for( auto TimeCounter : TimeCounters )
+		if( TimeCounters.size() > 0 )
 		{
-			const char* TimeCounterName = TimeCounter.first.c_str();
-			const uint64_t& TimeCounterValue = TimeCounter.second;
-			ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+			ImGui::Text( "\nCounters" );
+			ImGui::Separator();
+
+			for( auto TimeCounter : TimeCounters )
+			{
+				const char* TimeCounterName = TimeCounter.first.c_str();
+				const uint64_t& TimeCounterValue = TimeCounter.second;
+				ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+			}
 		}
 
 		ImGui::End();
@@ -124,6 +154,16 @@ void CProfileVisualisation::Clear()
 {
 	// TimeEntries.clear();
 	TimeCounters.clear();
+}
+
+bool CProfileVisualisation::IsEnabled() const
+{
+	return Enabled;
+}
+
+void CProfileVisualisation::SetEnabled( const bool EnabledIn )
+{
+	Enabled = EnabledIn;
 }
 
 CTimerScope::CTimerScope( const char* ScopeNameIn, bool TextOnlyIn )
