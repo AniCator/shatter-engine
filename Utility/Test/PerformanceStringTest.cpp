@@ -8,7 +8,7 @@
 
 #include <fstream>
 #include <sstream>
-#include <unordered_map>
+#include <unordered_set>
 
 #pragma optimize("", off)
 
@@ -27,7 +27,7 @@ static const char* TestString = "Nicholas was spending the last of his leave at 
 ETestResult CStringPerformanceTest::Run()
 {
 	CStringPool TestPool;
-	std::unordered_map<std::string, std::string> TestMap;
+	std::unordered_set<std::string> TestSet;
 
 	std::ifstream BigTextStream;
 	BigTextStream.open( "big.txt" );
@@ -43,7 +43,7 @@ ETestResult CStringPerformanceTest::Run()
 		std::string Line;
 		while( std::getline( BigTextStream, Line ) )
 		{
-			TestPool.Create( Line );
+			TestPool.Find( Line, true );
 		}
 
 		CreatePoolTimer.Stop();
@@ -51,23 +51,23 @@ ETestResult CStringPerformanceTest::Run()
 		CTimer PollPoolTimer( false );
 		PollPoolTimer.Start();
 
-		StringSymbol_t Symbol = TestPool.Find( std::string( TestString ) );
+		auto& Symbol = TestPool.Find( std::string( TestString ) );
 
 		PollPoolTimer.Stop();
 
-		if( Symbol == CStringPool::InvalidSymbol )
+		if( Symbol == std::string( "BADSTRING" ) )
 		{
 			Log::Event( "Pool: Test string not found.\n" );
 		}
 		else
 		{
-			Log::Event( "Pool: Test string found: %s\n", TestPool.Get( Symbol ).c_str() );
+			Log::Event( "Pool: Test string found: %s\n", Symbol.c_str() );
 		}
 
 		CTimer GetPoolTimer( false );
 		GetPoolTimer.Start();
 
-		const std::string& GetString = TestPool.Get( Symbol );
+		const std::string& GetString = TestPool.Find( std::string( TestString ) );
 
 		GetPoolTimer.Stop();
 
@@ -88,7 +88,7 @@ ETestResult CStringPerformanceTest::Run()
 		std::string LineB;
 		while( std::getline( BigTextStream2, LineB ) )
 		{
-			TestMap.insert_or_assign( LineB, LineB );
+			TestSet.insert( LineB );
 		}
 
 		CreateMapTimer.Stop();
@@ -96,31 +96,32 @@ ETestResult CStringPerformanceTest::Run()
 		CTimer PollMapTimer( false );
 		PollMapTimer.Start();
 
-		auto Result = TestMap.find( TestString );
+		auto Result = TestSet.find( TestString );
 
 		PollMapTimer.Stop();
 
-		if( Result == TestMap.end() )
+		if( Result == TestSet.end() )
 		{
-			Log::Event( "Map: Test string not found.\n" );
+			Log::Event( "Set: Test string not found.\n" );
 		}
 		else
 		{
-			Log::Event( "Map: Test string found: %s\n", TestMap[TestString].c_str() );
+			const std::string ResultString = *Result;
+			Log::Event( "Set: Test string found: %s\n", ResultString.c_str() );
 		}
 
 		CTimer GetMapTimer( false );
 		GetMapTimer.Start();
 
-		const std::string& GetString2 = TestMap[TestString];
+		const std::string& GetString2 = *TestSet.find( TestString );
 
 		GetMapTimer.Stop();
 
 		GetString2.c_str();
 
-		Log::Event( "Map: Direct lookup time: %ius\n", GetMapTimer.GetElapsedTimeMicroseconds() );
+		Log::Event( "Set: Direct lookup time: %ius\n", GetMapTimer.GetElapsedTimeMicroseconds() );
 
-		Log::Event( "Map creation time: %ius | Map poll time: %ius\n", CreateMapTimer.GetElapsedTimeMicroseconds(), PollMapTimer.GetElapsedTimeMicroseconds() );
+		Log::Event( "Set creation time: %ius | Map poll time: %ius\n", CreateMapTimer.GetElapsedTimeMicroseconds(), PollMapTimer.GetElapsedTimeMicroseconds() );
 
 		return ETestResult::Succeeded;
 	}
