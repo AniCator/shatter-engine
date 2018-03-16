@@ -1,9 +1,9 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <vector>
+#include "ActionTarget.h"
 
-typedef void( *ActionTarget )( void );
+#include <vector>
 
 static const int MaximumKeyboardInputs = 512;
 static const int MaximumJoysticks = 16;
