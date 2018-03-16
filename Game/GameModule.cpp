@@ -2,13 +2,13 @@
 #include <Game/Game.h>
 
 // AICritters.h
-#include <Game/AICritters/AICritters.h>
-CAICritters* AICrittersInstance = new CAICritters();
+// #include <Game/AICritters/AICritters.h>
+// CAICritters* AICrittersInstance = new CAICritters();
 // CTestLayer* TestLayerInstance = new CTestLayer();
 
 // CauseEffect.h
-#include <Game/CauseEffect/CauseEffect.h>
-CCauseEffect* CauseEffectInstance = new CCauseEffect();
+// #include <Game/CauseEffect/CauseEffect.h>
+// CCauseEffect* CauseEffectInstance = new CCauseEffect();
 
 #include <Utility/Test/PerformanceStringTest.h>
 
@@ -17,8 +17,4 @@ extern CStringPerformanceTest StringPerformanceTest;
 void CGameLayers::RegisterGameLayers()
 {
 	StringPerformanceTest.Run();
-
-	GameLayersInstance->Add( AICrittersInstance );
-
-	GameLayersInstance->Add( CauseEffectInstance );
 }
