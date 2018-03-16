@@ -51,6 +51,9 @@
     <Filter Include="Source Files\Engine\Utility\Test">
       <UniqueIdentifier>{a3fa8650-cac1-466b-917e-127267072962}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Game\Squareoids">
+      <UniqueIdentifier>{eacaeb3b-29c4-4d87-91ee-c666611986b3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -124,6 +127,12 @@
     </ClCompile>
     <ClCompile Include="Display\imgui_impl_glfw_gl3.cpp">
       <Filter>Source Files\Engine\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Squareoids\Squareoids.cpp">
+      <Filter>Source Files\Game\Squareoids</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Event.cpp">
+      <Filter>Source Files\Engine</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -211,6 +220,15 @@
     </ClInclude>
     <ClInclude Include="Display\imgui_impl_glfw_gl3.h">
       <Filter>Source Files\Engine\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Squareoids\Squareoids.h">
+      <Filter>Source Files\Game\Squareoids</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Event.h">
+      <Filter>Source Files\Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\ActionTarget.h">
+      <Filter>Source Files\Engine</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
