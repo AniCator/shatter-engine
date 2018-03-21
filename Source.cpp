@@ -8,6 +8,8 @@
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Input/Input.h>
 
+#include <Engine/Application/Application.h>
+
 #include <Game/Game.h>
 
 #include <ThirdParty/imgui-1.52/imgui.h>

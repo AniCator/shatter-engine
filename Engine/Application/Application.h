@@ -7,5 +7,8 @@ public:
 	CApplication();
 	~CApplication();
 
+	void Run();
+
 private:
+	void Initialize();
 };
