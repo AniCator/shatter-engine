@@ -71,9 +71,6 @@
     <ClCompile Include="ThirdParty\glad\src\glad.c">
       <Filter>Source Files\ThirdParty\glad</Filter>
     </ClCompile>
-    <ClCompile Include="Utility\File.cpp">
-      <Filter>Source Files\Engine\Utility</Filter>
-    </ClCompile>
     <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp">
       <Filter>Source Files\ThirdParty\imgui</Filter>
     </ClCompile>
@@ -86,9 +83,6 @@
     <ClCompile Include="Game\Game.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Utility\Math\SIMDVector.cpp">
-      <Filter>Source Files\Engine\Utility\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Game\AICritters\AICritters.cpp">
       <Filter>Source Files\Game\AICritters</Filter>
     </ClCompile>
@@ -97,9 +91,6 @@
     </ClCompile>
     <ClCompile Include="Game\GameModule.cpp">
       <Filter>Source Files\Game</Filter>
-    </ClCompile>
-    <ClCompile Include="Utility\Test\PerformanceStringTest.cpp">
-      <Filter>Source Files\Engine\Utility\Test</Filter>
     </ClCompile>
     <ClCompile Include="Utility\StringPool.cpp">
       <Filter>Source Files</Filter>
@@ -146,11 +137,20 @@
     <ClCompile Include="Engine\Configuration\Configuration.cpp">
       <Filter>Source Files\Engine\Configuration</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\File.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\StringPool.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp">
+      <Filter>Source Files\Engine\Utility\Test</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Math\SIMDVector.cpp">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Utility\File.h">
-      <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
       <Filter>Source Files\ThirdParty\imgui</Filter>
     </ClInclude>
@@ -172,31 +172,13 @@
     <ClInclude Include="Game\Game.h">
       <Filter>Source Files\Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Utility\RingBuffer.h">
-      <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility\Math.h">
-      <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility\Math\SIMDVector.h">
-      <Filter>Source Files\Engine\Utility\Math</Filter>
-    </ClInclude>
     <ClInclude Include="Game\AICritters\AICritters.h">
       <Filter>Source Files\Game\AICritters</Filter>
     </ClInclude>
     <ClInclude Include="Game\CauseEffect\CauseEffect.h">
       <Filter>Source Files\Game\CauseEffect</Filter>
     </ClInclude>
-    <ClInclude Include="Utility\TestResult.h">
-      <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="Utility\Test.h">
-      <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\Test\PerformanceStringTest.h" />
-    <ClInclude Include="Utility\StringPool.h">
-      <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
     <ClInclude Include="Game\Squareoids\Squareoids.h">
       <Filter>Source Files\Game\Squareoids</Filter>
     </ClInclude>
@@ -241,6 +223,30 @@
     </ClInclude>
     <ClInclude Include="Engine\Configuration\Configuration.h">
       <Filter>Source Files\Engine\Configuration</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\File.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Math.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\RingBuffer.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\StringPool.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Test.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\TestResult.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h">
+      <Filter>Source Files\Engine\Utility\Test</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Math\SIMDVector.h">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

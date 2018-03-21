@@ -4,7 +4,7 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
-#include <Utility/StringPool.h>
+#include <Engine/Utility/StringPool.h>
 
 #include <fstream>
 #include <sstream>

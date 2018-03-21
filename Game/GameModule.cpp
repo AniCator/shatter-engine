@@ -10,7 +10,7 @@
 // #include <Game/CauseEffect/CauseEffect.h>
 // CCauseEffect* CauseEffectInstance = new CCauseEffect();
 
-#include <Utility/Test/PerformanceStringTest.h>
+#include <Engine/Utility/Test/PerformanceStringTest.h>
 
 extern CStringPerformanceTest StringPerformanceTest;
 

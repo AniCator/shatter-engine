@@ -9,8 +9,8 @@
 
 #include <Engine/Configuration/Configuration.h>
 
-#include <Utility/Math.h>
-#include <Utility/Math/SIMDVector.h>
+#include <Engine/Utility/Math.h>
+#include <Engine/Utility/Math/SIMDVector.h>
 
 #include <cstdlib>
 

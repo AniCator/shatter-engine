@@ -217,6 +217,10 @@
     <ClCompile Include="Engine\Input\Input.cpp" />
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
+    <ClCompile Include="Engine\Utility\File.cpp" />
+    <ClCompile Include="Engine\Utility\Math\SIMDVector.cpp" />
+    <ClCompile Include="Engine\Utility\StringPool.cpp" />
+    <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Game\AICritters\AICritters.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
     <ClCompile Include="Game\Game.cpp" />
@@ -227,10 +231,6 @@
     <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui-1.52\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\imgui-1.52\imgui_draw.cpp" />
-    <ClCompile Include="Utility\File.cpp" />
-    <ClCompile Include="Utility\Math\SIMDVector.cpp" />
-    <ClCompile Include="Utility\StringPool.cpp" />
-    <ClCompile Include="Utility\Test\PerformanceStringTest.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Application\Application.h" />
@@ -247,6 +247,14 @@
     <ClInclude Include="Engine\Input\Input.h" />
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
+    <ClInclude Include="Engine\Utility\File.h" />
+    <ClInclude Include="Engine\Utility\Math.h" />
+    <ClInclude Include="Engine\Utility\Math\SIMDVector.h" />
+    <ClInclude Include="Engine\Utility\RingBuffer.h" />
+    <ClInclude Include="Engine\Utility\StringPool.h" />
+    <ClInclude Include="Engine\Utility\Test.h" />
+    <ClInclude Include="Engine\Utility\TestResult.h" />
+    <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />
     <ClInclude Include="Game\AICritters\AICritters.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />
     <ClInclude Include="Game\Game.h" />
@@ -257,13 +265,6 @@
     <ClInclude Include="ThirdParty\imgui-1.52\stb_rect_pack.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\stb_textedit.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\stb_truetype.h" />
-    <ClInclude Include="Utility\File.h" />
-    <ClInclude Include="Utility\Math.h" />
-    <ClInclude Include="Utility\Math\SIMDVector.h" />
-    <ClInclude Include="Utility\RingBuffer.h" />
-    <ClInclude Include="Utility\StringPool.h" />
-    <ClInclude Include="Utility\Test.h" />
-    <ClInclude Include="Utility\TestResult.h" />
     <ClInclude Include="Utility\Test\PerformanceStringTest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

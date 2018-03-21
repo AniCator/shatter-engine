@@ -1,11 +1,11 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
-#include <Display/Window.h>
-#include <Configuration/Configuration.h>
+#include <Engine/Display/Window.h>
+#include <Engine/Configuration/Configuration.h>
 
-#include <Display/Rendering/Camera.h>
-#include <Display/Rendering/Renderable.h>
+#include <Engine/Display/Rendering/Camera.h>
+#include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Input/Input.h>
 
 #include <Game/Game.h>
