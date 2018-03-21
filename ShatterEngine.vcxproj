@@ -265,7 +265,6 @@
     <ClInclude Include="ThirdParty\imgui-1.52\stb_rect_pack.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\stb_textedit.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\stb_truetype.h" />
-    <ClInclude Include="Utility\Test\PerformanceStringTest.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
