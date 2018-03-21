@@ -204,8 +204,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Configuration\Configuration.cpp" />
     <ClCompile Include="Engine\Application\Application.cpp" />
+    <ClCompile Include="Engine\Configuration\Configuration.cpp" />
     <ClCompile Include="Engine\Display\imgui_impl_glfw_gl3.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Camera.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
@@ -233,8 +233,8 @@
     <ClCompile Include="Utility\Test\PerformanceStringTest.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Configuration\Configuration.h" />
     <ClInclude Include="Engine\Application\Application.h" />
+    <ClInclude Include="Engine\Configuration\Configuration.h" />
     <ClInclude Include="Engine\Display\imgui_impl_glfw_gl3.h" />
     <ClInclude Include="Engine\Display\Rendering\Camera.h" />
     <ClInclude Include="Engine\Display\Rendering\Mesh.h" />

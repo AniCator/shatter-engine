@@ -8,7 +8,7 @@
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
-#include <Configuration/Configuration.h>
+#include <Engine/Configuration/Configuration.h>
 
 #include <Engine/Input/Input.h>
 

@@ -7,7 +7,7 @@
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Renderable.h>
 
-#include <Configuration/Configuration.h>
+#include <Engine/Configuration/Configuration.h>
 
 #include <Utility/Math.h>
 #include <Utility/Math/SIMDVector.h>

@@ -71,9 +71,6 @@
     <ClCompile Include="ThirdParty\glad\src\glad.c">
       <Filter>Source Files\ThirdParty\glad</Filter>
     </ClCompile>
-    <ClCompile Include="Configuration\Configuration.cpp">
-      <Filter>Source Files\Engine\Configuration</Filter>
-    </ClCompile>
     <ClCompile Include="Utility\File.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
@@ -146,11 +143,11 @@
     <ClCompile Include="Engine\Display\Rendering\Shader.cpp">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Configuration\Configuration.cpp">
+      <Filter>Source Files\Engine\Configuration</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Configuration\Configuration.h">
-      <Filter>Source Files\Engine\Configuration</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\File.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
@@ -241,6 +238,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Display\Rendering\Shader.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Configuration\Configuration.h">
+      <Filter>Source Files\Engine\Configuration</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
