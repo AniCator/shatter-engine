@@ -205,14 +205,14 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Configuration\Configuration.cpp" />
-    <ClCompile Include="Display\imgui_impl_glfw_gl3.cpp" />
-    <ClCompile Include="Display\Rendering\Camera.cpp" />
-    <ClCompile Include="Display\Rendering\Mesh.cpp" />
-    <ClCompile Include="Display\Rendering\Renderable.cpp" />
-    <ClCompile Include="Display\Rendering\Renderer.cpp" />
-    <ClCompile Include="Display\Rendering\Shader.cpp" />
-    <ClCompile Include="Display\Window.cpp" />
     <ClCompile Include="Engine\Application\Application.cpp" />
+    <ClCompile Include="Engine\Display\imgui_impl_glfw_gl3.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Camera.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Renderable.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Renderer.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Shader.cpp" />
+    <ClCompile Include="Engine\Display\Window.cpp" />
     <ClCompile Include="Engine\Event\Event.cpp" />
     <ClCompile Include="Engine\Input\Input.cpp" />
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
@@ -234,15 +234,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Configuration\Configuration.h" />
-    <ClInclude Include="Display\imgui_impl_glfw_gl3.h" />
-    <ClInclude Include="Display\Rendering\Camera.h" />
-    <ClInclude Include="Display\Rendering\Mesh.h" />
-    <ClInclude Include="Display\Rendering\Renderable.h" />
-    <ClInclude Include="Display\Rendering\Renderer.h" />
-    <ClInclude Include="Display\Rendering\RenderHandles.h" />
-    <ClInclude Include="Display\Rendering\Shader.h" />
-    <ClInclude Include="Display\Window.h" />
     <ClInclude Include="Engine\Application\Application.h" />
+    <ClInclude Include="Engine\Display\imgui_impl_glfw_gl3.h" />
+    <ClInclude Include="Engine\Display\Rendering\Camera.h" />
+    <ClInclude Include="Engine\Display\Rendering\Mesh.h" />
+    <ClInclude Include="Engine\Display\Rendering\Renderable.h" />
+    <ClInclude Include="Engine\Display\Rendering\Renderer.h" />
+    <ClInclude Include="Engine\Display\Rendering\Shader.h" />
+    <ClInclude Include="Engine\Display\Window.h" />
     <ClInclude Include="Engine\Event\ActionTarget.h" />
     <ClInclude Include="Engine\Event\Event.h" />
     <ClInclude Include="Engine\Input\Input.h" />

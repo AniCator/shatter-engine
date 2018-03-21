@@ -4,8 +4,8 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Profiling/Logging.h>
 
-#include <Display/Window.h>
-#include <Display/Rendering/Renderable.h>
+#include <Engine/Display/Window.h>
+#include <Engine/Display/Rendering/Renderable.h>
 
 #include <Configuration/Configuration.h>
 

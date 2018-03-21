@@ -74,26 +74,8 @@
     <ClCompile Include="Configuration\Configuration.cpp">
       <Filter>Source Files\Engine\Configuration</Filter>
     </ClCompile>
-    <ClCompile Include="Display\Window.cpp">
-      <Filter>Source Files\Engine\Display</Filter>
-    </ClCompile>
-    <ClCompile Include="Display\Rendering\Renderer.cpp">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="Display\Rendering\Renderable.cpp">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="Display\Rendering\Mesh.cpp">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClCompile>
-    <ClCompile Include="Display\Rendering\Shader.cpp">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClCompile>
     <ClCompile Include="Utility\File.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
-    </ClCompile>
-    <ClCompile Include="Display\Rendering\Camera.cpp">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClCompile>
     <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp">
       <Filter>Source Files\ThirdParty\imgui</Filter>
@@ -125,9 +107,6 @@
     <ClCompile Include="Utility\StringPool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Display\imgui_impl_glfw_gl3.cpp">
-      <Filter>Source Files\Engine\Display</Filter>
-    </ClCompile>
     <ClCompile Include="Game\Squareoids\Squareoids.cpp">
       <Filter>Source Files\Game\Squareoids</Filter>
     </ClCompile>
@@ -146,31 +125,34 @@
     <ClCompile Include="Engine\Profiling\Profiling.cpp">
       <Filter>Source Files\Engine\Profiling</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Display\imgui_impl_glfw_gl3.cpp">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Window.cpp">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Camera.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Mesh.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Renderable.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Renderer.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Shader.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Configuration\Configuration.h">
       <Filter>Source Files\Engine\Configuration</Filter>
     </ClInclude>
-    <ClInclude Include="Display\Window.h">
-      <Filter>Source Files\Engine\Display</Filter>
-    </ClInclude>
-    <ClInclude Include="Display\Rendering\Renderer.h">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Display\Rendering\Renderable.h">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Display\Rendering\Mesh.h">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClInclude>
-    <ClInclude Include="Display\Rendering\Shader.h">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\File.h">
       <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="Display\Rendering\Camera.h">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
       <Filter>Source Files\ThirdParty\imgui</Filter>
@@ -208,9 +190,6 @@
     <ClInclude Include="Game\CauseEffect\CauseEffect.h">
       <Filter>Source Files\Game\CauseEffect</Filter>
     </ClInclude>
-    <ClInclude Include="Display\Rendering\RenderHandles.h">
-      <Filter>Source Files\Engine\Display\Rendering</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\TestResult.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
@@ -220,9 +199,6 @@
     <ClInclude Include="Utility\Test\PerformanceStringTest.h" />
     <ClInclude Include="Utility\StringPool.h">
       <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="Display\imgui_impl_glfw_gl3.h">
-      <Filter>Source Files\Engine\Display</Filter>
     </ClInclude>
     <ClInclude Include="Game\Squareoids\Squareoids.h">
       <Filter>Source Files\Game\Squareoids</Filter>
@@ -244,6 +220,27 @@
     </ClInclude>
     <ClInclude Include="Engine\Profiling\Profiling.h">
       <Filter>Source Files\Engine\Profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\imgui_impl_glfw_gl3.h">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Window.h">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Camera.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Mesh.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Renderable.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Renderer.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Shader.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

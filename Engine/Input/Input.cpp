@@ -3,11 +3,11 @@
 
 #include <GLFW/glfw3.h>
 
-#include <Display/Window.h>
+#include <Engine/Display/Window.h>
 
 #ifdef IMGUI_ENABLED
 #include <ThirdParty/imgui-1.52/imgui.h>
-#include <Display/imgui_impl_glfw_gl3.h>
+#include <Engine/Display/imgui_impl_glfw_gl3.h>
 #endif
 
 CInput& InputInstance = CInput::GetInstance();
@@ -56,7 +56,7 @@ void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY )
 		return;
 	}
 #endif
-	InputInstance.RegisterScrollInput( OffsetX, OffsetY );
+	InputInstance.RegisterScrollInput( static_cast<int>( OffsetX ), static_cast<int>( OffsetY ) );
 }
 
 void InputJoystickStatusCallback( int Joystick, int Event )
