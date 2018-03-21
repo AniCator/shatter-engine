@@ -1,8 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "AICritters.h"
 
-#include <Profiling/Profiling.h>
-#include <Profiling/Logging.h>
+#include <Engine/Profiling/Profiling.h>
+#include <Engine/Profiling/Logging.h>
 
 #include <Display/Window.h>
 #include <Display/Rendering/Renderable.h>

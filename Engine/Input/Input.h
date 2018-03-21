@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include "ActionTarget.h"
+#include <Engine/Event/ActionTarget.h>
 
 #include <vector>
 

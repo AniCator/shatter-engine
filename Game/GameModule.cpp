@@ -16,5 +16,5 @@ extern CStringPerformanceTest StringPerformanceTest;
 
 void CGameLayers::RegisterGameLayers()
 {
-	StringPerformanceTest.Run();
+	// StringPerformanceTest.Run();
 }

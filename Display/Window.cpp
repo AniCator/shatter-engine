@@ -6,11 +6,11 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
-#include <Profiling/Logging.h>
-#include <Profiling/Profiling.h>
+#include <Engine/Profiling/Logging.h>
+#include <Engine/Profiling/Profiling.h>
 #include <Configuration/Configuration.h>
 
-#include <Game/Input.h>
+#include <Engine/Input/Input.h>
 
 #ifdef IMGUI_ENABLED
 #include <ThirdParty/imgui-1.52/imgui.h>

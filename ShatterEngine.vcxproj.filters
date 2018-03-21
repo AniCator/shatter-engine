@@ -27,9 +27,6 @@
     <Filter Include="Source Files\Engine\Utility">
       <UniqueIdentifier>{bb6ebd86-1d2c-4c17-993c-07b3f2d3ed57}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Engine\Debugging">
-      <UniqueIdentifier>{4e5ac7c9-bf51-4714-a46e-4a235c8c7451}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Engine\Display">
       <UniqueIdentifier>{a7e1b419-4aac-4b69-866a-522756f07663}</UniqueIdentifier>
     </Filter>
@@ -54,6 +51,18 @@
     <Filter Include="Source Files\Game\Squareoids">
       <UniqueIdentifier>{eacaeb3b-29c4-4d87-91ee-c666611986b3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Application">
+      <UniqueIdentifier>{e7744a31-428f-489e-b7c5-6f0c90fa72ee}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Input">
+      <UniqueIdentifier>{55d28cde-c1de-4e43-ab93-129d7da63b56}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Event">
+      <UniqueIdentifier>{205db9e9-4aa4-473d-b24b-855e1b97983b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Profiling">
+      <UniqueIdentifier>{1218079d-7a77-4f12-a547-ad3d4b9e79d3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -61,12 +70,6 @@
     </ClCompile>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
       <Filter>Source Files\ThirdParty\glad</Filter>
-    </ClCompile>
-    <ClCompile Include="Profiling\Logging.cpp">
-      <Filter>Source Files\Engine\Debugging</Filter>
-    </ClCompile>
-    <ClCompile Include="Profiling\Profiling.cpp">
-      <Filter>Source Files\Engine\Debugging</Filter>
     </ClCompile>
     <ClCompile Include="Configuration\Configuration.cpp">
       <Filter>Source Files\Engine\Configuration</Filter>
@@ -104,9 +107,6 @@
     <ClCompile Include="Game\Game.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Input.cpp">
-      <Filter>Source Files\Engine</Filter>
-    </ClCompile>
     <ClCompile Include="Utility\Math\SIMDVector.cpp">
       <Filter>Source Files\Engine\Utility\Math</Filter>
     </ClCompile>
@@ -131,17 +131,23 @@
     <ClCompile Include="Game\Squareoids\Squareoids.cpp">
       <Filter>Source Files\Game\Squareoids</Filter>
     </ClCompile>
-    <ClCompile Include="Game\Event.cpp">
-      <Filter>Source Files\Engine</Filter>
+    <ClCompile Include="Engine\Application\Application.cpp">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Input\Input.cpp">
+      <Filter>Source Files\Engine\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Event\Event.cpp">
+      <Filter>Source Files\Engine\Event</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Profiling\Logging.cpp">
+      <Filter>Source Files\Engine\Profiling</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Profiling\Profiling.cpp">
+      <Filter>Source Files\Engine\Profiling</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Profiling\Profiling.h">
-      <Filter>Source Files\Engine\Debugging</Filter>
-    </ClInclude>
-    <ClInclude Include="Profiling\Logging.h">
-      <Filter>Source Files\Engine\Debugging</Filter>
-    </ClInclude>
     <ClInclude Include="Configuration\Configuration.h">
       <Filter>Source Files\Engine\Configuration</Filter>
     </ClInclude>
@@ -190,9 +196,6 @@
     <ClInclude Include="Utility\RingBuffer.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
-    <ClInclude Include="Game\Input.h">
-      <Filter>Source Files\Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Utility\Math.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
@@ -224,11 +227,23 @@
     <ClInclude Include="Game\Squareoids\Squareoids.h">
       <Filter>Source Files\Game\Squareoids</Filter>
     </ClInclude>
-    <ClInclude Include="Game\Event.h">
-      <Filter>Source Files\Engine</Filter>
+    <ClInclude Include="Engine\Application\Application.h">
+      <Filter>Source Files\Engine\Application</Filter>
     </ClInclude>
-    <ClInclude Include="Game\ActionTarget.h">
-      <Filter>Source Files\Engine</Filter>
+    <ClInclude Include="Engine\Input\Input.h">
+      <Filter>Source Files\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Event\ActionTarget.h">
+      <Filter>Source Files\Engine\Event</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Event\Event.h">
+      <Filter>Source Files\Engine\Event</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Profiling\Logging.h">
+      <Filter>Source Files\Engine\Profiling</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Profiling\Profiling.h">
+      <Filter>Source Files\Engine\Profiling</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

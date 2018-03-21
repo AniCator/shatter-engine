@@ -1,6 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "File.h"
-#include "../Profiling/Logging.h"
+#include <Engine/Profiling/Logging.h>
 
 #include <fstream>
 

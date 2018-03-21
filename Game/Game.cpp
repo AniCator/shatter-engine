@@ -2,7 +2,7 @@
 #pragma once
 
 #include "Game.h"
-#include <Profiling/Profiling.h>
+#include <Engine/Profiling/Profiling.h>
 
 CGameLayers* GameLayersInstance = new CGameLayers();
 

@@ -12,8 +12,8 @@
 #include "glad/glad.h"
 #include "GLFW/glfw3.h"
 
-#include <Profiling/Logging.h>
-#include <Profiling/Profiling.h>
+#include <Engine/Profiling/Logging.h>
+#include <Engine/Profiling/Profiling.h>
 
 #include "Renderable.h"
 #include "Camera.h"

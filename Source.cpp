@@ -1,14 +1,14 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
-#include <Profiling/Logging.h>
-#include <Profiling/Profiling.h>
+#include <Engine/Profiling/Logging.h>
+#include <Engine/Profiling/Profiling.h>
 #include <Display/Window.h>
 #include <Configuration/Configuration.h>
 
 #include <Display/Rendering/Camera.h>
 #include <Display/Rendering/Renderable.h>
+#include <Engine/Input/Input.h>
 
 #include <Game/Game.h>
-#include <Game/Input.h>
 
 #include <ThirdParty/imgui-1.52/imgui.h>
 
