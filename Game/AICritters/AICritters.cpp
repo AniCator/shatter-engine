@@ -14,8 +14,6 @@
 
 #include <cstdlib>
 
-#undef GetCurrentTime
-
 CAICritters::CAICritters()
 {
 	CConfiguration& Configuration = CConfiguration::GetInstance();

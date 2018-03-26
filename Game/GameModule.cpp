@@ -10,6 +10,10 @@
 // #include <Game/CauseEffect/CauseEffect.h>
 // CCauseEffect* CauseEffectInstance = new CCauseEffect();
 
+// Squaroids.h
+#include <Game/Squareoids/Squareoids.h>
+CGameSquareoids* SquareoidsInstance = new CGameSquareoids();
+
 #include <Engine/Utility/Test/PerformanceStringTest.h>
 
 extern CStringPerformanceTest StringPerformanceTest;
@@ -17,4 +21,5 @@ extern CStringPerformanceTest StringPerformanceTest;
 void CGameLayers::RegisterGameLayers()
 {
 	// StringPerformanceTest.Run();
+	Add( SquareoidsInstance );
 }

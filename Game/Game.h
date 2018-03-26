@@ -4,10 +4,6 @@
 #include <vector>
 #include "glm/glm.hpp"
 
-#ifdef GetCurrentTime
-#undef GetCurrentTime
-#endif
-
 class IGameLayer
 {
 public:
