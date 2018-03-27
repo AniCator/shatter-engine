@@ -8,5 +8,5 @@ The engine requires a couple of third party libraries which aren't available in 
 
 * ThirdParty/glad/ - GLAD for OpenGL 3.3 with the KHR debug extension
 * ThirdParty/glfw-3.2.1.bin.WIN64/ - GLFW 3.2.1
-* ThirdParty/glm/ - GLM
+* ThirdParty/glm/ - GLM 0.9.8.5
 * ThirdParty/imgui-1.52/ - dear imgui 1.52
