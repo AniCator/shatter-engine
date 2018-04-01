@@ -66,7 +66,23 @@ void InputJoystickStatusCallback( int Joystick, int Event )
 
 CInput::CInput()
 {
+	AnyKey = false;
 
+	// Initialize the Keyboard input array
+	for( int KeyboardIndex = 0; KeyboardIndex < MaximumKeyboardInputs; KeyboardIndex++ )
+	{
+		KeyboardInput[KeyboardIndex].Input = KeyboardIndex;
+		KeyboardInput[KeyboardIndex].Action = -1;
+		KeyboardInput[KeyboardIndex].Modifiers = 0;
+	}
+
+	// Initialize the Mouse input array
+	for( int MouseIndex = 0; MouseIndex < MaximumMouseButtons; MouseIndex++ )
+	{
+		MouseInput[MouseIndex].Input = MouseIndex;
+		MouseInput[MouseIndex].Action = -1;
+		MouseInput[MouseIndex].Modifiers = 0;
+	}
 }
 
 void CInput::RegisterKeyInput( int KeyInput, int ScanCode, int Action, int Modifiers )
@@ -144,6 +160,9 @@ void CInput::ClearActionBindings()
 
 void CInput::Tick()
 {
+	// Reset the 'any' key
+	AnyKey = false;
+
 	for( auto ActionBinding : ActionBindings )
 	{
 		bool ExecuteTargetFunction = false;
@@ -151,6 +170,7 @@ void CInput::Tick()
 		if( ActionBinding.BindingType == EActionBindingType::Keyboard && KeyboardInput[ActionBinding.BindingInput].Action == ActionBinding.BindingAction )
 		{
 			ExecuteTargetFunction = true;
+			AnyKey = true;
 		}
 
 		if( ActionBinding.BindingType == EActionBindingType::Mouse && MouseInput[ActionBinding.BindingInput].Action == ActionBinding.BindingAction )
@@ -164,9 +184,9 @@ void CInput::Tick()
 		}
 	}
 
-	for( int i = 0; i < MaximumKeyboardInputs; i++ )
+	for( int KeyboardIndex = 0; KeyboardIndex < MaximumKeyboardInputs; KeyboardIndex++ )
 	{
-		FInput& Input = KeyboardInput[i];
+		FInput& Input = KeyboardInput[KeyboardIndex];
 		if( Input.Action == GLFW_RELEASE )
 		{
 			Input.Action = -1;
@@ -183,7 +203,12 @@ void CInput::Tick()
 	}
 }
 
-bool CInput::IsKeyDown( int KeyInput )
+bool CInput::IsKeyDown( int KeyInput ) const
 {
 	return KeyboardInput[KeyInput].Action == GLFW_PRESS;
+}
+
+bool CInput::IsAnyKeyDown() const
+{
+	return AnyKey;
 }

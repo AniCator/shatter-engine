@@ -62,7 +62,8 @@ public:
 
 	void Tick();
 
-	bool IsKeyDown( int KeyInput );
+	bool IsKeyDown( int KeyInput ) const;
+	bool IsAnyKeyDown() const;
 
 public:
 	static CInput& GetInstance()
@@ -86,4 +87,7 @@ private:
 
 	// Mouse button states
 	FInput MouseInput[MaximumMouseButtons];
+
+	// Any state
+	bool AnyKey;
 };
