@@ -281,7 +281,7 @@ void main()
 				Renderer.RefreshFrame();
 
 				const float TimeScaleParameter = CConfiguration::GetInstance().GetFloat( "timescale" );
-				ScaledGameTime += TimeScale * TimeScaleParameter;
+				ScaledGameTime += GameDeltaTime * 0.001f;
 
 				Renderer.SetCamera( DefaultCamera );
 
