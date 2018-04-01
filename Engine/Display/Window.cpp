@@ -125,6 +125,13 @@ void CWindow::Create( const char* Title )
 		WindowY = config.GetInteger( "windowy" );
 	}
 
+	bool ShouldOverrideWindowPosition = false;
+
+	if( WindowX > -1 || WindowY > -1 )
+	{
+		ShouldOverrideWindowPosition = true;
+	}
+
 	int MonitorX = 0;
 	int MonitorY = 0;
 	glfwGetMonitorPos( Monitor, &MonitorX, &MonitorY );
@@ -133,6 +140,8 @@ void CWindow::Create( const char* Title )
 	{
 		WindowX = MonitorX;
 		WindowY = MonitorY;
+
+		ShouldOverrideWindowPosition = true;
 	}
 	else
 	{
@@ -140,7 +149,10 @@ void CWindow::Create( const char* Title )
 		WindowY += MonitorY;
 	}
 
-	glfwSetWindowPos( WindowHandle, WindowX, WindowY );
+	if( ShouldOverrideWindowPosition )
+	{
+		glfwSetWindowPos( WindowHandle, WindowX, WindowY );
+	}
 
 	glfwMakeContextCurrent( WindowHandle );
 
