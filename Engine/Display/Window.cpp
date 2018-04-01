@@ -112,12 +112,35 @@ void CWindow::Create( const char* Title )
 
 	WindowHandle = glfwCreateWindow( Width, Height, Title, FullScreen ? glfwGetPrimaryMonitor() : nullptr, nullptr );
 
+	int WindowX = -1;
+	int WindowY = -1;
+
+	if( config.IsValidKey( "windowx" ) )
+	{
+		WindowX = config.GetInteger( "windowx" );
+	}
+
+	if( config.IsValidKey( "windowy" ) )
+	{
+		WindowY = config.GetInteger( "windowy" );
+	}
+
+	int MonitorX = 0;
+	int MonitorY = 0;
+	glfwGetMonitorPos( Monitor, &MonitorX, &MonitorY );
+
 	if( !EnableBorder )
 	{
-		int MonitorPosition[2];
-		glfwGetMonitorPos( Monitor, &MonitorPosition[0], &MonitorPosition[1] );
-		glfwSetWindowPos( WindowHandle, MonitorPosition[0], MonitorPosition[1] );
+		WindowX = MonitorX;
+		WindowY = MonitorY;
 	}
+	else
+	{
+		WindowX += MonitorX;
+		WindowY += MonitorY;
+	}
+
+	glfwSetWindowPos( WindowHandle, WindowX, WindowY );
 
 	glfwMakeContextCurrent( WindowHandle );
 
