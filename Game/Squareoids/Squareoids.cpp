@@ -51,8 +51,8 @@ void CGameSquareoids::Tick()
 	StartPositionY -= StartOffsetY * 2.0f;
 
 	const float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() ) + 0.5f;
-	const float Frequency = Time * 0.1f;
-	const float Amplitude = pow( ( sin( Time * 0.025f ) * 0.5f + 0.5f ), 2 ) * ( cos( Time * 0.0125f ) * 0.5f + 0.5f );
+	const float Frequency = Time * 4.0f;
+	const float Amplitude = pow( ( sin( Time ) * 0.5f + 0.5f ), 2 ) * ( cos( Time ) * 0.5f + 0.5f );
 	const float AmplitudeScaledX = Amplitude * 50.0f;
 	const float AmplitudeScaledY = Amplitude * 50.0f;
 
