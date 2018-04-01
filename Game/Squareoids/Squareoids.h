@@ -3,6 +3,8 @@
 
 #include <Game/Game.h>
 
+#include "GameState/SquareoidsGameState.h"
+
 class CGameSquareoids : public IGameLayer
 {
 public:
@@ -15,4 +17,5 @@ public:
 	virtual void Shutdown() override;
 
 private:
+	ESquareoidGameState GameState;
 };

@@ -63,6 +63,9 @@
     <Filter Include="Source Files\Engine\Profiling">
       <UniqueIdentifier>{1218079d-7a77-4f12-a547-ad3d4b9e79d3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Game\Squareoids\TitleScreen">
+      <UniqueIdentifier>{7179dd23-a5be-4d5e-9741-ea8084b3d8bb}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -145,6 +148,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\Math\SIMDVector.cpp">
       <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Squareoids\TitleScreen\TitleScreen.cpp">
+      <Filter>Source Files\Game\Squareoids\TitleScreen</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -243,6 +249,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Math\SIMDVector.h">
       <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Squareoids\TitleScreen\TitleScreen.h">
+      <Filter>Source Files\Game\Squareoids\TitleScreen</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Squareoids\GameState\SquareoidsGameState.h">
+      <Filter>Source Files\Game\Squareoids</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
