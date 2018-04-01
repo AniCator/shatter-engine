@@ -260,7 +260,6 @@ void main()
 	while( !MainWindow.ShouldClose() )
 	{
 		MainWindow.BeginFrame();
-		// Profile( "Frametime" );
 		CTimerScope Scope_Frametime( "Frametime", false );
 
 		const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
