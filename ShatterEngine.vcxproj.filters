@@ -66,6 +66,9 @@
     <Filter Include="Source Files\Game\Squareoids\TitleScreen">
       <UniqueIdentifier>{7179dd23-a5be-4d5e-9741-ea8084b3d8bb}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Game\Squareoids\Battlefield">
+      <UniqueIdentifier>{bd93d907-e337-4272-9103-8741d137a7f6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -151,6 +154,9 @@
     </ClCompile>
     <ClCompile Include="Game\Squareoids\TitleScreen\TitleScreen.cpp">
       <Filter>Source Files\Game\Squareoids\TitleScreen</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Squareoids\Battlefield\Battlefield.cpp">
+      <Filter>Source Files\Game\Squareoids\Battlefield</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -255,6 +261,9 @@
     </ClInclude>
     <ClInclude Include="Game\Squareoids\GameState\SquareoidsGameState.h">
       <Filter>Source Files\Game\Squareoids</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Squareoids\Battlefield\Battlefield.h">
+      <Filter>Source Files\Game\Squareoids\Battlefield</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

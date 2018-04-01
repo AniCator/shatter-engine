@@ -4,6 +4,7 @@
 #include <Engine/Input/Input.h>
 
 #include "TitleScreen/TitleScreen.h"
+#include "Battlefield/Battlefield.h"
 
 CGameSquareoids::CGameSquareoids()
 {
@@ -26,6 +27,7 @@ void CGameSquareoids::Frame()
 }
 
 CSquareoidsTitleScreen* TitleScreen = nullptr;
+CSquareoidsBattlefield* BattleField = nullptr;
 
 void CGameSquareoids::Tick()
 {
@@ -56,7 +58,12 @@ void CGameSquareoids::Tick()
 	}
 	else if( GameState == ESquareoidGameState::Game )
 	{
+		if( !BattleField )
+		{
+			BattleField = new CSquareoidsBattlefield();
+		}
 
+		BattleField->Update();
 	}
 }
 
