@@ -281,13 +281,14 @@ void main()
 				Renderer.RefreshFrame();
 
 				const float TimeScaleParameter = CConfiguration::GetInstance().GetFloat( "timescale" );
-				ScaledGameTime += GameDeltaTime * 0.001f;
+				const float TimeScaleGlobal = TimeScale * TimeScaleParameter;
+				ScaledGameTime += GameDeltaTime * 0.001f * TimeScaleGlobal;
 
 				Renderer.SetCamera( DefaultCamera );
 
 				// Update time
 				GameLayersInstance->Time( ScaledGameTime );
-				GameLayersInstance->SetTimeScale( TimeScale * TimeScaleParameter );
+				GameLayersInstance->SetTimeScale( TimeScaleGlobal );
 
 				// Tick all game layers
 				GameLayersInstance->Tick();
