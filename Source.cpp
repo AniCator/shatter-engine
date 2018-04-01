@@ -28,7 +28,7 @@ CCamera DefaultCamera = CCamera();
 FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
 bool PauseGame = false;
 bool ScaleTime = false;
-bool CursorVisible = false;
+bool CursorVisible = true;
 
 void InputScaleTimeEnable()
 {
