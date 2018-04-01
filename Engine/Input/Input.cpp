@@ -160,7 +160,7 @@ void CInput::ClearActionBindings()
 
 void CInput::Tick()
 {
-	// Reset the 'any' key
+	// Clear the 'any' key
 	AnyKey = false;
 
 	for( auto ActionBinding : ActionBindings )
@@ -170,7 +170,6 @@ void CInput::Tick()
 		if( ActionBinding.BindingType == EActionBindingType::Keyboard && KeyboardInput[ActionBinding.BindingInput].Action == ActionBinding.BindingAction )
 		{
 			ExecuteTargetFunction = true;
-			AnyKey = true;
 		}
 
 		if( ActionBinding.BindingType == EActionBindingType::Mouse && MouseInput[ActionBinding.BindingInput].Action == ActionBinding.BindingAction )
@@ -190,6 +189,10 @@ void CInput::Tick()
 		if( Input.Action == GLFW_RELEASE )
 		{
 			Input.Action = -1;
+		}
+		else if( Input.Action == GLFW_PRESS )
+		{
+			AnyKey = true;
 		}
 	}
 
