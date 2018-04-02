@@ -4,7 +4,7 @@
 CSquareoidsUnit::CSquareoidsUnit()
 {
 	UnitData.Color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
-	UnitData.Position = glm::vec3( 0.0f, 0.0f, 100.0f );
+	UnitData.Position = glm::vec3( 0.0f, 0.0f, 0.0f );
 	UnitData.Size = glm::vec3( 5.0f, 5.0f, 5.0f );
 }
 

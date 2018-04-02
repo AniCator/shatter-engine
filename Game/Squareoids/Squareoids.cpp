@@ -18,7 +18,8 @@ CGameSquareoids::~CGameSquareoids()
 
 void CGameSquareoids::Initialize()
 {
-
+	CInput& Input = CInput::GetInstance();
+	Input.ClearActionBindings();
 }
 
 void CGameSquareoids::Frame()
@@ -32,6 +33,7 @@ CSquareoidsBattlefield* BattleField = nullptr;
 void CGameSquareoids::Tick()
 {
 	CInput& Input = CInput::GetInstance();
+	const bool EscapeKeyPressed = Input.IsKeyDown( 256 );
 
 	if( GameState == ESquareoidGameState::Unknown )
 	{
@@ -48,7 +50,7 @@ void CGameSquareoids::Tick()
 
 		TitleScreen->Display();
 
-		if( Input.IsAnyKeyDown() )
+		if( Input.IsAnyKeyDown() && !EscapeKeyPressed )
 		{
 			delete TitleScreen;
 			TitleScreen = nullptr;
@@ -64,6 +66,15 @@ void CGameSquareoids::Tick()
 		}
 
 		BattleField->Update();
+
+		// 256 is the escape key, temporarily hardcoded here so we don't have to include glfw3.h
+		if( EscapeKeyPressed )
+		{
+			delete BattleField;
+			BattleField = nullptr;
+
+			GameState = ESquareoidGameState::TitleScreen;
+		}
 	}
 }
 

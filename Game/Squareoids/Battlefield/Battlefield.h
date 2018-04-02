@@ -2,8 +2,11 @@
 #pragma once
 
 #include <vector>
+#include <memory>
 
 #include "../Unit/UnitInterface.h"
+
+class CCamera;
 
 class CSquareoidsBattlefield
 {
@@ -14,4 +17,7 @@ public:
 	void Update();
 private:
 	std::vector<ISquareoidsUnit*> SquareoidUnits;
+	ISquareoidsUnit* PlayerUnit;
+
+	CCamera* Camera;
 };

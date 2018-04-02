@@ -65,6 +65,22 @@ void CProfileVisualisation::AddCounterEntry( const char* NameIn, int TimeIn )
 	}
 }
 
+void CProfileVisualisation::AddDebugMessage( const char* NameIn, const char* Body )
+{
+	if( !Enabled )
+		return;
+
+	auto Iterator = DebugMessages.find( NameIn );
+	if( Iterator == DebugMessages.end() )
+	{
+		DebugMessages.insert_or_assign( NameIn, Body );
+	}
+	else
+	{
+		Iterator->second = Body;
+	}
+}
+
 void CProfileVisualisation::Display()
 {
 	ImGui::SetNextWindowPos( ImVec2( 0.0f, 25.0f ), ImGuiCond_Always );
@@ -143,6 +159,19 @@ void CProfileVisualisation::Display()
 			}
 		}
 
+		if( DebugMessages.size() > 0 )
+		{
+			ImGui::Text( "\nMessages" );
+			ImGui::Separator();
+
+			for( auto DebugMessage : DebugMessages )
+			{
+				const char* DebugMessageName = DebugMessage.first.c_str();
+				const char* DebugMessageBody = DebugMessage.second.c_str();
+				ImGui::Text( "%s: %i", DebugMessageName, DebugMessageBody );
+			}
+		}
+
 		ImGui::End();
 	}
 	ImGui::PopStyleColor();
@@ -154,6 +183,7 @@ void CProfileVisualisation::Clear()
 {
 	// TimeEntries.clear();
 	TimeCounters.clear();
+	// DebugMessages.clear();
 }
 
 bool CProfileVisualisation::IsEnabled() const

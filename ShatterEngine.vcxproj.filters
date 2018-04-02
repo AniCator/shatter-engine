@@ -69,6 +69,12 @@
     <Filter Include="Source Files\Game\Squareoids\Battlefield">
       <UniqueIdentifier>{bd93d907-e337-4272-9103-8741d137a7f6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Game\Squareoids\Unit">
+      <UniqueIdentifier>{2af1c52a-1664-4d1d-8fd1-7c8aac1b659a}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Game\ShatterLapse">
+      <UniqueIdentifier>{4449bcb3-72c6-493d-9d5b-3eb4ee9c0bd6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -157,6 +163,15 @@
     </ClCompile>
     <ClCompile Include="Game\Squareoids\Battlefield\Battlefield.cpp">
       <Filter>Source Files\Game\Squareoids\Battlefield</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Squareoids\Unit\Unit.cpp">
+      <Filter>Source Files\Game\Squareoids\Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\ShatterLapse\ShatterLapse.cpp">
+      <Filter>Source Files\Game\ShatterLapse</Filter>
+    </ClCompile>
+    <ClCompile Include="Game\Squareoids\Unit\PlayerUnit.cpp">
+      <Filter>Source Files\Game\Squareoids\Unit</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -264,6 +279,18 @@
     </ClInclude>
     <ClInclude Include="Game\Squareoids\Battlefield\Battlefield.h">
       <Filter>Source Files\Game\Squareoids\Battlefield</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Squareoids\Unit\Unit.h">
+      <Filter>Source Files\Game\Squareoids\Unit</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Squareoids\Unit\UnitInterface.h">
+      <Filter>Source Files\Game\Squareoids\Unit</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\ShatterLapse\ShatterLapse.h">
+      <Filter>Source Files\Game\ShatterLapse</Filter>
+    </ClInclude>
+    <ClInclude Include="Game\Squareoids\Unit\PlayerUnit.h">
+      <Filter>Source Files\Game\Squareoids\Unit</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

@@ -5,8 +5,10 @@
 #include <Game/Game.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Renderable.h>
+#include <Engine/Display/Rendering/Camera.h>
 
 #include "../Unit/Unit.h"
+#include "../Unit/PlayerUnit.h"
 
 CSquareoidsBattlefield::CSquareoidsBattlefield()
 {
@@ -15,6 +17,7 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 	for( int Index = 0; Index < 5; Index++ )
 	{
 		CSquareoidsUnit* NewUnit = new CSquareoidsUnit();
+
 		const float RandomOffsetX = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * 512 ) - 256;
 		const float RandomOffsetY = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * 512 ) - 256;
 
@@ -24,6 +27,11 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 
 		SquareoidUnits.push_back( NewUnit );
 	}
+
+	PlayerUnit = new CSquareoidsPlayerUnit();
+	SquareoidUnits.push_back( PlayerUnit );
+
+	Camera = new CCamera();
 }
 
 CSquareoidsBattlefield::~CSquareoidsBattlefield()
@@ -35,6 +43,8 @@ CSquareoidsBattlefield::~CSquareoidsBattlefield()
 	}
 
 	SquareoidUnits.clear();
+
+	delete Camera;
 }
 
 void CSquareoidsBattlefield::Update()
@@ -72,4 +82,22 @@ void CSquareoidsBattlefield::Update()
 
 		Renderer.QueueDynamicRenderable( Renderable );
 	}
+
+	// Configure the camera setup
+	FCameraSetup& Setup = Camera->GetCameraSetup();
+	FSquareoidUnitData& UnitData = PlayerUnit->GetUnitData();
+
+	const float DeltaX = Setup.CameraPosition[0] + UnitData.Position[0];
+	const float DeltaY = Setup.CameraPosition[1] - UnitData.Position[1];
+
+	const float InterpolationFactor = 0.1f;
+	const float OneMinusInterp = 1.0f - InterpolationFactor;
+	Setup.CameraPosition[0] = ( Setup.CameraPosition[0] * OneMinusInterp ) + ( -DeltaX * InterpolationFactor );
+	Setup.CameraPosition[1] = ( Setup.CameraPosition[1] * OneMinusInterp ) + ( -DeltaY * InterpolationFactor );
+
+	Setup.CameraPosition[2] = 600.0f;
+
+	Setup.CameraDirection = glm::vec3( 0.0f, 0.0f, -1.0f );
+
+	Renderer.SetCamera( *Camera );
 }

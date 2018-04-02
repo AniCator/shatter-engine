@@ -129,6 +129,7 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glfw-3.2.1.bin.WIN64\include;ThirdParty\glad\include%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ProfileBuild;_MBCS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -228,9 +229,12 @@
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
     <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Game\GameModule.cpp" />
+    <ClCompile Include="Game\ShatterLapse\ShatterLapse.cpp" />
     <ClCompile Include="Game\Squareoids\Battlefield\Battlefield.cpp" />
     <ClCompile Include="Game\Squareoids\Squareoids.cpp" />
     <ClCompile Include="Game\Squareoids\TitleScreen\TitleScreen.cpp" />
+    <ClCompile Include="Game\Squareoids\Unit\PlayerUnit.cpp" />
+    <ClCompile Include="Game\Squareoids\Unit\Unit.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="ThirdParty\glad\src\glad.c" />
     <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp" />
@@ -263,10 +267,14 @@
     <ClInclude Include="Game\AICritters\AICritters.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />
     <ClInclude Include="Game\Game.h" />
+    <ClInclude Include="Game\ShatterLapse\ShatterLapse.h" />
     <ClInclude Include="Game\Squareoids\Battlefield\Battlefield.h" />
     <ClInclude Include="Game\Squareoids\GameState\SquareoidsGameState.h" />
     <ClInclude Include="Game\Squareoids\Squareoids.h" />
     <ClInclude Include="Game\Squareoids\TitleScreen\TitleScreen.h" />
+    <ClInclude Include="Game\Squareoids\Unit\PlayerUnit.h" />
+    <ClInclude Include="Game\Squareoids\Unit\Unit.h" />
+    <ClInclude Include="Game\Squareoids\Unit\UnitInterface.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\imgui.h" />
     <ClInclude Include="ThirdParty\imgui-1.52\imgui_internal.h" />
