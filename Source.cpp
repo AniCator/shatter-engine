@@ -283,8 +283,6 @@ void main()
 				const float TimeScaleGlobal = TimeScale * TimeScaleParameter;
 				ScaledGameTime += GameDeltaTime * 0.001f * TimeScaleGlobal;
 
-				Renderer.SetCamera( DefaultCamera );
-
 				// Update time
 				GameLayersInstance->Time( ScaledGameTime );
 				GameLayersInstance->SetTimeScale( TimeScaleGlobal );
