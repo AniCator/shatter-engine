@@ -168,7 +168,7 @@ void CProfileVisualisation::Display()
 			{
 				const char* DebugMessageName = DebugMessage.first.c_str();
 				const char* DebugMessageBody = DebugMessage.second.c_str();
-				ImGui::Text( "%s: %i", DebugMessageName, DebugMessageBody );
+				ImGui::Text( "%s: %s", DebugMessageName, DebugMessageBody );
 			}
 		}
 
