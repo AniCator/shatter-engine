@@ -14,12 +14,12 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 {
 	std::srand( static_cast<uint32_t>( std::time( 0 ) ) );
 
-	for( int Index = 0; Index < 5; Index++ )
+	for( int Index = 0; Index < 1024; Index++ )
 	{
 		CSquareoidsUnit* NewUnit = new CSquareoidsUnit();
 
-		const float RandomOffsetX = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * 512 ) - 256;
-		const float RandomOffsetY = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * 512 ) - 256;
+		const float RandomOffsetX = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * 8192 ) - 4096;
+		const float RandomOffsetY = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * 8192 ) - 4096;
 
 		FSquareoidUnitData& UnitData = NewUnit->GetUnitData();
 		UnitData.Position[0] = RandomOffsetX;
@@ -52,6 +52,8 @@ void CSquareoidsBattlefield::Update()
 	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
 	CMesh* SquareMesh = Renderer.FindMesh( "square" );
 
+	std::vector<ISquareoidsUnit*> DeadUnits;
+
 	// Tick units and do brute force interaction checks
 	for( auto SquareoidUnitA : SquareoidUnits )
 	{
@@ -63,6 +65,35 @@ void CSquareoidsBattlefield::Update()
 			{
 				SquareoidUnitA->Interaction( SquareoidUnitB );
 			}
+		}
+
+		if( SquareoidUnitA != PlayerUnit )
+		{
+			FSquareoidUnitData& UnitData = SquareoidUnitA->GetUnitData();
+			if( UnitData.Health < 0.0f )
+			{
+				DeadUnits.push_back( SquareoidUnitA );
+			}
+		}
+	}
+
+	// Cleanup
+	for( auto Iterator = SquareoidUnits.begin(); Iterator != SquareoidUnits.end(); )
+	{
+		bool RemovedDeadUnit = false;
+		for( auto DeadUnit : DeadUnits )
+		{
+			if( *Iterator == DeadUnit )
+			{
+				Iterator = SquareoidUnits.erase( Iterator );
+				RemovedDeadUnit = true;
+				break;
+			}
+		}
+
+		if( !RemovedDeadUnit )
+		{
+			++Iterator;
 		}
 	}
 
@@ -90,12 +121,14 @@ void CSquareoidsBattlefield::Update()
 	const float DeltaX = Setup.CameraPosition[0] + UnitData.Position[0];
 	const float DeltaY = Setup.CameraPosition[1] - UnitData.Position[1];
 
-	const float InterpolationFactor = 0.1f;
+	const float InterpolationFactor = 0.314f;
 	const float OneMinusInterp = 1.0f - InterpolationFactor;
-	Setup.CameraPosition[0] = ( Setup.CameraPosition[0] * OneMinusInterp ) + ( -DeltaX * InterpolationFactor );
-	Setup.CameraPosition[1] = ( Setup.CameraPosition[1] * OneMinusInterp ) + ( -DeltaY * InterpolationFactor );
+	Setup.CameraPosition[0] = ( Setup.CameraPosition[0] * OneMinusInterp ) + ( ( Setup.CameraPosition[0] - DeltaX ) * InterpolationFactor );
+	Setup.CameraPosition[1] = ( Setup.CameraPosition[1] * OneMinusInterp ) + ( ( Setup.CameraPosition[1] - DeltaY ) * InterpolationFactor );
 
-	Setup.CameraPosition[2] = 600.0f;
+	const float Speed = Math::Length( UnitData.Velocity ) * 2.0f - 1.0f;
+	Setup.CameraPosition[2] = glm::clamp( Setup.CameraPosition[2] + Speed * 0.1f, 100.0f + UnitData.Health, 600.0f + UnitData.Health );
+	Setup.CameraPosition[2] = UnitData.Health * 2.0f + 100.0f;
 
 	Setup.CameraDirection = glm::vec3( 0.0f, 0.0f, -1.0f );
 

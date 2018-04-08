@@ -15,4 +15,5 @@ public:
 
 private:
 	FSquareoidUnitData UnitData;
+	bool Absorbing;
 };

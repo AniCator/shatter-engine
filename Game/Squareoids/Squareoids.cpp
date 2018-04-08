@@ -20,6 +20,8 @@ void CGameSquareoids::Initialize()
 {
 	CInput& Input = CInput::GetInstance();
 	Input.ClearActionBindings();
+
+	GameState = ESquareoidGameState::Unknown;
 }
 
 void CGameSquareoids::Frame()
@@ -80,5 +82,17 @@ void CGameSquareoids::Tick()
 
 void CGameSquareoids::Shutdown()
 {
+	GameState = ESquareoidGameState::Unknown;
 
+	if( TitleScreen )
+	{
+		delete TitleScreen;
+		TitleScreen = nullptr;
+	}
+
+	if( BattleField )
+	{
+		delete BattleField;
+		BattleField = nullptr;
+	}
 }

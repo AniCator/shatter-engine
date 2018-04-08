@@ -3,14 +3,19 @@
 
 // TODO: Checks inputs directly for now
 #include <Engine/Input/Input.h>
+#include <Engine/Utility/Math.h>
 
 #include <Engine/Profiling/Profiling.h>
 
 CSquareoidsPlayerUnit::CSquareoidsPlayerUnit()
 {
-	UnitData.Color = glm::vec4( 0.0f, 0.0f, 1.0f, 1.0f );
 	UnitData.Position = glm::vec3( 0.0f, 0.0f, 0.0f );
+	UnitData.Velocity = glm::vec3( 0.0f, 0.0f, 0.0f );
+	UnitData.Color = glm::vec4( 0.0f, 0.0f, 1.0f, 1.0f );
 	UnitData.Size = glm::vec3( 5.0f, 5.0f, 5.0f );
+
+	UnitData.Health = 5.0f;
+	Absorbing = false;
 }
 
 CSquareoidsPlayerUnit::~CSquareoidsPlayerUnit()
@@ -24,6 +29,25 @@ void CSquareoidsPlayerUnit::Interaction( ISquareoidsUnit* Unit )
 	if( CastUnit )
 	{
 		FSquareoidUnitData& InteractionUnitData = CastUnit->GetUnitData();
+
+		const glm::vec3 InteractionBoundingMinimum = InteractionUnitData.Position - InteractionUnitData.Size;
+		const glm::vec3 InteractionBoundingMaximum = InteractionUnitData.Position + InteractionUnitData.Size;
+
+		const glm::vec3 BoundingMinimum = UnitData.Position - UnitData.Size;
+		const glm::vec3 BoundingMaximum = UnitData.Position + UnitData.Size;
+
+		if( Math::BoundingBoxIntersection( InteractionBoundingMinimum, InteractionBoundingMaximum, BoundingMinimum, BoundingMaximum ) )
+		{
+			const float AbsorptionRatio = ( InteractionUnitData.Size[0] / UnitData.Size[0] );
+			glm::vec3 Direction3D = InteractionUnitData.Position - UnitData.Position;
+			InteractionUnitData.Velocity += Direction3D;
+			UnitData.Velocity = glm::vec3( 0.0f, 0.0f, 0.0f );
+
+			InteractionUnitData.Health -= AbsorptionRatio;
+			UnitData.Health += AbsorptionRatio;
+
+			Absorbing = true;
+		}
 	}
 }
 
@@ -36,15 +60,31 @@ void CSquareoidsPlayerUnit::Tick()
 	const int Left = Input.IsKeyDown( 65 ) ? -1 : 0;
 	const int Right = Input.IsKeyDown( 68 ) ? 1 : 0;
 
-	const float Scale = 1000.0f;
+	const float Scale = 5.0f;
 	const float OffsetX = static_cast<float>( Left + Right ) * Scale;
 	const float OffsetY = static_cast<float>( Forward + Back ) * Scale;
 
 	const float InterpolationFactor = 0.1f;
 	const float OneMinusInterp = 1.0f - InterpolationFactor;
-	UnitData.Position[0] = ( UnitData.Position[0] * OneMinusInterp ) + ( OffsetX * InterpolationFactor );
-	UnitData.Position[1] = ( UnitData.Position[1] * OneMinusInterp ) + ( OffsetY * InterpolationFactor );
+	UnitData.Velocity[0] = ( UnitData.Velocity[0] * OneMinusInterp ) + (OffsetX * InterpolationFactor );
+	UnitData.Velocity[1] = ( UnitData.Velocity[1] * OneMinusInterp ) + (OffsetY * InterpolationFactor );
 
+	UnitData.Position[0] += UnitData.Velocity[0];
+	UnitData.Position[1] += UnitData.Velocity[1];
+
+	UnitData.Size = glm::vec3( UnitData.Health * 0.5f, UnitData.Health * 0.5f, UnitData.Health * 0.5f );
+
+	if( Absorbing )
+	{
+		UnitData.Color = glm::vec4( 0.0f, 1.0f, 1.0f, 1.0f );
+		Absorbing = false;
+	}
+	else
+	{
+		UnitData.Color = glm::vec4( 0.0f, 0.0f, 1.0f, 1.0f );
+	}
+
+	// Visualize in profiler
 	CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
 
 	char PositionXString[32];
@@ -54,6 +94,18 @@ void CSquareoidsPlayerUnit::Tick()
 
 	Profiler.AddDebugMessage( "PlayerPositionX", PositionXString );
 	Profiler.AddDebugMessage( "PlayerPositionY", PositionYString );
+
+	char OffsetXString[32];
+	sprintf_s( OffsetXString, "%f", OffsetX );
+	char OffsetYString[32];
+	sprintf_s( OffsetYString, "%f", OffsetY );
+
+	Profiler.AddDebugMessage( "OffsetX", OffsetXString );
+	Profiler.AddDebugMessage( "OffsetY", OffsetYString );
+
+	char HealthString[32];
+	sprintf_s( HealthString, "%f", UnitData.Health );
+	Profiler.AddDebugMessage( "Health", HealthString );
 }
 
 FSquareoidUnitData& CSquareoidsPlayerUnit::GetUnitData()

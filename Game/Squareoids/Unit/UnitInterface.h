@@ -6,9 +6,12 @@
 struct FSquareoidUnitData
 {
 	glm::vec3 Position;
+	glm::vec3 Velocity;
 	glm::vec3 Orientation;
 	glm::vec3 Size;
 	glm::vec4 Color;
+
+	float Health;
 };
 
 class ISquareoidsUnit
