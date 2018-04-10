@@ -11,6 +11,7 @@
 #include "../Unit/PlayerUnit.h"
 
 CSquareoidsBattlefield::CSquareoidsBattlefield()
+	: Units(CSpatialGrid<ISquareoidsUnit>( 128 ))
 {
 	std::srand( static_cast<uint32_t>( std::time( 0 ) ) );
 
@@ -26,6 +27,7 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 		UnitData.Position[1] = RandomOffsetY;
 
 		SquareoidUnits.push_back( NewUnit );
+		Units.Insert( NewUnit, &UnitData.Position[0] );
 	}
 
 	PlayerUnit = new CSquareoidsPlayerUnit();
@@ -55,7 +57,7 @@ void CSquareoidsBattlefield::Update()
 	std::vector<ISquareoidsUnit*> DeadUnits;
 
 	// Tick units and do brute force interaction checks
-	for( auto SquareoidUnitA : SquareoidUnits )
+	/*for( auto SquareoidUnitA : SquareoidUnits )
 	{
 		SquareoidUnitA->Tick();
 
@@ -75,7 +77,7 @@ void CSquareoidsBattlefield::Update()
 				DeadUnits.push_back( SquareoidUnitA );
 			}
 		}
-	}
+	}*/
 
 	// Cleanup
 	for( auto Iterator = SquareoidUnits.begin(); Iterator != SquareoidUnits.end(); )
@@ -133,4 +135,25 @@ void CSquareoidsBattlefield::Update()
 	Setup.CameraDirection = glm::vec3( 0.0f, 0.0f, -1.0f );
 
 	Renderer.SetCamera( *Camera );
+
+	for( auto& Object : Units.GetObjects() )
+	{
+		FSpatialEntry<ISquareoidsUnit>* EntryA = Units.GetEntry( Object );
+
+		while( EntryA )
+		{
+			EntryA->Object->Tick();
+
+			FSpatialEntry<ISquareoidsUnit>* EntryB = EntryA->Next;
+			while( EntryB )
+			{
+				EntryA->Object->Interaction( EntryB->Object );
+				EntryB = EntryB->Next;
+			}
+
+			EntryA = EntryA->Next;
+		}
+
+		Units.UpdatePosition( Object, &Object->GetUnitData().Position[0] );
+	}
 }

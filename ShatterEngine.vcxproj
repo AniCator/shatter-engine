@@ -224,6 +224,7 @@
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\Math\SIMDVector.cpp" />
     <ClCompile Include="Engine\Utility\StringPool.cpp" />
+    <ClCompile Include="Engine\Utility\Structures\SpatialGrid.cpp" />
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Game\AICritters\AICritters.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
@@ -261,6 +262,7 @@
     <ClInclude Include="Engine\Utility\Math\SIMDVector.h" />
     <ClInclude Include="Engine\Utility\RingBuffer.h" />
     <ClInclude Include="Engine\Utility\StringPool.h" />
+    <ClInclude Include="Engine\Utility\Structures\SpatialGrid.h" />
     <ClInclude Include="Engine\Utility\Test.h" />
     <ClInclude Include="Engine\Utility\TestResult.h" />
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />

@@ -5,6 +5,7 @@
 #include <memory>
 
 #include "../Unit/UnitInterface.h"
+#include <Engine/Utility/Structures/SpatialGrid.h>
 
 class CCamera;
 
@@ -17,6 +18,8 @@ public:
 	void Update();
 private:
 	std::vector<ISquareoidsUnit*> SquareoidUnits;
+	CSpatialGrid<ISquareoidsUnit> Units;
+
 	ISquareoidsUnit* PlayerUnit;
 
 	CCamera* Camera;

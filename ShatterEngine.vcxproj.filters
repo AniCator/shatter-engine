@@ -75,6 +75,9 @@
     <Filter Include="Source Files\Game\ShatterLapse">
       <UniqueIdentifier>{4449bcb3-72c6-493d-9d5b-3eb4ee9c0bd6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Utility\Structures">
+      <UniqueIdentifier>{f78a2f4b-8253-4a0f-a538-23f13cf54902}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -172,6 +175,9 @@
     </ClCompile>
     <ClCompile Include="Game\Squareoids\Unit\PlayerUnit.cpp">
       <Filter>Source Files\Game\Squareoids\Unit</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Structures\SpatialGrid.cpp">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -291,6 +297,9 @@
     </ClInclude>
     <ClInclude Include="Game\Squareoids\Unit\PlayerUnit.h">
       <Filter>Source Files\Game\Squareoids\Unit</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\SpatialGrid.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
