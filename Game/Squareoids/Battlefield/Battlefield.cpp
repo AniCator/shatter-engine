@@ -27,7 +27,7 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 		UnitData.Position[1] = RandomOffsetY;
 
 		SquareoidUnits.push_back( NewUnit );
-		Units.Insert( NewUnit, &UnitData.Position[0] );
+		// Units.Insert( NewUnit, &UnitData.Position[0] );
 	}
 
 	PlayerUnit = new CSquareoidsPlayerUnit();
@@ -54,50 +54,7 @@ void CSquareoidsBattlefield::Update()
 	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
 	CMesh* SquareMesh = Renderer.FindMesh( "square" );
 
-	std::vector<ISquareoidsUnit*> DeadUnits;
-
-	// Tick units and do brute force interaction checks
-	/*for( auto SquareoidUnitA : SquareoidUnits )
-	{
-		SquareoidUnitA->Tick();
-
-		for( auto SquareoidUnitB : SquareoidUnits )
-		{
-			if( SquareoidUnitA != SquareoidUnitB )
-			{
-				SquareoidUnitA->Interaction( SquareoidUnitB );
-			}
-		}
-
-		if( SquareoidUnitA != PlayerUnit )
-		{
-			FSquareoidUnitData& UnitData = SquareoidUnitA->GetUnitData();
-			if( UnitData.Health < 0.0f )
-			{
-				DeadUnits.push_back( SquareoidUnitA );
-			}
-		}
-	}*/
-
-	// Cleanup
-	for( auto Iterator = SquareoidUnits.begin(); Iterator != SquareoidUnits.end(); )
-	{
-		bool RemovedDeadUnit = false;
-		for( auto DeadUnit : DeadUnits )
-		{
-			if( *Iterator == DeadUnit )
-			{
-				Iterator = SquareoidUnits.erase( Iterator );
-				RemovedDeadUnit = true;
-				break;
-			}
-		}
-
-		if( !RemovedDeadUnit )
-		{
-			++Iterator;
-		}
-	}
+	UpdateBruteForce();
 
 	// Queue units for rendering
 	for( auto SquareoidUnit : SquareoidUnits )
@@ -135,7 +92,58 @@ void CSquareoidsBattlefield::Update()
 	Setup.CameraDirection = glm::vec3( 0.0f, 0.0f, -1.0f );
 
 	Renderer.SetCamera( *Camera );
+}
 
+void CSquareoidsBattlefield::UpdateBruteForce()
+{
+	std::vector<ISquareoidsUnit*> DeadUnits;
+
+	// Tick units and do brute force interaction checks
+	for( auto SquareoidUnitA : SquareoidUnits )
+	{
+		SquareoidUnitA->Tick();
+
+		for( auto SquareoidUnitB : SquareoidUnits )
+		{
+			if( SquareoidUnitA != SquareoidUnitB )
+			{
+				SquareoidUnitA->Interaction( SquareoidUnitB );
+			}
+		}
+
+		if( SquareoidUnitA != PlayerUnit )
+		{
+			FSquareoidUnitData& UnitData = SquareoidUnitA->GetUnitData();
+			if( UnitData.Health < 0.0f )
+			{
+				DeadUnits.push_back( SquareoidUnitA );
+			}
+		}
+	}
+
+	// Cleanup
+	for( auto Iterator = SquareoidUnits.begin(); Iterator != SquareoidUnits.end(); )
+	{
+		bool RemovedDeadUnit = false;
+		for( auto DeadUnit : DeadUnits )
+		{
+			if( *Iterator == DeadUnit )
+			{
+				Iterator = SquareoidUnits.erase( Iterator );
+				RemovedDeadUnit = true;
+				break;
+			}
+		}
+
+		if( !RemovedDeadUnit )
+		{
+			++Iterator;
+		}
+	}
+}
+
+void CSquareoidsBattlefield::UpdateSpatialGrid()
+{
 	for( auto& Object : Units.GetObjects() )
 	{
 		FSpatialEntry<ISquareoidsUnit>* EntryA = Units.GetEntry( Object );

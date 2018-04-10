@@ -72,7 +72,7 @@ public:
 
 		if( !EntryFound )
 		{
-			EntryPair.insert( Object, Entry );
+			// EntryPair.insert( Object, Entry );
 		}
 	}
 

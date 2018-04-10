@@ -16,6 +16,9 @@ public:
 	~CSquareoidsBattlefield();
 
 	void Update();
+
+	void UpdateBruteForce();
+	void UpdateSpatialGrid();
 private:
 	std::vector<ISquareoidsUnit*> SquareoidUnits;
 	CSpatialGrid<ISquareoidsUnit> Units;
