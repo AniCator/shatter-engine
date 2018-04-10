@@ -5,86 +5,57 @@
 #include <unordered_map>
 #include <stdint.h>
 
+#include <Game/Squareoids/Unit/UnitInterface.h>
+
+enum class ESpatialNeighborDirection : uint8_t
+{
+	North = 0,
+	NorthEast,
+	East,
+	SouthEast,
+	South,
+	SouthWest,
+	West,
+	NorthWest,
+	Max
+};
+
+static const uint8_t MaximumNeighbors = static_cast<uint8_t>( ESpatialNeighborDirection::Max );
+
 struct FCell
 {
 	int32_t X = 0;
 	int32_t Y = 0;
 };
 
-template<typename T>
-struct FSpatialEntry
+static const uint32_t CellSize = 128;
+
+class CSpatialRegion
 {
 public:
-	FSpatialEntry()
+	CSpatialRegion()
 	{
-		Previous = nullptr;
-		Next = nullptr;
 
-		Object = nullptr;
 	}
 
-	FSpatialEntry* Previous;
-	FSpatialEntry* Next;
-
-	FCell Cell;
-
-	T* Object;
-};
-
-template<typename T>
-class CSpatialGrid
-{
-public:
-	CSpatialGrid( uint32_t CellSize )
-	{
-		this->CellSize = CellSize;
-	}
-
-	~CSpatialGrid()
+	~CSpatialRegion()
 	{
 
 	}
 
 	void Clear()
 	{
-		for( size_t Index = 0; Index < Objects.size(); Index++ )
-		{
-			delete Objects[Index];
-			Objects[Index] = nullptr;
-		}
-
-		Objects.clear();
+		
 	};
 
-	void Insert( T* Object, float* Position )
+	void Insert( ISquareoidsUnit* Object )
 	{
-		FSpatialEntry<T>& Entry = FSpatialEntry<T>();
-
-		auto Iterator = EntryPair.find( Object );
-		const bool EntryFound = Iterator != EntryPair.end();
-		if( EntryFound )
-		{
-			Entry = Iterator->second;
-		}
-
-		FCell NewCell = GetCellCoordinates( Position );
-		Entry.Cell = NewCell;
-
-		if( !EntryFound )
-		{
-			// EntryPair.insert( Object, Entry );
-		}
+		
 	}
 
 	void Tick()
 	{
 
-	}
-
-	inline T* GetCell( const int X, const int Y )
-	{
-		const int Index = X / CellSize + Y / CellSize;
-		return Objects[Index];
 	}
 
 	inline int GetCellIndex( const int X, const int Y ) const
@@ -101,66 +72,11 @@ public:
 		return Cell;
 	}
 
-	void UpdatePosition( T* Object, float* Position )
+	void UpdatePosition()
 	{
-		auto Iterator = EntryPair.find( Object );
-		if( Iterator != EntryPair.end() )
-		{
-			FSpatialEntry<T>& Entry = Iterator->second;
-
-			FCell CurrentCell = GetCellCoordinates( Position );
-
-			if( Entry.Cell.X != CurrentCell.X || Entry.Cell.Y != CurrentCell.Y )
-			{
-				// If I have a previous neighbor then I want his next to be my next because I'm jumping out
-				if( Entry.Previous )
-				{
-					Entry.Previous->Next = Entry.Next;
-				}
-
-				// My next neighbor should be made aware of the fact that my previous neighbor is now his neighbor
-				if( Entry.Next )
-				{
-					Entry.Next->Previous = Entry.Previous;
-				}
-
-				// If we were top dog before we should make sure our next neighbor in line is put in charge
-				const int PreviousObjectIndex = GetCellIndex( Entry.Cell.X, Entry.Cell.Y );
-				if( Objects[PreviousObjectIndex] == Entry.Object )
-				{
-					auto Iterator = EntryPair.find( Object );
-					if( Iterator != EntryPair.end() )
-					{
-						Objects[PreviousObjectIndex] = Iterator->second.Next->Object;
-					}
-				}
-
-				// Re-insert ourselves
-				Insert( Object, Position );
-			}
-		}
-	}
-
-	std::vector<T*>& GetObjects()
-	{
-		return Objects;
-	}
-
-	FSpatialEntry<T>* GetEntry( T* Object )
-	{
-		auto Iterator = EntryPair.find( Object );
-		if( Iterator != EntryPair.end() )
-		{
-			return &Iterator->second;
-		}
-
-		return nullptr;
+		
 	}
 
 private:
-	std::vector<T*> Objects;
-
-	std::unordered_map<T*, FSpatialEntry<T>> EntryPair;
-
-	uint32_t CellSize;
+	CSpatialRegion* Neighbors[MaximumNeighbors];
 };

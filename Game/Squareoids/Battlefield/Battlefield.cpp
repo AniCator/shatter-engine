@@ -11,7 +11,6 @@
 #include "../Unit/PlayerUnit.h"
 
 CSquareoidsBattlefield::CSquareoidsBattlefield()
-	: Units(CSpatialGrid<ISquareoidsUnit>( 128 ))
 {
 	std::srand( static_cast<uint32_t>( std::time( 0 ) ) );
 
@@ -27,7 +26,6 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 		UnitData.Position[1] = RandomOffsetY;
 
 		SquareoidUnits.push_back( NewUnit );
-		// Units.Insert( NewUnit, &UnitData.Position[0] );
 	}
 
 	PlayerUnit = new CSquareoidsPlayerUnit();
@@ -144,24 +142,5 @@ void CSquareoidsBattlefield::UpdateBruteForce()
 
 void CSquareoidsBattlefield::UpdateSpatialGrid()
 {
-	for( auto& Object : Units.GetObjects() )
-	{
-		FSpatialEntry<ISquareoidsUnit>* EntryA = Units.GetEntry( Object );
-
-		while( EntryA )
-		{
-			EntryA->Object->Tick();
-
-			FSpatialEntry<ISquareoidsUnit>* EntryB = EntryA->Next;
-			while( EntryB )
-			{
-				EntryA->Object->Interaction( EntryB->Object );
-				EntryB = EntryB->Next;
-			}
-
-			EntryA = EntryA->Next;
-		}
-
-		Units.UpdatePosition( Object, &Object->GetUnitData().Position[0] );
-	}
+	
 }
