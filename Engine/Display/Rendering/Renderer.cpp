@@ -299,13 +299,13 @@ void CRenderer::DrawQueuedRenderables()
 
 	CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
 
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ) );
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
 	int64_t RenderablesSize = static_cast<int64_t>( Renderables.size() );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables", RenderablesSize ) );
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables", RenderablesSize ), true );
 
 	int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ) );
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
 }
 
 void CRenderer::ReloadShaders()

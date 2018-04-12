@@ -40,8 +40,8 @@ void CSquareoidsPlayerUnit::Interaction( ISquareoidsUnit* Unit )
 		{
 			const float AbsorptionRatio = ( InteractionUnitData.Size[0] / UnitData.Size[0] );
 			glm::vec3 Direction3D = InteractionUnitData.Position - UnitData.Position;
-			InteractionUnitData.Velocity += Direction3D;
-			UnitData.Velocity = glm::vec3( 0.0f, 0.0f, 0.0f );
+			InteractionUnitData.Velocity += Direction3D * 0.5f;
+			UnitData.Velocity *= 0.5f;
 
 			InteractionUnitData.Health -= AbsorptionRatio;
 			UnitData.Health += AbsorptionRatio;
@@ -60,7 +60,7 @@ void CSquareoidsPlayerUnit::Tick()
 	const int Left = Input.IsKeyDown( 65 ) ? -1 : 0;
 	const int Right = Input.IsKeyDown( 68 ) ? 1 : 0;
 
-	const float Scale = 5.0f;
+	const float Scale = 20.0f;
 	const float OffsetX = static_cast<float>( Left + Right ) * Scale;
 	const float OffsetY = static_cast<float>( Forward + Back ) * Scale;
 

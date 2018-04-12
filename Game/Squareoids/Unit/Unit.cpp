@@ -20,7 +20,7 @@ CSquareoidsUnit::~CSquareoidsUnit()
 
 void CSquareoidsUnit::Interaction( ISquareoidsUnit* Unit )
 {
-	CSquareoidsUnit* CastUnit = static_cast<CSquareoidsUnit*>( Unit );
+	/*CSquareoidsUnit* CastUnit = static_cast<CSquareoidsUnit*>( Unit );
 	if( CastUnit )
 	{
 		FSquareoidUnitData& InteractionUnitData = CastUnit->GetUnitData();
@@ -37,7 +37,7 @@ void CSquareoidsUnit::Interaction( ISquareoidsUnit* Unit )
 			InteractionUnitData.Velocity += Direction3D;
 			UnitData.Velocity = glm::vec3( 0.0f, 0.0f, 0.0f );
 		}
-	}
+	}*/
 }
 
 void CSquareoidsUnit::Tick()

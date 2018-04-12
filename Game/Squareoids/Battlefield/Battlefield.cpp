@@ -7,14 +7,20 @@
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Rendering/Camera.h>
 
+#include <Engine/Profiling/Profiling.h>
+
 #include "../Unit/Unit.h"
 #include "../Unit/PlayerUnit.h"
+
+#include <ThirdParty/glm/glm.hpp>
 
 CSquareoidsBattlefield::CSquareoidsBattlefield()
 {
 	std::srand( static_cast<uint32_t>( std::time( 0 ) ) );
 
-	for( int Index = 0; Index < 1024; Index++ )
+	SpatialRegion = new CSpatialRegion<ISquareoidsUnit>();
+
+	for( int Index = 0; Index < 2048; Index++ )
 	{
 		CSquareoidsUnit* NewUnit = new CSquareoidsUnit();
 
@@ -26,6 +32,8 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 		UnitData.Position[1] = RandomOffsetY;
 
 		SquareoidUnits.push_back( NewUnit );
+
+		SpatialRegion->Insert( NewUnit, &UnitData.Position[0] );
 	}
 
 	PlayerUnit = new CSquareoidsPlayerUnit();
@@ -52,7 +60,30 @@ void CSquareoidsBattlefield::Update()
 	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
 	CMesh* SquareMesh = Renderer.FindMesh( "square" );
 
-	UpdateBruteForce();
+	// UpdateBruteForce();
+	UpdateSpatialGrid();
+
+	// Cleanup
+	for( auto Iterator = SquareoidUnits.begin(); Iterator != SquareoidUnits.end(); )
+	{
+		bool RemovedDeadUnit = false;
+		for( auto DeadUnit : DeadUnits )
+		{
+			if( *Iterator == DeadUnit )
+			{
+				Iterator = SquareoidUnits.erase( Iterator );
+				RemovedDeadUnit = true;
+				break;
+			}
+		}
+
+		if( !RemovedDeadUnit )
+		{
+			++Iterator;
+		}
+	}
+
+	DeadUnits.clear();
 
 	// Queue units for rendering
 	for( auto SquareoidUnit : SquareoidUnits )
@@ -85,7 +116,7 @@ void CSquareoidsBattlefield::Update()
 
 	const float Speed = Math::Length( UnitData.Velocity ) * 2.0f - 1.0f;
 	Setup.CameraPosition[2] = glm::clamp( Setup.CameraPosition[2] + Speed * 0.1f, 100.0f + UnitData.Health, 600.0f + UnitData.Health );
-	Setup.CameraPosition[2] = UnitData.Health * 2.0f + 100.0f;
+	Setup.CameraPosition[2] = UnitData.Health * 3.14f + 300.0f;
 
 	Setup.CameraDirection = glm::vec3( 0.0f, 0.0f, -1.0f );
 
@@ -94,7 +125,7 @@ void CSquareoidsBattlefield::Update()
 
 void CSquareoidsBattlefield::UpdateBruteForce()
 {
-	std::vector<ISquareoidsUnit*> DeadUnits;
+	int64_t CollisionChecks = 0;
 
 	// Tick units and do brute force interaction checks
 	for( auto SquareoidUnitA : SquareoidUnits )
@@ -106,6 +137,7 @@ void CSquareoidsBattlefield::UpdateBruteForce()
 			if( SquareoidUnitA != SquareoidUnitB )
 			{
 				SquareoidUnitA->Interaction( SquareoidUnitB );
+				CollisionChecks++;
 			}
 		}
 
@@ -119,28 +151,123 @@ void CSquareoidsBattlefield::UpdateBruteForce()
 		}
 	}
 
-	// Cleanup
-	for( auto Iterator = SquareoidUnits.begin(); Iterator != SquareoidUnits.end(); )
-	{
-		bool RemovedDeadUnit = false;
-		for( auto DeadUnit : DeadUnits )
-		{
-			if( *Iterator == DeadUnit )
-			{
-				Iterator = SquareoidUnits.erase( Iterator );
-				RemovedDeadUnit = true;
-				break;
-			}
-		}
-
-		if( !RemovedDeadUnit )
-		{
-			++Iterator;
-		}
-	}
+	CProfileVisualisation::GetInstance().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
 }
 
 void CSquareoidsBattlefield::UpdateSpatialGrid()
 {
-	
+	int64_t CollisionChecks = 0;
+
+	// Tick units, do spatial lookup and collision checks
+	for( auto SquareoidUnitA : SquareoidUnits )
+	{
+		FSquareoidUnitData& UnitData = SquareoidUnitA->GetUnitData();
+
+		SquareoidUnitA->Tick();
+
+		if( SquareoidUnitA != PlayerUnit )
+		{
+			if( UnitData.Health < 0.0f )
+			{
+				DeadUnits.push_back( SquareoidUnitA );
+			}
+		}
+
+		std::vector<ISquareoidsUnit*> Colliders;
+
+		for( int Corner = 0; Corner < 4; Corner++ )
+		{
+			glm::vec3 CornerPosition = UnitData.Position;
+
+			const float SizeSplit = UnitData.Size[0] * 0.5f;
+
+			if( Corner == 0 )
+			{
+				CornerPosition[0] -= SizeSplit;
+				CornerPosition[1] -= SizeSplit;
+			}
+			else if( Corner == 1 )
+			{
+				CornerPosition[0] += SizeSplit;
+				CornerPosition[1] -= SizeSplit;
+			}
+			else if( Corner == 2 )
+			{
+				CornerPosition[0] += SizeSplit;
+				CornerPosition[1] += SizeSplit;
+			}
+			else if( Corner == 3 )
+			{
+				CornerPosition[0] -= SizeSplit;
+				CornerPosition[1] += SizeSplit;
+			}
+
+			std::set<ISquareoidsUnit*>& LocalSet = SpatialRegion->GetSetForPosition( &CornerPosition[0] );
+
+			for( auto SquareoidUnitB : LocalSet )
+			{
+				bool Processed = false;
+				for( auto Collider : Colliders )
+				{
+					if( SquareoidUnitB == Collider )
+					{
+						Processed = true;
+						break;
+					}
+				}
+
+				if( Processed )
+					continue;
+
+				SquareoidUnitA->Interaction( SquareoidUnitB );
+				CollisionChecks++;
+
+				Colliders.push_back( SquareoidUnitB );
+			}
+		}
+	}
+
+	CProfileVisualisation::GetInstance().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
+
+	SpatialRegion->Clear();
+
+	for( auto SquareoidUnitA : SquareoidUnits )
+	{
+		FSquareoidUnitData& UnitData = SquareoidUnitA->GetUnitData();
+		SpatialRegion->Insert( SquareoidUnitA, &UnitData.Position[0] );
+	}
+
+	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
+	CMesh* SquareMesh = Renderer.FindMesh( "square" );
+
+	for( size_t X = 0; X < Cells; X++ )
+	{
+		for( size_t Y = 0; Y < Cells; Y++ )
+		{
+			TSpatialCell Cell;
+			Cell.X = X;
+			Cell.Y = Y;
+
+			std::set<ISquareoidsUnit*>& LocalSet = SpatialRegion->GetSetForCell( Cell );
+			const float Heat = glm::clamp( static_cast<float>( LocalSet.size() ) / 20.0f, 0.0f, 1.0f );
+
+			CRenderable* Renderable = new CRenderable();
+			Renderable->SetMesh( SquareMesh );
+
+			FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+			RenderData.Position = glm::vec3(
+				X * CellSize + CellSize / 2 - WorldSize,
+				Y * CellSize + CellSize / 2 - WorldSize,
+				-0.1f );
+			RenderData.Size = glm::vec3(
+				CellSize / 2,
+				CellSize / 2,
+				1.0f );
+			RenderData.Color = glm::vec4(
+				0.5f, Heat, 0.0f,
+				1.0f );
+
+			Renderer.QueueDynamicRenderable( Renderable );
+		}
+	}
 }

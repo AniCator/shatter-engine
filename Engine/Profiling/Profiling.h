@@ -27,7 +27,7 @@ public:
 	~CProfileVisualisation();
 
 	void AddTimeEntry( FProfileTimeEntry& TimeEntry );
-	void AddCounterEntry( FProfileTimeEntry& TimeEntry );
+	void AddCounterEntry( FProfileTimeEntry& TimeEntry, const bool PerFrame = false );
 	void AddCounterEntry( const char* NameIn, int TimeIn );
 	void AddDebugMessage( const char* NameIn, const char* Body );
 	void Display();
@@ -39,6 +39,7 @@ public:
 private:
 	std::map<std::string, CRingBuffer<int64_t, TimeWindow>> TimeEntries;
 	std::map<std::string, int64_t> TimeCounters;
+	std::map<std::string, int64_t> TimeCountersFrame;
 	std::map<std::string, std::string> DebugMessages;
 
 	bool Enabled;

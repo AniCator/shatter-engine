@@ -21,7 +21,7 @@
 #endif
 
 CWindow& MainWindow = CWindow::GetInstance();
-static const char* pszWindowTitle = "AICritters Prototype 3";
+static const char* pszWindowTitle = "Shatter Engine";
 static const int nBuildNumber = 0;
 
 CCamera DefaultCamera = CCamera();
@@ -277,6 +277,9 @@ void main()
 		{
 			if( !PauseGame )
 			{
+#ifdef IMGUI_ENABLED
+				CProfileVisualisation::GetInstance().Clear();
+#endif
 				Renderer.RefreshFrame();
 
 				const float TimeScaleParameter = CConfiguration::GetInstance().GetFloat( "timescale" );

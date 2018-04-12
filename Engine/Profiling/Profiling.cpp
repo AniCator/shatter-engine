@@ -33,22 +33,6 @@ void CProfileVisualisation::AddTimeEntry( FProfileTimeEntry& TimeEntry )
 	}
 }
 
-void CProfileVisualisation::AddCounterEntry( FProfileTimeEntry& TimeEntry )
-{
-	if( !Enabled )
-		return;
-
-	auto Iterator = TimeCounters.find( TimeEntry.Name );
-	if( Iterator == TimeCounters.end() )
-	{
-		TimeCounters.insert_or_assign( TimeEntry.Name, TimeEntry.Time );
-	}
-	else
-	{
-		Iterator->second += TimeEntry.Time;
-	}
-}
-
 void CProfileVisualisation::AddCounterEntry( const char* NameIn, int TimeIn )
 {
 	if( !Enabled )
@@ -62,6 +46,37 @@ void CProfileVisualisation::AddCounterEntry( const char* NameIn, int TimeIn )
 	else
 	{
 		Iterator->second += TimeIn;
+	}
+}
+
+void CProfileVisualisation::AddCounterEntry( FProfileTimeEntry& TimeEntry, const bool PerFrame )
+{
+	if( !Enabled )
+		return;
+
+	if( PerFrame )
+	{
+		auto Iterator = TimeCountersFrame.find( TimeEntry.Name );
+		if( Iterator == TimeCountersFrame.end() )
+		{
+			TimeCountersFrame.insert_or_assign( TimeEntry.Name, TimeEntry.Time );
+		}
+		else
+		{
+			Iterator->second += TimeEntry.Time;
+		}
+	}
+	else
+	{
+		auto Iterator = TimeCounters.find( TimeEntry.Name );
+		if( Iterator == TimeCounters.end() )
+		{
+			TimeCounters.insert_or_assign( TimeEntry.Name, TimeEntry.Time );
+		}
+		else
+		{
+			Iterator->second += TimeEntry.Time;
+		}
 	}
 }
 
@@ -96,7 +111,7 @@ void CProfileVisualisation::Display()
 			}
 
 			int EntryIndex = 0;
-			for( auto TimeEntry : TimeEntries )
+			for( auto& TimeEntry : TimeEntries )
 			{
 				const char* TimeEntryName = TimeEntry.first.c_str();
 				CRingBuffer<int64_t, TimeWindow>& Buffer = TimeEntry.second;
@@ -146,12 +161,19 @@ void CProfileVisualisation::Display()
 			}
 		}
 
-		if( TimeCounters.size() > 0 )
+		if( TimeCounters.size() > 0 || TimeCountersFrame.size() > 0 )
 		{
 			ImGui::Text( "\nCounters" );
 			ImGui::Separator();
 
-			for( auto TimeCounter : TimeCounters )
+			for( auto& TimeCounter : TimeCounters )
+			{
+				const char* TimeCounterName = TimeCounter.first.c_str();
+				const uint64_t& TimeCounterValue = TimeCounter.second;
+				ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+			}
+
+			for( auto& TimeCounter : TimeCountersFrame )
 			{
 				const char* TimeCounterName = TimeCounter.first.c_str();
 				const uint64_t& TimeCounterValue = TimeCounter.second;
@@ -164,7 +186,7 @@ void CProfileVisualisation::Display()
 			ImGui::Text( "\nMessages" );
 			ImGui::Separator();
 
-			for( auto DebugMessage : DebugMessages )
+			for( auto& DebugMessage : DebugMessages )
 			{
 				const char* DebugMessageName = DebugMessage.first.c_str();
 				const char* DebugMessageBody = DebugMessage.second.c_str();
@@ -176,7 +198,8 @@ void CProfileVisualisation::Display()
 	}
 	ImGui::PopStyleColor();
 
-	Clear();
+	// Clear();
+	TimeCountersFrame.clear();
 }
 
 void CProfileVisualisation::Clear()
