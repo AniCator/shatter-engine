@@ -39,8 +39,7 @@ void CSquareoidsPlayerUnit::Interaction( ISquareoidsUnit* Unit )
 		{
 			const float AbsorptionRatio = ( InteractionUnitData.Size[0] / UnitData.Size[0] );
 			glm::vec3 Direction3D = InteractionUnitData.Position - UnitData.Position;
-			InteractionUnitData.Velocity += Direction3D * 0.5f;
-			UnitData.Velocity *= 0.5f;
+			InteractionUnitData.Velocity += Direction3D * 0.1f;
 
 			InteractionUnitData.Health -= AbsorptionRatio;
 			UnitData.Health += AbsorptionRatio;
