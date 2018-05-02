@@ -230,16 +230,8 @@ void CRenderer::DrawQueuedRenderables()
 
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 
-	glm::mat4 ProjectionMatrix = glm::perspective( glm::radians( CameraSetup.FieldOfView ), CameraSetup.AspectRatio, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
-
-	glm::vec3 CameraPosition = CameraSetup.CameraPosition;
-	CameraPosition.x = -CameraPosition.x;
-
-	glm::mat4 ViewMatrix = glm::lookAt(
-		CameraPosition,
-		CameraPosition + CameraSetup.CameraDirection,
-		CameraSetup.CameraUpVector
-		);
+	glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
+	glm::mat4& ViewMatrix = Camera.GetViewMatrix();
 
 	int64_t DrawCalls = 0;
 

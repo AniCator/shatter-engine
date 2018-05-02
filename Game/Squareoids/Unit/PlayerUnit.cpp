@@ -1,8 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "PlayerUnit.h"
 
-// TODO: Checks inputs directly for now
-#include <Engine/Input/Input.h>
+#include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/Math.h>
 
 #include <Engine/Profiling/Profiling.h>
@@ -53,7 +52,7 @@ void CSquareoidsPlayerUnit::Interaction( ISquareoidsUnit* Unit )
 
 void CSquareoidsPlayerUnit::Tick()
 {
-	CInput& Input = CInput::GetInstance();
+	IInput& Input = CInputLocator::GetService();
 
 	const int Forward = Input.IsKeyDown( 87 ) ? 1 : 0;
 	const int Back = Input.IsKeyDown( 83 ) ? -1 : 0;

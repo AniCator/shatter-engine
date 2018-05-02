@@ -78,6 +78,6 @@ void CSquareoidsTitleScreen::Display()
 	}
 
 	CCamera Camera;
-	FCameraSetup& Setup = Camera.GetCameraSetup();
+	Camera.Update();
 	Renderer.SetCamera( Camera );
 }

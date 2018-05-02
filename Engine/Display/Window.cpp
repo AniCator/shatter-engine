@@ -10,7 +10,7 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Configuration/Configuration.h>
 
-#include <Engine/Input/Input.h>
+#include <Engine/Utility/Locator/InputLocator.h>
 
 #ifdef IMGUI_ENABLED
 #include <ThirdParty/imgui-1.52/imgui.h>
@@ -198,7 +198,7 @@ void CWindow::ProcessInput()
 		glfwSetCursorPos( WindowHandle, Width * 0.5, Height * 0.5 );
 	}
 
-	CInput::GetInstance().Tick();
+	CInputLocator::GetService().Tick();
 }
 
 void CWindow::BeginFrame()

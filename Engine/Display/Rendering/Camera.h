@@ -33,16 +33,24 @@ public:
 	CCamera();
 	~CCamera();
 
-	void SetFieldOfView( float FieldOfView );
-	void SetAspectRatio( float AspectRatio);
-	void SetNearPlaneDistance( float NearPlaneDistance );
-	void SetFarPlaneDistance( float FarPlaneDistance );
-	void SetCameraPosition( glm::vec3 CameraPosition );
-	void SetCameraDirection( glm::vec3 CameraDirection );
-	void SetCameraUpVector( glm::vec3 CameraUpVector );
+	void Update();
+
+	void SetFieldOfView( float& FieldOfView );
+	void SetAspectRatio( float& AspectRatio);
+	void SetNearPlaneDistance( float& NearPlaneDistance );
+	void SetFarPlaneDistance( float& FarPlaneDistance );
+	void SetCameraPosition( glm::vec3& CameraPosition );
+	void SetCameraDirection( glm::vec3& CameraDirection );
+	void SetCameraUpVector( glm::vec3& CameraUpVector );
+
+	glm::mat4& GetProjectionMatrix();
+	glm::mat4& GetViewMatrix();
 
 	FCameraSetup& GetCameraSetup();
 private:
 	FCameraSetup CameraSetup;
 	Math::FFrustum Frustum;
+
+	glm::mat4 ProjectionMatrix;
+	glm::mat4 ViewMatrix;
 };

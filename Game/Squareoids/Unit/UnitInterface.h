@@ -17,6 +17,8 @@ struct FSquareoidUnitData
 class ISquareoidsUnit
 {
 public:
+	virtual ~ISquareoidsUnit() = default;
+
 	virtual void Interaction( ISquareoidsUnit* Unit ) = 0;
 	virtual void Tick() = 0;
 	virtual FSquareoidUnitData& GetUnitData() = 0;

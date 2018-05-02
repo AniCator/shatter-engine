@@ -78,6 +78,12 @@
     <Filter Include="Source Files\Engine\Utility\Structures">
       <UniqueIdentifier>{f78a2f4b-8253-4a0f-a538-23f13cf54902}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Utility\Service">
+      <UniqueIdentifier>{dac7aa61-b412-4f59-b3b2-4c312d3b0308}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Utility\Locator">
+      <UniqueIdentifier>{03e8c706-9369-463d-9f4c-4cffb9895f5c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -178,6 +184,12 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\Structures\SpatialGrid.cpp">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Input\NullInput.cpp">
+      <Filter>Source Files\Engine\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp">
+      <Filter>Source Files\Engine\Utility\Service</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -300,6 +312,24 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Structures\SpatialGrid.h">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Locator\Locator.h">
+      <Filter>Source Files\Engine\Utility\Locator</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Service\Service.h">
+      <Filter>Source Files\Engine\Utility\Service</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Locator\InputLocator.h">
+      <Filter>Source Files\Engine\Utility\Locator</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Input\InputInterface.h">
+      <Filter>Source Files\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Input\NullInput.h">
+      <Filter>Source Files\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Service\ServiceRegistry.h">
+      <Filter>Source Files\Engine\Utility\Service</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

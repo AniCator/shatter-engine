@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Squareoids.h"
 
-#include <Engine/Input/Input.h>
+#include <Engine/Utility/Locator/InputLocator.h>
 
 #include "TitleScreen/TitleScreen.h"
 #include "Battlefield/Battlefield.h"
@@ -18,7 +18,7 @@ CGameSquareoids::~CGameSquareoids()
 
 void CGameSquareoids::Initialize()
 {
-	CInput& Input = CInput::GetInstance();
+	IInput& Input = CInputLocator::GetService();
 	Input.ClearActionBindings();
 
 	GameState = ESquareoidGameState::Unknown;
@@ -34,7 +34,7 @@ CSquareoidsBattlefield* BattleField = nullptr;
 
 void CGameSquareoids::Tick()
 {
-	CInput& Input = CInput::GetInstance();
+	IInput& Input = CInputLocator::GetService();
 	const bool EscapeKeyPressed = Input.IsKeyDown( 256 );
 
 	if( GameState == ESquareoidGameState::Unknown )
@@ -69,7 +69,7 @@ void CGameSquareoids::Tick()
 
 		BattleField->Update();
 
-		// 256 is the escape key, temporarily hardcoded here so we don't have to include glfw3.h
+		// 256 is the escape key, temporarily hard-coded here so we don't have to include glfw3.h
 		if( EscapeKeyPressed )
 		{
 			delete BattleField;

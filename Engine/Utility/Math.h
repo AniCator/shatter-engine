@@ -92,6 +92,6 @@ namespace Math
 
 	struct FFrustum
 	{
-
+		FFrustumPlane Planes[6];
 	};
 }

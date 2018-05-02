@@ -4,13 +4,12 @@
 #include <GLFW/glfw3.h>
 
 #include <Engine/Display/Window.h>
+#include <Engine/Utility/Locator/InputLocator.h>
 
 #ifdef IMGUI_ENABLED
 #include <ThirdParty/imgui-1.52/imgui.h>
 #include <Engine/Display/imgui_impl_glfw_gl3.h>
 #endif
-
-CInput& InputInstance = CInput::GetInstance();
 
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Action, int Modifiers )
 {
@@ -21,7 +20,7 @@ void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Actio
 		return;
 	}
 #endif
-	InputInstance.RegisterKeyInput( KeyInput, ScanCode, Action, Modifiers );
+	CInputLocator::GetService().RegisterKeyInput( KeyInput, ScanCode, Action, Modifiers );
 }
 
 void InputCharCallback( GLFWwindow* window, unsigned int Character )
@@ -44,7 +43,7 @@ void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int Action, 
 		return;
 	}
 #endif
-	InputInstance.RegisterMouseButtonInput( MouseButton, Action, Modifiers );
+	CInputLocator::GetService().RegisterMouseButtonInput( MouseButton, Action, Modifiers );
 }
 
 void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY )
@@ -56,12 +55,12 @@ void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY )
 		return;
 	}
 #endif
-	InputInstance.RegisterScrollInput( static_cast<int>( OffsetX ), static_cast<int>( OffsetY ) );
+	CInputLocator::GetService().RegisterScrollInput( static_cast<int>( OffsetX ), static_cast<int>( OffsetY ) );
 }
 
 void InputJoystickStatusCallback( int Joystick, int Event )
 {
-	InputInstance.RegisterJoystickStatus( Joystick, Event );
+	CInputLocator::GetService().RegisterJoystickStatus( Joystick, Event );
 }
 
 CInput::CInput()
