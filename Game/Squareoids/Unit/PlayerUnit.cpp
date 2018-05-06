@@ -15,6 +15,19 @@ CSquareoidsPlayerUnit::CSquareoidsPlayerUnit()
 
 	UnitData.Health = 5.0f;
 	Absorbing = false;
+
+	IInput& Input = CInputLocator::GetService();
+	Input.AddActionBinding( EActionBindingType::Keyboard, 87, 1, std::bind( &CSquareoidsPlayerUnit::InputForwardPress, this ) );
+	Input.AddActionBinding( EActionBindingType::Keyboard, 87, 0, std::bind( &CSquareoidsPlayerUnit::InputForwardRelease, this ) );
+
+	Input.AddActionBinding( EActionBindingType::Keyboard, 83, 1, std::bind( &CSquareoidsPlayerUnit::InputBackwardPress, this ) );
+	Input.AddActionBinding( EActionBindingType::Keyboard, 83, 0, std::bind( &CSquareoidsPlayerUnit::InputBackwardRelease, this ) );
+
+	Input.AddActionBinding( EActionBindingType::Keyboard, 65, 1, std::bind( &CSquareoidsPlayerUnit::InputLeftPress, this ) );
+	Input.AddActionBinding( EActionBindingType::Keyboard, 65, 0, std::bind( &CSquareoidsPlayerUnit::InputLeftRelease, this ) );
+
+	Input.AddActionBinding( EActionBindingType::Keyboard, 68, 1, std::bind( &CSquareoidsPlayerUnit::InputRightPress, this ) );
+	Input.AddActionBinding( EActionBindingType::Keyboard, 68, 0, std::bind( &CSquareoidsPlayerUnit::InputRightRelease, this ) );
 }
 
 CSquareoidsPlayerUnit::~CSquareoidsPlayerUnit()
@@ -51,12 +64,10 @@ void CSquareoidsPlayerUnit::Interaction( ISquareoidsUnit* Unit )
 
 void CSquareoidsPlayerUnit::Tick()
 {
-	IInput& Input = CInputLocator::GetService();
-
-	const int Forward = Input.IsKeyDown( 87 ) ? 1 : 0;
-	const int Back = Input.IsKeyDown( 83 ) ? -1 : 0;
-	const int Left = Input.IsKeyDown( 65 ) ? -1 : 0;
-	const int Right = Input.IsKeyDown( 68 ) ? 1 : 0;
+	const int Forward = Inputs & ESquareoidsInputFlag::Forward ? 1 : 0;
+	const int Back = Inputs & ESquareoidsInputFlag::Backward ? -1 : 0;
+	const int Left = Inputs & ESquareoidsInputFlag::Left ? -1 : 0;
+	const int Right = Inputs & ESquareoidsInputFlag::Right ? 1 : 0;
 
 	const float Scale = 20.0f;
 	const float OffsetX = static_cast<float>( Left + Right ) * Scale;
@@ -109,4 +120,44 @@ void CSquareoidsPlayerUnit::Tick()
 FSquareoidUnitData& CSquareoidsPlayerUnit::GetUnitData()
 {
 	return UnitData;
+}
+
+void CSquareoidsPlayerUnit::InputForwardPress()
+{
+	Inputs |= ESquareoidsInputFlag::Forward;
+}
+
+void CSquareoidsPlayerUnit::InputForwardRelease()
+{
+	Inputs &= ~ESquareoidsInputFlag::Forward;
+}
+
+void CSquareoidsPlayerUnit::InputBackwardPress()
+{
+	Inputs |= ESquareoidsInputFlag::Backward;
+}
+
+void CSquareoidsPlayerUnit::InputBackwardRelease()
+{
+	Inputs &= ~ESquareoidsInputFlag::Backward;
+}
+
+void CSquareoidsPlayerUnit::InputLeftPress()
+{
+	Inputs |= ESquareoidsInputFlag::Left;
+}
+
+void CSquareoidsPlayerUnit::InputLeftRelease()
+{
+	Inputs &= ~ESquareoidsInputFlag::Left;
+}
+
+void CSquareoidsPlayerUnit::InputRightPress()
+{
+	Inputs |= ESquareoidsInputFlag::Right;
+}
+
+void CSquareoidsPlayerUnit::InputRightRelease()
+{
+	Inputs &= ~ESquareoidsInputFlag::Right;
 }
