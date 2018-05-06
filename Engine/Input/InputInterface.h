@@ -53,3 +53,5 @@ public:
 	virtual bool IsKeyDown( int KeyInput ) const = 0;
 	virtual bool IsAnyKeyDown() const = 0;
 };
+
+

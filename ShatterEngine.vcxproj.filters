@@ -331,5 +331,14 @@
     <ClInclude Include="Engine\Utility\Service\ServiceRegistry.h">
       <Filter>Source Files\Engine\Utility\Service</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Utility\Timer.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Input\InputMap.h">
+      <Filter>Source Files\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Input\InputMapGLFW.h">
+      <Filter>Source Files\Engine\Input</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

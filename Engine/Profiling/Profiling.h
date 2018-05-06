@@ -77,24 +77,3 @@ private:
 #define Profile( Name ) (void(0))
 #define ProfileBare( Name ) (void(0))
 #endif
-
-class CTimer
-{
-public:
-	CTimer( bool UpdateOnGetElapsed = false );
-	~CTimer();
-
-	void Start();
-	void Stop();
-
-	int64_t GetElapsedTimeMicroseconds();
-	int64_t GetElapsedTimeMilliseconds();
-	double GetElapsedTimeSeconds();
-
-private:
-	std::chrono::steady_clock::time_point StartTime;
-	std::chrono::steady_clock::time_point StopTime;
-
-	bool IsRunning;
-	bool UpdatedOnGetElapsed;
-};

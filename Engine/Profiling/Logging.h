@@ -1,7 +1,10 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Utility/Timer.h>
+
 #include <stdarg.h>
+#include <fstream>
 
 #ifdef _WIN32
 #define ConsoleWindowDisabled
@@ -43,5 +46,8 @@ namespace Log
 		void Print( const char* Format, va_list Arguments );
 
 		char Name[128];
+		std::ofstream LogOutputStream;
+
+		CTimer Timer;
 	};
 }

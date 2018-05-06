@@ -45,3 +45,5 @@
 # Project specific
 /x64
 /ThirdParty
+/Output/*.log
+/Output/*.ilk

@@ -2,6 +2,7 @@
 #include "Logging.h"
 
 #include <iostream>
+#include <chrono>
 
 #ifdef _WIN32
 
@@ -49,16 +50,29 @@ namespace Log
 	CLog::CLog( const char* LogName )
 	{
 		strcpy_s( Name, LogName );
+
+		char LogFileName[256];
+		sprintf_s( LogFileName, "Shatter%s.log", Name );
+		LogOutputStream.open( LogFileName );
+
+		Timer.Start();
 	}
 
 	CLog::CLog()
 	{
 		Name[0] = '\0';
+		LogOutputStream.open( "ShatterGlobalLog.log" );
+
+		Timer.Start();
 	}
 
 	CLog::~CLog()
 	{
+		Timer.Stop();
 
+
+
+		LogOutputStream.close();
 	}
 
 	void CLog::Print( const char* Format, va_list Arguments )
@@ -84,6 +98,13 @@ namespace Log
 			OutputDebugString( LogMessage );
 		}
 #endif
+
+		if( LogOutputStream.is_open() )
+		{
+			char TimeCode[64];
+			sprintf_s( TimeCode, "%.3fs", static_cast<float>( Timer.GetElapsedTimeMilliseconds() ) * 0.001f );
+			LogOutputStream << TimeCode << ": " << LogMessage;
+		}
 	}
 
 	void CLog::Event( const char* Format, va_list Arguments )

@@ -258,6 +258,8 @@
     <ClInclude Include="Engine\Event\Event.h" />
     <ClInclude Include="Engine\Input\Input.h" />
     <ClInclude Include="Engine\Input\InputInterface.h" />
+    <ClInclude Include="Engine\Input\InputMap.h" />
+    <ClInclude Include="Engine\Input\InputMapGLFW.h" />
     <ClInclude Include="Engine\Input\NullInput.h" />
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
@@ -274,6 +276,7 @@
     <ClInclude Include="Engine\Utility\Test.h" />
     <ClInclude Include="Engine\Utility\TestResult.h" />
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />
+    <ClInclude Include="Engine\Utility\Timer.h" />
     <ClInclude Include="Game\AICritters\AICritters.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />
     <ClInclude Include="Game\Game.h" />
