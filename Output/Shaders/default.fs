@@ -69,5 +69,5 @@ void main()
 	Lighting = pow( Lighting, vec3( 0.45 ) );
 	
     FragColor = vec4( Lighting, ObjectColor.a );
-	// FragColor = ObjectColor;
+	FragColor = ObjectColor;
 }

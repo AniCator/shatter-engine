@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShatterEngine", "ShatterEng
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dummy", "Game\Dummy\Dummy.vcxproj", "{753860C3-745E-4052-B400-7D6B7F31EF4F}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Squareoids", "Game\Squareoids\Squareoids.vcxproj", "{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -41,6 +43,18 @@ Global
 		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Release|x64.Build.0 = Release|x64
 		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Release|x86.ActiveCfg = Release|Win32
 		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Release|x86.Build.0 = Release|Win32
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Debug|x64.ActiveCfg = Debug|x64
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Debug|x64.Build.0 = Debug|x64
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Debug|x86.ActiveCfg = Debug|Win32
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Debug|x86.Build.0 = Debug|Win32
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Profile|x64.ActiveCfg = Profile|x64
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Profile|x64.Build.0 = Profile|x64
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Profile|x86.ActiveCfg = Profile|Win32
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Profile|x86.Build.0 = Profile|Win32
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x64.ActiveCfg = Release|x64
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x64.Build.0 = Release|x64
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x86.ActiveCfg = Release|Win32
+		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

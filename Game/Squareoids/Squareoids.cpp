@@ -6,6 +6,29 @@
 #include "TitleScreen/TitleScreen.h"
 #include "Battlefield/Battlefield.h"
 
+#include <Engine/Application/Application.h>
+
+#ifdef ConsoleWindowDisabled
+#ifdef _MSC_VER
+#pragma comment(linker, "/subsystem:windows /ENTRY:mainCRTStartup")
+#endif
+#endif
+
+CGameSquareoids* SquaroidsInstance = new CGameSquareoids();
+
+void main()
+{
+	if( !GameLayersInstance )
+	{
+		Log::Event( Log::Fatal, "Game layers instance does not exist!\n" );
+	}
+
+	GameLayersInstance->Add( SquaroidsInstance );
+
+	CApplication Application;
+	Application.Run();
+}
+
 CGameSquareoids::CGameSquareoids()
 {
 	GameState = ESquareoidGameState::Unknown;

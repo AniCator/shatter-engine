@@ -22,8 +22,17 @@
 #endif
 #endif
 
+CDummyLayer* DummyInstance = new CDummyLayer();
+
 void main()
 {
+	if( !GameLayersInstance )
+	{
+		Log::Event( Log::Fatal, "Game layers instance does not exist!\n" );
+	}
+
+	GameLayersInstance->Add( DummyInstance );
+
 	CApplication Application;
 	Application.Run();
 }
@@ -54,6 +63,10 @@ void CDummyLayer::Frame()
 void CDummyLayer::Tick()
 {
 	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
+
+	CCamera Camera;
+	Camera.Update();
+	Renderer.SetCamera( Camera );
 
 	const float TimeStamp = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 	const float Frequency = TimeStamp;
