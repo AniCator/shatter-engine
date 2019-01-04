@@ -29,7 +29,11 @@ CShader* CRenderable::GetShader()
 
 void CRenderable::SetShader( CShader* Shader )
 {
-	this->Shader = Shader;
+	if( Shader )
+	{
+		this->Shader = Shader;
+		RenderData.ShaderProgram = Shader->Handle;
+	}
 }
 
 void CRenderable::Draw()

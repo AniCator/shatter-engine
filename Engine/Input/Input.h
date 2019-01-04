@@ -24,19 +24,21 @@ public:
 	CInput( CInput const& ) = delete;
 	void operator=( CInput const& ) = delete;
 
-	void RegisterKeyInput( int KeyInput, int ScanCode, int Action, int Modifiers );
-	void RegisterMouseButtonInput( int MouseButton, int Action, int Modifiers );
-	void RegisterScrollInput( int OffsetX, int OffsetY );
-	void RegisterJoystickStatus( int Joystick, int Event );
+	virtual void RegisterKeyInput( int KeyInput, int ScanCode, int Action, int Modifiers ) override;
+	virtual void RegisterMouseButtonInput( int MouseButton, int Action, int Modifiers ) override;
+	virtual void RegisterMousePositionInput( double PositionX, double PositionY ) override;
+	virtual void RegisterScrollInput( int OffsetX, int OffsetY ) override;
+	virtual void RegisterJoystickStatus( int Joystick, int Event ) override;
 
-	void AddActionBinding( FActionBinding ActionBinding );
-	void AddActionBinding( EActionBindingType BindingType, int KeyInput, int Action, ActionTarget TargetFunc );
-	void ClearActionBindings();
+	virtual void AddActionBinding( FActionBinding ActionBinding ) override;
+	virtual void AddActionBinding( EActionBindingType BindingType, int KeyInput, int Action, ActionTarget TargetFunc ) override;
+	virtual void ClearActionBindings() override;
 
-	void Tick();
+	virtual void Tick() override;
 
-	bool IsKeyDown( int KeyInput ) const;
-	bool IsAnyKeyDown() const;
+	virtual bool IsKeyDown( int KeyInput ) const override;
+	virtual bool IsAnyKeyDown() const override;
+	virtual FFixedPosition2D GetMousePosition() const override;
 
 private:
 	std::vector<FActionBinding> ActionBindings;
@@ -49,6 +51,8 @@ private:
 
 	// Mouse button states
 	FInput MouseInput[MaximumMouseButtons];
+
+	FFixedPosition2D MousePosition;
 
 	// Any state
 	bool AnyKey;

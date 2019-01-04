@@ -6,6 +6,8 @@
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Rendering/Camera.h>
+#include <Engine/Utility/Locator/InputLocator.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 #include <Engine/Profiling/Profiling.h>
 
@@ -20,7 +22,7 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 
 	SpatialRegion = new CSpatialRegion<ISquareoidsUnit>();
 
-	for( int Index = 0; Index < 2048; Index++ )
+	for( int Index = 0; Index < 512; Index++ )
 	{
 		CSquareoidsUnit* NewUnit = new CSquareoidsUnit();
 
@@ -122,6 +124,68 @@ void CSquareoidsBattlefield::Update()
 
 	Camera->Update();
 	Renderer.SetCamera( *Camera );
+
+	// Cursor square
+	CRenderable* Renderable = new CRenderable();
+	Renderable->SetMesh( SquareMesh );
+
+	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+
+	IInput& Input = CInputLocator::GetService();
+	FFixedPosition2D MousePosition = Input.GetMousePosition();
+
+	glm::mat4& ProjectionInverse = glm::inverse( Camera->GetProjectionMatrix() );
+	glm::mat4& ViewInverse = glm::inverse( Camera->GetViewMatrix() );
+	float NormalizedMouseX = ( 2.0f * MousePosition.X ) / 1920.0f - 1.0f;
+	float NormalizedMouseY = 1.0f - ( 2.0f * MousePosition.Y ) / 1080.0f;
+	glm::vec4 MousePositionClipSpace = glm::vec4( NormalizedMouseX, NormalizedMouseY, -1.0f, 1.0f );
+	glm::vec4 MousePositionEyeSpace = ProjectionInverse * MousePositionClipSpace;
+
+	// Un-project Z and W
+	MousePositionEyeSpace[2] = -1.0f;
+	MousePositionEyeSpace[3] = 1.0f;
+
+	glm::vec3 MousePositionWorldSpace = ViewInverse * MousePositionEyeSpace;
+	glm::vec3 MouseDirection = glm::normalize( Camera->GetCameraSetup().CameraPosition - MousePositionWorldSpace );
+
+	bool RayCast = false;
+	glm::vec3 StartPosition = Camera->GetCameraSetup().CameraPosition;
+	float CastDelta = -0.1f;
+
+	glm::vec3 RayCastResult = StartPosition;
+
+	while( !RayCast )
+	{
+		StartPosition += MouseDirection * CastDelta;
+		const float Delta = 100.0f - StartPosition[2];
+
+		if( fabs( Delta ) < 0.5f )
+		{
+			RayCastResult = StartPosition;
+			RayCast = true;
+		}
+	}
+
+	RenderData.Color = glm::vec4( 1.0f, 0.5f, 0.0f, 1.0f );
+	RenderData.Position = RayCastResult;
+	RenderData.Position[2] = 100.0f;
+	RenderData.Size = glm::vec3( 10.0f, 10.0f, 10.0f );
+
+	Renderer.QueueDynamicRenderable( Renderable );
+
+	// Visualize in profiler
+	CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+
+	char PositionXString[32];
+	sprintf_s( PositionXString, "%f", RenderData.Position[0] );
+	char PositionYString[32];
+	sprintf_s( PositionYString, "%f", RenderData.Position[1] );
+	char PositionZString[32];
+	sprintf_s( PositionZString, "%f", RenderData.Position[2] );
+
+	Profiler.AddDebugMessage( "3DMousePositionX", PositionXString );
+	Profiler.AddDebugMessage( "3DMousePositionY", PositionYString );
+	Profiler.AddDebugMessage( "3DMousePositionZ", PositionZString );
 }
 
 void CSquareoidsBattlefield::UpdateBruteForce()
@@ -234,11 +298,14 @@ void CSquareoidsBattlefield::UpdateSpatialGrid()
 
 	for( auto SquareoidUnitA : SquareoidUnits )
 	{
-		FSquareoidUnitData& UnitData = SquareoidUnitA->GetUnitData();
-		SpatialRegion->Insert( SquareoidUnitA, &UnitData.Position[0] );
+		if( SquareoidUnitA )
+		{
+			FSquareoidUnitData& UnitData = SquareoidUnitA->GetUnitData();
+			SpatialRegion->Insert( SquareoidUnitA, &UnitData.Position[0] );
+		}
 	}
 
-	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
+	/*CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
 	CMesh* SquareMesh = Renderer.FindMesh( "square" );
 
 	for( size_t X = 0; X < Cells; X++ )
@@ -270,5 +337,5 @@ void CSquareoidsBattlefield::UpdateSpatialGrid()
 
 			Renderer.QueueDynamicRenderable( Renderable );
 		}
-	}
+	}*/
 }

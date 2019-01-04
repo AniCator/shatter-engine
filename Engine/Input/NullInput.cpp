@@ -12,6 +12,11 @@ void CNullInput::RegisterMouseButtonInput( int MouseButton, int Action, int Modi
 
 }
 
+void CNullInput::RegisterMousePositionInput( double PositionX, double PositionY )
+{
+	
+}
+
 void CNullInput::RegisterScrollInput( int OffsetX, int OffsetY )
 {
 
@@ -50,4 +55,9 @@ bool CNullInput::IsKeyDown( int KeyInput ) const
 bool CNullInput::IsAnyKeyDown() const
 {
 	return false;
+}
+
+FFixedPosition2D CNullInput::GetMousePosition() const
+{
+	return FFixedPosition2D();
 }

@@ -8,6 +8,7 @@ class CNullInput : public IInput
 public:
 	virtual void RegisterKeyInput( int KeyInput, int ScanCode, int Action, int Modifiers ) override;
 	virtual void RegisterMouseButtonInput( int MouseButton, int Action, int Modifiers ) override;
+	virtual void RegisterMousePositionInput( double PositionX, double PositionY ) override;
 	virtual void RegisterScrollInput( int OffsetX, int OffsetY ) override;
 	virtual void RegisterJoystickStatus( int Joystick, int Event ) override;
 
@@ -19,4 +20,6 @@ public:
 
 	virtual bool IsKeyDown( int KeyInput ) const override;
 	virtual bool IsAnyKeyDown() const override;
+	virtual FFixedPosition2D GetMousePosition() const override;
+
 };

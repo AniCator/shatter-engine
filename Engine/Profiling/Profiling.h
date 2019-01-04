@@ -5,6 +5,8 @@
 #include <vector>
 #include <map>
 
+#include <ThirdParty/tracy/Tracy.hpp>
+
 #include <Engine/Utility/RingBuffer.h>
 
 static const size_t TimeWindow = 512;
@@ -71,8 +73,8 @@ private:
 };
 
 #ifdef ProfileBuild
-#define Profile( Name ) CTimerScope Scope_( Name, false )
-#define ProfileBare( Name ) CTimerScope Scope_( Name, true )
+#define Profile( Name ) ZoneScoped; CTimerScope Scope_( Name, false )
+#define ProfileBare( Name ) ZoneScoped; CTimerScope Scope_( Name, true )
 #else
 #define Profile( Name ) (void(0))
 #define ProfileBare( Name ) (void(0))

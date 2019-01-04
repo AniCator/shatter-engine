@@ -58,6 +58,11 @@ void InputRestartGameLayers()
 	MainWindow.GetRenderer().RefreshFrame();
 }
 
+void InputReloadShaders()
+{
+	MainWindow.GetRenderer().ReloadShaders();
+}
+
 const float CameraSpeed = CConfiguration::GetInstance().GetFloat( "cameraspeed" );
 void InputMoveCameraUp()
 {
@@ -154,6 +159,11 @@ void DebugMenu()
 				InputRestartGameLayers();
 			}
 
+			if( ImGui::MenuItem( "Reload Shaders", "J" ) )
+			{
+				InputReloadShaders();
+			}
+
 			ImGui::EndMenu();
 		}
 
@@ -210,6 +220,7 @@ void CApplication::Run()
 
 	while( !MainWindow.ShouldClose() )
 	{
+		ZoneScoped;
 		MainWindow.BeginFrame();
 		CTimerScope Scope_Frametime( "Frametime", false );
 
@@ -263,6 +274,9 @@ void CApplication::Run()
 #endif
 
 			MainWindow.RenderFrame();
+
+			// Tracy profiling marker.
+			FrameMark;
 		}
 	}
 
@@ -296,6 +310,7 @@ void CApplication::Initialize()
 	glfwSetKeyCallback( WindowHandle, InputKeyCallback );
 	glfwSetCharCallback( WindowHandle, InputCharCallback );
 	glfwSetMouseButtonCallback( WindowHandle, InputMouseButtonCallback );
+	glfwSetCursorPosCallback( WindowHandle, InputMousePositionCallback );
 	glfwSetScrollCallback( WindowHandle, InputScrollCallback );
 	glfwSetJoystickCallback( InputJoystickStatusCallback );
 

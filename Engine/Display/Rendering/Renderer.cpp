@@ -15,6 +15,8 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
+#include <Engine/Utility/Locator/InputLocator.h>
+
 #include "Renderable.h"
 #include "Camera.h"
 
@@ -35,6 +37,7 @@ CRenderer::~CRenderer()
 void CRenderer::Initialize()
 {
 	CreateNamedShader( "Default", "Shaders/default" );
+	CreateNamedShader( "DefaultInstanced", "Shaders/DefaultInstanced" );
 
 	static const uint32_t TriangleVertexCount = 3;
 	static glm::vec3 TriangleVertices[TriangleVertexCount] =
@@ -213,8 +216,11 @@ void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 	DynamicRenderables.push_back( Renderable );
 }
 
+const static glm::mat4 IdentityMatrix = glm::mat4( 1.0f );
 static CShader* DefaultShader = nullptr;
-GLuint LastProgramHandle = -1;
+GLuint ProgramHandle = -1;
+
+#pragma optimize("",off)
 
 void CRenderer::DrawQueuedRenderables()
 {
@@ -223,9 +229,9 @@ void CRenderer::DrawQueuedRenderables()
 		DefaultShader = FindShader( "default" );
 	}
 
-	if( DefaultShader->Handle != LastProgramHandle )
+	if( ProgramHandle != DefaultShader->Handle )
 	{
-		LastProgramHandle = DefaultShader->Activate();
+		ProgramHandle = DefaultShader->Activate();
 	}
 
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
@@ -238,9 +244,11 @@ void CRenderer::DrawQueuedRenderables()
 	for( auto Renderable : Renderables )
 	{
 		FRenderDataInstanced RenderData = Renderable->GetRenderData();
-		RenderData.ShaderProgram = DefaultShader->Handle;
 
-		glm::mat4 ModelMatrix = glm::mat4( 1.0f );
+		RefreshShaderHandle( Renderable );
+		RenderData.ShaderProgram = ProgramHandle;
+
+		glm::mat4 ModelMatrix = IdentityMatrix;
 
 		ModelMatrix = glm::translate( ModelMatrix, RenderData.Position );
 
@@ -260,6 +268,9 @@ void CRenderer::DrawQueuedRenderables()
 		GLuint MatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "ModelViewProjection" );
 		glUniformMatrix4fv( MatrixLocation, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0] );
 
+		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
+		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
+
 		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
 		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
 
@@ -267,12 +278,49 @@ void CRenderer::DrawQueuedRenderables()
 		DrawCalls++;
 	}
 
+	IInput& Input = CInputLocator::GetService();
+	FFixedPosition2D MousePosition = Input.GetMousePosition();
+
+	glm::mat4& ProjectionInverse = glm::inverse( ProjectionMatrix );
+	glm::mat4& ViewInverse = glm::inverse( ViewMatrix );
+	float NormalizedMouseX = ( 2.0f * MousePosition.X ) / 1920.0f - 1.0f;
+	float NormalizedMouseY = 1.0f - ( 2.0f * MousePosition.Y ) / 1080.0f;
+	glm::vec4 MousePositionClipSpace = glm::vec4( NormalizedMouseX, NormalizedMouseY, -1.0f, 1.0f );
+	glm::vec4 MousePositionEyeSpace = ProjectionInverse * MousePositionClipSpace;
+
+	// Un-project Z and W
+	MousePositionEyeSpace[2] = -1.0f;
+	MousePositionEyeSpace[3] = 1.0f;
+
+	glm::vec3 MousePositionWorldSpace = ViewInverse * MousePositionEyeSpace;
+	glm::vec3 MouseDirection = glm::normalize( CameraSetup.CameraPosition - MousePositionWorldSpace );
+
+	bool RayCast = false;
+	glm::vec3 StartPosition = CameraSetup.CameraPosition;
+	float CastDelta = -0.1f;
+
+	glm::vec3 RayCastResult = StartPosition;
+
+	while( !RayCast )
+	{
+		StartPosition += MouseDirection * CastDelta;
+		const float Delta = StartPosition[2] - 100.0f;
+
+		if( fabs( Delta ) < 0.5f )
+		{
+			RayCastResult = StartPosition;
+			RayCast = true;
+		}
+	}
+
 	for( auto Renderable : DynamicRenderables )
 	{
 		FRenderDataInstanced RenderData = Renderable->GetRenderData();
-		RenderData.ShaderProgram = DefaultShader->Handle;
 
-		glm::mat4 ModelMatrix = glm::mat4( 1.0f );
+		RefreshShaderHandle( Renderable );
+		RenderData.ShaderProgram = ProgramHandle;
+
+		glm::mat4 ModelMatrix = IdentityMatrix;
 
 		ModelMatrix = glm::translate( ModelMatrix, RenderData.Position );
 		ModelMatrix = glm::scale( ModelMatrix, RenderData.Size );
@@ -282,8 +330,17 @@ void CRenderer::DrawQueuedRenderables()
 		GLuint MatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "ModelViewProjection" );
 		glUniformMatrix4fv( MatrixLocation, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0] );
 
+		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
+		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
+
 		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
 		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
+
+		GLuint CameraPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraPosition" );
+		glUniform3fv( CameraPositionLocation, 1, glm::value_ptr( CameraSetup.CameraPosition ) );
+
+		GLuint MouseLocation = glGetUniformLocation( RenderData.ShaderProgram, "MousePositionWorldSpace" );
+		glUniform3fv( MouseLocation, 1, glm::value_ptr( RayCastResult ) );
 
 		Renderable->Draw();
 		DrawCalls++;
@@ -302,7 +359,6 @@ void CRenderer::DrawQueuedRenderables()
 
 void CRenderer::ReloadShaders()
 {
-	Profile( __FUNCTION__ );
 	Log::Event( "Reloading shaders.\n" );
 
 	for( auto Shader : Shaders )
@@ -319,4 +375,20 @@ void CRenderer::SetCamera( CCamera& CameraIn )
 size_t CRenderer::MeshCount() const
 {
 	return Meshes.size();
+}
+
+void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
+{
+	const CShader* Shader = Renderable->GetShader();
+	if( Shader && Shader->Handle != ProgramHandle )
+	{
+		ProgramHandle = Shader->Activate();
+	}
+	else
+	{
+		if( ProgramHandle != DefaultShader->Handle )
+		{
+			ProgramHandle = DefaultShader->Activate();
+		}
+	}
 }

@@ -4,12 +4,21 @@
 #include <Engine/Utility/Service/Service.h>
 #include <Engine/Event/ActionTarget.h>
 
+#include <stdint.h>
+
 struct GLFWwindow;
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Action, int Modifiers );
 void InputCharCallback( GLFWwindow* window, unsigned int Character );
 void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int Action, int Modifiers );
+void InputMousePositionCallback( GLFWwindow* window, double PositionX, double PositionY );
 void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY );
 void InputJoystickStatusCallback( int Joystick, int Event );
+
+struct FFixedPosition2D
+{
+	int32_t X;
+	int32_t Y;
+};
 
 enum class EActionBindingType
 {
@@ -41,6 +50,7 @@ class IInput : public IEngineService
 public:
 	virtual void RegisterKeyInput( int KeyInput, int ScanCode, int Action, int Modifiers ) = 0;
 	virtual void RegisterMouseButtonInput( int MouseButton, int Action, int Modifiers ) = 0;
+	virtual void RegisterMousePositionInput( double PositionX, double PositionY ) = 0;
 	virtual void RegisterScrollInput( int OffsetX, int OffsetY ) = 0;
 	virtual void RegisterJoystickStatus( int Joystick, int Event ) = 0;
 
@@ -52,6 +62,7 @@ public:
 
 	virtual bool IsKeyDown( int KeyInput ) const = 0;
 	virtual bool IsAnyKeyDown() const = 0;
+	virtual FFixedPosition2D GetMousePosition() const = 0;
 };
 
 

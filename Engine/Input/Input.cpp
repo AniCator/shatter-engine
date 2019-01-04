@@ -5,6 +5,7 @@
 
 #include <Engine/Display/Window.h>
 #include <Engine/Utility/Locator/InputLocator.h>
+#include <Engine/Profiling/Logging.h>
 
 #ifdef IMGUI_ENABLED
 #include <ThirdParty/imgui-1.52/imgui.h>
@@ -44,6 +45,11 @@ void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int Action, 
 	}
 #endif
 	CInputLocator::GetService().RegisterMouseButtonInput( MouseButton, Action, Modifiers );
+}
+
+void InputMousePositionCallback( GLFWwindow* window, double PositionX, double PositionY )
+{
+	CInputLocator::GetService().RegisterMousePositionInput( PositionX, PositionY );
 }
 
 void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY )
@@ -127,6 +133,12 @@ void CInput::RegisterMouseButtonInput( int MouseButton, int Action, int Modifier
 	Input.Modifiers = Modifiers;
 }
 
+void CInput::RegisterMousePositionInput( double PositionX, double PositionY )
+{
+	MousePosition.X = static_cast<int32_t>( PositionX );
+	MousePosition.Y = static_cast<int32_t>( PositionY );
+}
+
 void CInput::RegisterScrollInput( int OffsetX, int OffsetY )
 {
 
@@ -134,7 +146,14 @@ void CInput::RegisterScrollInput( int OffsetX, int OffsetY )
 
 void CInput::RegisterJoystickStatus( int Joystick, int Event )
 {
-
+	if( Event == GLFW_CONNECTED )
+	{
+		Log::Event( "Joystick %i connected.\n", Joystick );
+	}
+	else if( Event == GLFW_DISCONNECTED )
+	{
+		Log::Event( "Joystick %i disconnected.\n", Joystick );
+	}
 }
 
 void CInput::AddActionBinding( FActionBinding ActionBinding )
@@ -213,4 +232,9 @@ bool CInput::IsKeyDown( int KeyInput ) const
 bool CInput::IsAnyKeyDown() const
 {
 	return AnyKey;
+}
+
+FFixedPosition2D CInput::GetMousePosition() const
+{
+	return MousePosition;
 }

@@ -86,7 +86,7 @@ GLuint CShader::Activate() const
 	return Handle;
 }
 
-void LogShaderCompilationErrors( GLuint v )
+bool LogShaderCompilationErrors( GLuint v )
 {
 	GLint ByteLength = 0;
 	GLsizei StringLength = 0;
@@ -101,7 +101,11 @@ void LogShaderCompilationErrors( GLuint v )
 		Log::Event( Log::Error, "---Shader Compilation Log---\n%s\n", CompileLog );
 
 		delete CompileLog;
+
+		return true;
 	}
+
+	return false;
 }
 
 GLuint CShader::Link()
@@ -112,10 +116,20 @@ GLuint CShader::Link()
 	}
 
 	// Compile all shaders
-	glCompileShader( HandleVS );
-	LogShaderCompilationErrors( HandleVS );
-	glCompileShader( HandleFS );
-	LogShaderCompilationErrors( HandleFS );
+	bool ShaderCompiled = false;
+	while( !ShaderCompiled )
+	{
+		glCompileShader( HandleVS );
+		const bool HasErrorsVS = LogShaderCompilationErrors( HandleVS );
+		glCompileShader( HandleFS );
+		const bool HasErrorsFS = LogShaderCompilationErrors( HandleFS );
+		ShaderCompiled = !HasErrorsVS && !HasErrorsFS;
+
+		if( !ShaderCompiled )
+		{
+			Reload();
+		}
+	}
 
 	// Create the program
 	GLuint ProgramHandle = glCreateProgram();

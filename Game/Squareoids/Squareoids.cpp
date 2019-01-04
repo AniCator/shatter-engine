@@ -52,7 +52,9 @@ void CGameSquareoids::Tick()
 
 		TitleScreen->Display();
 
-		if( Input.IsAnyKeyDown() && !EscapeKeyPressed )
+		const bool SpaceBarPressed = Input.IsKeyDown( 32 );
+
+		if( SpaceBarPressed && !EscapeKeyPressed )
 		{
 			delete TitleScreen;
 			TitleScreen = nullptr;

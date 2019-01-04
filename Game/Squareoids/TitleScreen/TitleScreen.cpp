@@ -4,6 +4,8 @@
 #include <Game/Game.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Renderable.h>
+#include <Engine/Utility/Locator/InputLocator.h>
+#include <glm/gtc/matrix_transform.hpp>
 
 CSquareoidsTitleScreen::CSquareoidsTitleScreen()
 {
@@ -80,4 +82,51 @@ void CSquareoidsTitleScreen::Display()
 	CCamera Camera;
 	Camera.Update();
 	Renderer.SetCamera( Camera );
+
+	/*// Cursor square
+	CRenderable* Renderable = new CRenderable();
+	Renderable->SetMesh( SquareMesh );
+
+	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+
+	IInput& Input = CInputLocator::GetService();
+	FFixedPosition2D MousePosition = Input.GetMousePosition();
+
+	glm::mat4& ProjectionInverse = glm::inverse( Camera.GetProjectionMatrix() );
+	glm::mat4& ViewInverse = glm::inverse( Camera.GetViewMatrix() );
+	float NormalizedMouseX = ( 2.0f * MousePosition.X ) / 1920.0f - 1.0f;
+	float NormalizedMouseY = 1.0f - ( 2.0f * MousePosition.Y ) / 1080.0f;
+	glm::vec4 MousePositionClipSpace = glm::vec4( NormalizedMouseX, NormalizedMouseY, -1.0f, 1.0f );
+	glm::vec4 MousePositionEyeSpace = ProjectionInverse * MousePositionClipSpace;
+
+	// Un-project Z and W
+	MousePositionEyeSpace[2] = -1.0f;
+	MousePositionEyeSpace[3] = 1.0f;
+
+	glm::vec3 MousePositionWorldSpace = ViewInverse * MousePositionEyeSpace;
+	glm::vec3 MouseDirection = glm::normalize( Camera.GetCameraSetup().CameraPosition - MousePositionWorldSpace );
+
+	bool RayCast = false;
+	glm::vec3 StartPosition = Camera.GetCameraSetup().CameraPosition;
+	float CastDelta = -0.1f;
+
+	glm::vec3 RayCastResult = StartPosition;
+
+	while( !RayCast )
+	{
+		StartPosition += MouseDirection * CastDelta;
+		const float Delta = 100.0f - StartPosition[2];
+
+		if( fabs( Delta ) < 0.5f )
+		{
+			RayCastResult = StartPosition;
+			RayCast = true;
+		}
+	}
+
+	RenderData.Color = glm::vec4( 1.0f, 0.5f, 0.0f, 1.0f );
+	RenderData.Position = RayCastResult;
+	RenderData.Size = glm::vec3( 10.0f, 10.0f, 10.0f );
+
+	Renderer.QueueDynamicRenderable( Renderable );*/
 }

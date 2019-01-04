@@ -80,6 +80,7 @@ void CSquareoidsPlayerUnit::Tick()
 
 	UnitData.Position[0] += UnitData.Velocity[0];
 	UnitData.Position[1] += UnitData.Velocity[1];
+	UnitData.Position[2] = 100.0f;
 
 	UnitData.Size = glm::vec3( UnitData.Health * 0.5f, UnitData.Health * 0.5f, UnitData.Health * 0.5f );
 

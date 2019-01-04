@@ -29,7 +29,7 @@ inline void BreakDebugger()
 
 namespace Log
 {
-	static const int nMaximumLogMessageLength = 2048;
+	static const int nMaximumLogMessageLength = 8192;
 
 	void Event( const char* Format, ... )
 	{

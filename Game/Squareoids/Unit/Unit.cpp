@@ -45,6 +45,7 @@ void CSquareoidsUnit::Tick()
 	UnitData.Size = glm::vec3( UnitData.Health * 0.5f, UnitData.Health * 0.5f, UnitData.Health * 0.5f );
 
 	UnitData.Position += UnitData.Velocity;
+	UnitData.Position[2] = 100.0f;
 	UnitData.Velocity *= 0.33f;
 }
 

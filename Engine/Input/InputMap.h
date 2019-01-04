@@ -183,30 +183,6 @@ enum class EInputMappingMouseType : uint32_t
 	Maximum
 };
 
-enum class EInputMappingJoystickType : uint32_t
-{
-	Unknown = 0,
-
-	JoystickButton1,
-	JoystickButton2,
-	JoystickButton3,
-	JoystickButton4,
-	JoystickButton5,
-	JoystickButton6,
-	JoystickButton7,
-	JoystickButton8,
-	JoystickButton9,
-	JoystickButton10,
-	JoystickButton11,
-	JoystickButton12,
-	JoystickButton13,
-	JoystickButton14,
-	JoystickButton15,
-	JoystickButton16,
-
-	Maximum
-};
-
 enum class EInputMappingGamepadType : uint32_t
 {
 	Unknown = 0,

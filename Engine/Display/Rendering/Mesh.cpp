@@ -47,7 +47,7 @@ bool CMesh::Populate( glm::vec3* Vertices, uint32_t VertexCount, glm::uint* Indi
 
 	if( bVertexBufferCreated && VertexBufferData.IndexBufferObject == 0 )
 	{
-		glGenVertexArrays( 1, &VertexArrayObject );
+		// glGenVertexArrays( 1, &VertexArrayObject );
 
 		glGenBuffers( 1, &VertexBufferData.IndexBufferObject );
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );

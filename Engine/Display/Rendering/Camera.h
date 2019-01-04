@@ -45,6 +45,7 @@ public:
 
 	glm::mat4& GetProjectionMatrix();
 	glm::mat4& GetViewMatrix();
+	glm::mat4& GetProjectionViewInverse();
 
 	FCameraSetup& GetCameraSetup();
 private:
@@ -53,4 +54,6 @@ private:
 
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
+
+	glm::mat4 ProjectionViewInverseMatrix;
 };

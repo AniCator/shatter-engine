@@ -40,7 +40,7 @@ public:
 	CShader* GetShader();
 	void SetShader( CShader* Shader );
 
-	void Draw();
+	virtual void Draw();
 
 	FRenderDataInstanced& GetRenderData();
 private:

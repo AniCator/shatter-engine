@@ -9,8 +9,8 @@
 #endif
 #endif
 
-void main()
-{
-	CApplication Application;
-	Application.Run();
-}
+// void main()
+// {
+// 	CApplication Application;
+// 	Application.Run();
+// }

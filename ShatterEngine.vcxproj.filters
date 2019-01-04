@@ -84,6 +84,9 @@
     <Filter Include="Source Files\Engine\Utility\Locator">
       <UniqueIdentifier>{03e8c706-9369-463d-9f4c-4cffb9895f5c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\ThirdParty\tracy">
+      <UniqueIdentifier>{46246e19-564d-4505-8688-af5d1026f34c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -190,6 +193,12 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp">
       <Filter>Source Files\Engine\Utility\Service</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Input\InputMapGLFW.cpp">
+      <Filter>Source Files\Engine\Input</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\tracy\TracyClient.cpp">
+      <Filter>Source Files\ThirdParty\tracy</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -339,6 +348,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Input\InputMapGLFW.h">
       <Filter>Source Files\Engine\Input</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\tracy\Tracy.hpp">
+      <Filter>Source Files\ThirdParty\tracy</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

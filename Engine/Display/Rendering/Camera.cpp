@@ -25,6 +25,8 @@ void CCamera::Update()
 		CameraPosition + CameraSetup.CameraDirection,
 		CameraSetup.CameraUpVector
 	);
+
+	ProjectionViewInverseMatrix = glm::inverse( ProjectionMatrix * ViewMatrix );
 }
 
 void CCamera::SetFieldOfView( float& FieldOfView )
@@ -84,6 +86,11 @@ glm::mat4& CCamera::GetProjectionMatrix()
 glm::mat4& CCamera::GetViewMatrix()
 {
 	return ViewMatrix;
+}
+
+glm::mat4& CCamera::GetProjectionViewInverse()
+{
+	return ProjectionViewInverseMatrix;
 }
 
 FCameraSetup& CCamera::GetCameraSetup()

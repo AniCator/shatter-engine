@@ -64,10 +64,10 @@ public:
 		Cell.X = ( Point.X + WorldSizeSplit ) / CellSize;
 		Cell.Y = ( Point.Y + WorldSizeSplit ) / CellSize;
 
-		Cell.X = Cell.X > Cells ? Cells : Cell.X;
+		Cell.X = Cell.X > Cells ? Cells - 1 : Cell.X;
 		Cell.X = Cell.X < 0 ? 0 : Cell.X;
 
-		Cell.Y = Cell.Y > Cells ? Cells : Cell.Y;
+		Cell.Y = Cell.Y > Cells ? Cells - 1 : Cell.Y;
 		Cell.Y = Cell.Y < 0 ? 0 : Cell.Y;
 
 		return Cell;

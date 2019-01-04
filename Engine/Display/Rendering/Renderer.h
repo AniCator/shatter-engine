@@ -52,6 +52,9 @@ public:
 
 	size_t MeshCount() const;
 
+protected:
+	void RefreshShaderHandle( CRenderable* Renderable );
+
 private:
 	std::unordered_map<std::string, CMesh*> Meshes;
 	std::unordered_map<std::string, CShader*> Shaders;
