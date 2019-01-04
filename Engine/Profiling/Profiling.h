@@ -5,7 +5,9 @@
 #include <vector>
 #include <map>
 
-#include <ThirdParty/tracy/Tracy.hpp>
+// #include <ThirdParty/tracy/Tracy.hpp>
+#define ZoneScoped (void(0))
+#define FrameMark (void(0))
 
 #include <Engine/Utility/RingBuffer.h>
 
