@@ -39,11 +39,13 @@
 *.suo
 
 *.ipdb
+*.ipch
 *.iobj
 *.pdb
 
 # Project specific
-*/x64
+/x64
+/Game/*/x64
 /ThirdParty
 /Output/*.log
 /Output/*.ilk
