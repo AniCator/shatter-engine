@@ -349,4 +349,14 @@ void CApplication::Initialize()
 	{
 		CameraSpeed = CConfiguration::GetInstance().GetFloat( "cameraspeed" );
 	}
+
+#if defined( IMGUI_ENABLED )
+	ImGuiIO& IO = ImGui::GetIO();
+	ImFontConfig DefaultFontConfig;
+	DefaultFontConfig.OversampleH = 4;
+	DefaultFontConfig.OversampleV = 4;
+	DefaultFontConfig.SizePixels = 15.0f;
+
+	IO.FontDefault = IO.Fonts->AddFontFromFileTTF( "Resources/Roboto-Medium.ttf", 15.0f, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
+#endif
 }
