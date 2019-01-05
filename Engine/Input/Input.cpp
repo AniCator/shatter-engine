@@ -7,14 +7,14 @@
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Profiling/Logging.h>
 
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 #include <ThirdParty/imgui-1.52/imgui.h>
 #include <Engine/Display/imgui_impl_glfw_gl3.h>
 #endif
 
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Action, int Modifiers )
 {
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 	if( ImGui::IsAnyItemHovered() )
 	{
 		ImGui_ImplGlfwGL3_KeyCallback( window, KeyInput, ScanCode, Action, Modifiers );
@@ -26,7 +26,7 @@ void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Actio
 
 void InputCharCallback( GLFWwindow* window, unsigned int Character )
 {
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 	if( ImGui::IsAnyItemHovered() )
 	{
 		ImGui_ImplGlfwGL3_CharCallback( window, Character );
@@ -37,7 +37,7 @@ void InputCharCallback( GLFWwindow* window, unsigned int Character )
 
 void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int Action, int Modifiers )
 {
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 	if( ImGui::IsAnyItemHovered() )
 	{
 		ImGui_ImplGlfwGL3_MouseButtonCallback( window, MouseButton, Action, Modifiers );
@@ -54,7 +54,7 @@ void InputMousePositionCallback( GLFWwindow* window, double PositionX, double Po
 
 void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY )
 {
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 	if( ImGui::IsAnyItemActive() )
 	{
 		ImGui_ImplGlfwGL3_ScrollCallback( window, OffsetX, OffsetY );

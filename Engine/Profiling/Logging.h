@@ -6,7 +6,7 @@
 #include <stdarg.h>
 #include <fstream>
 
-#ifdef _WIN32
+#if defined( _WIN32 )
 #define ConsoleWindowDisabled
 #endif
 

@@ -2,9 +2,9 @@
 #include <Game/Game.h>
 
 // AICritters.h
-#include <Game/AICritters/AICritters.h>
+// #include <Game/AICritters/AICritters.h>
 // CAICritters* AICrittersInstance = new CAICritters();
-CTestLayer* TestLayerInstance = new CTestLayer();
+// CTestLayer* TestLayerInstance = new CTestLayer();
 
 // CauseEffect.h
 // #include <Game/CauseEffect/CauseEffect.h>
@@ -14,9 +14,9 @@ CTestLayer* TestLayerInstance = new CTestLayer();
 // #include <Game/Squareoids/Squareoids.h>
 // CGameSquareoids* SquareoidsInstance = new CGameSquareoids();
 
-#include <Engine/Utility/Test/PerformanceStringTest.h>
+// #include <Engine/Utility/Test/PerformanceStringTest.h>
 
-extern CStringPerformanceTest StringPerformanceTest;
+// extern CStringPerformanceTest StringPerformanceTest;
 
 void CGameLayers::RegisterGameLayers()
 {

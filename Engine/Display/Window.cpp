@@ -12,7 +12,7 @@
 
 #include <Engine/Utility/Locator/InputLocator.h>
 
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 #include <ThirdParty/imgui-1.52/imgui.h>
 #include "imgui_impl_glfw_gl3.h"
 #endif
@@ -166,7 +166,7 @@ void CWindow::Create( const char* Title )
 
 	glfwSwapInterval( config.GetInteger( "vsync" ) );
 
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 	ImGui_ImplGlfwGL3_Init( WindowHandle, false );
 #endif
 
@@ -175,7 +175,7 @@ void CWindow::Create( const char* Title )
 
 void CWindow::Terminate()
 {
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 	ImGui_ImplGlfwGL3_Shutdown();
 #endif
 
@@ -203,7 +203,7 @@ void CWindow::ProcessInput()
 
 void CWindow::BeginFrame()
 {
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 	ImGui_ImplGlfwGL3_NewFrame();
 #endif
 }
@@ -216,7 +216,7 @@ void CWindow::RenderFrame()
 
 	Renderer.DrawQueuedRenderables();
 
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 	ImGui::Render();
 #endif
 

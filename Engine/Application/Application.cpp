@@ -239,7 +239,7 @@ void CApplication::Run()
 		{
 			if( !PauseGame )
 			{
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 				CProfileVisualisation::GetInstance().Clear();
 #endif
 				Renderer.RefreshFrame();
@@ -267,7 +267,7 @@ void CApplication::Run()
 		{
 			GameLayersInstance->Frame();
 
-#ifdef IMGUI_ENABLED
+#if defined( IMGUI_ENABLED )
 			CProfileVisualisation::GetInstance().Display();
 
 			DebugMenu();
