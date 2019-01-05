@@ -15,6 +15,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Squareoids", "Game\Squareoi
 		{543705ED-F464-4739-A2A8-ACC9E4A5A467} = {543705ED-F464-4739-A2A8-ACC9E4A5A467}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LoftyLagoon", "Game\LoftyLagoon\LoftyLagoon.vcxproj", "{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{543705ED-F464-4739-A2A8-ACC9E4A5A467} = {543705ED-F464-4739-A2A8-ACC9E4A5A467}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -61,6 +66,18 @@ Global
 		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x64.Build.0 = Release|x64
 		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x86.ActiveCfg = Release|Win32
 		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x86.Build.0 = Release|Win32
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Debug|x64.ActiveCfg = Debug|x64
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Debug|x64.Build.0 = Debug|x64
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Debug|x86.ActiveCfg = Debug|Win32
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Debug|x86.Build.0 = Debug|Win32
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Profile|x64.ActiveCfg = Profile|x64
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Profile|x64.Build.0 = Profile|x64
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Profile|x86.ActiveCfg = Release|Win32
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Profile|x86.Build.0 = Release|Win32
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Release|x64.ActiveCfg = Release|x64
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Release|x64.Build.0 = Release|x64
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Release|x86.ActiveCfg = Release|Win32
+		{FECC42E2-CAEC-4B42-9DAA-AC0EA3FA940F}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
