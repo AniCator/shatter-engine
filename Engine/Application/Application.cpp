@@ -18,7 +18,6 @@
 #endif
 
 CWindow& MainWindow = CWindow::GetInstance();
-static const char* pszWindowTitle = "Shatter Engine";
 static const int nBuildNumber = 0;
 
 CCamera DefaultCamera = CCamera();
@@ -122,11 +121,190 @@ void InputToggleMouse()
 	MainWindow.EnableCursor( CursorVisible );
 }
 
+std::map<std::string, std::function<void()>> Themes;
+
+auto CherryHigh = [] ( float v ) { return ImVec4( 0.502f, 0.075f, 0.256f, v ); };
+auto CherryMedium = [] ( float v ) { return ImVec4( 0.455f, 0.198f, 0.301f, v ); };
+auto CherryLow = [] ( float v ) { return ImVec4( 0.232f, 0.201f, 0.271f, v ); };
+
+auto CherryBackground = [] ( float v ) { return ImVec4( 0.200f, 0.220f, 0.270f, v ); };
+auto CherryText = [] ( float v ) { return ImVec4( 0.860f, 0.930f, 0.890f, v ); };
+
+bool DefaultStyleValid = false;
+ImGuiStyle DefaultStyle;
+
+void GenerateThemes()
+{
+	auto ThemeDefault = []
+	{
+		ImGuiStyle& Style = ImGui::GetStyle();
+		if( !DefaultStyleValid )
+		{
+			DefaultStyle = Style;
+			DefaultStyleValid = true;
+		}
+
+		Style = DefaultStyle;
+	};
+
+	Themes.insert_or_assign( "ImGui", ThemeDefault );
+	ThemeDefault();
+
+	auto ThemeCherry = [ThemeDefault]
+	{
+		ThemeDefault();
+
+		ImGuiStyle& Style = ImGui::GetStyle();
+		Style.Colors[ImGuiCol_Text] = CherryText( 0.78f );
+		Style.Colors[ImGuiCol_TextDisabled] = CherryText( 0.28f );
+		Style.Colors[ImGuiCol_WindowBg] = ImVec4( 0.13f, 0.14f, 0.17f, 1.00f );
+		Style.Colors[ImGuiCol_ChildWindowBg] = CherryBackground( 0.58f );
+		Style.Colors[ImGuiCol_PopupBg] = CherryBackground( 0.9f );
+		Style.Colors[ImGuiCol_Border] = ImVec4( 0.31f, 0.31f, 1.00f, 0.00f );
+		Style.Colors[ImGuiCol_BorderShadow] = ImVec4( 0.00f, 0.00f, 0.00f, 0.00f );
+		Style.Colors[ImGuiCol_FrameBg] = CherryBackground( 1.00f );
+		Style.Colors[ImGuiCol_FrameBgHovered] = CherryMedium( 0.78f );
+		Style.Colors[ImGuiCol_FrameBgActive] = CherryMedium( 1.00f );
+		Style.Colors[ImGuiCol_TitleBg] = CherryLow( 1.00f );
+		Style.Colors[ImGuiCol_TitleBgActive] = CherryHigh( 1.00f );
+		Style.Colors[ImGuiCol_TitleBgCollapsed] = CherryBackground( 0.75f );
+		Style.Colors[ImGuiCol_MenuBarBg] = CherryBackground( 0.47f );
+		Style.Colors[ImGuiCol_ScrollbarBg] = CherryBackground( 1.00f );
+		Style.Colors[ImGuiCol_ScrollbarGrab] = ImVec4( 0.09f, 0.15f, 0.16f, 1.00f );
+		Style.Colors[ImGuiCol_ScrollbarGrabHovered] = CherryMedium( 0.78f );
+		Style.Colors[ImGuiCol_ScrollbarGrabActive] = CherryMedium( 1.00f );
+		Style.Colors[ImGuiCol_CheckMark] = ImVec4( 0.71f, 0.22f, 0.27f, 1.00f );
+		Style.Colors[ImGuiCol_SliderGrab] = ImVec4( 0.47f, 0.77f, 0.83f, 0.14f );
+		Style.Colors[ImGuiCol_SliderGrabActive] = ImVec4( 0.71f, 0.22f, 0.27f, 1.00f );
+		Style.Colors[ImGuiCol_Button] = ImVec4( 0.47f, 0.77f, 0.83f, 0.14f );
+		Style.Colors[ImGuiCol_ButtonHovered] = CherryMedium( 0.86f );
+		Style.Colors[ImGuiCol_ButtonActive] = CherryMedium( 1.00f );
+		Style.Colors[ImGuiCol_Header] = CherryMedium( 0.76f );
+		Style.Colors[ImGuiCol_HeaderHovered] = CherryMedium( 0.86f );
+		Style.Colors[ImGuiCol_HeaderActive] = CherryHigh( 1.00f );
+		Style.Colors[ImGuiCol_Column] = ImVec4( 0.14f, 0.16f, 0.19f, 1.00f );
+		Style.Colors[ImGuiCol_ColumnHovered] = CherryMedium( 0.78f );
+		Style.Colors[ImGuiCol_ColumnActive] = CherryMedium( 1.00f );
+		Style.Colors[ImGuiCol_ResizeGrip] = ImVec4( 0.47f, 0.77f, 0.83f, 0.04f );
+		Style.Colors[ImGuiCol_ResizeGripHovered] = CherryMedium( 0.78f );
+		Style.Colors[ImGuiCol_ResizeGripActive] = CherryMedium( 1.00f );
+		Style.Colors[ImGuiCol_PlotLines] = CherryText( 0.63f );
+		Style.Colors[ImGuiCol_PlotLinesHovered] = CherryMedium( 1.00f );
+		Style.Colors[ImGuiCol_PlotHistogram] = CherryText( 0.63f );
+		Style.Colors[ImGuiCol_PlotHistogramHovered] = CherryMedium( 1.00f );
+		Style.Colors[ImGuiCol_TextSelectedBg] = CherryMedium( 0.43f );
+		// [...]
+		Style.Colors[ImGuiCol_ModalWindowDarkening] = CherryBackground( 0.73f );
+
+		Style.WindowPadding = ImVec2( 6, 4 );
+		Style.WindowRounding = 0.0f;
+		Style.FramePadding = ImVec2( 5, 2 );
+		Style.FrameRounding = 3.0f;
+		Style.ItemSpacing = ImVec2( 7, 3 );
+		Style.ItemInnerSpacing = ImVec2( 1, 1 );
+		Style.TouchExtraPadding = ImVec2( 0, 0 );
+		Style.IndentSpacing = 6.0f;
+		Style.ScrollbarSize = 12.0f;
+		Style.ScrollbarRounding = 16.0f;
+		Style.GrabMinSize = 20.0f;
+		Style.GrabRounding = 2.0f;
+
+		Style.WindowTitleAlign.x = 0.50f;
+
+		Style.Colors[ImGuiCol_Border] = ImVec4( 0.539f, 0.479f, 0.255f, 0.162f );
+	};
+
+	Themes.insert_or_assign( "Cherry", ThemeCherry );
+
+	auto ThemeDracula = [ThemeDefault]
+	{
+		ThemeDefault();
+
+		ImGuiStyle& Style = ImGui::GetStyle();
+		Style.WindowRounding = 5.3f;
+		Style.GrabRounding = Style.FrameRounding = 2.3f;
+		Style.ScrollbarRounding = 5.0f;
+		Style.ItemSpacing.y = 6.5f;
+
+		Style.Colors[ImGuiCol_Text] = { 0.73333335f, 0.73333335f, 0.73333335f, 1.00f };
+		Style.Colors[ImGuiCol_TextDisabled] = { 0.34509805f, 0.34509805f, 0.34509805f, 1.00f };
+		Style.Colors[ImGuiCol_WindowBg] = { 0.23529413f, 0.24705884f, 0.25490198f, 0.94f };
+		Style.Colors[ImGuiCol_PopupBg] = { 0.23529413f, 0.24705884f, 0.25490198f, 0.94f };
+		Style.Colors[ImGuiCol_Border] = { 0.33333334f, 0.33333334f, 0.33333334f, 0.50f };
+		Style.Colors[ImGuiCol_BorderShadow] = { 0.15686275f, 0.15686275f, 0.15686275f, 0.00f };
+		Style.Colors[ImGuiCol_FrameBg] = { 0.16862746f, 0.16862746f, 0.16862746f, 0.54f };
+		Style.Colors[ImGuiCol_FrameBgHovered] = { 0.453125f, 0.67578125f, 0.99609375f, 0.67f };
+		Style.Colors[ImGuiCol_FrameBgActive] = { 0.47058827f, 0.47058827f, 0.47058827f, 0.67f };
+		Style.Colors[ImGuiCol_TitleBg] = { 0.04f, 0.04f, 0.04f, 1.00f };
+		Style.Colors[ImGuiCol_TitleBgCollapsed] = { 0.16f, 0.29f, 0.48f, 1.00f };
+		Style.Colors[ImGuiCol_TitleBgActive] = { 0.00f, 0.00f, 0.00f, 0.51f };
+		Style.Colors[ImGuiCol_MenuBarBg] = { 0.27058825f, 0.28627452f, 0.2901961f, 0.80f };
+		Style.Colors[ImGuiCol_ScrollbarBg] = { 0.27058825f, 0.28627452f, 0.2901961f, 0.60f };
+		Style.Colors[ImGuiCol_ScrollbarGrab] = { 0.21960786f, 0.30980393f, 0.41960788f, 0.51f };
+		Style.Colors[ImGuiCol_ScrollbarGrabHovered] = { 0.21960786f, 0.30980393f, 0.41960788f, 1.00f };
+		Style.Colors[ImGuiCol_ScrollbarGrabActive] = { 0.13725491f, 0.19215688f, 0.2627451f, 0.91f };
+		Style.Colors[ImGuiCol_CheckMark] = { 0.90f, 0.90f, 0.90f, 0.83f };
+		Style.Colors[ImGuiCol_SliderGrab] = { 0.70f, 0.70f, 0.70f, 0.62f };
+		Style.Colors[ImGuiCol_SliderGrabActive] = { 0.30f, 0.30f, 0.30f, 0.84f };
+		Style.Colors[ImGuiCol_Button] = { 0.33333334f, 0.3529412f, 0.36078432f, 0.49f };
+		Style.Colors[ImGuiCol_ButtonHovered] = { 0.21960786f, 0.30980393f, 0.41960788f, 1.00f };
+		Style.Colors[ImGuiCol_ButtonActive] = { 0.13725491f, 0.19215688f, 0.2627451f, 1.00f };
+		Style.Colors[ImGuiCol_Header] = { 0.33333334f, 0.3529412f, 0.36078432f, 0.53f };
+		Style.Colors[ImGuiCol_HeaderHovered] = { 0.453125f, 0.67578125f, 0.99609375f, 0.67f };
+		Style.Colors[ImGuiCol_HeaderActive] = { 0.47058827f, 0.47058827f, 0.47058827f, 0.67f };
+		Style.Colors[ImGuiCol_Separator] = { 0.31640625f, 0.31640625f, 0.31640625f, 1.00f };
+		Style.Colors[ImGuiCol_SeparatorHovered] = { 0.31640625f, 0.31640625f, 0.31640625f, 1.00f };
+		Style.Colors[ImGuiCol_SeparatorActive] = { 0.31640625f, 0.31640625f, 0.31640625f, 1.00f };
+		Style.Colors[ImGuiCol_ResizeGrip] = { 1.00f, 1.00f, 1.00f, 0.85f };
+		Style.Colors[ImGuiCol_ResizeGripHovered] = { 1.00f, 1.00f, 1.00f, 0.60f };
+		Style.Colors[ImGuiCol_ResizeGripActive] = { 1.00f, 1.00f, 1.00f, 0.90f };
+		Style.Colors[ImGuiCol_PlotLines] = { 0.61f, 0.61f, 0.61f, 1.00f };
+		Style.Colors[ImGuiCol_PlotLinesHovered] = { 1.00f, 0.43f, 0.35f, 1.00f };
+		Style.Colors[ImGuiCol_PlotHistogram] = { 0.90f, 0.70f, 0.00f, 1.00f };
+		Style.Colors[ImGuiCol_PlotHistogramHovered] = { 1.00f, 0.60f, 0.00f, 1.00f };
+		Style.Colors[ImGuiCol_TextSelectedBg] = { 0.18431373f, 0.39607847f, 0.79215693f, 0.90f };
+	};
+
+	Themes.insert_or_assign( "Dracula", ThemeDracula );
+
+	// Default theme
+	ThemeCherry();
+}
+
+void SetTheme( const char* Theme )
+{
+	auto Iterator = Themes.find( Theme );
+	if( Iterator != Themes.end() )
+	{
+		Iterator->second();
+	}
+}
+
 void DebugMenu( CApplication* Application )
 {
+	if( !Application || !GameLayersInstance )
+		return;
+
+	std::vector<IGameLayer*> GameLayers = GameLayersInstance->GetGameLayers();
+	IGameLayer* TopLevelLayer = nullptr;
+
+	if( GameLayers.size() > 0 )
+	{
+		TopLevelLayer = GameLayers[0];
+	}
+
 	if( ImGui::BeginMainMenuBar() )
 	{
-		if( ImGui::BeginMenu( "Shatter 0.0.0" ) )
+		Version Number;
+		
+		if( TopLevelLayer )
+		{
+			Number = TopLevelLayer->GetVersion();
+		}
+
+		char MenuName[256];
+		sprintf_s( MenuName, "%s %i.%i.%i", Application->GetName().c_str(), Number.Major, Number.Minor, Number.Hot );
+		if( ImGui::BeginMenu( MenuName ) )
 		{
 			ImGui::MenuItem( "2017 \xc2\xa9 Christiaan Bakker", NULL, false, false );
 
@@ -154,11 +332,10 @@ void DebugMenu( CApplication* Application )
 
 			if( ImGui::MenuItem( "Re-initialize Application", "" ) )
 			{
-				auto ReinitializeApplication = [Application](CApplication* App)
+				[Application]
 				{
-					App->Initialize();
-				};
-				ReinitializeApplication(Application);
+					Application->Initialize();
+				}();
 
 				// Has to return when executed because imgui will be reset.
 				return;
@@ -177,6 +354,19 @@ void DebugMenu( CApplication* Application )
 			if( ImGui::MenuItem( "Reload Shaders", "J" ) )
 			{
 				InputReloadShaders();
+			}
+
+			ImGui::Separator();
+
+			for( auto Iterator : Themes )
+			{
+				const char* ThemeKey = Iterator.first.c_str();
+				char ThemeName[256];
+				sprintf_s( ThemeName, "%s Theme", ThemeKey );
+				if( ImGui::MenuItem( ThemeName, "" ) )
+				{
+					SetTheme( ThemeKey );
+				}
 			}
 
 			ImGui::EndMenu();
@@ -200,7 +390,7 @@ void DebugMenu( CApplication* Application )
 
 CApplication::CApplication()
 {
-
+	Name = "Unnamed Shatter Engine Application";
 }
 
 CApplication::~CApplication()
@@ -303,9 +493,19 @@ void CApplication::Run()
 	MainWindow.Terminate();
 }
 
+std::string CApplication::GetName() const
+{
+	return Name;
+}
+
+void CApplication::SetName( const char* NameIn )
+{
+	Name = NameIn;
+}
+
 void CApplication::Initialize()
 {
-	Log::Event( "%s (Build: %i)\n\n", pszWindowTitle, nBuildNumber );
+	Log::Event( "%s (Build: %s)\n\n", Name.c_str(), __DATE__ );
 
 	ServiceRegistry.CreateStandardServices();
 
@@ -313,7 +513,7 @@ void CApplication::Initialize()
 	CConfiguration& ConfigurationInstance = CConfiguration::GetInstance();
 
 	char szTitle[256];
-	sprintf_s( szTitle, "%s (Build: %i)", pszWindowTitle, nBuildNumber );
+	sprintf_s( szTitle, "%s (Build: %s)", Name.c_str(), __DATE__ );
 
 	if( MainWindow.Valid() )
 	{
@@ -360,7 +560,9 @@ void CApplication::Initialize()
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_R, GLFW_PRESS, InputMoveCameraLower );
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_F, GLFW_PRESS, InputMoveCameraHigher );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_ESCAPE, GLFW_RELEASE, InputToggleMouse );
+	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_ESCAPE, GLFW_RELEASE, []{
+		glfwSetWindowShouldClose( MainWindow.Handle(), true );
+	} );
 
 	MainWindow.EnableCursor( CursorVisible );
 
@@ -390,5 +592,7 @@ void CApplication::Initialize()
 	IO.FontDefault = RobotoFont;
 
 	ImGui_ImplGlfwGL3_NewFrame();
+
+	GenerateThemes();
 #endif
 }

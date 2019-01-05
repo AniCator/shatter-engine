@@ -4,6 +4,13 @@
 #include <vector>
 #include "glm/glm.hpp"
 
+struct Version
+{
+	int Major;
+	int Minor;
+	int Hot;
+};
+
 class IGameLayer
 {
 public:
@@ -13,6 +20,8 @@ public:
 	virtual void Frame() = 0;
 	virtual void Tick() = 0;
 	virtual void Shutdown() = 0;
+
+	virtual Version GetVersion() const = 0;
 };
 
 class CGameLayers
@@ -37,7 +46,7 @@ public:
 	double GetTimeScale() const;
 	void SetTimeScale( double TimeScale );
 
-	void RegisterGameLayers();
+	std::vector<IGameLayer*> GetGameLayers() const;
 
 private:
 	std::vector<IGameLayer*> GameLayers;

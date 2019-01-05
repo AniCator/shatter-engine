@@ -232,7 +232,6 @@
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
     <ClCompile Include="Game\Game.cpp" />
-    <ClCompile Include="Game\GameModule.cpp" />
     <ClCompile Include="Game\ShatterLapse\ShatterLapse.cpp" />
     <ClCompile Include="Source.cpp" />
     <ClCompile Include="ThirdParty\glad\src\glad.c" />

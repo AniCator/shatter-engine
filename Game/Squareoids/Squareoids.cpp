@@ -26,6 +26,7 @@ void main()
 	GameLayersInstance->Add( SquaroidsInstance );
 
 	CApplication Application;
+	Application.SetName( "Squareoids" );
 	Application.Run();
 }
 
@@ -120,4 +121,14 @@ void CGameSquareoids::Shutdown()
 		delete BattleField;
 		BattleField = nullptr;
 	}
+}
+
+Version CGameSquareoids::GetVersion() const
+{
+	static Version Number;
+	Number.Major = 0;
+	Number.Minor = 1;
+	Number.Hot = 0;
+
+	return Number;
 }

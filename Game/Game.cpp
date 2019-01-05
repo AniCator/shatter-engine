@@ -100,3 +100,8 @@ void CGameLayers::SetTimeScale( double TimeScaleIn )
 {
 	TimeScale = TimeScaleIn;
 }
+
+std::vector<IGameLayer*> CGameLayers::GetGameLayers() const
+{
+	return GameLayers;
+}

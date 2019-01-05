@@ -12,5 +12,11 @@ public:
 	void Initialize();
 	void Run();
 
+	std::string GetName() const;
+	void SetName( const char* Name );
+
 	CServiceRegistry ServiceRegistry;
+
+private:
+	std::string Name;
 };

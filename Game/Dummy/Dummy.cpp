@@ -34,6 +34,7 @@ void main()
 	GameLayersInstance->Add( DummyInstance );
 
 	CApplication Application;
+	Application.SetName( "Dummy" );
 	Application.Run();
 }
 
@@ -108,4 +109,14 @@ void CDummyLayer::Tick()
 void CDummyLayer::Shutdown()
 {
 	TestRenderables.clear();
+}
+
+Version CDummyLayer::GetVersion() const
+{
+	static Version Number;
+	Number.Major = 1;
+	Number.Minor = 0;
+	Number.Hot = 0;
+
+	return Number;
 }

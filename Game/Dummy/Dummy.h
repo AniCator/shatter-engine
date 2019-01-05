@@ -16,6 +16,7 @@ public:
 	virtual void Tick() override;
 	virtual void Shutdown() override;
 
+	virtual Version GetVersion() const override;
 private:
 	std::vector<CRenderable*> TestRenderables;
 };

@@ -16,6 +16,8 @@ public:
 	virtual void Tick() override;
 	virtual void Shutdown() override;
 
+	virtual Version GetVersion() const override;
+
 private:
 	ESquareoidGameState GameState;
 };

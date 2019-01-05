@@ -34,6 +34,7 @@ void main()
 	GameLayersInstance->Add( LoftyLagoonInstance );
 
 	CApplication Application;
+	Application.SetName( "Lofty Lagoon Prototype" );
 	Application.Run();
 }
 
@@ -67,4 +68,14 @@ void CGameLoftyLagoon::Tick()
 void CGameLoftyLagoon::Shutdown()
 {
 	
+}
+
+Version CGameLoftyLagoon::GetVersion() const
+{
+	static Version Number;
+	Number.Major = 0;
+	Number.Minor = 0;
+	Number.Hot = 0;
+
+	return Number;
 }

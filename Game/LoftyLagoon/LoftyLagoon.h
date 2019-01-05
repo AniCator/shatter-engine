@@ -22,6 +22,8 @@ public:
 	virtual void Tick() override;
 	virtual void Shutdown() override;
 
+	virtual Version GetVersion() const override;
+
 private:
 	std::vector<CRenderable*> TestRenderables;
 	static std::unique_ptr<Log::CLog> Report;
