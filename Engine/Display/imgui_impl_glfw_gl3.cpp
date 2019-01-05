@@ -9,6 +9,8 @@
 #include <ThirdParty/imgui-1.52/imgui.h>
 #include "imgui_impl_glfw_gl3.h"
 
+#include <Engine/Profiling/Profiling.h>
+
 // GL3W/GLFW
 #include "glad/glad.h"   // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
 #include <GLFW/glfw3.h>
@@ -90,6 +92,8 @@ void ImGui_ImplGlfwGL3_RenderDrawLists(ImDrawData* draw_data)
     glBindVertexArray(g_VaoHandle);
     glBindSampler(0, 0); // Rely on combined texture/sampler state.
 
+	int64_t DrawCalls = 0;
+
     for (int n = 0; n < draw_data->CmdListsCount; n++)
     {
         const ImDrawList* cmd_list = draw_data->CmdLists[n];
@@ -115,8 +119,12 @@ void ImGui_ImplGlfwGL3_RenderDrawLists(ImDrawData* draw_data)
                 glDrawElements(GL_TRIANGLES, (GLsizei)pcmd->ElemCount, sizeof(ImDrawIdx) == 2 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_INT, idx_buffer_offset);
             }
             idx_buffer_offset += pcmd->ElemCount;
+
+			DrawCalls++;
         }
     }
+
+	CProfileVisualisation::GetInstance().AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
     // Restore modified GL state
     glUseProgram(last_program);
