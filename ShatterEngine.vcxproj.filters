@@ -42,9 +42,6 @@
     <Filter Include="Source Files\Game\CauseEffect">
       <UniqueIdentifier>{fe8e7a3d-7dad-4e3d-b3b3-3d65a9997f51}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Game\AICritters">
-      <UniqueIdentifier>{78910a85-8b13-4411-a49f-7a302453fc55}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Engine\Utility\Test">
       <UniqueIdentifier>{a3fa8650-cac1-466b-917e-127267072962}</UniqueIdentifier>
     </Filter>
@@ -94,9 +91,6 @@
     </ClCompile>
     <ClCompile Include="Game\Game.cpp">
       <Filter>Source Files\Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Game\AICritters\AICritters.cpp">
-      <Filter>Source Files\Game\AICritters</Filter>
     </ClCompile>
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp">
       <Filter>Source Files\Game\CauseEffect</Filter>
@@ -195,9 +189,6 @@
     </ClInclude>
     <ClInclude Include="Game\Game.h">
       <Filter>Source Files\Engine</Filter>
-    </ClInclude>
-    <ClInclude Include="Game\AICritters\AICritters.h">
-      <Filter>Source Files\Game\AICritters</Filter>
     </ClInclude>
     <ClInclude Include="Game\CauseEffect\CauseEffect.h">
       <Filter>Source Files\Game\CauseEffect</Filter>
