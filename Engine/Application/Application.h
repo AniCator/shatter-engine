@@ -9,10 +9,8 @@ public:
 	CApplication();
 	~CApplication();
 
-	void Run();
-
-private:
 	void Initialize();
+	void Run();
 
 	CServiceRegistry ServiceRegistry;
 };

@@ -12,7 +12,10 @@
 
 #include <Game/Game.h>
 
+#if defined( IMGUI_ENABLED )
 #include <ThirdParty/imgui-1.52/imgui.h>
+#include <Engine/Display/imgui_impl_glfw_gl3.h>
+#endif
 
 CWindow& MainWindow = CWindow::GetInstance();
 static const char* pszWindowTitle = "Shatter Engine";
@@ -119,7 +122,7 @@ void InputToggleMouse()
 	MainWindow.EnableCursor( CursorVisible );
 }
 
-void DebugMenu()
+void DebugMenu( CApplication* Application )
 {
 	if( ImGui::BeginMainMenuBar() )
 	{
@@ -148,6 +151,18 @@ void DebugMenu()
 			}
 
 			ImGui::Separator();
+
+			if( ImGui::MenuItem( "Re-initialize Application", "" ) )
+			{
+				auto ReinitializeApplication = [Application](CApplication* App)
+				{
+					App->Initialize();
+				};
+				ReinitializeApplication(Application);
+
+				// Has to return when executed because imgui will be reset.
+				return;
+			}
 
 			if( ImGui::MenuItem( "Reload Configuration", "H" ) )
 			{
@@ -270,7 +285,7 @@ void CApplication::Run()
 #if defined( IMGUI_ENABLED )
 			CProfileVisualisation::GetInstance().Display();
 
-			DebugMenu();
+			DebugMenu( this );
 #endif
 
 			MainWindow.RenderFrame();
@@ -295,10 +310,19 @@ void CApplication::Initialize()
 	ServiceRegistry.CreateStandardServices();
 
 	// Calling GetInstance creates the instance and initializes the class.
-	CConfiguration::GetInstance();
+	CConfiguration& ConfigurationInstance = CConfiguration::GetInstance();
 
 	char szTitle[256];
 	sprintf_s( szTitle, "%s (Build: %i)", pszWindowTitle, nBuildNumber );
+
+	if( MainWindow.Valid() )
+	{
+		MainWindow.Terminate();
+		ImGui_ImplGlfwGL3_Reset();
+
+		// Reload the configuration file if the application is being re-initialized.
+		ConfigurationInstance.Initialize();
+	}
 
 	MainWindow.Create( szTitle );
 
@@ -316,6 +340,8 @@ void CApplication::Initialize()
 	glfwSetJoystickCallback( InputJoystickStatusCallback );
 
 	IInput& Input = CInputLocator::GetService();
+
+	Input.ClearActionBindings();
 
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_SPACE, GLFW_PRESS, InputPauseGameEnable );
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_SPACE, GLFW_RELEASE, InputPauseGameDisable );
@@ -343,20 +369,26 @@ void CApplication::Initialize()
 		Log::Event( Log::Fatal, "Game layers instance does not exist!\n" );
 	}
 
-	GameLayersInstance->RegisterGameLayers();
-
 	if( CameraSpeed < 0.0f )
 	{
 		CameraSpeed = CConfiguration::GetInstance().GetFloat( "cameraspeed" );
 	}
 
 #if defined( IMGUI_ENABLED )
+	ImGui_ImplGlfwGL3_Shutdown();
+
 	ImGuiIO& IO = ImGui::GetIO();
+	static ImFont* RobotoFont = nullptr;
+
 	ImFontConfig DefaultFontConfig;
 	DefaultFontConfig.OversampleH = 4;
-	DefaultFontConfig.OversampleV = 4;
-	DefaultFontConfig.SizePixels = 15.0f;
+	DefaultFontConfig.OversampleV = 2;
+	DefaultFontConfig.SizePixels = ConfigurationInstance.GetFloat( "font_size", 15.0f );
 
-	IO.FontDefault = IO.Fonts->AddFontFromFileTTF( "Resources/Roboto-Medium.ttf", 15.0f, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
+	IO.Fonts->ClearTexData();
+	RobotoFont = IO.Fonts->AddFontFromFileTTF( "Resources/Roboto-Medium.ttf", DefaultFontConfig.SizePixels, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
+	IO.FontDefault = RobotoFont;
+
+	ImGui_ImplGlfwGL3_NewFrame();
 #endif
 }
