@@ -12,6 +12,8 @@ IMGUI_API bool        ImGui_ImplGlfwGL3_Init(GLFWwindow* window, bool install_ca
 IMGUI_API void        ImGui_ImplGlfwGL3_Shutdown();
 IMGUI_API void        ImGui_ImplGlfwGL3_NewFrame();
 
+IMGUI_API void        ImGui_ImplGlfwGL3_Reset();
+
 // Use if you want to reset your rendering device without losing ImGui state.
 IMGUI_API void        ImGui_ImplGlfwGL3_InvalidateDeviceObjects();
 IMGUI_API bool        ImGui_ImplGlfwGL3_CreateDeviceObjects();

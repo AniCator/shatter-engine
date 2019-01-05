@@ -415,3 +415,16 @@ void ImGui_ImplGlfwGL3_NewFrame()
     // Start the frame
     ImGui::NewFrame();
 }
+
+void ImGui_ImplGlfwGL3_Reset()
+{
+	g_Window = NULL;
+	g_Time = 0.0f;
+	g_MouseJustPressed[0], g_MouseJustPressed[1], g_MouseJustPressed[2] = false;
+	g_MouseWheel = 0.0f;
+	g_FontTexture = 0;
+	g_ShaderHandle = 0, g_VertHandle = 0, g_FragHandle = 0;
+	g_AttribLocationTex = 0, g_AttribLocationProjMtx = 0;
+	g_AttribLocationPosition = 0, g_AttribLocationUV = 0, g_AttribLocationColor = 0;
+	g_VboHandle = 0, g_VaoHandle = 0, g_ElementsHandle = 0;
+}
