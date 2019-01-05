@@ -32,17 +32,17 @@ bool CConfiguration::IsEnabled( const char* KeyName )
 	return false;
 }
 
-const char* CConfiguration::GetString( const char* KeyName )
+const char* CConfiguration::GetString( const char* KeyName, const char* Default )
 {
 	if( !IsValidKey( KeyName ) )
 	{
-		return "undefined";
+		return Default;
 	}
 
 	return GetValue( KeyName ).c_str();
 }
 
-int CConfiguration::GetInteger( const char* KeyName )
+int CConfiguration::GetInteger( const char* KeyName, const int Default )
 {
 	if( !IsValidKey( KeyName ) )
 	{
@@ -52,19 +52,19 @@ int CConfiguration::GetInteger( const char* KeyName )
 	return atoi( StoredSettings[KeyName].c_str() );
 }
 
-double CConfiguration::GetDouble( const char* KeyName )
+double CConfiguration::GetDouble( const char* KeyName, const double Default )
 {
 	if( !IsValidKey( KeyName ) )
 	{
-		return 0.0;
+		return Default;
 	}
 
 	return atof( StoredSettings[KeyName].c_str() );
 }
 
-float CConfiguration::GetFloat( const char* KeyName )
+float CConfiguration::GetFloat( const char* KeyName, const float Default )
 {
-	return static_cast<float>( GetDouble( KeyName ) );
+	return static_cast<float>( GetDouble( KeyName, Default ) );
 }
 
 void CConfiguration::Initialize()

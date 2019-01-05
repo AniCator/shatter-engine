@@ -10,10 +10,10 @@ class CConfiguration
 public:
 	bool IsValidKey( const char* KeyName );
 	bool IsEnabled( const char* KeyName );
-	const char* GetString( const char* KeyName );
-	int GetInteger( const char* KeyName );
-	double GetDouble( const char* KeyName );
-	float GetFloat( const char* KeyName );
+	const char* GetString( const char* KeyName, const char* Default = "undefined" );
+	int GetInteger( const char* KeyName, const int Default = -1 );
+	double GetDouble( const char* KeyName, const double Default = -1.0f );
+	float GetFloat( const char* KeyName, const float Default = -1.0f );
 
 	void Initialize();
 	void AppendFile( std::string FilePath );
