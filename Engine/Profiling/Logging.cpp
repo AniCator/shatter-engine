@@ -72,12 +72,12 @@ namespace Log
 		LogOutputStream.close();
 	}
 
-	void CLog::Print( const char* Format, va_list Arguments )
+	void CLog::Print( const char* Format, va_list Arguments, const bool Passthrough )
 	{
 		CLog& GlobalInstance = CLog::GetInstance();
 		if( this != &GlobalInstance )
 		{
-			GlobalInstance.Print( Format, Arguments );
+			GlobalInstance.Print( Format, Arguments, true );
 		}
 
 		char FullMessage[nMaximumLogMessageLength];
@@ -93,10 +93,13 @@ namespace Log
 			strcpy_s( LogMessage, FullMessage );
 		}
 
-#ifndef ConsoleWindowDisabled
-		printf( LogMessage );
+#if !defined( ConsoleWindowDisabled )
+		if( !Passthrough )
+		{
+			printf( LogMessage );
+		}
 #else
-		if( IsDebuggerPresent() )
+		if( IsDebuggerPresent() && !Passthrough )
 		{
 			OutputDebugString( LogMessage );
 		}
