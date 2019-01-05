@@ -148,7 +148,7 @@ void CProfileVisualisation::Display()
 					{
 						ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Lowest): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
 						ImGui::PushItemWidth( -1 );
-						ImGui::PlotHistogram( "", TimeValues, static_cast<int>( TimeWindow ), static_cast<int>( Buffer.Offset() ), "", 0.0f, 33.3f, ImVec2( 500.0f, 100.0f ) );
+						ImGui::PlotHistogram( "", TimeValues, static_cast<int>( TimeWindow ), static_cast<int>( Buffer.Offset() ), "Histogram (Frametime)", 0.0f, 33.3f, ImVec2( 500.0f, 100.0f ) );
 						ImGui::Text( "" );
 					}
 					else
