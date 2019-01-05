@@ -4,8 +4,6 @@
 #include <memory>
 #include <Game/Game.h>
 
-class CRenderable;
-
 namespace Log
 {
 	class CLog;
@@ -25,6 +23,5 @@ public:
 	virtual Version GetVersion() const override;
 
 private:
-	std::vector<CRenderable*> TestRenderables;
 	static std::unique_ptr<Log::CLog> Report;
 };

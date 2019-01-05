@@ -1,16 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "LoftyLagoon.h"
 
-#include <Engine/Profiling/Profiling.h>
 #include <Engine/Profiling/Logging.h>
-
-#include <Engine/Display/Window.h>
-#include <Engine/Display/Rendering/Renderable.h>
-
-#include <Engine/Configuration/Configuration.h>
-
-#include <Engine/Utility/Math.h>
-#include <Engine/Utility/Math/SIMDVector.h>
 
 #include <cstdlib>
 
