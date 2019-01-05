@@ -69,14 +69,17 @@ namespace Log
 	CLog::~CLog()
 	{
 		Timer.Stop();
-
-
-
 		LogOutputStream.close();
 	}
 
 	void CLog::Print( const char* Format, va_list Arguments )
 	{
+		CLog& GlobalInstance = CLog::GetInstance();
+		if( this != &GlobalInstance )
+		{
+			GlobalInstance.Print( Format, Arguments );
+		}
+
 		char FullMessage[nMaximumLogMessageLength];
 		vsprintf_s( FullMessage, Format, Arguments );
 
@@ -107,6 +110,22 @@ namespace Log
 		}
 	}
 
+	void CLog::Event( const char* Format, ... )
+	{
+		va_list Arguments;
+		va_start( Arguments, Format );
+		Event( Format, Arguments );
+		va_end( Arguments );
+	}
+
+	void CLog::Event( LogSeverity Severity, const char* Format, ... )
+	{
+		va_list Arguments;
+		va_start( Arguments, Format );
+		Event( Severity, Format, Arguments );
+		va_end( Arguments );
+	}
+
 	void CLog::Event( const char* Format, va_list Arguments )
 	{
 		Print( Format, Arguments );
@@ -126,4 +145,5 @@ namespace Log
 			exit( EXIT_FAILURE );
 		}
 	}
+
 }

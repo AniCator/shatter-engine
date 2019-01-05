@@ -37,8 +37,14 @@ namespace Log
 			return StaticInstance;
 		}
 
+		void Event( const char* Format, ... );
+		void Event( LogSeverity Severity, const char* Format, ... );
+
 		void Event( const char* Format, va_list Arguments );
 		void Event( LogSeverity Severity, const char* Format, va_list Arguments );
+
+		CLog( const CLog& ) = default;
+		CLog& operator=( const CLog& ) = default;
 
 	private:
 		CLog();

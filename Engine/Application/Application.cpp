@@ -63,7 +63,7 @@ void InputReloadShaders()
 	MainWindow.GetRenderer().ReloadShaders();
 }
 
-const float CameraSpeed = CConfiguration::GetInstance().GetFloat( "cameraspeed" );
+float CameraSpeed = -1.0f;
 void InputMoveCameraUp()
 {
 	const float DistanceToZero = fabs( Setup.CameraPosition[2] );
@@ -294,7 +294,8 @@ void CApplication::Initialize()
 
 	ServiceRegistry.CreateStandardServices();
 
-	CConfiguration::GetInstance().Initialize();
+	// Calling GetInstance creates the instance and initializes the class.
+	CConfiguration::GetInstance();
 
 	char szTitle[256];
 	sprintf_s( szTitle, "%s (Build: %i)", pszWindowTitle, nBuildNumber );
@@ -343,4 +344,9 @@ void CApplication::Initialize()
 	}
 
 	GameLayersInstance->RegisterGameLayers();
+
+	if( CameraSpeed < 0.0f )
+	{
+		CameraSpeed = CConfiguration::GetInstance().GetFloat( "cameraspeed" );
+	}
 }
