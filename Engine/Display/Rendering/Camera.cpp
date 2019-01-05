@@ -88,7 +88,7 @@ glm::mat4& CCamera::GetViewMatrix()
 	return ViewMatrix;
 }
 
-glm::mat4& CCamera::GetProjectionViewInverse()
+glm::mat4& CCamera::GetViewProjectionInverse()
 {
 	return ProjectionViewInverseMatrix;
 }
