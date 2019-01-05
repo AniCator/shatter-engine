@@ -37,6 +37,8 @@ void main()
 	Application.Run();
 }
 
+std::unique_ptr<Log::CLog> CGameLoftyLagoon::Report( new Log::CLog( "LoftyLagoon" ) );
+
 CGameLoftyLagoon::CGameLoftyLagoon()
 {
 	
@@ -49,7 +51,7 @@ CGameLoftyLagoon::~CGameLoftyLagoon()
 
 void CGameLoftyLagoon::Initialize()
 {
-	
+	Report->Event( "Initializing Lofty Lagoon.\n" );
 }
 
 void CGameLoftyLagoon::Frame()
