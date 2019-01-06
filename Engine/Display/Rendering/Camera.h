@@ -12,10 +12,10 @@ struct FCameraSetup
 		AspectRatio = 1280.0f / 720.0f;
 		NearPlaneDistance = 1.0f;
 		FarPlaneDistance = 100000.0f;
-		CameraPosition = glm::vec3( 0.0f, 0.0f, -600.0f );
+		CameraPosition = glm::vec3( 0.0f, 0.0f, 600.0f );
 		//CameraPosition = glm::vec3( 4.0f, 3.0f, 3.0f );
-		CameraDirection = glm::vec3( 0.0f, 0.0f, 1.0f );
-		CameraUpVector = glm::vec3( 0.0f, 1.0f, 0.0f );
+		CameraDirection = glm::vec3( 0.0f, 0.0f, -1.0f );
+		CameraUpVector = glm::vec3( 0.0f, 0.0f, 1.0f );
 	};
 
 	float FieldOfView;

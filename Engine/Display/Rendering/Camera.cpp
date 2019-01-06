@@ -18,7 +18,6 @@ void CCamera::Update()
 	ProjectionMatrix = glm::perspective( glm::radians( CameraSetup.FieldOfView ), CameraSetup.AspectRatio, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
 
 	glm::vec3 CameraPosition = CameraSetup.CameraPosition;
-	CameraPosition.x = -CameraPosition.x;
 
 	ViewMatrix = glm::lookAt(
 		CameraPosition,
