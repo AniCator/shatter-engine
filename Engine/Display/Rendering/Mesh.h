@@ -8,6 +8,7 @@
 enum EVertexAttribute
 {
 	Position = 0,
+	Normal,
 	Color
 };
 
@@ -32,9 +33,11 @@ struct FVertexData
 	~FVertexData()
 	{
 		delete[] Vertices;
+		delete[] Normals;
 	}
 
 	glm::vec3 *Vertices;
+	glm::vec3 *Normals;
 };
 
 struct FIndexData

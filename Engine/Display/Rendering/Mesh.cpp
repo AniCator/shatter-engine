@@ -19,17 +19,22 @@ bool CMesh::Populate( glm::vec3* Vertices, uint32_t VertexCount )
 {
 	if( VertexBufferData.VertexBufferObject == 0 )
 	{
+		const uint32_t PositionOffset = sizeof( glm::vec3 ) * VertexCount;
+
 		glGenVertexArrays( 1, &VertexArrayObject );
 
 		glGenBuffers( 1, &VertexBufferData.VertexBufferObject );
 		glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
-		glBufferData( GL_ARRAY_BUFFER, sizeof( glm::vec3 ) * VertexCount, Vertices, MeshType );
+		glBufferData( GL_ARRAY_BUFFER, PositionOffset, 0, MeshType );
 
+		// Allocate and fill a new array with the vertices that have been passed in.
 		glm::vec3* VertexCopy = new glm::vec3[VertexCount];
-		memcpy( VertexCopy, Vertices, VertexCount );
+		memcpy( VertexCopy, Vertices, PositionOffset );
 
 		VertexData.Vertices = VertexCopy;
 		VertexBufferData.Size = VertexCount;
+
+		glBufferSubData( GL_ARRAY_BUFFER, 0, PositionOffset, VertexData.Vertices );
 
 		return true;
 	}
@@ -78,7 +83,7 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 	glEnableVertexAttribArray( EVertexAttribute::Position );
 
 	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
-	glVertexAttribPointer( 0, 3, GL_FLOAT, GL_FALSE, 0, 0 );
+	glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, 0, 0 );
 
 	if( HasIndexBuffer )
 	{
