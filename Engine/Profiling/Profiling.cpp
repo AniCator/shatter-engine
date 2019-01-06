@@ -153,7 +153,7 @@ void CProfileVisualisation::Display()
 					}
 					else
 					{
-						ImGui::Text( "%s: %ims (Peak: %ims)\n", TimeEntryName, static_cast<int64_t>( Average ), Peak );
+						ImGui::Text( "%s: %ims (Peak: %ims)\nFPS:%i (Lowest: %i)", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
 					}
 				}
 
@@ -192,6 +192,8 @@ void CProfileVisualisation::Display()
 				const char* DebugMessageBody = DebugMessage.second.c_str();
 				ImGui::Text( "%s: %s", DebugMessageName, DebugMessageBody );
 			}
+
+			DebugMessages.clear();
 		}
 
 		ImGui::End();
