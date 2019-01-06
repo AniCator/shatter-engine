@@ -88,8 +88,32 @@ void CRenderer::Initialize()
 		VertexBufferData.DrawMode = GL_LINE_LOOP;
 	}
 
+	static const uint32_t PyramidVertexCount = 5;
+	static glm::vec3 PyramidVertices[PyramidVertexCount] =
+	{
+		glm::vec3( 0.0f, 0.0f, 1.0f ),
+		glm::vec3( 1.0f, 1.0f, -1.0f ),
+		glm::vec3( 1.0f, -1.0f, -1.0f ),
+		glm::vec3( -1.0f, -1.0f, -1.0f ),
+		glm::vec3( -1.0f, 1.0f, -1.0f ),
+	};
+
+	static const uint32_t PyramidIndexCount = 15;
+	static glm::uint PyramidIndices[PyramidIndexCount] =
+	{
+		0, 1, 2,
+		0, 2, 3,
+		0, 4, 1,
+		1, 2, 4,
+		2, 3, 4,
+	};
+
+	CreateNamedMesh( "pyramid", PyramidVertices, PyramidVertexCount, PyramidIndices, PyramidIndexCount );
+
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LESS );
+
+	glDisable( GL_CULL_FACE );
 }
 
 CMesh* CRenderer::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount )
@@ -283,16 +307,16 @@ void CRenderer::DrawQueuedRenderables()
 
 	glm::mat4& ProjectionInverse = glm::inverse( ProjectionMatrix );
 	glm::mat4& ViewInverse = glm::inverse( ViewMatrix );
-	float NormalizedMouseX = ( 2.0f * MousePosition.X ) / 1920.0f - 1.0f;
-	float NormalizedMouseY = 1.0f - ( 2.0f * MousePosition.Y ) / 1080.0f;
+	const float NormalizedMouseX = ( 2.0f * MousePosition.X ) / 1920.0f - 1.0f;
+	const float NormalizedMouseY = 1.0f - ( 2.0f * MousePosition.Y ) / 1080.0f;
 	glm::vec4 MousePositionClipSpace = glm::vec4( NormalizedMouseX, NormalizedMouseY, -1.0f, 1.0f );
-	glm::vec4 MousePositionEyeSpace = ProjectionInverse * MousePositionClipSpace;
+	glm::vec4 MousePositionViewSpace = ProjectionInverse * MousePositionClipSpace;
 
 	// Un-project Z and W
-	MousePositionEyeSpace[2] = -1.0f;
-	MousePositionEyeSpace[3] = 1.0f;
+	MousePositionViewSpace[2] = -1.0f;
+	MousePositionViewSpace[3] = 1.0f;
 
-	glm::vec3 MousePositionWorldSpace = ViewInverse * MousePositionEyeSpace;
+	glm::vec3 MousePositionWorldSpace = ViewInverse * MousePositionViewSpace;
 	glm::vec3 MouseDirection = glm::normalize( CameraSetup.CameraPosition - MousePositionWorldSpace );
 
 	bool RayCast = false;
@@ -301,17 +325,16 @@ void CRenderer::DrawQueuedRenderables()
 
 	glm::vec3 RayCastResult = StartPosition;
 
-	while( !RayCast )
+	/*while( !RayCast )
 	{
 		StartPosition += MouseDirection * CastDelta;
-		const float Delta = StartPosition[2] - 100.0f;
 
-		if( fabs( Delta ) < 0.5f )
+		if( StartPosition[2] < 0.0f )
 		{
 			RayCastResult = StartPosition;
 			RayCast = true;
 		}
-	}
+	}*/
 
 	for( auto Renderable : DynamicRenderables )
 	{
@@ -340,7 +363,7 @@ void CRenderer::DrawQueuedRenderables()
 		glUniform3fv( CameraPositionLocation, 1, glm::value_ptr( CameraSetup.CameraPosition ) );
 
 		GLuint MouseLocation = glGetUniformLocation( RenderData.ShaderProgram, "MousePositionWorldSpace" );
-		glUniform3fv( MouseLocation, 1, glm::value_ptr( RayCastResult ) );
+		glUniform3fv( MouseLocation, 1, glm::value_ptr( MousePositionWorldSpace ) );
 
 		Renderable->Draw();
 		DrawCalls++;
@@ -355,6 +378,24 @@ void CRenderer::DrawQueuedRenderables()
 
 	int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
+
+	char PositionXString[32];
+	sprintf_s( PositionXString, "%f", NormalizedMouseX );
+	char PositionYString[32];
+	sprintf_s( PositionYString, "%f", NormalizedMouseY );
+
+	Profiler.AddDebugMessage( "MouseClipSpaceX", PositionXString );
+	Profiler.AddDebugMessage( "MouseClipSpaceY", PositionYString );
+
+
+	char PositionZString[32];
+	sprintf_s( PositionXString, "%f", MousePositionWorldSpace[0] );
+	sprintf_s( PositionYString, "%f", MousePositionWorldSpace[1] );
+	sprintf_s( PositionZString, "%f", MousePositionWorldSpace[2] );
+
+	Profiler.AddDebugMessage( "MouseWorldSpaceX", PositionXString );
+	Profiler.AddDebugMessage( "MouseWorldSpaceY", PositionYString );
+	Profiler.AddDebugMessage( "MouseWorldSpaceZ", PositionZString );
 }
 
 void CRenderer::ReloadShaders()
