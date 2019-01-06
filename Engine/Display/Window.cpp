@@ -58,6 +58,8 @@ void CWindow::Create( const char* Title )
 		Height = config.GetInteger( "height" );
 	}
 
+	// Make sure GLFW is terminated before initializing it in case the application is being re-initialized.
+	glfwTerminate();
 	if( !glfwInit() )
 	{
 		Log::Event( Log::Fatal, "Failed to initialize GLFW\n" );
