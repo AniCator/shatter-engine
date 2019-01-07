@@ -245,8 +245,6 @@ const static glm::mat4 IdentityMatrix = glm::mat4( 1.0f );
 static CShader* DefaultShader = nullptr;
 GLuint ProgramHandle = -1;
 
-#pragma optimize("",off)
-
 void CRenderer::DrawQueuedRenderables()
 {
 	if( !DefaultShader )
