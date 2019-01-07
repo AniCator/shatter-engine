@@ -38,6 +38,7 @@ void CRenderer::Initialize()
 {
 	CreateNamedShader( "Default", "Shaders/default" );
 	CreateNamedShader( "DefaultInstanced", "Shaders/DefaultInstanced" );
+	CreateNamedShader( "PyramidOcean", "Shaders/PyramidOcean" );
 
 	static const uint32_t TriangleVertexCount = 3;
 	static glm::vec3 TriangleVertices[TriangleVertexCount] =

@@ -87,6 +87,7 @@ void CGameLoftyLagoon::Tick()
 	{
 		CRenderable* Renderable = new CRenderable();
 		Renderable->SetMesh( Renderer.FindMesh( "pyramid" ) );
+		Renderable->SetShader( Renderer.FindShader( "pyramidocean" ) );
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 
