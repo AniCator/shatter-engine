@@ -264,40 +264,48 @@ void CRenderer::DrawQueuedRenderables()
 
 	int64_t DrawCalls = 0;
 
-	for( auto Renderable : Renderables )
+	auto DrawRenderable = [this, ProjectionMatrix, ViewMatrix, CameraSetup](CRenderable* Renderable)
 	{
 		FRenderDataInstanced RenderData = Renderable->GetRenderData();
 
-		RefreshShaderHandle( Renderable );
+		RefreshShaderHandle(Renderable);
 		RenderData.ShaderProgram = ProgramHandle;
 
 		glm::mat4 ModelMatrix = IdentityMatrix;
 
-		ModelMatrix = glm::translate( ModelMatrix, RenderData.Position );
+		ModelMatrix = glm::translate(ModelMatrix, RenderData.Position);
 
-		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
-		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
-		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
-		
-		const glm::quat ModelQuaternion = glm::quat( RenderData.Orientation );
-		const glm::mat4 RotationMatrix = glm::toMat4( ModelQuaternion );
+		static const glm::vec3 AxisX = glm::vec3(1.0f, 0.0f, 0.0f);
+		static const glm::vec3 AxisY = glm::vec3(0.0f, 1.0f, 0.0f);
+		static const glm::vec3 AxisZ = glm::vec3(0.0f, 0.0f, 1.0f);
+
+		const glm::quat ModelQuaternion = glm::quat(RenderData.Orientation);
+		const glm::mat4 RotationMatrix = glm::toMat4(ModelQuaternion);
 
 		ModelMatrix *= RotationMatrix;
 
-		ModelMatrix = glm::scale( ModelMatrix, RenderData.Size );
+		ModelMatrix = glm::scale(ModelMatrix, RenderData.Size);
 
 		glm::mat4 ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
 
-		GLuint MatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "ModelViewProjection" );
-		glUniformMatrix4fv( MatrixLocation, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0] );
+		GLuint MatrixLocation = glGetUniformLocation(RenderData.ShaderProgram, "ModelViewProjection");
+		glUniformMatrix4fv(MatrixLocation, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0]);
 
-		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
-		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
+		GLuint ModelMatrixLocation = glGetUniformLocation(RenderData.ShaderProgram, "Model");
+		glUniformMatrix4fv(ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0]);
 
-		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
-		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
+		GLuint ColorLocation = glGetUniformLocation(RenderData.ShaderProgram, "ObjectColor");
+		glUniform4fv(ColorLocation, 1, glm::value_ptr(RenderData.Color));
+
+		GLuint CameraPositionLocation = glGetUniformLocation(RenderData.ShaderProgram, "CameraPosition");
+		glUniform3fv(CameraPositionLocation, 1, glm::value_ptr(CameraSetup.CameraPosition));
 
 		Renderable->Draw();
+	};
+
+	for( auto Renderable : Renderables )
+	{
+		DrawRenderable(Renderable);
 		DrawCalls++;
 	}
 
@@ -337,34 +345,7 @@ void CRenderer::DrawQueuedRenderables()
 
 	for( auto Renderable : DynamicRenderables )
 	{
-		FRenderDataInstanced RenderData = Renderable->GetRenderData();
-
-		RefreshShaderHandle( Renderable );
-		RenderData.ShaderProgram = ProgramHandle;
-
-		glm::mat4 ModelMatrix = IdentityMatrix;
-
-		ModelMatrix = glm::translate( ModelMatrix, RenderData.Position );
-		ModelMatrix = glm::scale( ModelMatrix, RenderData.Size );
-
-		glm::mat4 ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
-
-		GLuint MatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "ModelViewProjection" );
-		glUniformMatrix4fv( MatrixLocation, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0] );
-
-		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
-		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
-
-		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
-		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
-
-		GLuint CameraPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraPosition" );
-		glUniform3fv( CameraPositionLocation, 1, glm::value_ptr( CameraSetup.CameraPosition ) );
-
-		GLuint MouseLocation = glGetUniformLocation( RenderData.ShaderProgram, "MousePositionWorldSpace" );
-		glUniform3fv( MouseLocation, 1, glm::value_ptr( MousePositionWorldSpace ) );
-
-		Renderable->Draw();
+		DrawRenderable(Renderable);
 		DrawCalls++;
 	}
 
