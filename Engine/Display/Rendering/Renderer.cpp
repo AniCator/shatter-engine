@@ -17,6 +17,8 @@
 
 #include <Engine/Utility/Locator/InputLocator.h>
 
+#include <Game/Game.h>
+
 #include "Renderable.h"
 #include "Camera.h"
 
@@ -252,11 +254,6 @@ void CRenderer::DrawQueuedRenderables()
 		DefaultShader = FindShader( "default" );
 	}
 
-	if( ProgramHandle != DefaultShader->Handle )
-	{
-		ProgramHandle = DefaultShader->Activate();
-	}
-
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 
 	glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
@@ -275,14 +272,14 @@ void CRenderer::DrawQueuedRenderables()
 
 		ModelMatrix = glm::translate( ModelMatrix, RenderData.Position );
 
-		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
+		/*static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
 		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
 		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
 
 		const glm::quat ModelQuaternion = glm::quat( RenderData.Orientation );
 		const glm::mat4 RotationMatrix = glm::toMat4( ModelQuaternion );
 
-		ModelMatrix *= RotationMatrix;
+		ModelMatrix *= RotationMatrix;*/
 
 		ModelMatrix = glm::scale( ModelMatrix, RenderData.Size );
 
@@ -299,6 +296,13 @@ void CRenderer::DrawQueuedRenderables()
 
 		GLuint CameraPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraPosition" );
 		glUniform3fv( CameraPositionLocation, 1, glm::value_ptr( CameraSetup.CameraPosition ) );
+
+		if( GameLayersInstance )
+		{
+			float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() );
+			GLuint TimeLocation = glGetUniformLocation( RenderData.ShaderProgram, "Time" );
+			glUniform1fv( TimeLocation, 1, &Time );
+		}
 
 		Renderable->Draw();
 	};
@@ -401,15 +405,13 @@ size_t CRenderer::MeshCount() const
 void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 {
 	const CShader* Shader = Renderable->GetShader();
-	if( Shader && Shader->Handle != ProgramHandle )
+	if( !Shader )
+	{
+		Shader = DefaultShader;
+	}
+
+	if( Shader->Handle != ProgramHandle )
 	{
 		ProgramHandle = Shader->Activate();
-	}
-	else
-	{
-		if( ProgramHandle != DefaultShader->Handle )
-		{
-			ProgramHandle = DefaultShader->Activate();
-		}
 	}
 }
