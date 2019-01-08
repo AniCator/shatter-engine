@@ -83,22 +83,28 @@ void CGameLoftyLagoon::Tick()
 
 	std::srand( 0 );
 
-	for( int i = 0; i < 500; i++ )
+	CMesh* PyramidMesh = Renderer.FindMesh( "pyramid" );
+	CShader* PyramidShader = Renderer.FindShader( "pyramidocean" );
+
+	if( PyramidMesh && PyramidShader )
 	{
-		CRenderable* Renderable = new CRenderable();
-		Renderable->SetMesh( Renderer.FindMesh( "pyramid" ) );
-		Renderable->SetShader( Renderer.FindShader( "pyramidocean" ) );
+		for( int i = 0; i < 500; i++ )
+		{
+			CRenderable* Renderable = new CRenderable();
+			Renderable->SetMesh( PyramidMesh );
+			Renderable->SetShader( PyramidShader );
 
-		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+			FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 
-		const float RandomOffsetX = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * WorldSize ) - ( WorldSize * 0.5f );
-		const float RandomOffsetY = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * WorldSize ) - ( WorldSize * 0.5f );
+			const float RandomOffsetX = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * WorldSize ) - ( WorldSize * 0.5f );
+			const float RandomOffsetY = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * WorldSize ) - ( WorldSize * 0.5f );
 
-		RenderData.Color = glm::vec4( glm::abs( glm::sin( CurrentTime + static_cast<float>( i ) * 0.25f ) ), glm::abs( glm::cos( CurrentTime + static_cast<float>( i ) * 0.33f ) ), glm::abs( glm::sin( CurrentTime * 0.5f + static_cast<float>( i ) * 0.5f ) ), 1.0f );
-		RenderData.Position = glm::vec3( RandomOffsetX, RandomOffsetY, ( glm::sin( CurrentTime + RandomOffsetX * 0.001f ) * 0.5f + 0.5f ) * ( glm::cos( CurrentTime + RandomOffsetY * 0.001f ) * 0.5f + 0.5f ) * 500.0f );
-		RenderData.Size = glm::vec3( 10.0f, 10.0f, 10.0f );
+			RenderData.Color = glm::vec4( glm::abs( glm::sin( CurrentTime + static_cast<float>( i ) * 0.25f ) ), glm::abs( glm::cos( CurrentTime + static_cast<float>( i ) * 0.33f ) ), glm::abs( glm::sin( CurrentTime * 0.5f + static_cast<float>( i ) * 0.5f ) ), 1.0f );
+			RenderData.Position = glm::vec3( RandomOffsetX, RandomOffsetY, ( glm::sin( CurrentTime + RandomOffsetX * 0.001f ) * 0.5f + 0.5f ) * ( glm::cos( CurrentTime + RandomOffsetY * 0.001f ) * 0.5f + 0.5f ) * 500.0f );
+			RenderData.Size = glm::vec3( 10.0f, 10.0f, 10.0f );
 
-		Renderer.QueueDynamicRenderable( Renderable );
+			Renderer.QueueDynamicRenderable( Renderable );
+		}
 	}
 
 	Camera.Update();
