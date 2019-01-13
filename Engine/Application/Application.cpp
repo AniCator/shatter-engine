@@ -444,9 +444,6 @@ void CApplication::Run()
 		{
 			if( !PauseGame )
 			{
-#if defined( IMGUI_ENABLED )
-				CProfileVisualisation::GetInstance().Clear();
-#endif
 				Renderer.RefreshFrame();
 
 				const float TimeScaleParameter = CConfiguration::GetInstance().GetFloat( "timescale" );

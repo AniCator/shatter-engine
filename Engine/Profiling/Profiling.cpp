@@ -51,7 +51,7 @@ void CProfileVisualisation::AddCounterEntry( const char* NameIn, int TimeIn )
 
 void CProfileVisualisation::AddCounterEntry( FProfileTimeEntry& TimeEntry, const bool PerFrame )
 {
-	if( !Enabled )
+	if( !Enabled && PerFrame )
 		return;
 
 	if( PerFrame )
@@ -161,39 +161,42 @@ void CProfileVisualisation::Display()
 			}
 		}
 
-		if( TimeCounters.size() > 0 || TimeCountersFrame.size() > 0 )
+		if( Enabled )
 		{
-			ImGui::Text( "\nCounters" );
-			ImGui::Separator();
-
-			for( auto& TimeCounter : TimeCounters )
+			if( TimeCounters.size() > 0 || TimeCountersFrame.size() > 0 )
 			{
-				const char* TimeCounterName = TimeCounter.first.c_str();
-				const uint64_t& TimeCounterValue = TimeCounter.second;
-				ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+				ImGui::Text( "\nCounters" );
+				ImGui::Separator();
+
+				for( auto& TimeCounter : TimeCounters )
+				{
+					const char* TimeCounterName = TimeCounter.first.c_str();
+					const uint64_t& TimeCounterValue = TimeCounter.second;
+					ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+				}
+
+				for( auto& TimeCounter : TimeCountersFrame )
+				{
+					const char* TimeCounterName = TimeCounter.first.c_str();
+					const uint64_t& TimeCounterValue = TimeCounter.second;
+					ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+				}
 			}
 
-			for( auto& TimeCounter : TimeCountersFrame )
+			if( DebugMessages.size() > 0 )
 			{
-				const char* TimeCounterName = TimeCounter.first.c_str();
-				const uint64_t& TimeCounterValue = TimeCounter.second;
-				ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+				ImGui::Text( "\nMessages" );
+				ImGui::Separator();
+
+				for( auto& DebugMessage : DebugMessages )
+				{
+					const char* DebugMessageName = DebugMessage.first.c_str();
+					const char* DebugMessageBody = DebugMessage.second.c_str();
+					ImGui::Text( "%s: %s", DebugMessageName, DebugMessageBody );
+				}
+
+				DebugMessages.clear();
 			}
-		}
-
-		if( DebugMessages.size() > 0 )
-		{
-			ImGui::Text( "\nMessages" );
-			ImGui::Separator();
-
-			for( auto& DebugMessage : DebugMessages )
-			{
-				const char* DebugMessageName = DebugMessage.first.c_str();
-				const char* DebugMessageBody = DebugMessage.second.c_str();
-				ImGui::Text( "%s: %s", DebugMessageName, DebugMessageBody );
-			}
-
-			DebugMessages.clear();
 		}
 
 		ImGui::End();
