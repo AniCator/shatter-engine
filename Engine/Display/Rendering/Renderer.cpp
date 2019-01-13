@@ -162,6 +162,10 @@ CMesh* CRenderer::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32
 	{
 		Meshes.insert_or_assign( NameString, NewMesh );
 
+		CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+		int64_t Mesh = 1;
+		Profiler.AddCounterEntry( FProfileTimeEntry( "Meshes", Mesh ), false );
+
 		return NewMesh;
 	}
 
@@ -199,6 +203,10 @@ CShader* CRenderer::CreateNamedShader( const char* Name, const char* FileLocatio
 	if( bSuccessfulCreation )
 	{
 		Shaders.insert_or_assign( NameString, NewShader );
+
+		CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+		int64_t Shader = 1;
+		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
 
 		return NewShader;
 	}
