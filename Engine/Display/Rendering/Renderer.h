@@ -49,8 +49,12 @@ public:
 	void ReloadShaders();
 
 	void SetCamera( CCamera& CameraIn );
+	void SetViewport( int& Width, int& Height );
 
 	size_t MeshCount() const;
+
+	glm::vec3 ScreenPositionToWorld( const glm::vec2& ScreenPosition ) const;
+	bool PlaneIntersection( glm::vec3& Intersection, const glm::vec3& RayOrigin, const glm::vec3& RayTarget, const glm::vec3& PlaneOrigin, const glm::vec3& PlaneNormal ) const;
 
 protected:
 	void RefreshShaderHandle( CRenderable* Renderable );
@@ -63,4 +67,7 @@ private:
 	std::vector<CRenderable*> DynamicRenderables;
 
 	CCamera Camera;
+	
+	int ViewportWidth;
+	int ViewportHeight;
 };

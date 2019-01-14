@@ -264,8 +264,8 @@ void CRenderer::DrawQueuedRenderables()
 
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 
-	glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
-	glm::mat4& ViewMatrix = Camera.GetViewMatrix();
+	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
+	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
 
 	int64_t DrawCalls = 0;
 
@@ -323,37 +323,9 @@ void CRenderer::DrawQueuedRenderables()
 
 	IInput& Input = CInputLocator::GetService();
 	FFixedPosition2D MousePosition = Input.GetMousePosition();
-
-	glm::mat4& ProjectionInverse = glm::inverse( ProjectionMatrix );
-	glm::mat4& ViewInverse = glm::inverse( ViewMatrix );
-	const float NormalizedMouseX = ( 2.0f * MousePosition.X ) / 1920.0f - 1.0f;
-	const float NormalizedMouseY = 1.0f - ( 2.0f * MousePosition.Y ) / 1080.0f;
-	glm::vec4 MousePositionClipSpace = glm::vec4( NormalizedMouseX, NormalizedMouseY, -1.0f, 1.0f );
-	glm::vec4 MousePositionViewSpace = ProjectionInverse * MousePositionClipSpace;
-
-	// Un-project Z and W
-	MousePositionViewSpace[2] = -1.0f;
-	MousePositionViewSpace[3] = 1.0f;
-
-	glm::vec3 MousePositionWorldSpace = ViewInverse * MousePositionViewSpace;
-	glm::vec3 MouseDirection = glm::normalize( CameraSetup.CameraPosition - MousePositionWorldSpace );
-
-	bool RayCast = false;
-	glm::vec3 StartPosition = CameraSetup.CameraPosition;
-	float CastDelta = -0.1f;
-
-	glm::vec3 RayCastResult = StartPosition;
-
-	/*while( !RayCast )
-	{
-	StartPosition += MouseDirection * CastDelta;
-
-	if( StartPosition[2] < 0.0f )
-	{
-	RayCastResult = StartPosition;
-	RayCast = true;
-	}
-	}*/
+	glm::vec3 MousePositionWorldSpace = ScreenPositionToWorld( glm::vec2( static_cast<float>( MousePosition.X ), static_cast<float>( MousePosition.Y ) ) );
+	
+	const bool bPlaneIntersection = PlaneIntersection( MousePositionWorldSpace, CameraSetup.CameraPosition, MousePositionWorldSpace, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, 0.0f, 1.0f ) );
 
 	for( auto Renderable : DynamicRenderables )
 	{
@@ -372,12 +344,12 @@ void CRenderer::DrawQueuedRenderables()
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
 
 	char PositionXString[32];
-	sprintf_s( PositionXString, "%f", NormalizedMouseX );
+	sprintf_s( PositionXString, "%i", MousePosition.X );
 	char PositionYString[32];
-	sprintf_s( PositionYString, "%f", NormalizedMouseY );
+	sprintf_s( PositionYString, "%i", MousePosition.Y );
 
-	Profiler.AddDebugMessage( "MouseClipSpaceX", PositionXString );
-	Profiler.AddDebugMessage( "MouseClipSpaceY", PositionYString );
+	Profiler.AddDebugMessage( "MouseScreenSpaceX", PositionXString );
+	Profiler.AddDebugMessage( "MouseScreenSpaceY", PositionYString );
 
 
 	char PositionZString[32];
@@ -388,6 +360,7 @@ void CRenderer::DrawQueuedRenderables()
 	Profiler.AddDebugMessage( "MouseWorldSpaceX", PositionXString );
 	Profiler.AddDebugMessage( "MouseWorldSpaceY", PositionYString );
 	Profiler.AddDebugMessage( "MouseWorldSpaceZ", PositionZString );
+	Profiler.AddDebugMessage( "MouseIntersectsWorldPlane", bPlaneIntersection ? "Yes" : "No" );
 }
 
 void CRenderer::ReloadShaders()
@@ -405,9 +378,45 @@ void CRenderer::SetCamera( CCamera& CameraIn )
 	Camera = CameraIn;
 }
 
+void CRenderer::SetViewport( int& Width, int& Height )
+{
+	ViewportWidth = Width;
+	ViewportHeight = Height;
+}
+
 size_t CRenderer::MeshCount() const
 {
 	return Meshes.size();
+}
+
+glm::vec3 CRenderer::ScreenPositionToWorld( const glm::vec2& ScreenPosition ) const
+{
+	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
+	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
+
+	glm::mat4& ProjectionInverse = glm::inverse( ProjectionMatrix );
+	glm::mat4& ViewInverse = glm::inverse( ViewMatrix );
+	const float NormalizedScreenPositionX = ( 2.0f * ScreenPosition[0] ) / ViewportWidth - 1.0f;
+	const float NormalizedScreenPositionY = 1.0f - ( 2.0f * ScreenPosition[1] ) / ViewportHeight;
+	glm::vec4 ScreenPositionClipSpace = glm::vec4( NormalizedScreenPositionX, NormalizedScreenPositionY, -1.0f, 1.0f );
+	glm::vec4 ScreenPositionViewSpace = ProjectionInverse * ScreenPositionClipSpace;
+
+	ScreenPositionViewSpace[2] = -1.0f;
+	ScreenPositionViewSpace[3] = 1.0f;
+
+	return ViewInverse * ScreenPositionViewSpace;
+}
+
+bool CRenderer::PlaneIntersection( glm::vec3& Intersection, const glm::vec3& RayOrigin, const glm::vec3& RayTarget, const glm::vec3& PlaneOrigin, const glm::vec3& PlaneNormal ) const
+{
+	const glm::vec3 RayVector = RayTarget - RayOrigin;
+	const glm::vec3 PlaneVector = PlaneOrigin - RayOrigin;
+
+	const float DistanceRatio = glm::dot( PlaneVector, PlaneNormal ) / glm::dot( RayVector, PlaneNormal );
+
+	Intersection = RayOrigin + DistanceRatio * RayVector;
+
+	return DistanceRatio >= 0.0f;
 }
 
 void CRenderer::RefreshShaderHandle( CRenderable* Renderable )

@@ -43,9 +43,9 @@ public:
 	void SetCameraDirection( glm::vec3& CameraDirection );
 	void SetCameraUpVector( glm::vec3& CameraUpVector );
 
-	glm::mat4& GetProjectionMatrix();
-	glm::mat4& GetViewMatrix();
-	glm::mat4& GetViewProjectionInverse();
+	const glm::mat4& GetProjectionMatrix() const;
+	const glm::mat4& GetViewMatrix() const;
+	const glm::mat4& GetViewProjectionInverse() const;
 
 	FCameraSetup& GetCameraSetup();
 private:

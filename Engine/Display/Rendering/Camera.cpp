@@ -77,17 +77,17 @@ void CCamera::SetCameraUpVector( glm::vec3& CameraUpVector )
 	Update();
 }
 
-glm::mat4& CCamera::GetProjectionMatrix()
+const glm::mat4& CCamera::GetProjectionMatrix() const
 {
 	return ProjectionMatrix;
 }
 
-glm::mat4& CCamera::GetViewMatrix()
+const glm::mat4& CCamera::GetViewMatrix() const
 {
 	return ViewMatrix;
 }
 
-glm::mat4& CCamera::GetViewProjectionInverse()
+const glm::mat4& CCamera::GetViewProjectionInverse() const
 {
 	return ProjectionViewInverseMatrix;
 }
