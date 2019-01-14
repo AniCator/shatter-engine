@@ -7,6 +7,7 @@
 #include <Engine/Display/Rendering/Renderable.h>
 
 #include <Engine/Configuration/Configuration.h>
+#include <Engine/Utility/Locator/InputLocator.h>
 
 #include <cstdlib>
 
@@ -81,6 +82,9 @@ void CGameLoftyLagoon::Tick()
 	CameraSetup.CameraDirection = glm::normalize( glm::vec3( 0.0f, 1.0f, 0.0f ) );
 	CameraSetup.CameraDirection = glm::normalize( CameraPhase - CameraSetup.CameraPosition );
 
+	Camera.Update();
+	Renderer.SetCamera( Camera );
+
 	std::srand( 0 );
 
 	CMesh* PyramidMesh = Renderer.FindMesh( "pyramid" );
@@ -88,7 +92,7 @@ void CGameLoftyLagoon::Tick()
 
 	if( PyramidMesh && PyramidShader )
 	{
-		for( int i = 0; i < 500; i++ )
+		for( int RenderableIndex = 0; RenderableIndex < 500; RenderableIndex++ )
 		{
 			CRenderable* Renderable = new CRenderable();
 			Renderable->SetMesh( PyramidMesh );
@@ -96,19 +100,46 @@ void CGameLoftyLagoon::Tick()
 
 			FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 
-			const float RandomOffsetX = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * WorldSize ) - ( WorldSize * 0.5f );
-			const float RandomOffsetY = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * WorldSize ) - ( WorldSize * 0.5f );
 
-			RenderData.Color = glm::vec4( glm::abs( glm::sin( CurrentTime + static_cast<float>( i ) * 0.25f ) ), glm::abs( glm::cos( CurrentTime + static_cast<float>( i ) * 0.33f ) ), glm::abs( glm::sin( CurrentTime * 0.5f + static_cast<float>( i ) * 0.5f ) ), 1.0f );
-			RenderData.Position = glm::vec3( RandomOffsetX, RandomOffsetY, ( glm::sin( CurrentTime + RandomOffsetX * 0.001f ) * 0.5f + 0.5f ) * ( glm::cos( CurrentTime + RandomOffsetY * 0.001f ) * 0.5f + 0.5f ) * 500.0f );
+			const float RandomOffsetX = static_cast<float>( std::rand() ) / RAND_MAX;
+			const float RandomOffsetY = static_cast<float>( std::rand() ) / RAND_MAX;
+
+			const float RandomOscillationX = ( RandomOffsetX * WorldSize ) - ( WorldSize * 0.5f );
+			const float RandomOscillationY = ( RandomOffsetY * WorldSize ) - ( WorldSize * 0.5f );
+
+			const float WaveSin = glm::sin( CurrentTime * 1.33f + static_cast<float>( RenderableIndex ) * 0.25f );
+			const float WaveCos = glm::cos( CurrentTime * 1.33f + static_cast<float>( RenderableIndex ) * 0.25f );
+
+			RenderData.Color = glm::vec4( glm::abs( glm::sin( CurrentTime + static_cast<float>( RenderableIndex ) * 0.25f ) ), glm::abs( glm::cos( CurrentTime + static_cast<float>( RenderableIndex ) * 0.33f ) ), glm::abs( glm::sin( CurrentTime * 0.5f + static_cast<float>( RenderableIndex ) * 0.5f ) ), 1.0f );
+			RenderData.Position = glm::vec3( RandomOscillationX + ( WaveSin * -10.0f ), RandomOscillationY + ( WaveCos * -10.0f ), ( glm::sin( CurrentTime + RandomOscillationX * 0.001f ) * 0.5f + 0.5f ) * ( glm::cos( CurrentTime + RandomOscillationY * 0.001f ) * 0.5f + 0.5f ) * 500.0f );
+			RenderData.Size = glm::vec3( 10.0f, 10.0f, 10.0f );
+
+			Renderer.QueueDynamicRenderable( Renderable );
+		}
+
+		IInput& Input = CInputLocator::GetService();
+		FFixedPosition2D MousePosition = Input.GetMousePosition();
+		glm::vec3 MousePositionWorldSpace = Renderer.ScreenPositionToWorld( glm::vec2( static_cast<float>( MousePosition.X ), static_cast<float>( MousePosition.Y ) ) );
+
+		const glm::vec3 PlaneOrigin = glm::vec3( 0.0f, 0.0f, 0.0f );
+		const glm::vec3 PlaneNormal = glm::vec3( 0.0f, 0.0f, 1.0f );
+		const bool bPlaneIntersection = Renderer.PlaneIntersection( MousePositionWorldSpace, CameraSetup.CameraPosition, MousePositionWorldSpace, PlaneOrigin, PlaneNormal );
+
+		if( bPlaneIntersection )
+		{
+			CRenderable* Renderable = new CRenderable();
+			Renderable->SetMesh( PyramidMesh );
+			Renderable->SetShader( PyramidShader );
+
+			FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+
+			RenderData.Color = glm::vec4( 0.25f, 1.0f, 0.0f, 1.0f );
+			RenderData.Position = MousePositionWorldSpace;
 			RenderData.Size = glm::vec3( 10.0f, 10.0f, 10.0f );
 
 			Renderer.QueueDynamicRenderable( Renderable );
 		}
 	}
-
-	Camera.Update();
-	Renderer.SetCamera( Camera );
 }
 
 void CGameLoftyLagoon::Shutdown()
