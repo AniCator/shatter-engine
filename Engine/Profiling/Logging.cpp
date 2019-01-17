@@ -72,14 +72,8 @@ namespace Log
 		LogOutputStream.close();
 	}
 
-	void CLog::Print( const char* Format, va_list Arguments, const bool Passthrough )
+	void CLog::Print( const char* Format, va_list Arguments )
 	{
-		CLog& GlobalInstance = CLog::GetInstance();
-		if( this != &GlobalInstance )
-		{
-			GlobalInstance.Print( Format, Arguments, true );
-		}
-
 		char FullMessage[nMaximumLogMessageLength];
 		vsprintf_s( FullMessage, Format, Arguments );
 
@@ -93,23 +87,31 @@ namespace Log
 			strcpy_s( LogMessage, FullMessage );
 		}
 
-#if !defined( ConsoleWindowDisabled )
-		if( !Passthrough )
+		CLog& GlobalInstance = CLog::GetInstance();
+		if( this != &GlobalInstance )
 		{
-			printf( LogMessage );
+			GlobalInstance.PrintDirect( LogMessage );
 		}
+
+#if !defined( ConsoleWindowDisabled )
+		printf( LogMessage );
 #else
-		if( IsDebuggerPresent() && !Passthrough )
+		if( IsDebuggerPresent() )
 		{
 			OutputDebugString( LogMessage );
 		}
 #endif
 
+		PrintDirect( LogMessage );
+	}
+
+	void CLog::PrintDirect( const char* Message )
+	{
 		if( LogOutputStream.is_open() )
 		{
 			char TimeCode[64];
 			sprintf_s( TimeCode, "%.3fs", static_cast<float>( Timer.GetElapsedTimeMilliseconds() ) * 0.001f );
-			LogOutputStream << TimeCode << ": " << LogMessage;
+			LogOutputStream << TimeCode << ": " << Message;
 		}
 	}
 

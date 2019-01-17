@@ -49,7 +49,8 @@ namespace Log
 	private:
 		CLog();
 
-		void Print( const char* Format, va_list Arguments, const bool Passthrough = false );
+		void Print( const char* Format, va_list Arguments );
+		void PrintDirect( const char* Message );
 
 		char Name[128];
 		std::ofstream LogOutputStream;
