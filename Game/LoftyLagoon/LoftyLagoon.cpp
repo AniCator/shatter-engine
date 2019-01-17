@@ -7,6 +7,7 @@
 #include <Engine/Display/Rendering/Renderable.h>
 
 #include <Engine/Configuration/Configuration.h>
+#include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 
 #include <cstdlib>
@@ -59,7 +60,8 @@ void CGameLoftyLagoon::Frame()
 
 void CGameLoftyLagoon::Tick()
 {
-	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
+	CRenderer& Renderer = CWindow::Get().GetRenderer();
+	CAssets& Assets = CAssets::Get();
 
 	const float CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 
@@ -73,7 +75,7 @@ void CGameLoftyLagoon::Tick()
 
 	CCamera Camera;
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
-	CameraSetup.AspectRatio = CConfiguration::GetInstance().GetFloat( "width" ) / CConfiguration::GetInstance().GetFloat( "height" );
+	CameraSetup.AspectRatio = CConfiguration::Get().GetFloat( "width" ) / CConfiguration::Get().GetFloat( "height" );
 
 	glm::vec3 CameraPhase = glm::vec3( CameraSin * WorldSize * 0.5f, CameraCos * WorldSize * 0.5f, 0.0f );
 
@@ -87,8 +89,8 @@ void CGameLoftyLagoon::Tick()
 
 	std::srand( 0 );
 
-	CMesh* PyramidMesh = Renderer.FindMesh( "pyramid" );
-	CShader* PyramidShader = Renderer.FindShader( "pyramidocean" );
+	CMesh* PyramidMesh = Assets.FindMesh( "pyramid" );
+	CShader* PyramidShader = Assets.FindShader( "pyramidocean" );
 
 	if( PyramidMesh && PyramidShader )
 	{

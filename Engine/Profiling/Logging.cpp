@@ -35,7 +35,7 @@ namespace Log
 	{
 		va_list Arguments;
 		va_start( Arguments, Format );
-		CLog::GetInstance().Event( Format, Arguments );
+		CLog::Get().Event( Format, Arguments );
 		va_end( Arguments );
 	}
 
@@ -43,7 +43,7 @@ namespace Log
 	{
 		va_list Arguments;
 		va_start( Arguments, Format );
-		CLog::GetInstance().Event( Severity, Format, Arguments );
+		CLog::Get().Event( Severity, Format, Arguments );
 		va_end( Arguments );
 	}
 
@@ -87,7 +87,7 @@ namespace Log
 			strcpy_s( LogMessage, FullMessage );
 		}
 
-		CLog& GlobalInstance = CLog::GetInstance();
+		CLog& GlobalInstance = CLog::Get();
 		if( this != &GlobalInstance )
 		{
 			GlobalInstance.PrintDirect( LogMessage );

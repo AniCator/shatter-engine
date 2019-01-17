@@ -6,6 +6,7 @@
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Rendering/Camera.h>
+#include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -59,8 +60,8 @@ CSquareoidsBattlefield::~CSquareoidsBattlefield()
 
 void CSquareoidsBattlefield::Update()
 {
-	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
-	CMesh* SquareMesh = Renderer.FindMesh( "square" );
+	CRenderer& Renderer = CWindow::Get().GetRenderer();
+	CMesh* SquareMesh = CAssets::Get().FindMesh( "square" );
 
 	// UpdateBruteForce();
 	UpdateSpatialGrid();
@@ -139,13 +140,13 @@ void CSquareoidsBattlefield::Update()
 	float NormalizedMouseX = ( 2.0f * MousePosition.X ) / 1920.0f - 1.0f;
 	float NormalizedMouseY = 1.0f - ( 2.0f * MousePosition.Y ) / 1080.0f;
 	glm::vec4 MousePositionClipSpace = glm::vec4( NormalizedMouseX, NormalizedMouseY, -1.0f, 1.0f );
-	glm::vec4 MousePositionEyeSpace = ProjectionInverse * MousePositionClipSpace;
+	glm::vec4 MousePositionViewSpace = ProjectionInverse * MousePositionClipSpace;
 
 	// Un-project Z and W
-	MousePositionEyeSpace[2] = -1.0f;
-	MousePositionEyeSpace[3] = 1.0f;
+	MousePositionViewSpace[2] = -1.0f;
+	MousePositionViewSpace[3] = 1.0f;
 
-	glm::vec3 MousePositionWorldSpace = ViewInverse * MousePositionEyeSpace;
+	glm::vec3 MousePositionWorldSpace = ViewInverse * MousePositionViewSpace;
 	glm::vec3 MouseDirection = glm::normalize( Camera->GetCameraSetup().CameraPosition - MousePositionWorldSpace );
 
 	bool RayCast = false;
@@ -157,9 +158,8 @@ void CSquareoidsBattlefield::Update()
 	while( !RayCast )
 	{
 		StartPosition += MouseDirection * CastDelta;
-		const float Delta = 100.0f - StartPosition[2];
 
-		if( fabs( Delta ) < 0.5f )
+		if( StartPosition[2] < 0.0f )
 		{
 			RayCastResult = StartPosition;
 			RayCast = true;
@@ -168,24 +168,23 @@ void CSquareoidsBattlefield::Update()
 
 	RenderData.Color = glm::vec4( 1.0f, 0.5f, 0.0f, 1.0f );
 	RenderData.Position = RayCastResult;
-	RenderData.Position[2] = 100.0f;
 	RenderData.Size = glm::vec3( 10.0f, 10.0f, 10.0f );
 
 	Renderer.QueueDynamicRenderable( Renderable );
 
 	// Visualize in profiler
-	CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+	CProfileVisualisation& Profiler = CProfileVisualisation::Get();
 
 	char PositionXString[32];
-	sprintf_s( PositionXString, "%f", RenderData.Position[0] );
+	sprintf_s( PositionXString, "%f", MousePositionWorldSpace[0] );
 	char PositionYString[32];
-	sprintf_s( PositionYString, "%f", RenderData.Position[1] );
+	sprintf_s( PositionYString, "%f", MousePositionWorldSpace[1] );
 	char PositionZString[32];
-	sprintf_s( PositionZString, "%f", RenderData.Position[2] );
+	sprintf_s( PositionZString, "%f", MousePositionWorldSpace[2] );
 
-	Profiler.AddDebugMessage( "3DMousePositionX", PositionXString );
-	Profiler.AddDebugMessage( "3DMousePositionY", PositionYString );
-	Profiler.AddDebugMessage( "3DMousePositionZ", PositionZString );
+	Profiler.AddDebugMessage( "LightX", PositionXString );
+	Profiler.AddDebugMessage( "LightY", PositionYString );
+	Profiler.AddDebugMessage( "LightZ", PositionZString );
 }
 
 void CSquareoidsBattlefield::UpdateBruteForce()
@@ -216,7 +215,7 @@ void CSquareoidsBattlefield::UpdateBruteForce()
 		}
 	}
 
-	CProfileVisualisation::GetInstance().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
+	CProfileVisualisation::Get().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
 }
 
 void CSquareoidsBattlefield::UpdateSpatialGrid()
@@ -292,7 +291,7 @@ void CSquareoidsBattlefield::UpdateSpatialGrid()
 		}
 	}
 
-	CProfileVisualisation::GetInstance().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
+	CProfileVisualisation::Get().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
 
 	SpatialRegion->Clear();
 
@@ -305,7 +304,7 @@ void CSquareoidsBattlefield::UpdateSpatialGrid()
 		}
 	}
 
-	/*CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
+	/*CRenderer& Renderer = CWindow::Get().GetRenderer();
 	CMesh* SquareMesh = Renderer.FindMesh( "square" );
 
 	for( size_t X = 0; X < Cells; X++ )

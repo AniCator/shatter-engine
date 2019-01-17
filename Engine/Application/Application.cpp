@@ -8,6 +8,7 @@
 
 #include <Engine/Display/Rendering/Camera.h>
 #include <Engine/Display/Rendering/Renderable.h>
+#include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 
 #include <Game/Game.h>
@@ -17,7 +18,7 @@
 #include <Engine/Display/imgui_impl_glfw_gl3.h>
 #endif
 
-CWindow& MainWindow = CWindow::GetInstance();
+CWindow& MainWindow = CWindow::Get();
 static const int nBuildNumber = 0;
 
 CCamera DefaultCamera = CCamera();
@@ -48,7 +49,7 @@ void InputPauseGameDisable()
 
 void InputReloadConfiguration()
 {
-	CConfiguration::GetInstance().Reload();
+	CConfiguration::Get().Reload();
 }
 
 void InputRestartGameLayers()
@@ -62,7 +63,7 @@ void InputRestartGameLayers()
 
 void InputReloadShaders()
 {
-	MainWindow.GetRenderer().ReloadShaders();
+	CAssets::Get().ReloadShaders();
 }
 
 float CameraSpeed = -1.0f;
@@ -374,7 +375,7 @@ void DebugMenu( CApplication* Application )
 
 		if( ImGui::BeginMenu( "Profiler" ) )
 		{
-			CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+			CProfileVisualisation& Profiler = CProfileVisualisation::Get();
 			const bool Enabled = Profiler.IsEnabled();
 			if( ImGui::MenuItem( "Toggle", NULL, Enabled ) )
 			{
@@ -419,9 +420,9 @@ void CApplication::Run()
 
 	GameLayersInstance->Initialize();
 
-	const uint64_t MaximumFrameTime = 1000 / CConfiguration::GetInstance().GetInteger( "fps" );
-	const uint64_t MaximumGameTime = 1000 / CConfiguration::GetInstance().GetInteger( "tickrate" );
-	const uint64_t MaximumInputTime = 1000 / CConfiguration::GetInstance().GetInteger( "pollingrate" );
+	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps" );
+	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate" );
+	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate" );
 
 	while( !MainWindow.ShouldClose() )
 	{
@@ -446,7 +447,7 @@ void CApplication::Run()
 			{
 				Renderer.RefreshFrame();
 
-				const float TimeScaleParameter = CConfiguration::GetInstance().GetFloat( "timescale" );
+				const float TimeScaleParameter = CConfiguration::Get().GetFloat( "timescale" );
 				const float TimeScaleGlobal = TimeScale * TimeScaleParameter;
 				ScaledGameTime += GameDeltaTime * 0.001f * TimeScaleGlobal;
 
@@ -470,7 +471,7 @@ void CApplication::Run()
 			GameLayersInstance->Frame();
 
 #if defined( IMGUI_ENABLED )
-			CProfileVisualisation::GetInstance().Display();
+			CProfileVisualisation::Get().Display();
 
 			DebugMenu( this );
 #endif
@@ -485,7 +486,7 @@ void CApplication::Run()
 	GameLayersInstance->Shutdown();
 	delete GameLayersInstance;
 
-	Log::Event( "Meshes created: %i\n", MainWindow.GetRenderer().MeshCount() );
+	// Log::Event( "Meshes created: %i\n", MainWindow.GetRenderer().MeshCount() );
 
 	MainWindow.Terminate();
 }
@@ -523,8 +524,8 @@ void CApplication::Initialize()
 
 	ServiceRegistry.CreateStandardServices();
 
-	// Calling GetInstance creates the instance and initializes the class.
-	CConfiguration& ConfigurationInstance = CConfiguration::GetInstance();
+	// Calling Get creates the instance and initializes the class.
+	CConfiguration& ConfigurationInstance = CConfiguration::Get();
 
 	char szTitle[256];
 	sprintf_s( szTitle, "%s (Build: %s)", Name.c_str(), __DATE__ );
@@ -587,7 +588,7 @@ void CApplication::Initialize()
 
 	if( CameraSpeed < 0.0f )
 	{
-		CameraSpeed = CConfiguration::GetInstance().GetFloat( "cameraspeed" );
+		CameraSpeed = CConfiguration::Get().GetFloat( "cameraspeed" );
 	}
 
 #if defined( IMGUI_ENABLED )

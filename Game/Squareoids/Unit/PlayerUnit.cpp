@@ -95,7 +95,7 @@ void CSquareoidsPlayerUnit::Tick()
 	}
 
 	// Visualize in profiler
-	CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+	CProfileVisualisation& Profiler = CProfileVisualisation::Get();
 
 	char PositionXString[32];
 	sprintf_s( PositionXString, "%f", UnitData.Position[0] );

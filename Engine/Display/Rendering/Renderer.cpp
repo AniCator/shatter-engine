@@ -15,6 +15,7 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
+#include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 
 #include <Game/Game.h>
@@ -126,7 +127,8 @@ CMesh* CRenderer::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the mesh exists
-	if( CMesh* ExistingMesh = FindMesh( NameString ) )
+	CAssets& Assets = CAssets::Get();
+	if( CMesh* ExistingMesh = Assets.FindMesh( NameString ) )
 	{
 		Log::Event( "Found existing mesh named \"%s\"\n", NameString );
 		return ExistingMesh;
@@ -136,7 +138,7 @@ CMesh* CRenderer::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32
 	CMesh* NewMesh = new CMesh();
 	NewMesh->Populate( Vertices, VertexCount );
 
-	Meshes.insert_or_assign( NameString, NewMesh );
+	Assets.Create( NameString, NewMesh );
 
 	return NewMesh;
 }
@@ -148,7 +150,8 @@ CMesh* CRenderer::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the mesh exists
-	if( CMesh* ExistingMesh = FindMesh( NameString ) )
+	CAssets& Assets = CAssets::Get();
+	if( CMesh* ExistingMesh = Assets.FindMesh( NameString ) )
 	{
 		Log::Event( "Found existing mesh named \"%s\"\n", NameString );
 		return ExistingMesh;
@@ -160,9 +163,9 @@ CMesh* CRenderer::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32
 
 	if( bSuccessfulCreation )
 	{
-		Meshes.insert_or_assign( NameString, NewMesh );
+		Assets.Create( NameString, NewMesh );
 
-		CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+		CProfileVisualisation& Profiler = CProfileVisualisation::Get();
 		int64_t Mesh = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Meshes", Mesh ), false );
 
@@ -191,7 +194,8 @@ CShader* CRenderer::CreateNamedShader( const char* Name, const char* FileLocatio
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the mesh exists
-	if( CShader* ExistingShader = FindShader( NameString ) )
+	CAssets& Assets = CAssets::Get();
+	if( CShader* ExistingShader = Assets.FindShader( NameString ) )
 	{
 		Log::Event( "Found existing shader named \"%s\"\n", NameString );
 		return ExistingShader;
@@ -202,9 +206,9 @@ CShader* CRenderer::CreateNamedShader( const char* Name, const char* FileLocatio
 
 	if( bSuccessfulCreation )
 	{
-		Shaders.insert_or_assign( NameString, NewShader );
+		Assets.Create( NameString, NewShader );
 
-		CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+		CProfileVisualisation& Profiler = CProfileVisualisation::Get();
 		int64_t Shader = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
 
@@ -213,16 +217,6 @@ CShader* CRenderer::CreateNamedShader( const char* Name, const char* FileLocatio
 
 	// This should never happen because we check for existing shaders before creating new ones, but you never know
 	return nullptr;
-}
-
-CMesh* CRenderer::FindMesh( std::string Name )
-{
-	return Find<CMesh>( Name, Meshes );
-}
-
-CShader* CRenderer::FindShader( std::string Name )
-{
-	return Find<CShader>( Name, Shaders );
 }
 
 void CRenderer::RefreshFrame()
@@ -259,7 +253,8 @@ void CRenderer::DrawQueuedRenderables()
 {
 	if( !DefaultShader )
 	{
-		DefaultShader = FindShader( "default" );
+		CAssets& Assets = CAssets::Get();
+		DefaultShader = Assets.FindShader( "default" );
 	}
 
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
@@ -333,7 +328,7 @@ void CRenderer::DrawQueuedRenderables()
 		DrawCalls++;
 	}
 
-	CProfileVisualisation& Profiler = CProfileVisualisation::GetInstance();
+	CProfileVisualisation& Profiler = CProfileVisualisation::Get();
 
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
@@ -363,16 +358,6 @@ void CRenderer::DrawQueuedRenderables()
 	Profiler.AddDebugMessage( "MouseIntersectsWorldPlane", bPlaneIntersection ? "Yes" : "No" );
 }
 
-void CRenderer::ReloadShaders()
-{
-	Log::Event( "Reloading shaders.\n" );
-
-	for( auto Shader : Shaders )
-	{
-		Shader.second->Reload();
-	}
-}
-
 void CRenderer::SetCamera( CCamera& CameraIn )
 {
 	Camera = CameraIn;
@@ -382,11 +367,6 @@ void CRenderer::SetViewport( int& Width, int& Height )
 {
 	ViewportWidth = Width;
 	ViewportHeight = Height;
-}
-
-size_t CRenderer::MeshCount() const
-{
-	return Meshes.size();
 }
 
 glm::vec3 CRenderer::ScreenPositionToWorld( const glm::vec2& ScreenPosition ) const

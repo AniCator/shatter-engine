@@ -72,6 +72,9 @@
     <Filter Include="Source Files\ThirdParty\tracy">
       <UniqueIdentifier>{46246e19-564d-4505-8688-af5d1026f34c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Resource">
+      <UniqueIdentifier>{674b90ce-9aef-4754-974c-7ebb4cd7eeac}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -163,6 +166,9 @@
     </ClCompile>
     <ClCompile Include="ThirdParty\tracy\TracyClient.cpp">
       <Filter>Source Files\ThirdParty\tracy</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Resource\Assets.cpp">
+      <Filter>Source Files\Engine\Resource</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -291,6 +297,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\tracy\Tracy.hpp">
       <Filter>Source Files\ThirdParty\tracy</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\Assets.h">
+      <Filter>Source Files\Engine\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

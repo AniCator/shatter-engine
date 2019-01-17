@@ -241,7 +241,7 @@ CTimerScope::~CTimerScope()
 	}
 	else
 	{
-		CProfileVisualisation::GetInstance().AddTimeEntry( FProfileTimeEntry( ScopeName, int64_t( DeltaTime ) ) );
+		CProfileVisualisation::Get().AddTimeEntry( FProfileTimeEntry( ScopeName, int64_t( DeltaTime ) ) );
 	}
 };
 

@@ -41,7 +41,7 @@ private:
 	int Height;
 
 public:
-	static CWindow& GetInstance()
+	static CWindow& Get()
 	{
 		static CWindow StaticInstance;
 		return StaticInstance;

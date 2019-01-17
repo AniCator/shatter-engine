@@ -49,7 +49,7 @@ private:
 	bool Enabled;
 
 public:
-	static CProfileVisualisation& GetInstance()
+	static CProfileVisualisation& Get()
 	{
 		static CProfileVisualisation StaticInstance;
 		return StaticInstance;

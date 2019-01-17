@@ -4,6 +4,7 @@
 #include <Game/Game.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Renderable.h>
+#include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -32,9 +33,9 @@ static const int SquaroidsSquareName[MaxSquaresY][MaxSquaresX] = {
 
 void CSquareoidsTitleScreen::Display()
 {
-	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
+	CRenderer& Renderer = CWindow::Get().GetRenderer();
 
-	CMesh* SquareMesh = Renderer.FindMesh( "square" );
+	CMesh* SquareMesh = CAssets::Get().FindMesh( "square" );
 
 	const float Distance = 20.0f;
 	float StartPositionX = Distance * -MaxSquaresX * 0.5f;
@@ -71,7 +72,7 @@ void CSquareoidsTitleScreen::Display()
 				FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 
 				RenderData.Color = glm::vec4( VisibleSquare, 0.0f, !VisibleSquare, 1.0f );
-				RenderData.Position = glm::vec3( OffsetX, OffsetY, 100.0f );
+				RenderData.Position = glm::vec3( OffsetX, OffsetY, 0.0f );
 				RenderData.Size = glm::vec3( 5.0f, 5.0f, 5.0f ) * ( 1.0f - Amplitude );
 
 				Renderer.QueueDynamicRenderable( Renderable );
@@ -80,6 +81,14 @@ void CSquareoidsTitleScreen::Display()
 	}
 
 	CCamera Camera;
+
+	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
+
+	CameraSetup.CameraPosition[0] = 0.0f;
+	CameraSetup.CameraPosition[1] = -100.0f;
+	CameraSetup.CameraPosition[2] = -600.0f;
+	CameraSetup.CameraDirection = glm::normalize( CameraSetup.CameraPosition );
+
 	Camera.Update();
 	Renderer.SetCamera( Camera );
 

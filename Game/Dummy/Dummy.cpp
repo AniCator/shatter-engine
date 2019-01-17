@@ -8,6 +8,7 @@
 #include <Engine/Display/Rendering/Renderable.h>
 
 #include <Engine/Configuration/Configuration.h>
+#include <Engine/Resource/Assets.h>
 
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Math/SIMDVector.h>
@@ -63,7 +64,7 @@ void CDummyLayer::Frame()
 
 void CDummyLayer::Tick()
 {
-	CRenderer& Renderer = CWindow::GetInstance().GetRenderer();
+	CRenderer& Renderer = CWindow::Get().GetRenderer();
 
 	CCamera Camera;
 	Camera.Update();
@@ -87,7 +88,7 @@ void CDummyLayer::Tick()
 
 		if( !ValidRenderable )
 		{
-			TestRenderable->SetMesh( Renderer.FindMesh( "square" ) );
+			TestRenderable->SetMesh( CAssets::Get().FindMesh( "square" ) );
 			RenderData.Size = glm::vec3( 5.0f, 5.0f, 5.0f );
 			RenderData.Color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
 		}

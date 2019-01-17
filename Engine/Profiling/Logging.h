@@ -31,7 +31,7 @@ namespace Log
 		CLog( const char* LogName );
 		~CLog();
 
-		static CLog& GetInstance()
+		static CLog& Get()
 		{
 			static CLog StaticInstance;
 			return StaticInstance;

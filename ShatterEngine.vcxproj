@@ -224,6 +224,7 @@
     <ClCompile Include="Engine\Input\NullInput.cpp" />
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
+    <ClCompile Include="Engine\Resource\Assets.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\Math\SIMDVector.cpp" />
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp" />
@@ -263,6 +264,7 @@
     <ClInclude Include="Engine\Input\NullInput.h" />
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
+    <ClInclude Include="Engine\Resource\Assets.h" />
     <ClInclude Include="Engine\Utility\File.h" />
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />

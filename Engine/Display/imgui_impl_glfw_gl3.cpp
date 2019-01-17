@@ -124,7 +124,7 @@ void ImGui_ImplGlfwGL3_RenderDrawLists(ImDrawData* draw_data)
         }
     }
 
-	CProfileVisualisation::GetInstance().AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
+	CProfileVisualisation::Get().AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
     // Restore modified GL state
     glUseProgram(last_program);

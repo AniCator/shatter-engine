@@ -28,7 +28,7 @@ private:
 	bool Initialized;
 
 public:
-	static CConfiguration& GetInstance()
+	static CConfiguration& Get()
 	{
 		static CConfiguration StaticInstance;
 		return StaticInstance;

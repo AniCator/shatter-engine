@@ -41,7 +41,7 @@ void CWindow::Create( const char* Title )
 	ProfileBare( __FUNCTION__ );
 
 	// Load configuration data
-	CConfiguration& config = CConfiguration::GetInstance();
+	CConfiguration& config = CConfiguration::Get();
 
 	const bool EnableBorder = !config.IsEnabled( "noborder" );
 
