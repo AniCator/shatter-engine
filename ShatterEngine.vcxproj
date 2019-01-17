@@ -288,6 +288,9 @@
     <ClInclude Include="ThirdParty\imgui-1.52\stb_truetype.h" />
     <ClInclude Include="ThirdParty\tracy\Tracy.hpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Output\ShatterEngine.default.ini" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

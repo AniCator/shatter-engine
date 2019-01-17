@@ -293,4 +293,9 @@
       <Filter>Source Files\ThirdParty\tracy</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Output\ShatterEngine.default.ini">
+      <Filter>Source Files\Engine\Configuration</Filter>
+    </None>
+  </ItemGroup>
 </Project>
