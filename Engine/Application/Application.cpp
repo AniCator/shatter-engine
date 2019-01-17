@@ -500,8 +500,25 @@ void CApplication::SetName( const char* NameIn )
 	Name = NameIn;
 }
 
+#if defined(_WIN32)
+#include "Windows.h"
+
+LONG WINAPI ExceptionHandler( EXCEPTION_POINTERS* ExceptionInfo )
+{
+	Log::Event( Log::Fatal, "An exception has occured. Guess I'll die.\n" );
+
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+
+#endif
+
 void CApplication::Initialize()
 {
+#if defined(_WIN32)
+	// Attach an exception handler.
+	::SetUnhandledExceptionFilter( ExceptionHandler );
+#endif
+
 	Log::Event( "%s (Build: %s)\n\n", Name.c_str(), __DATE__ );
 
 	ServiceRegistry.CreateStandardServices();
