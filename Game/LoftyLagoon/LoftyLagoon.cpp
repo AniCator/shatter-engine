@@ -91,6 +91,7 @@ void CGameLoftyLagoon::Tick()
 
 	CMesh* PyramidMesh = Assets.FindMesh( "pyramid" );
 	CShader* PyramidShader = Assets.FindShader( "pyramidocean" );
+	CMesh* TriangleMesh = Assets.FindMesh( "triangle" );
 
 	if( PyramidMesh && PyramidShader )
 	{
@@ -127,10 +128,10 @@ void CGameLoftyLagoon::Tick()
 		const glm::vec3 PlaneNormal = glm::vec3( 0.0f, 0.0f, 1.0f );
 		const bool bPlaneIntersection = Renderer.PlaneIntersection( MousePositionWorldSpace, CameraSetup.CameraPosition, MousePositionWorldSpace, PlaneOrigin, PlaneNormal );
 
-		if( bPlaneIntersection )
+		if( bPlaneIntersection && TriangleMesh )
 		{
 			CRenderable* Renderable = new CRenderable();
-			Renderable->SetMesh( PyramidMesh );
+			Renderable->SetMesh( TriangleMesh );
 			Renderable->SetShader( PyramidShader );
 
 			FRenderDataInstanced& RenderData = Renderable->GetRenderData();

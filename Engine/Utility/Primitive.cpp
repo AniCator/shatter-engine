@@ -1,23 +1,23 @@
 #include "Primitive.h"
 
+#include <unordered_map>
+#include <vector>
+
 #include <Engine/Profiling/Logging.h>
 
 void CPrimitive::Triangle( FPrimitive& Primitive, const float Radius )
 {
 	Log::Event( "Generating triangle with radius %.2f\n", Radius );
 
-	static const uint32_t VertexCount = 3;
-	glm::vec3* Vertices = new glm::vec3[VertexCount]
+	static const uint32_t VertexCount = 6;
+	glm::vec3 Vertices[VertexCount] =
 	{
 		glm::vec3( -1.0f, -1.0f, 0.0f ) * Radius,
 		glm::vec3( 1.0f, -1.0f, 0.0f ) * Radius,
 		glm::vec3( 0.0f, 1.0f, 0.0f ) * Radius,
 	};
 
-	Primitive.Vertices = Vertices;
-	Primitive.VertexCount = VertexCount;
-	Primitive.Indices = nullptr;
-	Primitive.IndexCount = 0;
+	Soup( Primitive, Vertices, VertexCount );
 }
 
 void CPrimitive::Plane( FPrimitive& Primitive, const float Radius )
@@ -28,9 +28,9 @@ void CPrimitive::Plane( FPrimitive& Primitive, const float Radius )
 	glm::vec3* Vertices = new glm::vec3[VertexCount]
 	{
 		glm::vec3( -1.0f, -1.0f, 0.0f ) * Radius, // Bottom-left
-		glm::vec3( 1.0f, -1.0f, 0.0f ) * Radius, // Bottom-right
-		glm::vec3( 1.0f, 1.0f, 0.0f ) * Radius, // Top-right
-		glm::vec3( -1.0f, 1.0f, 0.0f ) * Radius, // Top-left
+		glm::vec3(	1.0f, -1.0f, 0.0f ) * Radius, // Bottom-right
+		glm::vec3(	1.0f,  1.0f, 0.0f ) * Radius, // Top-right
+		glm::vec3( -1.0f,  1.0f, 0.0f ) * Radius, // Top-left
 	};
 
 	static const uint32_t IndexCount = 6;
@@ -115,4 +115,61 @@ void CPrimitive::Teapot( FPrimitive& Primitive, const float Radius )
 void CPrimitive::Bunny( FPrimitive& Primitive, const float Radius )
 {
 	Log::Event( Log::Error, "Primitive not supported: Bunny.\n" );
+}
+
+void CPrimitive::Dragon( FPrimitive& Primitive, const float Radius )
+{
+	Log::Event( Log::Error, "Primitive not supported: Dragon.\n" );
+}
+
+void CPrimitive::Buddha( FPrimitive& Primitive, const float Radius )
+{
+	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
+}
+
+struct VectorHash {
+	size_t operator()( const glm::vec3& Vector ) const
+	{
+		return std::hash<float>()( Vector.x ) ^ std::hash<float>()( Vector.y ) ^ std::hash<float>()( Vector.z );
+	}
+};
+
+void CPrimitive::Soup( FPrimitive& Primitive, glm::vec3* Vertices, const int VertexCount )
+{
+	std::unordered_map<glm::vec3, glm::uint, VectorHash> Soup;
+	std::vector<glm::uint> SoupIndices;
+
+	for( size_t VertexIndex = 0; VertexIndex < VertexCount; VertexIndex++ )
+	{
+		auto Iterator = Soup.find( Vertices[VertexIndex] );
+		if( Iterator == Soup.end() )
+		{
+			Soup.insert_or_assign( Vertices[VertexIndex], VertexIndex );
+			SoupIndices.push_back( VertexIndex );
+		}
+		else
+		{
+			SoupIndices.push_back( Iterator->second );
+		}
+	}
+
+	const glm::uint SoupCount = Soup.size();
+	glm::vec3* UniqueVertices = new glm::vec3[SoupCount];
+	size_t VertexIndex = 0;
+	for( const auto SoupVertex : Soup )
+	{
+		UniqueVertices[VertexIndex++] = SoupVertex.first;
+	}
+
+	const size_t IndexCount = Soup.size();
+	glm::uint* Indices = new glm::uint[IndexCount];
+	for( size_t Index = 0; Index < IndexCount; Index++ )
+	{
+		Indices[Index] = SoupIndices[Index];
+	}
+
+	Primitive.Vertices = UniqueVertices;
+	Primitive.VertexCount = SoupCount;
+	Primitive.Indices = Indices;
+	Primitive.IndexCount = IndexCount;
 }

@@ -43,10 +43,13 @@ public:
 	static void Cone( FPrimitive& Primitive, const float Radius, const int Sides );
 	static void Torus( FPrimitive& Primitive, const float Radius, const int MajorSegments, const int MinorSegments );
 	static void Grid( FPrimitive& Primitive, const float Radius, const int SubdivisionsX, const int SubdivisionsY );
+
 	static void Monkey( FPrimitive& Primitive, const float Radius );
 	static void Teapot( FPrimitive& Primitive, const float Radius );
 	static void Bunny( FPrimitive& Primitive, const float Radius );
+	static void Dragon( FPrimitive& Primitive, const float Radius );
+	static void Buddha( FPrimitive& Primitive, const float Radius );
 
 private:
-	static void CopyData( FPrimitive& PrimitiveSource, FPrimitive& PrimitiveTarget );
+	static void Soup( FPrimitive& Primitive, glm::vec3* Vertices, const int VertexCount );
 };
