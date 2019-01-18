@@ -6,16 +6,16 @@ void CPrimitive::Triangle( FPrimitive& Primitive, const float Radius )
 {
 	Log::Event( "Generating triangle with radius %.2f\n", Radius );
 
-	static const uint32_t TriangleVertexCount = 3;
-	glm::vec3* TriangleVertices = new glm::vec3[TriangleVertexCount]
+	static const uint32_t VertexCount = 3;
+	glm::vec3* Vertices = new glm::vec3[VertexCount]
 	{
 		glm::vec3( -1.0f, -1.0f, 0.0f ) * Radius,
 		glm::vec3( 1.0f, -1.0f, 0.0f ) * Radius,
 		glm::vec3( 0.0f, 1.0f, 0.0f ) * Radius,
 	};
 
-	Primitive.Vertices = TriangleVertices;
-	Primitive.VertexCount = TriangleVertexCount;
+	Primitive.Vertices = Vertices;
+	Primitive.VertexCount = VertexCount;
 	Primitive.Indices = nullptr;
 	Primitive.IndexCount = 0;
 }
@@ -24,8 +24,8 @@ void CPrimitive::Plane( FPrimitive& Primitive, const float Radius )
 {
 	Log::Event( "Generating plane with radius %.2f\n", Radius );
 
-	static const uint32_t PlaneVertexCount = 4;
-	glm::vec3* PlaneVertices = new glm::vec3[PlaneVertexCount]
+	static const uint32_t VertexCount = 4;
+	glm::vec3* Vertices = new glm::vec3[VertexCount]
 	{
 		glm::vec3( -1.0f, -1.0f, 0.0f ) * Radius, // Bottom-left
 		glm::vec3( 1.0f, -1.0f, 0.0f ) * Radius, // Bottom-right
@@ -33,17 +33,17 @@ void CPrimitive::Plane( FPrimitive& Primitive, const float Radius )
 		glm::vec3( -1.0f, 1.0f, 0.0f ) * Radius, // Top-left
 	};
 
-	static const uint32_t PlaneIndexCount = 6;
-	static glm::uint* PlaneIndices = new glm::uint[PlaneIndexCount]
+	static const uint32_t IndexCount = 6;
+	static glm::uint* Indices = new glm::uint[IndexCount]
 	{
 		2, 1, 0, // Top-right, Bottom-right, Bottom-left
 		0, 3, 2, // 
 	};
 
-	Primitive.Vertices = PlaneVertices;
-	Primitive.VertexCount = PlaneVertexCount;
-	Primitive.Indices = PlaneIndices;
-	Primitive.IndexCount = PlaneIndexCount;
+	Primitive.Vertices = Vertices;
+	Primitive.VertexCount = VertexCount;
+	Primitive.Indices = Indices;
+	Primitive.IndexCount = IndexCount;
 }
 
 void CPrimitive::Cube( FPrimitive& Primitive, const float Radius )
@@ -66,8 +66,8 @@ void CPrimitive::Cone( FPrimitive& Primitive, const float Radius, const int Side
 	Log::Event( "Generating cone with radius %.2f and %i sides\n", Radius, Sides );
 
 	// Only pyramids for now.
-	static const uint32_t PyramidVertexCount = 5;
-	glm::vec3* PyramidVertices = new glm::vec3[PyramidVertexCount]
+	static const uint32_t VertexCount = 5;
+	glm::vec3* Vertices = new glm::vec3[VertexCount]
 	{
 		glm::vec3( 0.0f, 0.0f, 1.0f ) * Radius,
 		glm::vec3( 1.0f, 1.0f, -1.0f ) * Radius,
@@ -76,8 +76,8 @@ void CPrimitive::Cone( FPrimitive& Primitive, const float Radius, const int Side
 		glm::vec3( -1.0f, 1.0f, -1.0f ) * Radius,
 	};
 
-	static const uint32_t PyramidIndexCount = 15;
-	static glm::uint* PyramidIndices = new glm::uint[PyramidIndexCount]
+	static const uint32_t IndexCount = 15;
+	static glm::uint* Indices = new glm::uint[IndexCount]
 	{
 		0, 1, 2,
 		0, 2, 3,
@@ -86,10 +86,10 @@ void CPrimitive::Cone( FPrimitive& Primitive, const float Radius, const int Side
 		2, 3, 4,
 	};
 
-	Primitive.Vertices = PyramidVertices;
-	Primitive.VertexCount = PyramidVertexCount;
-	Primitive.Indices = PyramidIndices;
-	Primitive.IndexCount = PyramidIndexCount;
+	Primitive.Vertices = Vertices;
+	Primitive.VertexCount = VertexCount;
+	Primitive.Indices = Indices;
+	Primitive.IndexCount = IndexCount;
 }
 
 void CPrimitive::Torus( FPrimitive& Primitive, const float Radius, const int MajorSegments, const int MinorSegments )
