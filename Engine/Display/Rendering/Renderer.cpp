@@ -1,9 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Renderer.h"
 
-#include <algorithm>
-#include <string>
-
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -17,19 +14,18 @@
 
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
+#include <Engine/Utility/Primitive.h>
 
 #include <Game/Game.h>
 
 #include "Renderable.h"
 #include "Camera.h"
 
-static const size_t nRenderableCapacity = 512;
-static const size_t nTemporaryMeshCapacity = nRenderableCapacity;
+static const size_t nRenderableCapacity = 4096;
 
 CRenderer::CRenderer()
 {
 	Renderables.reserve( nRenderableCapacity );
-	TemporaryMeshes.reserve( nTemporaryMeshCapacity );
 }
 
 CRenderer::~CRenderer()
@@ -39,44 +35,20 @@ CRenderer::~CRenderer()
 
 void CRenderer::Initialize()
 {
-	CreateNamedShader( "Default", "Shaders/default" );
-	CreateNamedShader( "DefaultInstanced", "Shaders/DefaultInstanced" );
-	CreateNamedShader( "PyramidOcean", "Shaders/PyramidOcean" );
+	CAssets& Assets = CAssets::Get();
+	Assets.CreateNamedShader( "Default", "Shaders/default" );
+	Assets.CreateNamedShader( "DefaultInstanced", "Shaders/DefaultInstanced" );
+	Assets.CreateNamedShader( "PyramidOcean", "Shaders/PyramidOcean" );
 
-	static const uint32_t TriangleVertexCount = 3;
-	static glm::vec3 TriangleVertices[TriangleVertexCount] =
-	{
-		glm::vec3( -1.0f, -1.0f, 0.0f ),
-		glm::vec3( 1.0f, -1.0f, 0.0f ),
-		glm::vec3( 0.0f, 1.0f, 0.0f ),
-	};
+	FPrimitive Triangle;
+	CPrimitive::Triangle( Triangle, 1.0f );
 
-	Log::Event( "Vertex data:\n" );
-	for( int i = 0; i < TriangleVertexCount; i++ )
-	{
-		Log::Event( "\t%f %f %f\n", TriangleVertices[i][0], TriangleVertices[i][1], TriangleVertices[i][2] );
-	}
+	Assets.CreateNamedMesh( "triangle", Triangle.Vertices, Triangle.VertexCount );
 
-	CreateNamedMesh( "triangle", TriangleVertices, TriangleVertexCount );
-	CreateNamedMesh( "Triangle", TriangleVertices, TriangleVertexCount );
+	FPrimitive Square;
+	CPrimitive::Plane( Square, 1.0f );
 
-	static const uint32_t SquareVertexCount = 4;
-	static glm::vec3 SquareVertices[SquareVertexCount] =
-	{
-		glm::vec3( -1.0f, -1.0f, 0.0f ), // Bottom-left
-		glm::vec3( 1.0f, -1.0f, 0.0f ), // Bottom-right
-		glm::vec3( 1.0f, 1.0f, 0.0f ), // Top-right
-		glm::vec3( -1.0f, 1.0f, 0.0f ), // Top-left
-	};
-
-	static const uint32_t SquareIndexCount = 6;
-	static glm::uint SquareIndices[SquareIndexCount] =
-	{
-		2, 1, 0, // Top-right, Bottom-right, Bottom-left
-		0, 3, 2, // 
-	};
-
-	CreateNamedMesh( "square", SquareVertices, SquareVertexCount, SquareIndices, SquareIndexCount );
+	Assets.CreateNamedMesh( "square", Square.Vertices, Square.VertexCount, Square.Indices, Square.IndexCount );
 
 	static const uint32_t LineSquareIndexCount = 5;
 	static glm::uint LineSquareIndices[LineSquareIndexCount] =
@@ -85,138 +57,22 @@ void CRenderer::Initialize()
 		0, 3, // 
 	};
 
-	CMesh* LineSquareMesh = CreateNamedMesh( "LineSquare", SquareVertices, SquareVertexCount, LineSquareIndices, LineSquareIndexCount );
+	CMesh* LineSquareMesh = Assets.CreateNamedMesh( "LineSquare", Square.Vertices, Square.VertexCount, LineSquareIndices, LineSquareIndexCount );
 	if( LineSquareMesh )
 	{
 		FVertexBufferData& VertexBufferData = LineSquareMesh->GetVertexBufferData();
 		VertexBufferData.DrawMode = GL_LINE_LOOP;
 	}
 
-	static const uint32_t PyramidVertexCount = 5;
-	static glm::vec3 PyramidVertices[PyramidVertexCount] =
-	{
-		glm::vec3( 0.0f, 0.0f, 1.0f ),
-		glm::vec3( 1.0f, 1.0f, -1.0f ),
-		glm::vec3( 1.0f, -1.0f, -1.0f ),
-		glm::vec3( -1.0f, -1.0f, -1.0f ),
-		glm::vec3( -1.0f, 1.0f, -1.0f ),
-	};
+	FPrimitive Pyramid;
+	CPrimitive::Cone( Pyramid, 1.0f, 4 );
 
-	static const uint32_t PyramidIndexCount = 15;
-	static glm::uint PyramidIndices[PyramidIndexCount] =
-	{
-		0, 1, 2,
-		0, 2, 3,
-		0, 4, 1,
-		1, 2, 4,
-		2, 3, 4,
-	};
-
-	CreateNamedMesh( "pyramid", PyramidVertices, PyramidVertexCount, PyramidIndices, PyramidIndexCount );
+	Assets.CreateNamedMesh( "pyramid", Pyramid.Vertices, Pyramid.VertexCount, Pyramid.Indices, Pyramid.IndexCount );
 
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LESS );
 
 	glDisable( GL_CULL_FACE );
-}
-
-CMesh* CRenderer::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount )
-{
-	// Transform given name into lower case string
-	std::string NameString = Name;
-	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
-
-	// Check if the mesh exists
-	CAssets& Assets = CAssets::Get();
-	if( CMesh* ExistingMesh = Assets.FindMesh( NameString ) )
-	{
-		Log::Event( "Found existing mesh named \"%s\"\n", NameString );
-		return ExistingMesh;
-	}
-
-	// Create a new mesh
-	CMesh* NewMesh = new CMesh();
-	NewMesh->Populate( Vertices, VertexCount );
-
-	Assets.Create( NameString, NewMesh );
-
-	return NewMesh;
-}
-
-CMesh* CRenderer::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount, glm::uint* Indices, uint32_t IndexCount )
-{
-	// Transform given name into lower case string
-	std::string NameString = Name;
-	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
-
-	// Check if the mesh exists
-	CAssets& Assets = CAssets::Get();
-	if( CMesh* ExistingMesh = Assets.FindMesh( NameString ) )
-	{
-		Log::Event( "Found existing mesh named \"%s\"\n", NameString );
-		return ExistingMesh;
-	}
-
-	// Create a new mesh
-	CMesh* NewMesh = new CMesh();
-	const bool bSuccessfulCreation = NewMesh->Populate( Vertices, VertexCount, Indices, IndexCount );
-
-	if( bSuccessfulCreation )
-	{
-		Assets.Create( NameString, NewMesh );
-
-		CProfileVisualisation& Profiler = CProfileVisualisation::Get();
-		int64_t Mesh = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Meshes", Mesh ), false );
-
-		return NewMesh;
-	}
-
-	// This should never happen because we check for existing meshes before creating new ones, but you never know
-	return nullptr;
-}
-
-CMesh* CRenderer::CreateTemporaryMesh( glm::vec3* Vertices, uint32_t VertexCount )
-{
-	// Create a new mesh
-	CMesh* NewMesh = new CMesh();
-	NewMesh->Populate( Vertices, VertexCount );
-
-	TemporaryMeshes.push_back( NewMesh );
-
-	return NewMesh;
-}
-
-CShader* CRenderer::CreateNamedShader( const char* Name, const char* FileLocation )
-{
-	// Transform given name into lower case string
-	std::string NameString = Name;
-	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
-
-	// Check if the mesh exists
-	CAssets& Assets = CAssets::Get();
-	if( CShader* ExistingShader = Assets.FindShader( NameString ) )
-	{
-		Log::Event( "Found existing shader named \"%s\"\n", NameString );
-		return ExistingShader;
-	}
-
-	CShader* NewShader = new CShader();
-	const bool bSuccessfulCreation = NewShader->Load( FileLocation );
-
-	if( bSuccessfulCreation )
-	{
-		Assets.Create( NameString, NewShader );
-
-		CProfileVisualisation& Profiler = CProfileVisualisation::Get();
-		int64_t Shader = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
-
-		return NewShader;
-	}
-
-	// This should never happen because we check for existing shaders before creating new ones, but you never know
-	return nullptr;
 }
 
 void CRenderer::RefreshFrame()
@@ -230,9 +86,6 @@ void CRenderer::RefreshFrame()
 		delete Renderable;
 	}
 	DynamicRenderables.clear();
-
-	// Clear out all temporary meshes
-	TemporaryMeshes.clear();
 }
 
 void CRenderer::QueueRenderable( CRenderable* Renderable )

@@ -170,6 +170,9 @@
     <ClCompile Include="Engine\Resource\Assets.cpp">
       <Filter>Source Files\Engine\Resource</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\Primitive.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
@@ -300,6 +303,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Resource\Assets.h">
       <Filter>Source Files\Engine\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Primitive.h">
+      <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

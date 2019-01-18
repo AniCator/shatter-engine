@@ -19,13 +19,6 @@ public:
 	~CRenderer();
 
 	void Initialize();
-
-	CMesh* CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount );
-	CMesh* CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount, glm::uint* Indices, uint32_t IndexCount );
-	CMesh* CreateTemporaryMesh( glm::vec3* Vertices, uint32_t VertexCount );
-
-	CShader* CreateNamedShader( const char* Name, const char* FileLocation );
-
 	void RefreshFrame();
 
 	void QueueRenderable( CRenderable* Renderable );
@@ -42,7 +35,6 @@ protected:
 	void RefreshShaderHandle( CRenderable* Renderable );
 
 private:
-	std::vector<CMesh*> TemporaryMeshes;
 	std::vector<CRenderable*> Renderables;
 	std::vector<CRenderable*> DynamicRenderables;
 

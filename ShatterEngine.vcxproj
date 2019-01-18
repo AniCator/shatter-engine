@@ -227,6 +227,7 @@
     <ClCompile Include="Engine\Resource\Assets.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\Math\SIMDVector.cpp" />
+    <ClCompile Include="Engine\Utility\Primitive.cpp" />
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp" />
     <ClCompile Include="Engine\Utility\StringPool.cpp" />
     <ClCompile Include="Engine\Utility\Structures\SpatialGrid.cpp" />
@@ -270,6 +271,7 @@
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />
     <ClInclude Include="Engine\Utility\Math.h" />
     <ClInclude Include="Engine\Utility\Math\SIMDVector.h" />
+    <ClInclude Include="Engine\Utility\Primitive.h" />
     <ClInclude Include="Engine\Utility\RingBuffer.h" />
     <ClInclude Include="Engine\Utility\Service\Service.h" />
     <ClInclude Include="Engine\Utility\Service\ServiceRegistry.h" />
