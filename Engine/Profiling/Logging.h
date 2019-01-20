@@ -5,6 +5,7 @@
 
 #include <stdarg.h>
 #include <fstream>
+#include <vector>
 
 #if defined( _WIN32 )
 #define ConsoleWindowDisabled
@@ -19,11 +20,26 @@ namespace Log
 		Normal = 0,
 		Warning,
 		Error,
-		Fatal
+		Fatal,
+
+		LogMax
+	};
+
+	struct FHistory
+	{
+		FHistory()
+		{
+			Severity = Normal;
+			Message = "";
+		}
+
+		LogSeverity Severity;
+		std::string Message;
 	};
 
 	void Event( const char* Format, ... );
 	void Event( LogSeverity Severity, const char* Format, ... );
+	const std::vector<FHistory>& History();
 
 	class CLog
 	{
@@ -46,15 +62,18 @@ namespace Log
 		CLog( const CLog& ) = default;
 		CLog& operator=( const CLog& ) = default;
 
+		const std::vector<FHistory>& History() const;
+
 	private:
 		CLog();
 
-		void Print( const char* Format, va_list Arguments );
+		void Print( LogSeverity Severity, const char* Format, va_list Arguments );
 		void PrintDirect( const char* Message );
 
 		char Name[128];
 		std::ofstream LogOutputStream;
 
 		CTimer Timer;
+		static std::vector<FHistory> LogHistory;
 	};
 }

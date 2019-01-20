@@ -43,12 +43,12 @@ void CRenderer::Initialize()
 	FPrimitive Triangle;
 	CPrimitive::Triangle( Triangle, 1.0f );
 
-	Assets.CreateNamedMesh( "triangle", Triangle.Vertices, Triangle.VertexCount );
+	Assets.CreateNamedMesh( "triangle", Triangle );
 
 	FPrimitive Square;
 	CPrimitive::Plane( Square, 1.0f );
 
-	Assets.CreateNamedMesh( "square", Square.Vertices, Square.VertexCount, Square.Indices, Square.IndexCount );
+	Assets.CreateNamedMesh( "square", Square );
 
 	static const uint32_t LineSquareIndexCount = 5;
 	static glm::uint LineSquareIndices[LineSquareIndexCount] =
@@ -57,7 +57,7 @@ void CRenderer::Initialize()
 		0, 3, // 
 	};
 
-	CMesh* LineSquareMesh = Assets.CreateNamedMesh( "LineSquare", Square.Vertices, Square.VertexCount, LineSquareIndices, LineSquareIndexCount );
+	CMesh* LineSquareMesh = Assets.CreateNamedMesh( "LineSquare", Square );
 	if( LineSquareMesh )
 	{
 		FVertexBufferData& VertexBufferData = LineSquareMesh->GetVertexBufferData();
@@ -67,7 +67,7 @@ void CRenderer::Initialize()
 	FPrimitive Pyramid;
 	CPrimitive::Cone( Pyramid, 1.0f, 4 );
 
-	Assets.CreateNamedMesh( "pyramid", Pyramid.Vertices, Pyramid.VertexCount, Pyramid.Indices, Pyramid.IndexCount );
+	Assets.CreateNamedMesh( "pyramid", Pyramid );
 
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LESS );

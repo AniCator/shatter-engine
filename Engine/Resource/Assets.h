@@ -4,6 +4,8 @@
 #include <unordered_map>
 #include "glm/glm.hpp"
 
+#include <Engine/Utility/Primitive.h>
+
 class CMesh;
 class CShader;
 
@@ -13,8 +15,7 @@ public:
 	void Create( const std::string& Name, CMesh* NewMesh );
 	void Create( const std::string& Name, CShader* NewShader );
 
-	CMesh* CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount );
-	CMesh* CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount, glm::uint* Indices, uint32_t IndexCount );
+	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation );
 
 

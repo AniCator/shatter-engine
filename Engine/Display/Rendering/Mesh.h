@@ -5,6 +5,8 @@
 #include "GLFW/glfw3.h"
 #include "glm/glm.hpp"
 
+#include <Engine/Utility/Primitive.h>
+
 enum EVertexAttribute
 {
 	Position = 0,
@@ -28,16 +30,20 @@ enum EDrawMode
 	LineLoop = GL_LINE_LOOP,
 };
 
+struct FVertex
+{
+	glm::vec3 Position;
+	glm::vec3 Normal;
+};
+
 struct FVertexData
 {
 	~FVertexData()
 	{
 		delete[] Vertices;
-		delete[] Normals;
 	}
 
-	glm::vec3 *Vertices;
-	glm::vec3 *Normals;
+	FVertex* Vertices;
 };
 
 struct FIndexData
@@ -55,7 +61,8 @@ struct FVertexBufferData
 	GLenum DrawMode = GL_TRIANGLE_STRIP;
 	GLuint VertexBufferObject = 0;
 	GLuint IndexBufferObject = 0;
-	glm::uint Size = 0;
+	glm::uint VertexCount = 0;
+	glm::uint IndexCount = 0;
 
 	bool operator==( const GLuint& y )
 	{
@@ -69,12 +76,15 @@ public:
 	CMesh( EMeshType MeshType = Static );
 	~CMesh();
 
-	bool Populate( glm::vec3* Vertices, uint32_t VertexCount );
-	bool Populate( glm::vec3* Vertices, uint32_t VertexCount, glm::uint* Indices, uint32_t IndexCount );
+	bool Populate( const FPrimitive& Primitive );
 	void Draw( EDrawMode DrawModeOverride = None );
 
 	FVertexBufferData& GetVertexBufferData();
 private:
+	bool CreateVertexBuffer( const FPrimitive& Primitive );
+	bool CreateIndexBuffer( const FPrimitive& Primitive );
+	void GenerateNormals( const FPrimitive& Primitive );
+
 	FVertexBufferData VertexBufferData;
 	FVertexData VertexData;
 	FIndexData IndexData;

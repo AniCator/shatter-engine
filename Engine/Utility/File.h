@@ -12,6 +12,8 @@ public:
 	template<typename T>
 	T* Fetch() { return reinterpret_cast<T*>( Data ); };
 
+	static bool Exists( const char* FileLocation );
+
 private:
 	char* Data;
 };

@@ -19,6 +19,16 @@ public:
 	void AppendFile( std::string FilePath );
 	void Reload();
 
+	template<typename T>
+	void Store( const char* KeyName, const T Value )
+	{
+		std::stringstream Stream;
+		Stream << Value;
+		StoredSettings.insert_or_assign( KeyName, Stream.str() );
+	};
+
+	void Save();
+
 private:
 	std::regex ConfigureFilter( const char* KeyName );
 	std::string GetValue( const char* KeyName );

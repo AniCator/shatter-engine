@@ -106,5 +106,5 @@ void main()
 	
 	Lighting += vec3( 0.05, 0.05, 0.05 ) * ObjectColor.rgb; // Ambient
 	
-    FragColor = vec4( Lighting, ObjectColor.a );
+    FragColor = vec4( WorldNormal, ObjectColor.a );
 }

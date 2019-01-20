@@ -13,7 +13,7 @@ bool CConfiguration::IsValidKey( const char* KeyName )
 {
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
 	{
-		Log::Event( "Invalid key \"%s\"\n", KeyName );
+		Log::Event( Log::Warning, "Invalid key \"%s\"\n", KeyName );
 		return false;
 	}
 
@@ -36,6 +36,8 @@ const char* CConfiguration::GetString( const char* KeyName, const char* Default 
 {
 	if( !IsValidKey( KeyName ) )
 	{
+		Store( KeyName, Default );
+		Save();
 		return Default;
 	}
 
@@ -46,7 +48,9 @@ int CConfiguration::GetInteger( const char* KeyName, const int Default )
 {
 	if( !IsValidKey( KeyName ) )
 	{
-		return 0;
+		Store( KeyName, Default );
+		Save();
+		return Default;
 	}
 
 	return atoi( StoredSettings[KeyName].c_str() );
@@ -56,6 +60,8 @@ double CConfiguration::GetDouble( const char* KeyName, const double Default )
 {
 	if( !IsValidKey( KeyName ) )
 	{
+		Store( KeyName, Default );
+		Save();
 		return Default;
 	}
 
@@ -110,7 +116,7 @@ void CConfiguration::Reload()
 				configurationFileStream.open( DefaultEngineConfigurationFile );
 				if( configurationFileStream.fail() )
 				{
-					Log::Event( Log::Fatal, "Cannot restore engine configuration file because \"%s\" is missing.\n", DefaultEngineConfigurationFile );
+					Log::Event( Log::Warning, "Cannot restore engine configuration file because \"%s\" is missing.\n", DefaultEngineConfigurationFile );
 				}
 				else
 				{
@@ -141,6 +147,26 @@ void CConfiguration::Reload()
 		configurationFileStream.close();
 
 		IsFirstFile = false;
+	}
+}
+
+void CConfiguration::Save()
+{
+	Log::Event( "Saving configuration files.\n" );
+	if( FilePaths.size() == 1 )
+	{
+		std::ofstream ConfigurationStream;
+		ConfigurationStream.open( FilePaths[0].c_str() );
+
+		if( ConfigurationStream.good() )
+		{
+			for( auto& Setting : StoredSettings )
+			{
+				ConfigurationStream << Setting.first << "=" << Setting.second << std::endl;
+			}
+		}
+
+		ConfigurationStream.close();
 	}
 }
 

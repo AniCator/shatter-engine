@@ -237,7 +237,7 @@ CTimerScope::~CTimerScope()
 	const auto DeltaTime = std::chrono::duration_cast<std::chrono::milliseconds>( EndTime - StartTime ).count();
 	if( TextOnly )
 	{
-		Log::Event( "-- %s - %ims --\n\n", ScopeName, DeltaTime );
+		Log::Event( "Scope %s took %ims\n", ScopeName, DeltaTime );
 	}
 	else
 	{

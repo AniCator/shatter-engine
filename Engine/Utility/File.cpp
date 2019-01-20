@@ -61,3 +61,16 @@ bool CFile::Load( const char* FileLocation, bool Binary )
 
 	return false;
 }
+
+bool CFile::Exists( const char* FileLocation )
+{
+	struct stat Buffer;
+	const bool Exists = stat( FileLocation, &Buffer ) == 0;
+
+	if( !Exists )
+	{
+		Log::Event( Log::Warning, "Could not find file at location \"%s\"\n", FileLocation );
+	}
+
+	return Exists;
+}

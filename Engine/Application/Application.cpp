@@ -10,6 +10,7 @@
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
+#include <Engine/Utility/File.h>
 
 #include <Game/Game.h>
 
@@ -281,6 +282,8 @@ void SetTheme( const char* Theme )
 	}
 }
 
+static bool DisplayLog = true;
+static size_t PreviousSize = 0;
 void DebugMenu( CApplication* Application )
 {
 	if( !Application || !GameLayersInstance )
@@ -373,19 +376,78 @@ void DebugMenu( CApplication* Application )
 			ImGui::EndMenu();
 		}
 
-		if( ImGui::BeginMenu( "Profiler" ) )
+		if( ImGui::BeginMenu( "Windows" ) )
 		{
 			CProfileVisualisation& Profiler = CProfileVisualisation::Get();
 			const bool Enabled = Profiler.IsEnabled();
-			if( ImGui::MenuItem( "Toggle", NULL, Enabled ) )
+			if( ImGui::MenuItem( "Profiler", NULL, Enabled ) )
 			{
 				Profiler.SetEnabled( !Enabled );
+			}
+
+			if( ImGui::MenuItem( "Logger", NULL, DisplayLog ) )
+			{
+				DisplayLog = !DisplayLog;
 			}
 
 			ImGui::EndMenu();
 		}
 
 		ImGui::EndMainMenuBar();
+	}
+
+	if( DisplayLog )
+	{
+		const float Width = MainWindow.GetWidth();
+		const float Height = 0.2f * MainWindow.GetHeight();
+
+		ImGui::SetNextWindowPos( ImVec2( 0.0f, MainWindow.GetHeight() - Height ), ImGuiCond_Always );
+		ImGui::SetNextWindowSize( ImVec2( Width, Height ), ImGuiCond_Always );
+
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
+		if( ImGui::Begin( "Log", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
+		{
+			static const char* SeverityToString[Log::LogMax] =
+			{
+				"",
+				"Warning",
+				"Error",
+				"Fatal"
+			};
+
+			static const ImVec4 SeverityToColor[Log::LogMax] =
+			{
+				ImVec4( 1.0f,1.0f,1.0f,1.0f ),
+				ImVec4( 1.0f,1.0f,0.0f,1.0f ),
+				ImVec4( 1.0f,0.0f,1.0f,1.0f ),
+				ImVec4( 1.0f,0.0f,0.0f,1.0f ),
+			};
+
+			const std::vector<Log::FHistory> LogHistory = Log::History();
+			const size_t Count = LogHistory.size();
+			const size_t Entries = min( LogHistory.size(), 500 );
+			for( size_t Index = 0; Index < Entries; Index++ )
+			{
+				const size_t HistoryIndex = Count - Entries + Index;
+				const Log::FHistory& History = LogHistory[HistoryIndex];
+				if( History.Severity > Log::Normal )
+				{
+					ImGui::TextColored( SeverityToColor[History.Severity], "%s: %s", SeverityToString[History.Severity], History.Message.c_str() );
+				}
+				else
+				{
+					ImGui::Text( "%s", History.Message.c_str() );
+				}
+			}
+
+			if( PreviousSize != Count )
+			{
+				ImGui::SetScrollHere( 1.0f );
+				PreviousSize = Count;
+			}
+			ImGui::End();
+		}
+		ImGui::PopStyleColor();
 	}
 }
 
@@ -420,9 +482,9 @@ void CApplication::Run()
 
 	GameLayersInstance->Initialize();
 
-	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps" );
-	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate" );
-	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate" );
+	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps", 60 );
+	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
+	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
 
 	while( !MainWindow.ShouldClose() )
 	{
@@ -447,7 +509,7 @@ void CApplication::Run()
 			{
 				Renderer.RefreshFrame();
 
-				const float TimeScaleParameter = CConfiguration::Get().GetFloat( "timescale" );
+				const float TimeScaleParameter = CConfiguration::Get().GetFloat( "timescale", 1.0f );
 				const float TimeScaleGlobal = TimeScale * TimeScaleParameter;
 				ScaledGameTime += GameDeltaTime * 0.001f * TimeScaleGlobal;
 
@@ -485,8 +547,6 @@ void CApplication::Run()
 
 	GameLayersInstance->Shutdown();
 	delete GameLayersInstance;
-
-	// Log::Event( "Meshes created: %i\n", MainWindow.GetRenderer().MeshCount() );
 
 	MainWindow.Terminate();
 }
@@ -575,8 +635,12 @@ void CApplication::Initialize()
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_R, GLFW_PRESS, InputMoveCameraLower );
 	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_F, GLFW_PRESS, InputMoveCameraHigher );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_ESCAPE, GLFW_RELEASE, []{
+	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_ESCAPE, GLFW_RELEASE, [] {
 		glfwSetWindowShouldClose( MainWindow.Handle(), true );
+	} );
+
+	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_L, GLFW_RELEASE, [] {
+		DisplayLog = !DisplayLog;
 	} );
 
 	MainWindow.EnableCursor( CursorVisible );
@@ -588,23 +652,32 @@ void CApplication::Initialize()
 
 	if( CameraSpeed < 0.0f )
 	{
-		CameraSpeed = CConfiguration::Get().GetFloat( "cameraspeed" );
+		CameraSpeed = CConfiguration::Get().GetFloat( "cameraspeed", 1.0f );
 	}
 
 #if defined( IMGUI_ENABLED )
 	ImGui_ImplGlfwGL3_Shutdown();
 
-	ImGuiIO& IO = ImGui::GetIO();
-	static ImFont* RobotoFont = nullptr;
+	static const char* FontLocation = "Resources/Roboto-Medium.ttf";
+	const bool FileExists = CFile::Exists( FontLocation );
+	if( FileExists )
+	{
+		ImGuiIO& IO = ImGui::GetIO();
+		static ImFont* RobotoFont = nullptr;
 
-	ImFontConfig DefaultFontConfig;
-	DefaultFontConfig.OversampleH = 4;
-	DefaultFontConfig.OversampleV = 2;
-	DefaultFontConfig.SizePixels = ConfigurationInstance.GetFloat( "font_size", 15.0f );
+		ImFontConfig DefaultFontConfig;
+		DefaultFontConfig.OversampleH = 4;
+		DefaultFontConfig.OversampleV = 2;
+		DefaultFontConfig.SizePixels = ConfigurationInstance.GetFloat( "font_size", 15.0f );
 
-	IO.Fonts->ClearTexData();
-	RobotoFont = IO.Fonts->AddFontFromFileTTF( "Resources/Roboto-Medium.ttf", DefaultFontConfig.SizePixels, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
-	IO.FontDefault = RobotoFont;
+		IO.Fonts->ClearTexData();
+		RobotoFont = IO.Fonts->AddFontFromFileTTF( FontLocation, DefaultFontConfig.SizePixels, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
+		IO.FontDefault = RobotoFont;
+	}
+	else
+	{
+		Log::Event( Log::Warning, "Could not find a default resource.\nMake sure you include the default engine items in the build directory.\n" );
+	}
 
 	ImGui_ImplGlfwGL3_NewFrame();
 

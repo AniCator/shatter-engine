@@ -24,7 +24,7 @@ void CAssets::Create( const std::string& Name, CShader* NewShader )
 	Shaders.insert_or_assign( Name, NewShader );
 }
 
-CMesh* CAssets::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount )
+CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 {
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -39,29 +39,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t
 
 	// Create a new mesh
 	CMesh* NewMesh = new CMesh();
-	NewMesh->Populate( Vertices, VertexCount );
-
-	Create( NameString, NewMesh );
-
-	return NewMesh;
-}
-
-CMesh* CAssets::CreateNamedMesh( const char* Name, glm::vec3* Vertices, uint32_t VertexCount, glm::uint* Indices, uint32_t IndexCount )
-{
-	// Transform given name into lower case string
-	std::string NameString = Name;
-	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
-
-	// Check if the mesh exists
-	if( CMesh* ExistingMesh = FindMesh( NameString ) )
-	{
-		Log::Event( "Found existing mesh named \"%s\"\n", NameString );
-		return ExistingMesh;
-	}
-
-	// Create a new mesh
-	CMesh* NewMesh = new CMesh();
-	const bool bSuccessfulCreation = NewMesh->Populate( Vertices, VertexCount, Indices, IndexCount );
+	const bool bSuccessfulCreation = NewMesh->Populate( Primitive );
 
 	if( bSuccessfulCreation )
 	{

@@ -45,18 +45,8 @@ void CWindow::Create( const char* Title )
 
 	const bool EnableBorder = !config.IsEnabled( "noborder" );
 
-	Width = 1280;
-	Height = 720;
-
-	if( config.IsValidKey( "width" ) )
-	{
-		Width = config.GetInteger( "width" );
-	}
-
-	if( config.IsValidKey( "height" ) )
-	{
-		Height = config.GetInteger( "height" );
-	}
+	Width = config.GetInteger( "width", 1280 );
+	Height = config.GetInteger( "height", 720 );
 
 	// Make sure GLFW is terminated before initializing it in case the application is being re-initialized.
 	glfwTerminate();
@@ -70,17 +60,14 @@ void CWindow::Create( const char* Title )
 	glfwWindowHint( GLFW_RESIZABLE, false );
 	glfwWindowHint( GLFW_DECORATED, EnableBorder );
 
-	glfwWindowHint( GLFW_SAMPLES, config.GetInteger( "aasamples" ) );
+	glfwWindowHint( GLFW_SAMPLES, config.GetInteger( "aasamples", 0 ) );
 	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, config.IsEnabled( "opengldebugcontext" ) );
 
-	if( config.IsValidKey( "openglversionmajor" ) && config.IsValidKey( "openglversionminor" ) )
-	{
-		const int MajorVersion = config.GetInteger( "openglversionmajor" );
-		const int MinorVersion = config.GetInteger( "openglversionminor" );
+	const int MajorVersion = config.GetInteger( "openglversionmajor", 3 );
+	const int MinorVersion = config.GetInteger( "openglversionminor", 3 );
 
-		glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, MajorVersion );
-		glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, MinorVersion );
-	}
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, MajorVersion );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, MinorVersion );
 
 	if( config.IsValidKey( "openglcore" ) && config.IsEnabled( "openglcore" ) )
 	{
