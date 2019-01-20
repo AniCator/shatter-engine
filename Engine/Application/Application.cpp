@@ -425,7 +425,7 @@ void DebugMenu( CApplication* Application )
 
 			const std::vector<Log::FHistory> LogHistory = Log::History();
 			const size_t Count = LogHistory.size();
-			const size_t Entries = min( LogHistory.size(), 500 );
+			const size_t Entries = LogHistory.size() < 500 ? LogHistory.size() : 500;
 			for( size_t Index = 0; Index < Entries; Index++ )
 			{
 				const size_t HistoryIndex = Count - Entries + Index;
