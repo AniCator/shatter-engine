@@ -3,6 +3,9 @@ This is a small game engine framework that is used to power some of my smaller s
 
 ![AICritters](aicritters-example.png)
 
+# Installation
+Make sure you create an EngineMacros.props file for your game projects with a User Macro named EnginePath that points at the location of the engine solution file.
+
 # Third Party
 The engine requires a couple of third party libraries which aren't available in this repository.
 
