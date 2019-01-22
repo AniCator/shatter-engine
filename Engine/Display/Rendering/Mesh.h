@@ -30,12 +30,6 @@ enum EDrawMode
 	LineLoop = GL_LINE_LOOP,
 };
 
-struct FVertex
-{
-	glm::vec3 Position;
-	glm::vec3 Normal;
-};
-
 struct FVertexData
 {
 	~FVertexData()

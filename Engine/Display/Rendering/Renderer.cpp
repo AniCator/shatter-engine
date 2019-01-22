@@ -15,6 +15,7 @@
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/Primitive.h>
+#include <Engine/Utility/MeshBuilder.h>
 
 #include <Game/Game.h>
 
@@ -41,12 +42,12 @@ void CRenderer::Initialize()
 	Assets.CreateNamedShader( "PyramidOcean", "Shaders/PyramidOcean" );
 
 	FPrimitive Triangle;
-	CPrimitive::Triangle( Triangle, 1.0f );
+	MeshBuilder::Triangle( Triangle, 1.0f );
 
 	Assets.CreateNamedMesh( "triangle", Triangle );
 
 	FPrimitive Square;
-	CPrimitive::Plane( Square, 1.0f );
+	MeshBuilder::Plane( Square, 1.0f );
 
 	Assets.CreateNamedMesh( "square", Square );
 
@@ -65,7 +66,7 @@ void CRenderer::Initialize()
 	}
 
 	FPrimitive Pyramid;
-	CPrimitive::Cone( Pyramid, 1.0f, 4 );
+	MeshBuilder::Cone( Pyramid, 1.0f, 4 );
 
 	Assets.CreateNamedMesh( "pyramid", Pyramid );
 

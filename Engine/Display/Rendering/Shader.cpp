@@ -53,8 +53,8 @@ bool CShader::Load( const char* FileLocation )
 
 bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType ShaderType )
 {
-	CFile ShaderSource;
-	const bool Loaded = ShaderSource.Load( FileLocation );
+	CFile ShaderSource( FileLocation );
+	const bool Loaded = ShaderSource.Load();
 
 	if( !Loaded )
 		return false;

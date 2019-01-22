@@ -170,7 +170,7 @@
     <ClCompile Include="Engine\Resource\Assets.cpp">
       <Filter>Source Files\Engine\Resource</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Utility\Primitive.cpp">
+    <ClCompile Include="Engine\Utility\MeshBuilder.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
   </ItemGroup>
@@ -305,6 +305,9 @@
       <Filter>Source Files\Engine\Resource</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\Primitive.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\MeshBuilder.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
   </ItemGroup>

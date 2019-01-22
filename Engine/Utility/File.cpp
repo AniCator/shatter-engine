@@ -4,9 +4,10 @@
 
 #include <fstream>
 
-CFile::CFile()
+CFile::CFile( const char* FileLocation )
 {
 	Data = nullptr;
+	Location = FileLocation;
 }
 
 CFile::~CFile()
@@ -14,7 +15,7 @@ CFile::~CFile()
 	delete [] Data;
 }
 
-bool CFile::Load( const char* FileLocation, bool Binary )
+bool CFile::Load( bool Binary )
 {
 	if( Data )
 	{
@@ -26,11 +27,11 @@ bool CFile::Load( const char* FileLocation, bool Binary )
 	
 	if( Binary )
 	{
-		FileStream.open( FileLocation, std::ios::binary );
+		FileStream.open( Location.c_str(), std::ios::binary );
 	}
 	else
 	{
-		FileStream.open( FileLocation, std::ios::in );
+		FileStream.open( Location.c_str(), std::ios::in );
 	}
 	
 	if( !FileStream.fail() )
@@ -57,9 +58,14 @@ bool CFile::Load( const char* FileLocation, bool Binary )
 		return true;
 	}
 
-	Log::Event( "Failed to load file \"%s\".\n", FileLocation );
+	Log::Event( "Failed to load file \"%s\".\n", Location.c_str() );
 
 	return false;
+}
+
+bool CFile::Exists()
+{
+	return Exists( Location.c_str() );
 }
 
 bool CFile::Exists( const char* FileLocation )

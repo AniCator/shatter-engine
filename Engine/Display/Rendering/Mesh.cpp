@@ -78,7 +78,7 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 		// Transfer the vertex locations to the interleaved vertices.
 		for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
 		{
-			VertexData.Vertices[Index].Position = Primitive.Vertices[Index];
+			VertexData.Vertices[Index].Position = Primitive.Vertices[Index].Position;
 		}
 
 		VertexBufferData.VertexCount = Primitive.VertexCount;
@@ -136,8 +136,8 @@ void CMesh::GenerateNormals( const FPrimitive& Primitive )
 		{
 			if( ( Primitive.VertexCount - VertexIndex ) > 2 )
 			{
-				const glm::vec3 U = Primitive.Vertices[VertexIndex + 1] - Primitive.Vertices[VertexIndex];
-				const glm::vec3 V = Primitive.Vertices[VertexIndex + 2] - Primitive.Vertices[VertexIndex];
+				const glm::vec3 U = Primitive.Vertices[VertexIndex + 1].Position - Primitive.Vertices[VertexIndex].Position;
+				const glm::vec3 V = Primitive.Vertices[VertexIndex + 2].Position - Primitive.Vertices[VertexIndex].Position;
 				const glm::vec3 Normal = glm::cross( U, V );
 				VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex + 1].Normal = VertexData.Vertices[VertexIndex + 2].Normal = Normal;
 			}
@@ -157,28 +157,37 @@ void CMesh::GenerateNormals( const FPrimitive& Primitive )
 			VertexData.Vertices[VertexIndex].Normal = glm::vec3( 0.0f, 0.0f, 0.0f );
 		}
 
-		for( uint32_t Index = 0; Index < Primitive.IndexCount; Index += 3 )
+		if( !Primitive.HasNormals )
 		{
-			if( ( Primitive.IndexCount - Index ) > 2 )
+			for( uint32_t Index = 0; Index < Primitive.IndexCount; Index += 3 )
 			{
-				const glm::vec3& Vertex0 = Primitive.Vertices[Primitive.Indices[Index]];
-				const glm::vec3& Vertex1 = Primitive.Vertices[Primitive.Indices[Index] + 1];
-				const glm::vec3& Vertex2 = Primitive.Vertices[Primitive.Indices[Index] + 2];
+				if( ( Primitive.IndexCount - Index ) > 2 )
+				{
+					const glm::vec3& Vertex0 = Primitive.Vertices[Primitive.Indices[Index]].Position;
+					const glm::vec3& Vertex1 = Primitive.Vertices[Primitive.Indices[Index] + 1].Position;
+					const glm::vec3& Vertex2 = Primitive.Vertices[Primitive.Indices[Index] + 2].Position;
 
-				const glm::vec3 U = Vertex0 - Vertex1;
-				const glm::vec3 V = Vertex0 - Vertex2;
-				const glm::vec3 Normal = glm::cross( U, V );
+					const glm::vec3 U = Vertex0 - Vertex1;
+					const glm::vec3 V = Vertex0 - Vertex2;
+					const glm::vec3 Normal = glm::cross( U, V );
 
-				VertexData.Vertices[Primitive.Indices[Index]].Normal += Normal;
-				VertexData.Vertices[Primitive.Indices[Index] + 1].Normal += Normal;
-				VertexData.Vertices[Primitive.Indices[Index] + 2].Normal += Normal;
+					VertexData.Vertices[Primitive.Indices[Index]].Normal += Normal;
+					VertexData.Vertices[Primitive.Indices[Index] + 1].Normal += Normal;
+					VertexData.Vertices[Primitive.Indices[Index] + 2].Normal += Normal;
+				}
 			}
 		}
 
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 		{
-			VertexData.Vertices[VertexIndex].Normal = glm::normalize( VertexData.Vertices[VertexIndex].Normal );
-			Log::Event( "N %i %.2f %.2f %.2f\n", VertexIndex, VertexData.Vertices[VertexIndex].Normal[0], VertexData.Vertices[VertexIndex].Normal[1], VertexData.Vertices[VertexIndex].Normal[2] );
+			if( Primitive.HasNormals )
+			{
+				VertexData.Vertices[VertexIndex].Normal = glm::normalize( Primitive.Vertices[VertexIndex].Normal );
+			}
+			else
+			{
+				VertexData.Vertices[VertexIndex].Normal = glm::normalize( VertexData.Vertices[VertexIndex].Normal );
+			}
 		}
 
 		glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
