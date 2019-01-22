@@ -419,7 +419,7 @@ void DebugMenu( CApplication* Application )
 			{
 				ImVec4( 1.0f,1.0f,1.0f,1.0f ),
 				ImVec4( 1.0f,1.0f,0.0f,1.0f ),
-				ImVec4( 1.0f,0.0f,1.0f,1.0f ),
+				ImVec4( 1.0f,0.0f,0.0f,1.0f ),
 				ImVec4( 1.0f,0.0f,0.0f,1.0f ),
 			};
 
