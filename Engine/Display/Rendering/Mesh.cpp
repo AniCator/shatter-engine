@@ -102,7 +102,7 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 	}
 	else
 	{
-		Log::Event( Log::Error, "Mesh has already been created.\n" );
+		Log::Event( Log::Error, "Mesh vertex buffer has already been created.\n" );
 
 		return false;
 	}
@@ -112,15 +112,21 @@ bool CMesh::CreateIndexBuffer( const FPrimitive& Primitive )
 {
 	if( VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject == 0 && Primitive.IndexCount > 0 )
 	{
+		const uint32_t Size = sizeof( glm::uint ) * Primitive.IndexCount;
+
 		glGenBuffers( 1, &VertexBufferData.IndexBufferObject );
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
-		glBufferData( GL_ELEMENT_ARRAY_BUFFER, sizeof( glm::uint ) * Primitive.IndexCount, Primitive.Indices, MeshType );
+		glBufferData( GL_ELEMENT_ARRAY_BUFFER, Size, 0, MeshType );
 
-		glm::uint* IndexCopy = new glm::uint[Primitive.IndexCount];
-		memcpy( IndexCopy, Primitive.Indices, sizeof( glm::uint ) * Primitive.IndexCount );
+		IndexData.Indices = new glm::uint[Primitive.IndexCount];
+		for( size_t Index = 0; Index < Primitive.IndexCount; Index++ )
+		{
+			IndexData.Indices[Index] = Primitive.Indices[Index];
+		}
 
-		IndexData.Indices = IndexCopy;
 		VertexBufferData.IndexCount = Primitive.IndexCount;
+
+		glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, Size, IndexData.Indices );
 
 		HasIndexBuffer = true;
 
@@ -128,6 +134,8 @@ bool CMesh::CreateIndexBuffer( const FPrimitive& Primitive )
 	}
 	else
 	{
+		Log::Event( Log::Error, "Mesh index buffer has already been created.\n" );
+
 		return false;
 	}
 }
