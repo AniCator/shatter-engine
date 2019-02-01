@@ -8,6 +8,7 @@ CFile::CFile( const char* FileLocation )
 {
 	Data = nullptr;
 	Location = FileLocation;
+	Binary = false;
 }
 
 CFile::~CFile()
@@ -15,7 +16,7 @@ CFile::~CFile()
 	delete [] Data;
 }
 
-bool CFile::Load( bool Binary )
+bool CFile::Load( bool InBinary )
 {
 	if( Data )
 	{
@@ -23,11 +24,13 @@ bool CFile::Load( bool Binary )
 		Data = nullptr;
 	}
 
+	Binary = InBinary;
+
 	std::ifstream FileStream;
 	
 	if( Binary )
 	{
-		FileStream.open( Location.c_str(), std::ios::binary );
+		FileStream.open( Location.c_str(), std::ios::in | std::ios::binary );
 	}
 	else
 	{
@@ -38,7 +41,7 @@ bool CFile::Load( bool Binary )
 	{
 		// Move to the end of the file and fetch the file size
 		FileStream.seekg( 0, std::ios::end );
-		size_t FileSize = FileStream.tellg();
+		FileSize = FileStream.tellg();
 
 		FileStream.seekg( 0, std::ios::beg );
 
@@ -59,6 +62,58 @@ bool CFile::Load( bool Binary )
 	}
 
 	Log::Event( "Failed to load file \"%s\".\n", Location.c_str() );
+
+	return false;
+}
+
+bool CFile::Load( char* DataSource, const size_t SizeIn )
+{
+	if( Data )
+	{
+		delete[] Data;
+		Data = nullptr;
+	}
+
+	Binary = true;
+	Data = DataSource;
+	FileSize = SizeIn;
+
+	return true;
+}
+
+bool CFile::Save()
+{
+	if( Data )
+	{
+		std::ofstream FileStream;
+
+		if( Binary )
+		{
+			FileStream.open( Location.c_str(), std::ios::out | std::ios::binary );
+		}
+		else
+		{
+			FileStream.open( Location.c_str(), std::ios::out );
+		}
+
+		if( !FileStream.fail() )
+		{
+			if( Binary )
+			{
+				FileStream.write( Data, FileSize );
+			}
+			else
+			{
+				FileStream.write( Data, FileSize );
+			}
+
+			FileStream.close();
+
+			return true;
+		}
+	}
+
+	Log::Event( "Failed to save file \"%s\".\n", Location.c_str() );
 
 	return false;
 }

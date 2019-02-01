@@ -26,6 +26,7 @@ public:
 	static void Buddha( FPrimitive& Primitive, const float Radius );
 
 	static void OBJ( FPrimitive& Primitive, CFile& File );
+	static void LM( FPrimitive& Primitive, CFile& File );
 
 private:
 	static void Soup( FPrimitive& Primitive, std::vector<glm::vec3> Vertices );

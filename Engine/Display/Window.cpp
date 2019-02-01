@@ -43,7 +43,7 @@ void CWindow::Create( const char* Title )
 	// Load configuration data
 	CConfiguration& config = CConfiguration::Get();
 
-	const bool EnableBorder = !config.IsEnabled( "noborder" );
+	const bool EnableBorder = !config.IsEnabled( "noborder", false );
 
 	Width = config.GetInteger( "width", 1280 );
 	Height = config.GetInteger( "height", 720 );
@@ -60,8 +60,8 @@ void CWindow::Create( const char* Title )
 	glfwWindowHint( GLFW_RESIZABLE, false );
 	glfwWindowHint( GLFW_DECORATED, EnableBorder );
 
-	glfwWindowHint( GLFW_SAMPLES, config.GetInteger( "aasamples", 0 ) );
-	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, config.IsEnabled( "opengldebugcontext" ) );
+	glfwWindowHint( GLFW_SAMPLES, config.GetInteger( "aasamples", 4 ) );
+	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, config.IsEnabled( "opengldebugcontext", false ) );
 
 	const int MajorVersion = config.GetInteger( "openglversionmajor", 3 );
 	const int MinorVersion = config.GetInteger( "openglversionminor", 3 );
@@ -69,14 +69,14 @@ void CWindow::Create( const char* Title )
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, MajorVersion );
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, MinorVersion );
 
-	if( config.IsValidKey( "openglcore" ) && config.IsEnabled( "openglcore" ) )
+	if( config.IsEnabled( "openglcore", true ) )
 	{
 		glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 		glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	}
 
-	const bool FullScreen = EnableBorder && config.IsEnabled( "fullscreen" );
-	const int TargetMonitor = config.GetInteger( "monitor" );
+	const bool FullScreen = EnableBorder && config.IsEnabled( "fullscreen", false );
+	const int TargetMonitor = config.GetInteger( "monitor", -1 );
 
 	if( FullScreen )
 	{
@@ -104,15 +104,8 @@ void CWindow::Create( const char* Title )
 	int WindowX = -1;
 	int WindowY = -1;
 
-	if( config.IsValidKey( "windowx" ) )
-	{
-		WindowX = config.GetInteger( "windowx" );
-	}
-
-	if( config.IsValidKey( "windowy" ) )
-	{
-		WindowY = config.GetInteger( "windowy" );
-	}
+	WindowX = config.GetInteger( "windowx", -1 );
+	WindowY = config.GetInteger( "windowy", -1 );
 
 	bool ShouldOverrideWindowPosition = false;
 
@@ -144,22 +137,32 @@ void CWindow::Create( const char* Title )
 	}
 
 	glfwMakeContextCurrent( WindowHandle );
-
+	
 	gladLoadGLLoader( (GLADloadproc) glfwGetProcAddress );
 
 	Log::Event( "OpenGL %s\n", glGetString( GL_VERSION ) );
 
-	glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR );
-	glDebugMessageControlKHR( GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH_KHR, 0, nullptr, true );
-	glDebugMessageCallbackKHR( DebugCallbackOpenGL, nullptr );
+#if defined(_DEBUG)
+	if( GLAD_GL_KHR_debug )
+	{
+		Log::Event( "KHR debug extention enabled.\n" );
+		glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR );
+		glDebugMessageControlKHR( GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH_KHR, 0, nullptr, true );
+		glDebugMessageCallbackKHR( DebugCallbackOpenGL, nullptr );
+	}
+#endif
 
-	glfwSwapInterval( config.GetInteger( "vsync" ) );
+	const int SwapInterval = config.GetInteger( "vsync", 0 );
+	Log::Event( "Swap interval: %i\n", SwapInterval );
+	glfwSwapInterval( SwapInterval );
 
+	Log::Event( "Initializing ImGui.\n" );
 #if defined( IMGUI_ENABLED )
 	ImGui_ImplGlfwGL3_Init( WindowHandle, false );
 #endif
 
 	Initialized = true;
+	Log::Event( "Initialized window.\n" );
 }
 
 void CWindow::Terminate()

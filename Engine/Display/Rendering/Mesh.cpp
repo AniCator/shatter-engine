@@ -34,12 +34,15 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 
 	glBindVertexArray( VertexArrayObject );
 
-	glEnableVertexAttribArray( EVertexAttribute::Position );
-	glEnableVertexAttribArray( EVertexAttribute::Normal );
-
 	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
-	glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), reinterpret_cast<void*>( offsetof( FVertex, Position ) ) );
-	glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), reinterpret_cast<void*>( offsetof( FVertex, Normal ) ) );
+
+	glEnableVertexAttribArray( EVertexAttribute::Position );
+	const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
+	glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
+
+	glEnableVertexAttribArray( EVertexAttribute::Normal );
+	const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
+	glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
 
 	if( HasIndexBuffer )
 	{
@@ -58,6 +61,16 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 FVertexBufferData& CMesh::GetVertexBufferData()
 {
 	return VertexBufferData;
+}
+
+const FVertexData& CMesh::GetVertexData() const
+{
+	return VertexData;
+}
+
+const FIndexData& CMesh::GetIndexData() const
+{
+	return IndexData;
 }
 
 bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
@@ -147,8 +160,6 @@ void CMesh::GenerateNormals( const FPrimitive& Primitive )
 		{
 			VertexData.Vertices[VertexIndex].Normal = glm::normalize( VertexData.Vertices[VertexIndex].Normal );
 		}
-
-		glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
 	}
 	else
 	{
@@ -164,16 +175,16 @@ void CMesh::GenerateNormals( const FPrimitive& Primitive )
 				if( ( Primitive.IndexCount - Index ) > 2 )
 				{
 					const glm::vec3& Vertex0 = Primitive.Vertices[Primitive.Indices[Index]].Position;
-					const glm::vec3& Vertex1 = Primitive.Vertices[Primitive.Indices[Index] + 1].Position;
-					const glm::vec3& Vertex2 = Primitive.Vertices[Primitive.Indices[Index] + 2].Position;
+					const glm::vec3& Vertex1 = Primitive.Vertices[Primitive.Indices[Index + 1]].Position;
+					const glm::vec3& Vertex2 = Primitive.Vertices[Primitive.Indices[Index + 2]].Position;
 
 					const glm::vec3 U = Vertex0 - Vertex1;
 					const glm::vec3 V = Vertex0 - Vertex2;
 					const glm::vec3 Normal = glm::cross( U, V );
 
 					VertexData.Vertices[Primitive.Indices[Index]].Normal += Normal;
-					VertexData.Vertices[Primitive.Indices[Index] + 1].Normal += Normal;
-					VertexData.Vertices[Primitive.Indices[Index] + 2].Normal += Normal;
+					VertexData.Vertices[Primitive.Indices[Index + 1]].Normal += Normal;
+					VertexData.Vertices[Primitive.Indices[Index + 2]].Normal += Normal;
 				}
 			}
 		}
@@ -189,7 +200,7 @@ void CMesh::GenerateNormals( const FPrimitive& Primitive )
 				VertexData.Vertices[VertexIndex].Normal = glm::normalize( VertexData.Vertices[VertexIndex].Normal );
 			}
 		}
-
-		glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
 	}
+
+	glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
 }

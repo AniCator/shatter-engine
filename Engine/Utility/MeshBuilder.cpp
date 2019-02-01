@@ -52,7 +52,48 @@ void MeshBuilder::Plane( FPrimitive& Primitive, const float Radius )
 
 void MeshBuilder::Cube( FPrimitive& Primitive, const float Radius )
 {
-	Log::Event( Log::Error, "Primitive not supported: Cube.\n" );
+	Log::Event( "Generating cube with radius %.2f\n", Radius );
+
+	static const uint32_t VertexCount = 8;
+	FVertex* Vertices = new FVertex[VertexCount]
+	{
+		FVertex( glm::vec3( -1.0f, -1.0f, -1.0f ) * Radius ),
+		FVertex( glm::vec3( 1.0f, -1.0f, -1.0f ) * Radius ),
+		FVertex( glm::vec3( 1.0f,  1.0f, -1.0f ) * Radius ),
+		FVertex( glm::vec3( -1.0f,  1.0f, -1.0f ) * Radius ),
+
+		FVertex( glm::vec3( -1.0f, -1.0f, 1.0f ) * Radius ),
+		FVertex( glm::vec3( 1.0f, -1.0f, 1.0f ) * Radius ),
+		FVertex( glm::vec3( 1.0f,  1.0f, 1.0f ) * Radius ),
+		FVertex( glm::vec3( -1.0f,  1.0f, 1.0f ) * Radius ),
+	};
+
+	static const uint32_t IndexCount = 36;
+	static glm::uint* Indices = new glm::uint[IndexCount]
+	{
+		2, 1, 0, // Bottom A
+		0, 3, 2, // Bottom B
+
+		6, 5, 4, // Top A
+		4, 7, 6, // Top B
+
+		3, 2, 6,
+		6, 7, 3,
+
+		3, 0, 4,
+		4, 7, 3,
+
+		1, 0, 4,
+		4, 5, 1,
+
+		2, 1, 5,
+		5, 6, 2
+	};
+
+	Primitive.Vertices = Vertices;
+	Primitive.VertexCount = VertexCount;
+	Primitive.Indices = Indices;
+	Primitive.IndexCount = IndexCount;
 }
 
 void MeshBuilder::Circle( FPrimitive& Primitive, const float Radius, const uint32_t Segments )
@@ -198,11 +239,10 @@ l 5 8 1 2 4 9*/
 
 void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 {
-	Log::Event( "Loading OBJ file...\n" );
-
 	std::vector<glm::vec3> Vertices;
 	std::vector<glm::vec3> Normals;
-	std::vector<glm::uint> Indices;
+	std::vector<glm::uint> VertexIndices;
+	std::vector<size_t> NormalIndices;
 
 	const char Delimiter = ' ';
 	const char* Data = File.Fetch<char>();
@@ -223,7 +263,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 				// Normals.
 				glm::vec3 Normal;
 
-				// Primitive.HasNormals = true;
+				Primitive.HasNormals = true;
 
 				Line.erase( 0, 2 );
 				std::stringstream Stream( Line );
@@ -236,9 +276,9 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 
 				if( Tokens.size() == 3 )
 				{
-					Normal[0] = atof( Tokens[0].c_str() );
-					Normal[1] = atof( Tokens[1].c_str() );
-					Normal[2] = atof( Tokens[2].c_str() );
+					Normal[0] = static_cast<float>( atof( Tokens[0].c_str() ) );
+					Normal[1] = static_cast<float>( atof( Tokens[1].c_str() ) );
+					Normal[2] = static_cast<float>( atof( Tokens[2].c_str() ) );
 
 					Normals.push_back( Normal );
 				}
@@ -263,9 +303,9 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 
 				if( Tokens.size() == 3 )
 				{
-					Vertex[0] = atof( Tokens[0].c_str() );
-					Vertex[1] = atof( Tokens[1].c_str() );
-					Vertex[2] = atof( Tokens[2].c_str() );
+					Vertex[0] = static_cast<float>( atof( Tokens[0].c_str() ) );
+					Vertex[1] = static_cast<float>( atof( Tokens[1].c_str() ) );
+					Vertex[2] = static_cast<float>( atof( Tokens[2].c_str() ) );
 
 					Vertices.push_back( Vertex );
 				}
@@ -277,18 +317,48 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 			Line.erase( 0, 2 );
 			std::stringstream Stream( Line );
 			std::string Token;
-			std::vector<std::string> Tokens;
-			while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 3 )
+			std::vector<std::string> VertexTokens;
+			std::vector<std::string> CoordinateTokens;
+			std::vector<std::string> NormalTokens;
+			while( std::getline( Stream, Token, Delimiter ) && VertexTokens.size() < 3 )
 			{
-				const std::string VertexIndex = Token.substr( 0, Token.find( '/' ) );
-				Tokens.push_back( VertexIndex );
+				const size_t VertexLocation = Token.find( '/' );
+				const std::string VertexIndex = Token.substr( 0, VertexLocation );
+
+				VertexTokens.push_back( VertexIndex );
+
+				Token = Token.substr( VertexLocation + 1, std::string::npos );
+				const size_t CoordinateLocation = Token.find( '/' );
+				const std::string CoordinateIndex = Token.substr( 0, CoordinateLocation );
+				if( CoordinateIndex.length() > 0 )
+				{
+					CoordinateTokens.push_back( CoordinateIndex );
+				}
+
+				Token = Token.substr( CoordinateLocation + 1, std::string::npos );
+				// const size_t NormalLocation = Token.find( '/' );
+				const std::string NormalIndex = Token.substr( 0, std::string::npos );
+
+				if( NormalIndex.length() > 0 )
+				{
+					NormalTokens.push_back( NormalIndex );
+				}
 			}
 
-			if( Tokens.size() == 3 )
+			if( VertexTokens.size() == 3 )
 			{
-				Indices.push_back( atoi( Tokens[0].c_str() ) );
-				Indices.push_back( atoi( Tokens[1].c_str() ) );
-				Indices.push_back( atoi( Tokens[2].c_str() ) );
+				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
+				VertexIndices.push_back( atoi( VertexTokens[0].c_str() ) - 1 );
+				VertexIndices.push_back( atoi( VertexTokens[1].c_str() ) - 1 );
+				VertexIndices.push_back( atoi( VertexTokens[2].c_str() ) - 1 );
+			}
+
+			if( NormalTokens.size() == 3 )
+			{
+				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
+				NormalIndices.push_back( atoi( NormalTokens[0].c_str() ) - 1 );
+				NormalIndices.push_back( atoi( NormalTokens[1].c_str() ) - 1 );
+				NormalIndices.push_back( atoi( NormalTokens[2].c_str() ) - 1 );
 			}
 		}
 	}
@@ -297,19 +367,34 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 	for( size_t Index = 0; Index < Vertices.size(); Index++ )
 	{
 		VertexArray[Index].Position = Vertices[Index];
-		VertexArray[Index].Normal = Normals[Index];
 	}
 
-	glm::uint* IndexArray = new glm::uint[Indices.size()];
-	for( size_t Index = 0; Index < Indices.size(); Index++ )
+	const bool HasNormalIndices = NormalIndices.size() == VertexIndices.size();
+	glm::uint* IndexArray = new glm::uint[VertexIndices.size()];
+	for( size_t Index = 0; Index < VertexIndices.size(); Index++ )
 	{
-		IndexArray[Index] = Indices[Index];
+		IndexArray[Index] = VertexIndices[Index];
+
+		if( HasNormalIndices )
+		{
+			VertexArray[VertexIndices[Index]].Normal = Normals[NormalIndices[Index]];
+		}
 	}
 
 	Primitive.Vertices = VertexArray;
-	Primitive.VertexCount = Vertices.size();
+	Primitive.VertexCount = static_cast<uint32_t>( Vertices.size() );
 	Primitive.Indices = IndexArray;
-	Primitive.IndexCount = Indices.size();
+	Primitive.IndexCount = static_cast<uint32_t>( VertexIndices.size() );
+}
+
+void MeshBuilder::LM( FPrimitive& Primitive, CFile& File )
+{
+	const char* RawData = File.Fetch<char>();
+	const size_t FileSize = File.Size();
+	CData Data;
+	Data.Load( RawData, FileSize );
+
+	Data >> Primitive;
 }
 
 struct VectorComparator {

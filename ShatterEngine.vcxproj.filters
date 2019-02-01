@@ -75,6 +75,12 @@
     <Filter Include="Source Files\Engine\Resource">
       <UniqueIdentifier>{674b90ce-9aef-4754-974c-7ebb4cd7eeac}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Audio">
+      <UniqueIdentifier>{5b41a32e-c13d-47fd-b69e-1dbc515ad085}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Utility\Presence">
+      <UniqueIdentifier>{3bb500b2-7fa2-4f31-ac51-1d0147928e92}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -172,6 +178,12 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\MeshBuilder.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Audio\SimpleSound.cpp">
+      <Filter>Source Files\Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Presence\Presence.cpp">
+      <Filter>Source Files\Engine\Utility\Presence</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -309,6 +321,15 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\MeshBuilder.h">
       <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\SimpleSound.h">
+      <Filter>Source Files\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Data.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Presence\Precense.h">
+      <Filter>Source Files\Engine\Utility\Presence</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

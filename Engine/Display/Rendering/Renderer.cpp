@@ -27,6 +27,7 @@ static const size_t nRenderableCapacity = 4096;
 CRenderer::CRenderer()
 {
 	Renderables.reserve( nRenderableCapacity );
+	ForceWireFrame = false;
 }
 
 CRenderer::~CRenderer()
@@ -51,7 +52,7 @@ void CRenderer::Initialize()
 
 	Assets.CreateNamedMesh( "square", Square );
 
-	static const uint32_t LineSquareIndexCount = 5;
+	/*static const uint32_t LineSquareIndexCount = 5;
 	static glm::uint LineSquareIndices[LineSquareIndexCount] =
 	{
 		2, 1, 0, // Top-right, Bottom-right, Bottom-left
@@ -63,17 +64,17 @@ void CRenderer::Initialize()
 	{
 		FVertexBufferData& VertexBufferData = LineSquareMesh->GetVertexBufferData();
 		VertexBufferData.DrawMode = GL_LINE_LOOP;
-	}
+	}*/
+
+	FPrimitive Cube;
+	MeshBuilder::Cube( Cube, 1.0f );
+
+	Assets.CreateNamedMesh( "cube", Cube );
 
 	FPrimitive Pyramid;
 	MeshBuilder::Cone( Pyramid, 1.0f, 4 );
 
 	Assets.CreateNamedMesh( "pyramid", Pyramid );
-
-	glEnable( GL_DEPTH_TEST );
-	glDepthFunc( GL_LESS );
-
-	glDisable( GL_CULL_FACE );
 }
 
 void CRenderer::RefreshFrame()
@@ -111,6 +112,20 @@ void CRenderer::DrawQueuedRenderables()
 		DefaultShader = Assets.FindShader( "default" );
 	}
 
+	glEnable( GL_DEPTH_TEST );
+	glDepthFunc( GL_LESS );
+
+	if( ForceWireFrame )
+	{
+		glPolygonMode( GL_FRONT_AND_BACK, GL_LINE );
+		glDisable( GL_CULL_FACE );
+	}
+	else
+	{
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		glEnable( GL_CULL_FACE );
+	}
+
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 
 	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
@@ -129,24 +144,25 @@ void CRenderer::DrawQueuedRenderables()
 
 		ModelMatrix = glm::translate( ModelMatrix, RenderData.Position );
 
-		/*static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
+		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
 		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
 		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
 
 		const glm::quat ModelQuaternion = glm::quat( RenderData.Orientation );
 		const glm::mat4 RotationMatrix = glm::toMat4( ModelQuaternion );
 
-		ModelMatrix *= RotationMatrix;*/
+		ModelMatrix *= RotationMatrix;
 
 		ModelMatrix = glm::scale( ModelMatrix, RenderData.Size );
 
-		glm::mat4 ModelViewProjectionMatrix = ProjectionMatrix * ViewMatrix * ModelMatrix;
-
-		GLuint MatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "ModelViewProjection" );
-		glUniformMatrix4fv( MatrixLocation, 1, GL_FALSE, &ModelViewProjectionMatrix[0][0] );
-
 		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
 		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
+
+		GLuint ViewMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "View" );
+		glUniformMatrix4fv( ViewMatrixLocation, 1, GL_FALSE, &ViewMatrix[0][0] );
+
+		GLuint ProjectionMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Projection" );
+		glUniformMatrix4fv( ProjectionMatrixLocation, 1, GL_FALSE, &ProjectionMatrix[0][0] );
 
 		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
 		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
@@ -172,9 +188,6 @@ void CRenderer::DrawQueuedRenderables()
 
 	IInput& Input = CInputLocator::GetService();
 	FFixedPosition2D MousePosition = Input.GetMousePosition();
-	glm::vec3 MousePositionWorldSpace = ScreenPositionToWorld( glm::vec2( static_cast<float>( MousePosition.X ), static_cast<float>( MousePosition.Y ) ) );
-	
-	const bool bPlaneIntersection = PlaneIntersection( MousePositionWorldSpace, CameraSetup.CameraPosition, MousePositionWorldSpace, glm::vec3( 0.0f, 0.0f, 0.0f ), glm::vec3( 0.0f, 0.0f, 1.0f ) );
 
 	for( auto Renderable : DynamicRenderables )
 	{
@@ -199,17 +212,6 @@ void CRenderer::DrawQueuedRenderables()
 
 	Profiler.AddDebugMessage( "MouseScreenSpaceX", PositionXString );
 	Profiler.AddDebugMessage( "MouseScreenSpaceY", PositionYString );
-
-
-	char PositionZString[32];
-	sprintf_s( PositionXString, "%f", MousePositionWorldSpace[0] );
-	sprintf_s( PositionYString, "%f", MousePositionWorldSpace[1] );
-	sprintf_s( PositionZString, "%f", MousePositionWorldSpace[2] );
-
-	Profiler.AddDebugMessage( "MouseWorldSpaceX", PositionXString );
-	Profiler.AddDebugMessage( "MouseWorldSpaceY", PositionYString );
-	Profiler.AddDebugMessage( "MouseWorldSpaceZ", PositionZString );
-	Profiler.AddDebugMessage( "MouseIntersectsWorldPlane", bPlaneIntersection ? "Yes" : "No" );
 }
 
 void CRenderer::SetCamera( CCamera& CameraIn )

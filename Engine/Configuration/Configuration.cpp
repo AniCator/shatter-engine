@@ -20,8 +20,15 @@ bool CConfiguration::IsValidKey( const char* KeyName )
 	return true;
 }
 
-bool CConfiguration::IsEnabled( const char* KeyName )
+bool CConfiguration::IsEnabled( const char* KeyName, const bool Default )
 {
+	if( !IsValidKey( KeyName ) )
+	{
+		Store( KeyName, Default );
+		Save();
+		return Default;
+	}
+
 	std::string Value = GetValue( KeyName );
 
 	if( Value.compare( "1" ) == 0 || Value.compare( "true" ) == 0 )

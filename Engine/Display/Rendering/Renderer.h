@@ -31,6 +31,8 @@ public:
 	glm::vec3 ScreenPositionToWorld( const glm::vec2& ScreenPosition ) const;
 	bool PlaneIntersection( glm::vec3& Intersection, const glm::vec3& RayOrigin, const glm::vec3& RayTarget, const glm::vec3& PlaneOrigin, const glm::vec3& PlaneNormal ) const;
 
+	bool ForceWireFrame;
+
 protected:
 	void RefreshShaderHandle( CRenderable* Renderable );
 

@@ -17,7 +17,7 @@ namespace Log
 {
 	enum LogSeverity
 	{
-		Normal = 0,
+		Standard = 0,
 		Warning,
 		Error,
 		Fatal,
@@ -29,7 +29,7 @@ namespace Log
 	{
 		FHistory()
 		{
-			Severity = Normal;
+			Severity = Standard;
 			Message = "";
 		}
 

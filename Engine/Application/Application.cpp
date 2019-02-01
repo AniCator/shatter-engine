@@ -3,6 +3,7 @@
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
+#include <Engine/Audio/SimpleSound.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Configuration/Configuration.h>
 
@@ -20,7 +21,6 @@
 #endif
 
 CWindow& MainWindow = CWindow::Get();
-static const int nBuildNumber = 0;
 
 CCamera DefaultCamera = CCamera();
 FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
@@ -360,6 +360,12 @@ void DebugMenu( CApplication* Application )
 				InputReloadShaders();
 			}
 
+			const bool Enabled = MainWindow.GetRenderer().ForceWireFrame;
+			if( ImGui::MenuItem( "Toggle Wireframe", NULL, Enabled ) )
+			{
+				MainWindow.GetRenderer().ForceWireFrame = !Enabled;
+			}
+
 			ImGui::Separator();
 
 			for( auto Iterator : Themes )
@@ -398,8 +404,8 @@ void DebugMenu( CApplication* Application )
 
 	if( DisplayLog )
 	{
-		const float Width = MainWindow.GetWidth();
-		const float Height = 0.2f * MainWindow.GetHeight();
+		const float Width = static_cast<float>( MainWindow.GetWidth() );
+		const float Height = 0.2f * static_cast<float>( MainWindow.GetHeight() );
 
 		ImGui::SetNextWindowPos( ImVec2( 0.0f, MainWindow.GetHeight() - Height ), ImGuiCond_Always );
 		ImGui::SetNextWindowSize( ImVec2( Width, Height ), ImGuiCond_Always );
@@ -430,7 +436,7 @@ void DebugMenu( CApplication* Application )
 			{
 				const size_t HistoryIndex = Count - Entries + Index;
 				const Log::FHistory& History = LogHistory[HistoryIndex];
-				if( History.Severity > Log::Normal )
+				if( History.Severity > Log::Standard )
 				{
 					ImGui::TextColored( SeverityToColor[History.Severity], "%s: %s", SeverityToString[History.Severity], History.Message.c_str() );
 				}
@@ -454,6 +460,7 @@ void DebugMenu( CApplication* Application )
 CApplication::CApplication()
 {
 	Name = "Unnamed Shatter Engine Application";
+	Tools = false;
 }
 
 CApplication::~CApplication()
@@ -479,6 +486,28 @@ void CApplication::Run()
 	GameTimer.Start();
 
 	double ScaledGameTime = 0.0;
+
+	// Render a single frame to indicate we're initializing.
+	if( !MainWindow.ShouldClose() )
+	{
+		MainWindow.BeginFrame();
+
+#if defined( IMGUI_ENABLED )
+		ImGui::SetNextWindowPos( ImVec2( 0.0f, 0.0f ), ImGuiCond_Always );
+		ImGui::SetNextWindowSize( ImVec2( 500.0f, 20.0f ), ImGuiCond_Always );
+
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
+		if( ImGui::Begin( "Loading", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
+		{
+			ImGui::Text( "Loading..." );
+			ImGui::End();
+		}
+
+		ImGui::PopStyleColor();
+#endif
+
+		MainWindow.RenderFrame();
+	}
 
 	GameLayersInstance->Initialize();
 
@@ -533,9 +562,12 @@ void CApplication::Run()
 			GameLayersInstance->Frame();
 
 #if defined( IMGUI_ENABLED )
-			CProfileVisualisation::Get().Display();
+			if( Tools )
+			{
+				CProfileVisualisation::Get().Display();
 
-			DebugMenu( this );
+				DebugMenu( this );
+			}
 #endif
 
 			MainWindow.RenderFrame();
@@ -549,6 +581,8 @@ void CApplication::Run()
 	delete GameLayersInstance;
 
 	MainWindow.Terminate();
+
+	CSimpleSound::Shutdown();
 }
 
 std::string CApplication::GetName() const
@@ -559,6 +593,16 @@ std::string CApplication::GetName() const
 void CApplication::SetName( const char* NameIn )
 {
 	Name = NameIn;
+}
+
+const bool CApplication::ToolsEnabled() const
+{
+	return Tools;
+}
+
+void CApplication::EnableTools( const bool Enable )
+{
+	Tools = Enable;
 }
 
 #if defined(_WIN32)
@@ -582,13 +626,23 @@ void CApplication::Initialize()
 
 	Log::Event( "%s (Build: %s)\n\n", Name.c_str(), __DATE__ );
 
+	unsigned char EndianTest[2] = { 1, 0 };
+	short CastShort;
+
+	CastShort = *reinterpret_cast<short*>( EndianTest );
+	if( CastShort == 0 )
+	{
+		Log::Event( "Byte order: Little endian.\n" );
+	}
+	else
+	{
+		Log::Event( "Byte order: Big endian.\n" );
+	}
+
 	ServiceRegistry.CreateStandardServices();
 
 	// Calling Get creates the instance and initializes the class.
 	CConfiguration& ConfigurationInstance = CConfiguration::Get();
-
-	char szTitle[256];
-	sprintf_s( szTitle, "%s (Build: %s)", Name.c_str(), __DATE__ );
 
 	if( MainWindow.Valid() )
 	{
@@ -599,12 +653,14 @@ void CApplication::Initialize()
 		ConfigurationInstance.Initialize();
 	}
 
-	MainWindow.Create( szTitle );
+	MainWindow.Create( Name.c_str() );
 
 	if( !MainWindow.Valid() )
 	{
 		Log::Event( Log::Fatal, "Application window could not be created.\n" );
 	}
+
+	Log::Event( "Binding engine inputs.\n" );
 
 	GLFWwindow* WindowHandle = MainWindow.Handle();
 	glfwSetKeyCallback( WindowHandle, InputKeyCallback );
@@ -643,6 +699,10 @@ void CApplication::Initialize()
 		DisplayLog = !DisplayLog;
 	} );
 
+	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_KP_SUBTRACT, GLFW_RELEASE, [this] {
+		Tools = !Tools;
+	} );
+
 	MainWindow.EnableCursor( CursorVisible );
 
 	if( !GameLayersInstance )
@@ -656,6 +716,8 @@ void CApplication::Initialize()
 	}
 
 #if defined( IMGUI_ENABLED )
+	Log::Event( "Setting font configuration.\n" );
+
 	ImGui_ImplGlfwGL3_Shutdown();
 
 	static const char* FontLocation = "Resources/Roboto-Medium.ttf";

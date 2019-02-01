@@ -74,6 +74,8 @@ public:
 	void Draw( EDrawMode DrawModeOverride = None );
 
 	FVertexBufferData& GetVertexBufferData();
+	const FVertexData& GetVertexData() const;
+	const FIndexData& GetIndexData() const;
 private:
 	bool CreateVertexBuffer( const FPrimitive& Primitive );
 	bool CreateIndexBuffer( const FPrimitive& Primitive );

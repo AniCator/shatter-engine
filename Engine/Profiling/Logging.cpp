@@ -170,7 +170,7 @@ namespace Log
 
 	void CLog::Event( const char* Format, va_list Arguments )
 	{
-		Event( Normal, Format, Arguments );
+		Event( Standard, Format, Arguments );
 	}
 
 	void CLog::Event( LogSeverity Severity, const char* Format, va_list Arguments )

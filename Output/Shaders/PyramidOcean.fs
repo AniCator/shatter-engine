@@ -83,8 +83,7 @@ void main()
 	float LightIntensity = GetLightIntensity( 3000 );
 	vec3 LightColor = BlackBody( 6500 * TimeMultiplier ) * LightIntensity;
 	
-	vec3 WorldNormal = normalize( vec3( Model * vec4( Normal, 1.0 ) ) );
-	WorldNormal = vec3( 0, 0, 1 ); // Normal input is still incorrect, use this one for now.
+	vec3 WorldNormal = normalize( Normal );
 	vec3 ViewVector = normalize( CameraPosition - WorldPosition );
 	vec3 LightDirection = normalize( LightPosition - WorldPosition );
 	vec3 HalfVector = normalize( LightDirection + ViewVector );
@@ -106,5 +105,5 @@ void main()
 	
 	Lighting += vec3( 0.05, 0.05, 0.05 ) * ObjectColor.rgb; // Ambient
 	
-    FragColor = vec4( WorldNormal, ObjectColor.a );
+    FragColor = vec4( ObjectColor.rgb, ObjectColor.a );
 }

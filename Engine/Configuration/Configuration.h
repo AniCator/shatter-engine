@@ -5,11 +5,20 @@
 #include <string>
 #include <map>
 
+enum class ECategory : size_t
+{
+	Miscellaneous = 0,
+	Game,
+	Audio,
+	Graphics,
+	Input
+};
+
 class CConfiguration
 {
 public:
 	bool IsValidKey( const char* KeyName );
-	bool IsEnabled( const char* KeyName );
+	bool IsEnabled( const char* KeyName, const bool Default = false );
 	const char* GetString( const char* KeyName, const char* Default = "undefined" );
 	int GetInteger( const char* KeyName, const int Default = -1 );
 	double GetDouble( const char* KeyName, const double Default = -1.0f );

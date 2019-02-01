@@ -36,9 +36,10 @@ void CRenderable::SetShader( CShader* Shader )
 	}
 }
 
-void CRenderable::Draw()
+void CRenderable::Draw( EDrawMode DrawModeOverride )
 {
-	Mesh->Draw( RenderData.DrawMode );
+	const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
+	Mesh->Draw( DrawMode );
 }
 
 FRenderDataInstanced& CRenderable::GetRenderData()

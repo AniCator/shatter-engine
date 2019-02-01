@@ -3,6 +3,7 @@
 
 #include "Game.h"
 #include <Engine/Profiling/Profiling.h>
+#include <Engine/Profiling/Logging.h>
 
 CGameLayers* GameLayersInstance = new CGameLayers();
 
@@ -25,6 +26,7 @@ void CGameLayers::Add( IGameLayer* GameLayer )
 
 void CGameLayers::Initialize()
 {
+	Log::Event( "Initializing game layers.\n" );
 	for( auto GameLayer : GameLayers )
 	{
 		if( GameLayer )

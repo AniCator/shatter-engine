@@ -15,8 +15,12 @@ public:
 	std::string GetName() const;
 	void SetName( const char* Name );
 
+	const bool ToolsEnabled() const;
+	void EnableTools( const bool Enable );
+
 	CServiceRegistry ServiceRegistry;
 
 private:
 	std::string Name;
+	bool Tools;
 };

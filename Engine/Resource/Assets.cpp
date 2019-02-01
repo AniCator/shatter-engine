@@ -49,6 +49,8 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 		int64_t Mesh = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Meshes", Mesh ), false );
 
+		Log::Event( "Created mesh \"%s\".\n", NameString.c_str() );
+
 		return NewMesh;
 	}
 
