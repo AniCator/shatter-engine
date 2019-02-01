@@ -61,7 +61,7 @@ bool CFile::Load( bool InBinary )
 		return true;
 	}
 
-	Log::Event( "Failed to load file \"%s\".\n", Location.c_str() );
+	Log::Event( Log::Warning, "Failed to load file \"%s\".\n", Location.c_str() );
 
 	return false;
 }
