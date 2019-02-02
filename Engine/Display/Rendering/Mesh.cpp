@@ -30,32 +30,35 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 
 void CMesh::Draw( EDrawMode DrawModeOverride )
 {
-	const GLenum DrawMode = DrawModeOverride != None ? DrawModeOverride : VertexBufferData.DrawMode;
+	const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
 
-	glBindVertexArray( VertexArrayObject );
-
-	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
-
-	glEnableVertexAttribArray( EVertexAttribute::Position );
-	const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
-	glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
-
-	glEnableVertexAttribArray( EVertexAttribute::Normal );
-	const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
-	glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
-
-	if( HasIndexBuffer )
+	if( DrawMode != EDrawMode::None )
 	{
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
-		glDrawElements( DrawMode, VertexBufferData.IndexCount, GL_UNSIGNED_INT, 0 );
-	}
-	else
-	{
-		glDrawArrays( DrawMode, 0, VertexBufferData.VertexCount );
-	}
+		glBindVertexArray( VertexArrayObject );
 
-	glDisableVertexAttribArray( EVertexAttribute::Position );
-	glDisableVertexAttribArray( EVertexAttribute::Normal );
+		glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
+
+		glEnableVertexAttribArray( EVertexAttribute::Position );
+		const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
+		glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
+
+		glEnableVertexAttribArray( EVertexAttribute::Normal );
+		const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
+		glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
+
+		if( HasIndexBuffer )
+		{
+			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
+			glDrawElements( DrawMode, VertexBufferData.IndexCount, GL_UNSIGNED_INT, 0 );
+		}
+		else
+		{
+			glDrawArrays( DrawMode, 0, VertexBufferData.VertexCount );
+		}
+
+		glDisableVertexAttribArray( EVertexAttribute::Position );
+		glDisableVertexAttribArray( EVertexAttribute::Normal );
+	}
 }
 
 FVertexBufferData& CMesh::GetVertexBufferData()
