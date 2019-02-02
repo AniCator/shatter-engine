@@ -244,6 +244,8 @@
     <ClCompile Include="Engine\Utility\StringPool.cpp" />
     <ClCompile Include="Engine\Utility\Structures\SpatialGrid.cpp" />
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
+    <ClCompile Include="Engine\World\Entity\Entity.cpp" />
+    <ClCompile Include="Engine\World\World.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
     <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Game\ShatterLapse\ShatterLapse.cpp" />
@@ -297,6 +299,8 @@
     <ClInclude Include="Engine\Utility\TestResult.h" />
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />
     <ClInclude Include="Engine\Utility\Timer.h" />
+    <ClInclude Include="Engine\World\Entity\Entity.h" />
+    <ClInclude Include="Engine\World\World.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />
     <ClInclude Include="Game\Game.h" />
     <ClInclude Include="Game\ShatterLapse\ShatterLapse.h" />
