@@ -339,10 +339,7 @@ void DebugMenu( CApplication* Application )
 
 			if( ImGui::MenuItem( "Re-initialize Application", "" ) )
 			{
-				[Application]
-				{
-					Application->Initialize();
-				}();
+				Application->Initialize();
 
 				// Has to return when executed because imgui will be reset.
 				return;
