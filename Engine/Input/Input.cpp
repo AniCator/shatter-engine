@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Input.h"
 
-#include <GLFW/glfw3.h>
+#include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
 
 #include <Engine/Display/Window.h>
 #include <Engine/Utility/Locator/InputLocator.h>

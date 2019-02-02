@@ -6,8 +6,8 @@
 
 #include <glm/gtx/quaternion.hpp>
 
-#include "glad/glad.h"
-#include "GLFW/glfw3.h"
+#include <ThirdParty/glad/include/glad/glad.h>
+#include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>

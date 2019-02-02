@@ -12,13 +12,13 @@
 #include <Engine/Profiling/Profiling.h>
 
 // GL3W/GLFW
-#include "glad/glad.h"   // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
-#include <GLFW/glfw3.h>
+#include <ThirdParty/glad/include/glad/glad.h>   // This example is using gl3w to access OpenGL functions (because it is small). You may use glew/glad/glLoadGen/etc. whatever already works for you.
+#include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
 #ifdef _WIN32
 #undef APIENTRY
 #define GLFW_EXPOSE_NATIVE_WIN32
 #define GLFW_EXPOSE_NATIVE_WGL
-#include <GLFW/glfw3native.h>
+#include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3native.h>
 #endif
 
 // Data

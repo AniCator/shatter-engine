@@ -1,9 +1,9 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include "glad/glad.h"
-#include "GLFW/glfw3.h"
-#include "glm/glm.hpp"
+#include <ThirdParty/glad/include/glad/glad.h>
+#include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW//glfw3.h>
+#include <ThirdParty/glm/glm.hpp>
 
 #include <Engine/Utility/Primitive.h>
 

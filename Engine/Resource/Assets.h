@@ -2,7 +2,7 @@
 #pragma once
 
 #include <unordered_map>
-#include "glm/glm.hpp"
+#include <ThirdParty/glm/glm.hpp>
 
 #include <Engine/Utility/Primitive.h>
 

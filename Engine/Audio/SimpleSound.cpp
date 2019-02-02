@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "SimpleSound.h"
 
-#include <SFML/Audio.hpp>
+#include <ThirdParty/SFML-2.5.1/include/SFML/Audio.hpp>
 
 #include <Engine/Profiling/Logging.h>
 

@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include "glm/glm.hpp"
+#include <ThirdParty/glm/glm.hpp>
 #include <Engine/Utility/Math.h>
 
 struct FCameraSetup
