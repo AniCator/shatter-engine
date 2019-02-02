@@ -13,3 +13,6 @@ The engine requires a couple of third party libraries which aren't available in 
 * ThirdParty/glfw-3.2.1.bin.WIN64/ - GLFW 3.2.1
 * ThirdParty/glm/ - GLM 0.9.8.5
 * ThirdParty/imgui-1.52/ - dear imgui 1.52
+* ThirdParty/SFML-2.5.1/ - SFML 2.5.1 (for audio)
+* ThirdParty/angelscript/ - AngelScript 2.33.0
+* ThirdParty/discord-rpc/ - Discord Rich Presence
