@@ -44,8 +44,7 @@
 *.pdb
 
 # Project specific
-/x64
-/Game/*/x64
 /ThirdParty
 /Output/*.log
 /Output/*.ilk
+*x64/
