@@ -27,6 +27,11 @@ void CGameLayers::Add( IGameLayer* GameLayer )
 void CGameLayers::Initialize()
 {
 	Log::Event( "Initializing game layers.\n" );
+
+	PreviousTime = 0.0f;
+	CurrentTime = 0.0f;
+	DeltaTime = CurrentTime - PreviousTime;
+
 	for( auto GameLayer : GameLayers )
 	{
 		if( GameLayer )

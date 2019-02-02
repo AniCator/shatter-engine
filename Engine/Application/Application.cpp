@@ -28,6 +28,8 @@ bool PauseGame = false;
 bool ScaleTime = false;
 bool CursorVisible = true;
 
+double ScaledGameTime = 0.0;
+
 void InputScaleTimeEnable()
 {
 	ScaleTime = true;
@@ -55,6 +57,7 @@ void InputReloadConfiguration()
 
 void InputRestartGameLayers()
 {
+	ScaledGameTime = 0.0f;
 	GameLayersInstance->Shutdown();
 	GameLayersInstance->Initialize();
 
@@ -484,8 +487,6 @@ void CApplication::Run()
 
 	InputTimer.Start();
 	GameTimer.Start();
-
-	double ScaledGameTime = 0.0;
 
 	// Render a single frame to indicate we're initializing.
 	if( !MainWindow.ShouldClose() )
