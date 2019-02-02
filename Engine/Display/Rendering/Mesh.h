@@ -52,7 +52,7 @@ struct FIndexData
 
 struct FVertexBufferData
 {
-	GLenum DrawMode = GL_TRIANGLE_STRIP;
+	GLenum DrawMode = GL_TRIANGLES;
 	GLuint VertexBufferObject = 0;
 	GLuint IndexBufferObject = 0;
 	glm::uint VertexCount = 0;
