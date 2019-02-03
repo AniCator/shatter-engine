@@ -87,6 +87,12 @@
     <Filter Include="Source Files\Engine\World\Entity">
       <UniqueIdentifier>{8939cd7e-a634-4079-ba24-ed6e00c4e640}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Utility\Script">
+      <UniqueIdentifier>{4d651276-e546-4eea-af74-57ca2ea7b57b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\ThirdParty\angelscript">
+      <UniqueIdentifier>{919be637-6d2c-4c33-8779-b2515d7f075e}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -196,6 +202,24 @@
     </ClCompile>
     <ClCompile Include="Engine\World\Entity\Entity.cpp">
       <Filter>Source Files\Engine\World\Entity</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Script\AngelEngine.cpp">
+      <Filter>Source Files\Engine\Utility\Script</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\angelscript\add_on\scriptbuilder\scriptbuilder.cpp">
+      <Filter>Source Files\ThirdParty\angelscript</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\angelscript\add_on\scriptstdstring\scriptstdstring.cpp">
+      <Filter>Source Files\ThirdParty\angelscript</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
+      <Filter>Source Files\ThirdParty\angelscript</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Texture.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Framebuffer.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -348,6 +372,15 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\Entity.h">
       <Filter>Source Files\Engine\World\Entity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Script\AngelEngine.h">
+      <Filter>Source Files\Engine\Utility\Script</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Texture.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Framebuffer.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

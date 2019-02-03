@@ -12,6 +12,7 @@
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/File.h>
+#include <Engine/Utility/Script/AngelEngine.h>
 
 #include <Game/Game.h>
 
@@ -58,6 +59,10 @@ void InputReloadConfiguration()
 void InputRestartGameLayers()
 {
 	ScaledGameTime = 0.0f;
+
+	CAngelEngine::Get().Shutdown();
+	CAngelEngine::Get().Initialize();
+
 	GameLayersInstance->Shutdown();
 	GameLayersInstance->Initialize();
 
@@ -547,6 +552,8 @@ void CApplication::Run()
 				// Tick all game layers
 				GameLayersInstance->Tick();
 
+				CAngelEngine::Get().Tick();
+
 				GameTimer.Start();
 			}
 		}
@@ -574,6 +581,8 @@ void CApplication::Run()
 			FrameMark;
 		}
 	}
+
+	CAngelEngine::Get().Shutdown();
 
 	GameLayersInstance->Shutdown();
 	delete GameLayersInstance;
@@ -712,6 +721,8 @@ void CApplication::Initialize()
 	{
 		CameraSpeed = CConfiguration::Get().GetFloat( "cameraspeed", 1.0f );
 	}
+
+	CAngelEngine::Get().Initialize();
 
 #if defined( IMGUI_ENABLED )
 	Log::Event( "Setting font configuration.\n" );
