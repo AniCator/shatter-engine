@@ -19,6 +19,11 @@ public:
 	bool Exists();
 	static bool Exists( const char* FileLocation );
 
+	const std::string Extension()
+	{
+		return FileExtension;
+	}
+
 	const size_t Size() const
 	{
 		return FileSize;
@@ -28,5 +33,6 @@ private:
 	char* Data;
 	size_t FileSize;
 	std::string Location;
+	std::string FileExtension;
 	bool Binary;
 };

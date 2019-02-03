@@ -3,12 +3,25 @@
 #include <Engine/Profiling/Logging.h>
 
 #include <fstream>
+#include <algorithm>
 
 CFile::CFile( const char* FileLocation )
 {
 	Data = nullptr;
 	Location = FileLocation;
 	Binary = false;
+
+	FileExtension = FileLocation;
+	const size_t ExtensionIndex = FileExtension.rfind( '.' );
+	if( ExtensionIndex != std::string::npos )
+	{
+		FileExtension = FileExtension.substr( ExtensionIndex + 1 );
+		std::transform( FileExtension.begin(), FileExtension.end(), FileExtension.begin(), ::tolower );
+	}
+	else
+	{
+		FileExtension = "";
+	}
 }
 
 CFile::~CFile()
