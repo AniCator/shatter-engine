@@ -9,6 +9,9 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
+#include <Engine/Utility/File.h>
+#include <Engine/Utility/MeshBuilder.h>
+
 CAssets::CAssets()
 {
 
@@ -22,6 +25,49 @@ void CAssets::Create( const std::string& Name, CMesh* NewMesh )
 void CAssets::Create( const std::string& Name, CShader* NewShader )
 {
 	Shaders.insert_or_assign( Name, NewShader );
+}
+
+CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation )
+{
+	CMesh* Mesh = nullptr;
+
+	CFile File( FileLocation );
+	if( File.Exists() )
+	{
+		std::string Extension = File.Extension();
+		FPrimitive Primitive;
+
+		if( Extension == "obj" )
+		{
+			File.Load();
+			MeshBuilder::OBJ( Primitive, File );
+		}
+		else if( Extension == "lm" )
+		{
+			File.Load( true );
+			MeshBuilder::LM( Primitive, File );
+		}
+		else
+		{
+			Log::Event( Log::Warning, "Unknown mesh extension \"%s\".\n", Extension.c_str() );
+		}
+
+		if( Primitive.Vertices )
+		{
+			Mesh = CreateNamedMesh( Name, Primitive );
+		}
+	}
+	else
+	{
+		Log::Event( Log::Warning, "Couldn't load file \"%s\".\n", FileLocation );
+	}
+
+	if( !Mesh )
+	{
+		Log::Event( Log::Warning, "Failed to create mesh \"%s\".\n", Name );
+	}
+
+	return Mesh;
 }
 
 CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )

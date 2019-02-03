@@ -15,6 +15,7 @@ public:
 	void Create( const std::string& Name, CMesh* NewMesh );
 	void Create( const std::string& Name, CShader* NewShader );
 
+	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation );
 
