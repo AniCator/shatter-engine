@@ -179,6 +179,11 @@ namespace Log
 
 		if( Severity >= Error )
 		{
+			BreakDebugger();
+		}
+
+		if( Severity >= Fatal )
+		{
 #ifdef _WIN32
 			char FullMessage[nMaximumLogMessageLength];
 			vsprintf_s( FullMessage, Format, Arguments );
@@ -188,11 +193,7 @@ namespace Log
 
 			MessageBox( nullptr, FullMessage, ValidName ? Name : DefaultCaption, MB_ICONERROR | MB_OK );
 #endif
-			BreakDebugger();
-		}
 
-		if( Severity >= Fatal )
-		{
 			exit( EXIT_FAILURE );
 		}
 	}
