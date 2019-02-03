@@ -42,6 +42,10 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 		const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
 		glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
 
+		glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
+		const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
+		glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
+
 		glEnableVertexAttribArray( EVertexAttribute::Normal );
 		const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
 		glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
@@ -57,6 +61,7 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 		}
 
 		glDisableVertexAttribArray( EVertexAttribute::Position );
+		glDisableVertexAttribArray( EVertexAttribute::TextureCoordinate );
 		glDisableVertexAttribArray( EVertexAttribute::Normal );
 	}
 }
@@ -95,6 +100,7 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 		for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
 		{
 			VertexData.Vertices[Index].Position = Primitive.Vertices[Index].Position;
+			VertexData.Vertices[Index].TextureCoordinate = Primitive.Vertices[Index].TextureCoordinate;
 		}
 
 		VertexBufferData.VertexCount = Primitive.VertexCount;

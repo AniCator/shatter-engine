@@ -5,8 +5,9 @@
 #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW//glfw3.h>
 #include <ThirdParty/glm/glm.hpp>
 
-#include "Mesh.h"
-#include "Shader.h"
+#include <Engine/Display/Rendering/Mesh.h>
+class CShader;
+#include <Engine/Display/Rendering/Texture.h>
 
 struct FRenderData
 {
@@ -40,10 +41,14 @@ public:
 	CShader* GetShader();
 	void SetShader( CShader* Shader );
 
+	CTexture* GetTexture( ETextureSlot Slot );
+	void SetTexture( CTexture* Texture, ETextureSlot Slot );
+
 	virtual void Draw( EDrawMode DrawModeOverride = None );
 
 	FRenderDataInstanced& GetRenderData();
 private:
+	CTexture* Textures[static_cast<std::underlying_type<ETextureSlot>::type>( ETextureSlot::Max )];
 	CShader* Shader;
 	CMesh* Mesh;
 

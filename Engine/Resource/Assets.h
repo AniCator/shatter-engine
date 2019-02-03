@@ -8,20 +8,24 @@
 
 class CMesh;
 class CShader;
+class CTexture;
 
 class CAssets
 {
 public:
 	void Create( const std::string& Name, CMesh* NewMesh );
 	void Create( const std::string& Name, CShader* NewShader );
+	void Create( const std::string& Name, CTexture* NewTexture );
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation );
+	CTexture* CreatedNamedTexture( const char* Name, const char* FileLocation );
 
 
 	CMesh* FindMesh( std::string Name );
 	CShader* FindShader( std::string Name );
+	CTexture* FindTexture( std::string Name );
 
 	template<class T>
 	inline T* Find( std::string Name, std::unordered_map<std::string, T*> Data )
@@ -36,9 +40,15 @@ public:
 
 	void ReloadShaders();
 
+	const std::unordered_map<std::string, CMesh*>& GetMeshMap() const
+	{
+		return Meshes;
+	}
+
 private:
 	std::unordered_map<std::string, CMesh*> Meshes;
 	std::unordered_map<std::string, CShader*> Shaders;
+	std::unordered_map<std::string, CTexture*> Textures;
 
 public:
 	static CAssets& Get()

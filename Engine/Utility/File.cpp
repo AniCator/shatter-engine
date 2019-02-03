@@ -94,6 +94,16 @@ bool CFile::Load( char* DataSource, const size_t SizeIn )
 	return true;
 }
 
+bool CFile::Load( CData& Data )
+{
+	const size_t Size = Data.Size();
+	char* Buffer = new char[Size];
+
+	Data.Read( Buffer, Size );
+
+	return Load( Buffer, Size );
+}
+
 bool CFile::Save()
 {
 	if( Data )

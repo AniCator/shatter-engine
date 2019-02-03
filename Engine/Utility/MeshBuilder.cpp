@@ -4,6 +4,7 @@
 #include <sstream>
 
 #include <Engine/Profiling/Logging.h>
+#include <Engine/Display/Rendering/Mesh.h>
 
 static const float Pi = static_cast<float>( acos( -1 ) );
 
@@ -240,8 +241,11 @@ l 5 8 1 2 4 9*/
 void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 {
 	std::vector<glm::vec3> Vertices;
+	std::vector<glm::vec2> Coordinates;
 	std::vector<glm::vec3> Normals;
+
 	std::vector<glm::uint> VertexIndices;
+	std::vector<size_t> CoordinateIndices;
 	std::vector<size_t> NormalIndices;
 
 	const char Delimiter = ' ';
@@ -257,6 +261,24 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 			if( Line[1] == 't' )
 			{
 				// Texture coordinates.
+				glm::vec2 Coordinate;
+
+				Line.erase( 0, 2 );
+				std::stringstream Stream( Line );
+				std::string Token;
+				std::vector<std::string> Tokens;
+				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 2 )
+				{
+					Tokens.push_back( Token );
+				}
+
+				if( Tokens.size() == 2 )
+				{
+					Coordinate[0] = static_cast<float>( atof( Tokens[0].c_str() ) );
+					Coordinate[1] = static_cast<float>( atof( Tokens[1].c_str() ) );
+
+					Coordinates.push_back( Coordinate );
+				}
 			}
 			else if( Line[1] == 'n' )
 			{
@@ -353,6 +375,14 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 				VertexIndices.push_back( atoi( VertexTokens[2].c_str() ) - 1 );
 			}
 
+			if( CoordinateTokens.size() == 3 )
+			{
+				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
+				CoordinateIndices.push_back( atoi( CoordinateTokens[0].c_str() ) - 1 );
+				CoordinateIndices.push_back( atoi( CoordinateTokens[1].c_str() ) - 1 );
+				CoordinateIndices.push_back( atoi( CoordinateTokens[2].c_str() ) - 1 );
+			}
+
 			if( NormalTokens.size() == 3 )
 			{
 				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
@@ -369,11 +399,17 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 		VertexArray[Index].Position = Vertices[Index];
 	}
 
+	const bool HasCoordinateIndices = CoordinateIndices.size() == VertexIndices.size();
 	const bool HasNormalIndices = NormalIndices.size() == VertexIndices.size();
 	glm::uint* IndexArray = new glm::uint[VertexIndices.size()];
 	for( size_t Index = 0; Index < VertexIndices.size(); Index++ )
 	{
 		IndexArray[Index] = VertexIndices[Index];
+
+		if( HasCoordinateIndices )
+		{
+			VertexArray[VertexIndices[Index]].TextureCoordinate = Coordinates[CoordinateIndices[Index]];
+		}
 
 		if( HasNormalIndices )
 		{
@@ -395,6 +431,27 @@ void MeshBuilder::LM( FPrimitive& Primitive, CFile& File )
 	Data.Load( RawData, FileSize );
 
 	Data >> Primitive;
+}
+
+void MeshBuilder::Mesh( FPrimitive& Primitive, CMesh* MeshInstance )
+{
+	if( MeshInstance )
+	{
+		const FVertexData& VertexData = MeshInstance->GetVertexData();
+		const FIndexData& IndexData = MeshInstance->GetIndexData();
+		const FVertexBufferData& VertexBufferData = MeshInstance->GetVertexBufferData();
+
+		Primitive.VertexCount = VertexBufferData.VertexCount;
+		Primitive.IndexCount = VertexBufferData.IndexCount;
+
+		Primitive.Vertices = new FVertex[Primitive.VertexCount];
+		Primitive.Indices = new glm::uint[Primitive.IndexCount];
+
+		memcpy( Primitive.Vertices, VertexData.Vertices, Primitive.VertexCount * sizeof( FVertex ) );
+		memcpy( Primitive.Indices, IndexData.Indices, Primitive.IndexCount * sizeof( glm::uint ) );
+
+		Primitive.HasNormals = true;
+	}
 }
 
 struct VectorComparator {

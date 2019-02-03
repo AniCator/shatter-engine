@@ -9,6 +9,10 @@
 #include <ThirdParty/glad/include/glad/glad.h>
 #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
 
+#include <Engine/Display/Rendering/Mesh.h>
+#include <Engine/Display/Rendering/Shader.h>
+#include <Engine/Display/Rendering/Texture.h>
+
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 

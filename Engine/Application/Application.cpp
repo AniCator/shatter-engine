@@ -11,7 +11,9 @@
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
+#include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
+#include <Engine/Utility/MeshBuilder.h>
 #include <Engine/Utility/Script/AngelEngine.h>
 
 #include <Game/Game.h>
@@ -291,6 +293,7 @@ void SetTheme( const char* Theme )
 }
 
 static bool DisplayLog = true;
+static bool ExportDialog = false;
 static size_t PreviousSize = 0;
 void DebugMenu( CApplication* Application )
 {
@@ -318,7 +321,7 @@ void DebugMenu( CApplication* Application )
 		sprintf_s( MenuName, "%s %i.%i.%i", Application->GetName().c_str(), Number.Major, Number.Minor, Number.Hot );
 		if( ImGui::BeginMenu( MenuName ) )
 		{
-			ImGui::MenuItem( "2017 \xc2\xa9 Christiaan Bakker", NULL, false, false );
+			ImGui::MenuItem( "2017 \xc2\xa9 Christiaan Bakker", nullptr, false, false );
 
 			if( ImGui::MenuItem( "Quit", "Escape" ) )
 			{
@@ -330,12 +333,12 @@ void DebugMenu( CApplication* Application )
 
 		if( ImGui::BeginMenu( "Commands" ) )
 		{
-			if( ImGui::MenuItem( "Pause", NULL, PauseGame ) )
+			if( ImGui::MenuItem( "Pause", nullptr, PauseGame ) )
 			{
 				PauseGame = !PauseGame;
 			}
 
-			if( ImGui::MenuItem( "Slow Motion", NULL, ScaleTime ) )
+			if( ImGui::MenuItem( "Slow Motion", nullptr, ScaleTime ) )
 			{
 				ScaleTime = !ScaleTime;
 			}
@@ -366,7 +369,7 @@ void DebugMenu( CApplication* Application )
 			}
 
 			const bool Enabled = MainWindow.GetRenderer().ForceWireFrame;
-			if( ImGui::MenuItem( "Toggle Wireframe", NULL, Enabled ) )
+			if( ImGui::MenuItem( "Toggle Wireframe", nullptr, Enabled ) )
 			{
 				MainWindow.GetRenderer().ForceWireFrame = !Enabled;
 			}
@@ -391,14 +394,19 @@ void DebugMenu( CApplication* Application )
 		{
 			CProfileVisualisation& Profiler = CProfileVisualisation::Get();
 			const bool Enabled = Profiler.IsEnabled();
-			if( ImGui::MenuItem( "Profiler", NULL, Enabled ) )
+			if( ImGui::MenuItem( "Profiler", nullptr, Enabled ) )
 			{
 				Profiler.SetEnabled( !Enabled );
 			}
 
-			if( ImGui::MenuItem( "Logger", NULL, DisplayLog ) )
+			if( ImGui::MenuItem( "Logger", nullptr, DisplayLog ) )
 			{
 				DisplayLog = !DisplayLog;
+			}
+
+			if( ImGui::MenuItem( "Export" ) )
+			{
+				ExportDialog = true;
 			}
 
 			ImGui::EndMenu();
@@ -459,6 +467,41 @@ void DebugMenu( CApplication* Application )
 			ImGui::End();
 		}
 		ImGui::PopStyleColor();
+	}
+
+	if( ExportDialog )
+	{
+		if( ImGui::Begin( "Export", &ExportDialog ) )
+		{
+			ImGui::Text( "Click on an asset to convert it." );
+
+			auto Map = CAssets::Get().GetMeshMap();
+			for( auto Entry : Map )
+			{
+				if( ImGui::Button( Entry.first.c_str() ) )
+				{
+					Log::Event( "Exporting mesh \"%s\".", Entry.first.c_str() );
+					CMesh* Mesh = Entry.second;
+					if( Mesh )
+					{
+						FPrimitive Primitive;
+						MeshBuilder::Mesh( Primitive, Mesh );
+
+						CData Data;
+						Data << Primitive;
+
+						std::stringstream Location;
+						Location << "Models/" << Entry.first << ".lm";
+
+						CFile File( Location.str().c_str() );
+						File.Load( Data );
+						File.Save();
+					}
+				}
+			}
+
+			ImGui::End();
+		}
 	}
 }
 

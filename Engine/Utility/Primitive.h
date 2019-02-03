@@ -5,6 +5,8 @@
 
 #include <Engine/Utility/Data.h>
 
+static const size_t PrimitiveVersion = 0;
+
 struct FVertex
 {
 	FVertex()
@@ -22,7 +24,15 @@ struct FVertex
 		Normal = InNormal;
 	}
 
+	FVertex( const glm::vec3& InPosition, const glm::vec3& InNormal, const glm::vec2& InTextureCoordinate )
+	{
+		Position = InPosition;
+		TextureCoordinate = InTextureCoordinate;
+		Normal = InNormal;
+	}
+
 	glm::vec3 Position;
+	glm::vec2 TextureCoordinate;
 	glm::vec3 Normal;
 };
 
@@ -60,6 +70,8 @@ struct FPrimitive
 
 	friend CData& operator<<( CData& Data, FPrimitive& Primitive )
 	{
+		Data << PrimitiveVersion;
+
 		Data << Primitive.VertexCount;
 		Data << Primitive.IndexCount;
 
@@ -78,19 +90,25 @@ struct FPrimitive
 
 	friend CData& operator>>( CData& Data, FPrimitive& Primitive )
 	{
-		Data >> Primitive.VertexCount;
-		Data >> Primitive.IndexCount;
+		size_t Version;
+		Data >> Version;
 
-		Primitive.Vertices = new FVertex[Primitive.VertexCount];
-		for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
+		if( Version >= PrimitiveVersion )
 		{
-			Data >> Primitive.Vertices[Index];
-		}
+			Data >> Primitive.VertexCount;
+			Data >> Primitive.IndexCount;
 
-		Primitive.Indices = new glm::uint[Primitive.IndexCount];
-		for( size_t Index = 0; Index < Primitive.IndexCount; Index++ )
-		{
-			Data >> Primitive.Indices[Index];
+			Primitive.Vertices = new FVertex[Primitive.VertexCount];
+			for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
+			{
+				Data >> Primitive.Vertices[Index];
+			}
+
+			Primitive.Indices = new glm::uint[Primitive.IndexCount];
+			for( size_t Index = 0; Index < Primitive.IndexCount; Index++ )
+			{
+				Data >> Primitive.Indices[Index];
+			}
 		}
 
 		return Data;

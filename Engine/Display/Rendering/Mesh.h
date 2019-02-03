@@ -10,6 +10,7 @@
 enum EVertexAttribute
 {
 	Position = 0,
+	TextureCoordinate,
 	Normal,
 	Color
 };

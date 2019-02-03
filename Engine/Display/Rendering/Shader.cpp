@@ -20,6 +20,10 @@ CShader::~CShader()
 
 bool CShader::Load( const char* FileLocation )
 {
+	Handle = 0;
+	HandleVS = 0;
+	HandleFS = 0;
+
 	Location = FileLocation;
 
 	std::stringstream VertexPath;
@@ -46,19 +50,19 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 	CFile ShaderSource( FileLocation );
 	const bool Loaded = ShaderSource.Load();
 
-	if( !Loaded )
-		return false;
-
-	const char* ShaderData = ShaderSource.Fetch<char>();
-
-	if( ShaderData )
+	if( Loaded )
 	{
-		GLuint ShaderTypeGL = static_cast<GLuint>( ShaderType );
+		const char* ShaderData = ShaderSource.Fetch<char>();
 
-		HandleIn = glCreateShader( ShaderTypeGL );
-		glShaderSource( HandleIn, 1, &ShaderData, NULL );
+		if( ShaderData )
+		{
+			GLuint ShaderTypeGL = static_cast<GLuint>( ShaderType );
 
-		return true;
+			HandleIn = glCreateShader( ShaderTypeGL );
+			glShaderSource( HandleIn, 1, &ShaderData, NULL );
+
+			return true;
+		}
 	}
 
 	return false;

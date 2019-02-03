@@ -2,6 +2,7 @@
 #pragma once
 
 #include <string>
+#include <Engine/Utility/Data.h>
 
 class CFile
 {
@@ -11,6 +12,7 @@ public:
 
 	virtual bool Load( bool Binary = false );
 	virtual bool Load( char* DataSource, const size_t SizeIn );
+	virtual bool Load( CData& Data );
 	virtual bool Save();
 
 	template<typename T>

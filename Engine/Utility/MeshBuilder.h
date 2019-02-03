@@ -7,6 +7,8 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Primitive.h>
 
+class CMesh;
+
 class MeshBuilder
 {
 public:
@@ -27,6 +29,8 @@ public:
 
 	static void OBJ( FPrimitive& Primitive, CFile& File );
 	static void LM( FPrimitive& Primitive, CFile& File );
+
+	static void Mesh( FPrimitive& Primitive, CMesh* MeshInstance );
 
 private:
 	static void Soup( FPrimitive& Primitive, std::vector<glm::vec3> Vertices );
