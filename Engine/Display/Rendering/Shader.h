@@ -4,10 +4,10 @@
 #include "glad/glad.h"
 #include <string>
 
-enum EShaderType
+enum class EShaderType : uint16_t
 {
-	Vertex,
-	Fragment
+	Vertex = GL_VERTEX_SHADER,
+	Fragment = GL_FRAGMENT_SHADER
 };
 
 class CShader
@@ -15,8 +15,6 @@ class CShader
 public:
 	CShader();
 	~CShader();
-
-	inline static GLuint ShaderTypeToGL( EShaderType ShaderType );
 
 	bool Load( const char* FileLocation );
 	bool Load( const char* FileLocation, GLuint& HandleIn, EShaderType ShaderType );

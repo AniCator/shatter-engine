@@ -18,16 +18,6 @@ CShader::~CShader()
 
 }
 
-GLuint CShader::ShaderTypeToGL( EShaderType ShaderType )
-{
-	if( ShaderType == Vertex )
-	{
-		return GL_VERTEX_SHADER;
-	}
-
-	return GL_FRAGMENT_SHADER;
-}
-
 bool CShader::Load( const char* FileLocation )
 {
 	Location = FileLocation;
@@ -38,8 +28,8 @@ bool CShader::Load( const char* FileLocation )
 	VertexPath << FileLocation << ".vs";
 	FragmentPath << FileLocation << ".fs";
 
-	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), HandleVS, Vertex );
-	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), HandleFS, Fragment );
+	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), HandleVS, EShaderType::Vertex );
+	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), HandleFS, EShaderType::Fragment );
 
 	if( LoadedVertexShader && LoadedFragmentShader )
 	{
@@ -63,7 +53,7 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 
 	if( ShaderData )
 	{
-		GLuint ShaderTypeGL = ShaderTypeToGL( ShaderType );
+		GLuint ShaderTypeGL = static_cast<GLuint>( ShaderType );
 
 		HandleIn = glCreateShader( ShaderTypeGL );
 		glShaderSource( HandleIn, 1, &ShaderData, NULL );
