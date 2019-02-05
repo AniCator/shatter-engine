@@ -1,10 +1,11 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <Engine/Utility/Service/Service.h>
-#include <Engine/Event/ActionTarget.h>
-
 #include <stdint.h>
+
+#include <Engine/Event/ActionTarget.h>
+#include <Engine/Input/InputMap.h>
+#include <Engine/Utility/Service/Service.h>
 
 struct GLFWwindow;
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Action, int Modifiers );
@@ -32,14 +33,14 @@ struct FActionBinding
 	FActionBinding()
 	{
 		BindingType = EActionBindingType::Keyboard;
-		BindingInput = -1;
+		BindingInput = EKey::Unknown;
 		BindingAction = 1;
 		BindingModifiers = 0;
 		TargetFunc = 0;
 	}
 
 	EActionBindingType BindingType;
-	int BindingInput;
+	EKey BindingInput;
 	int BindingAction;
 	int BindingModifiers;
 	ActionTarget TargetFunc;
@@ -48,14 +49,14 @@ struct FActionBinding
 class IInput : public IEngineService
 {
 public:
-	virtual void RegisterKeyInput( int KeyInput, int ScanCode, int Action, int Modifiers ) = 0;
+	virtual void RegisterKeyInput( EKey KeyInput, int ScanCode, int Action, int Modifiers ) = 0;
 	virtual void RegisterMouseButtonInput( int MouseButton, int Action, int Modifiers ) = 0;
 	virtual void RegisterMousePositionInput( double PositionX, double PositionY ) = 0;
 	virtual void RegisterScrollInput( int OffsetX, int OffsetY ) = 0;
 	virtual void RegisterJoystickStatus( int Joystick, int Event ) = 0;
 
 	virtual void AddActionBinding( FActionBinding ActionBinding ) = 0;
-	virtual void AddActionBinding( EActionBindingType BindingType, int KeyInput, int Action, ActionTarget TargetFunc ) = 0;
+	virtual void AddActionBinding( EActionBindingType BindingType, EKey KeyInput, int Action, ActionTarget TargetFunc ) = 0;
 	virtual void ClearActionBindings() = 0;
 
 	virtual void Tick() = 0;

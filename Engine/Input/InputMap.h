@@ -3,7 +3,7 @@
 
 #include <stdint.h>
 
-enum class EInputMappingActionType : uint32_t
+enum class EAction : uint32_t
 {
 	Unknown = 0,
 
@@ -14,7 +14,7 @@ enum class EInputMappingActionType : uint32_t
 	Maximum
 };
 
-enum class EInputMappingKeyType : uint32_t
+enum class EKey : uint32_t
 {
 	Unknown = 0,
 
@@ -25,16 +25,16 @@ enum class EInputMappingKeyType : uint32_t
 	Period,
 	Slash,
 
-	Num0,
-	Num1,
-	Num2,
-	Num3,
-	Num4,
-	Num5,
-	Num6,
-	Num7,
-	Num8,
-	Num9,
+	Number0,
+	Number1,
+	Number2,
+	Number3,
+	Number4,
+	Number5,
+	Number6,
+	Number7,
+	Number8,
+	Number9,
 
 	Semicolon,
 	Equal,
@@ -64,10 +64,10 @@ enum class EInputMappingKeyType : uint32_t
 	X,
 	Y,
 	Z,
-	Left_bracket,
+	LeftBracket,
 	Backslash,
-	Right_bracket,
-	Grave_accent,
+	RightBracket,
+	GraveAccent,
 	World1, // Non-US Key 1
 	World2, // Non-US Key 2
 
@@ -148,7 +148,9 @@ enum class EInputMappingKeyType : uint32_t
 	Maximum
 };
 
-enum class EInputMappingModifierType : uint32_t
+typedef std::underlying_type<EKey>::type EKeyType;
+
+enum class EModifier : uint32_t
 {
 	Unknown = 0,
 
@@ -160,7 +162,7 @@ enum class EInputMappingModifierType : uint32_t
 	Maximum
 };
 
-enum class EInputMappingMouseType : uint32_t
+enum class EMouse : uint32_t
 {
 	Unknown = 0,
 
@@ -183,7 +185,7 @@ enum class EInputMappingMouseType : uint32_t
 	Maximum
 };
 
-enum class EInputMappingGamepadType : uint32_t
+enum class EGamepad : uint32_t
 {
 	Unknown = 0,
 

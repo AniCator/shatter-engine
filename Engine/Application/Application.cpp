@@ -724,32 +724,32 @@ void CApplication::Initialize()
 
 	Input.ClearActionBindings();
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_SPACE, GLFW_PRESS, InputPauseGameEnable );
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_SPACE, GLFW_RELEASE, InputPauseGameDisable );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::Space, GLFW_PRESS, InputPauseGameEnable );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::Space, GLFW_RELEASE, InputPauseGameDisable );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_ENTER, GLFW_PRESS, InputScaleTimeEnable );
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_ENTER, GLFW_RELEASE, InputScaleTimeDisable );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::Enter, GLFW_PRESS, InputScaleTimeEnable );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::Enter, GLFW_RELEASE, InputScaleTimeDisable );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_H, GLFW_RELEASE, InputReloadConfiguration );
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_G, GLFW_RELEASE, InputRestartGameLayers );
-	Input.AddActionBinding( EActionBindingType::Mouse, GLFW_MOUSE_BUTTON_RIGHT, GLFW_RELEASE, InputRestartGameLayers );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::H, GLFW_RELEASE, InputReloadConfiguration );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::G, GLFW_RELEASE, InputRestartGameLayers );
+	// Input.AddActionBinding( EActionBindingType::Mouse, GLFW_MOUSE_BUTTON_RIGHT, GLFW_RELEASE, InputRestartGameLayers );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_W, GLFW_PRESS, InputMoveCameraUp );
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_S, GLFW_PRESS, InputMoveCameraDown );
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_A, GLFW_PRESS, InputMoveCameraLeft );
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_D, GLFW_PRESS, InputMoveCameraRight );
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_R, GLFW_PRESS, InputMoveCameraLower );
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_F, GLFW_PRESS, InputMoveCameraHigher );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::W, GLFW_PRESS, InputMoveCameraUp );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::S, GLFW_PRESS, InputMoveCameraDown );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::A, GLFW_PRESS, InputMoveCameraLeft );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::D, GLFW_PRESS, InputMoveCameraRight );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::R, GLFW_PRESS, InputMoveCameraLower );
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::F, GLFW_PRESS, InputMoveCameraHigher );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_ESCAPE, GLFW_RELEASE, [] {
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::Escape, GLFW_RELEASE, [] {
 		glfwSetWindowShouldClose( MainWindow.Handle(), true );
 	} );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_L, GLFW_RELEASE, [] {
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::L, GLFW_RELEASE, [] {
 		DisplayLog = !DisplayLog;
 	} );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, GLFW_KEY_KP_SUBTRACT, GLFW_RELEASE, [this] {
+	Input.AddActionBinding( EActionBindingType::Keyboard, EKey::NumpadSubtract, GLFW_RELEASE, [this] {
 		Tools = !Tools;
 	} );
 
