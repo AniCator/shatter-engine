@@ -37,7 +37,16 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation )
 {
 	CMesh* Mesh = nullptr;
 
-	CFile File( FileLocation );
+	std::stringstream ExportLocation;
+	ExportLocation << "Models/" << Name << ".lm";
+	std::string ExportPath = ExportLocation.str();
+
+	CFile File( ExportPath.c_str() );
+	if( !File.Exists() )
+	{
+		File = CFile( FileLocation );
+	}
+
 	if( File.Exists() )
 	{
 		std::string Extension = File.Extension();
@@ -61,6 +70,22 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation )
 		if( Primitive.Vertices )
 		{
 			Mesh = CreateNamedMesh( Name, Primitive );
+
+			// Automatically export an LM file if the extension was OBJ.
+			if( Mesh && Extension == "obj" )
+			{
+				Log::Event( "Exporting Lofty Model mesh \"%s\".", Name );
+
+				FPrimitive ExportPrimitive;
+				MeshBuilder::Mesh( ExportPrimitive, Mesh );
+
+				CData Data;
+				Data << ExportPrimitive;
+
+				CFile File( ExportPath.c_str() );
+				File.Load( Data );
+				File.Save();
+			}
 		}
 	}
 	else
