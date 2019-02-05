@@ -15,6 +15,7 @@ struct FCameraSetup
 		CameraPosition = glm::vec3( 0.0f, 0.0f, 600.0f );
 		//CameraPosition = glm::vec3( 4.0f, 3.0f, 3.0f );
 		CameraDirection = glm::vec3( 0.0f, 0.0f, -1.0f );
+		CameraRightVector = glm::vec3( 1.0f, 0.0f, 0.0f );
 		CameraUpVector = glm::vec3( 0.0f, 0.0f, 1.0f );
 	};
 
@@ -24,6 +25,7 @@ struct FCameraSetup
 	float FarPlaneDistance;
 	glm::vec3 CameraPosition;
 	glm::vec3 CameraDirection;
+	glm::vec3 CameraRightVector;
 	glm::vec3 CameraUpVector;
 };
 
