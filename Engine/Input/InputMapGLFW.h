@@ -12,7 +12,27 @@ struct FEKeyPairGLFW
 
 namespace InputGLFW
 {
-	static const int ToKey[EKey::Maximum]
+	static const int ActionToCode[EAction::Maximum]
+	{
+		GLFW_DONT_CARE,
+
+		GLFW_RELEASE,
+		GLFW_PRESS,
+		GLFW_REPEAT
+	};
+
+	static EAction CodeToAction( int Action )
+	{
+		switch( Action )
+		{
+			case GLFW_RELEASE:			return EAction::Release;
+			case GLFW_PRESS:			return EAction::Press;
+			case GLFW_REPEAT:			return EAction::Repeat;
+			default:					return EAction::Unknown;
+		}
+	}
+
+	static const int KeyToCode[EKey::Maximum]
 	{
 		GLFW_KEY_UNKNOWN,
 		GLFW_KEY_SPACE,
@@ -143,11 +163,10 @@ namespace InputGLFW
 		GLFW_KEY_MENU // List menu key
 	};
 
-	static EKey ToEnum( int Key )
+	static EKey CodeToKey( int Key )
 	{
 		switch( Key )
 		{
-			case GLFW_KEY_UNKNOWN:       return EKey::Unknown;
 			case GLFW_KEY_SPACE:         return EKey::Space;
 			case GLFW_KEY_APOSTROPHE:    return EKey::Apostrophe;
 			case GLFW_KEY_COMMA:         return EKey::Comma;

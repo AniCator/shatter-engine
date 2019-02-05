@@ -14,17 +14,18 @@
 
 #include <Engine/Input/InputMapGLFW.h>
 
-void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Action, int Modifiers )
+void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int ActionInput, int Modifiers )
 {
 #if defined( IMGUI_ENABLED )
 	if( ImGui::IsAnyItemHovered() )
 	{
-		ImGui_ImplGlfwGL3_KeyCallback( window, KeyInput, ScanCode, Action, Modifiers );
+		ImGui_ImplGlfwGL3_KeyCallback( window, KeyInput, ScanCode, ActionInput, Modifiers );
 		return;
 	}
 #endif
 
-	const EKey Key = InputGLFW::ToEnum( KeyInput );
+	const EKey Key = InputGLFW::CodeToKey( KeyInput );
+	const EAction Action = InputGLFW::CodeToAction( ActionInput );
 	CInputLocator::GetService().RegisterKeyInput( Key, ScanCode, Action, Modifiers );
 }
 
@@ -39,15 +40,17 @@ void InputCharCallback( GLFWwindow* window, unsigned int Character )
 #endif
 }
 
-void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int Action, int Modifiers )
+void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int ActionInput, int Modifiers )
 {
 #if defined( IMGUI_ENABLED )
 	if( ImGui::IsAnyItemHovered() )
 	{
-		ImGui_ImplGlfwGL3_MouseButtonCallback( window, MouseButton, Action, Modifiers );
+		ImGui_ImplGlfwGL3_MouseButtonCallback( window, MouseButton, ActionInput, Modifiers );
 		return;
 	}
 #endif
+
+	const EAction Action = InputGLFW::CodeToAction( ActionInput );
 	CInputLocator::GetService().RegisterMouseButtonInput( MouseButton, Action, Modifiers );
 }
 
@@ -81,7 +84,7 @@ CInput::CInput()
 	for( EKeyType KeyboardIndex = 0; KeyboardIndex < MaximumKeyboardInputs; KeyboardIndex++ )
 	{
 		KeyboardInput[KeyboardIndex].Input = static_cast<EKey>( KeyboardIndex );
-		KeyboardInput[KeyboardIndex].Action = -1;
+		KeyboardInput[KeyboardIndex].Action = EAction::Unknown;
 		KeyboardInput[KeyboardIndex].Modifiers = 0;
 	}
 
@@ -89,49 +92,49 @@ CInput::CInput()
 	for( int MouseIndex = 0; MouseIndex < MaximumMouseButtons; MouseIndex++ )
 	{
 		MouseInput[MouseIndex].Input = MouseIndex;
-		MouseInput[MouseIndex].Action = -1;
+		MouseInput[MouseIndex].Action = EAction::Unknown;
 		MouseInput[MouseIndex].Modifiers = 0;
 	}
 }
 
-void CInput::RegisterKeyInput( EKey KeyInput, int ScanCode, int Action, int Modifiers )
+void CInput::RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, int Modifiers )
 {
 	FKeyInput& Input = KeyboardInput[static_cast<EKeyType>( KeyInput )];
 	Input.Input = KeyInput;
 
 	// Ignore key repeat messages, toggle between press and release to latch states
-	if( Input.Action == -1 )
+	if( Input.Action == EAction::Unknown )
 	{
 		Input.Action = Action;
 	}
-	else if( Input.Action == GLFW_PRESS && Action == GLFW_RELEASE )
+	else if( Input.Action == EAction::Press && Action == EAction::Release )
 	{
-		Input.Action = GLFW_RELEASE;
+		Input.Action = EAction::Release;
 	}
-	else if( Input.Action == GLFW_RELEASE && Action == GLFW_PRESS )
+	else if( Input.Action == EAction::Release && Action == EAction::Press )
 	{
-		Input.Action = GLFW_PRESS;
+		Input.Action = EAction::Press;
 	}
 
 	Input.Modifiers = Modifiers;
 }
 
-void CInput::RegisterMouseButtonInput( int MouseButton, int Action, int Modifiers )
+void CInput::RegisterMouseButtonInput( int MouseButton, EAction Action, int Modifiers )
 {
 	FMouseInput& Input = MouseInput[MouseButton];
 
 	// Latch button states
-	if( Input.Action == -1 )
+	if( Input.Action == EAction::Unknown )
 	{
 		Input.Action = Action;
 	}
-	else if( Input.Action == GLFW_PRESS && Action == GLFW_RELEASE )
+	else if( Input.Action == EAction::Press && Action == EAction::Release )
 	{
-		Input.Action = GLFW_RELEASE;
+		Input.Action = EAction::Release;
 	}
-	else if( Input.Action == GLFW_RELEASE && Action == GLFW_PRESS )
+	else if( Input.Action == EAction::Release && Action == EAction::Press )
 	{
-		Input.Action = GLFW_PRESS;
+		Input.Action = EAction::Press;
 	}
 
 	Input.Modifiers = Modifiers;
@@ -165,7 +168,7 @@ void CInput::AddActionBinding( FActionBinding ActionBinding )
 	ActionBindings.push_back( ActionBinding );
 }
 
-void CInput::AddActionBinding( EActionBindingType BindingType, EKey KeyInput, int Action, ActionTarget TargetFunc )
+void CInput::AddActionBinding( EActionBindingType BindingType, EKey KeyInput, EAction Action, ActionTarget TargetFunc )
 {
 	FActionBinding ActionBinding;
 	ActionBinding.BindingType = BindingType;
@@ -208,11 +211,11 @@ void CInput::Tick()
 	for( int KeyboardIndex = 0; KeyboardIndex < MaximumKeyboardInputs; KeyboardIndex++ )
 	{
 		FKeyInput& Input = KeyboardInput[KeyboardIndex];
-		if( Input.Action == GLFW_RELEASE )
+		if( Input.Action == EAction::Release )
 		{
-			Input.Action = -1;
+			Input.Action = EAction::Unknown;
 		}
-		else if( Input.Action == GLFW_PRESS )
+		else if( Input.Action == EAction::Press )
 		{
 			AnyKey = true;
 		}
@@ -221,16 +224,16 @@ void CInput::Tick()
 	for( int i = 0; i < MaximumMouseButtons; i++ )
 	{
 		FMouseInput& Input = MouseInput[i];
-		if( Input.Action == GLFW_RELEASE )
+		if( Input.Action == EAction::Release )
 		{
-			Input.Action = -1;
+			Input.Action = EAction::Unknown;
 		}
 	}
 }
 
 bool CInput::IsKeyDown( int KeyInput ) const
 {
-	return KeyboardInput[KeyInput].Action == GLFW_PRESS;
+	return KeyboardInput[KeyInput].Action == EAction::Press;
 }
 
 bool CInput::IsAnyKeyDown() const

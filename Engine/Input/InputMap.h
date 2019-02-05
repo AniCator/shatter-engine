@@ -14,6 +14,8 @@ enum class EAction : uint32_t
 	Maximum
 };
 
+typedef std::underlying_type<EAction>::type EActionType;
+
 enum class EKey : uint32_t
 {
 	Unknown = 0,
@@ -162,6 +164,8 @@ enum class EModifier : uint32_t
 	Maximum
 };
 
+typedef std::underlying_type<EModifier>::type EModifierType;
+
 enum class EMouse : uint32_t
 {
 	Unknown = 0,
@@ -184,6 +188,8 @@ enum class EMouse : uint32_t
 
 	Maximum
 };
+
+typedef std::underlying_type<EMouse>::type EMouseType;
 
 enum class EGamepad : uint32_t
 {
@@ -217,3 +223,5 @@ enum class EGamepad : uint32_t
 
 	Maximum
 };
+
+typedef std::underlying_type<EGamepad>::type EGamepadType;

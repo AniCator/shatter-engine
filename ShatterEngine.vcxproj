@@ -235,7 +235,6 @@
     <ClCompile Include="Engine\Display\Window.cpp" />
     <ClCompile Include="Engine\Event\Event.cpp" />
     <ClCompile Include="Engine\Input\Input.cpp" />
-    <ClCompile Include="Engine\Input\InputMapGLFW.cpp" />
     <ClCompile Include="Engine\Input\NullInput.cpp" />
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />

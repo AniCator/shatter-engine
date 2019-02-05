@@ -2,12 +2,12 @@
 
 #include "NullInput.h"
 
-void CNullInput::RegisterKeyInput( EKey KeyInput, int ScanCode, int Action, int Modifiers )
+void CNullInput::RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, int Modifiers )
 {
 
 }
 
-void CNullInput::RegisterMouseButtonInput( int MouseButton, int Action, int Modifiers )
+void CNullInput::RegisterMouseButtonInput( int MouseButton, EAction Action, int Modifiers )
 {
 
 }
@@ -32,7 +32,7 @@ void CNullInput::AddActionBinding( FActionBinding ActionBinding )
 
 }
 
-void CNullInput::AddActionBinding( EActionBindingType BindingType, EKey KeyInput, int Action, ActionTarget TargetFunc )
+void CNullInput::AddActionBinding( EActionBindingType BindingType, EKey KeyInput, EAction Action, ActionTarget TargetFunc )
 {
 
 }

@@ -34,14 +34,14 @@ struct FActionBinding
 	{
 		BindingType = EActionBindingType::Keyboard;
 		BindingInput = EKey::Unknown;
-		BindingAction = 1;
+		BindingAction = EAction::Release;
 		BindingModifiers = 0;
 		TargetFunc = 0;
 	}
 
 	EActionBindingType BindingType;
 	EKey BindingInput;
-	int BindingAction;
+	EAction BindingAction;
 	int BindingModifiers;
 	ActionTarget TargetFunc;
 };
@@ -49,14 +49,14 @@ struct FActionBinding
 class IInput : public IEngineService
 {
 public:
-	virtual void RegisterKeyInput( EKey KeyInput, int ScanCode, int Action, int Modifiers ) = 0;
-	virtual void RegisterMouseButtonInput( int MouseButton, int Action, int Modifiers ) = 0;
+	virtual void RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, int Modifiers ) = 0;
+	virtual void RegisterMouseButtonInput( int MouseButton, EAction Action, int Modifiers ) = 0;
 	virtual void RegisterMousePositionInput( double PositionX, double PositionY ) = 0;
 	virtual void RegisterScrollInput( int OffsetX, int OffsetY ) = 0;
 	virtual void RegisterJoystickStatus( int Joystick, int Event ) = 0;
 
 	virtual void AddActionBinding( FActionBinding ActionBinding ) = 0;
-	virtual void AddActionBinding( EActionBindingType BindingType, EKey KeyInput, int Action, ActionTarget TargetFunc ) = 0;
+	virtual void AddActionBinding( EActionBindingType BindingType, EKey KeyInput, EAction Action, ActionTarget TargetFunc ) = 0;
 	virtual void ClearActionBindings() = 0;
 
 	virtual void Tick() = 0;

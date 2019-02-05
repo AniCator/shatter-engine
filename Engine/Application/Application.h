@@ -12,6 +12,8 @@ public:
 	void Initialize();
 	void Run();
 
+	void InitializeDefaultInputs();
+
 	std::string GetName() const;
 	void SetName( const char* Name );
 

@@ -179,9 +179,6 @@
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp">
       <Filter>Source Files\Engine\Utility\Service</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Input\InputMapGLFW.cpp">
-      <Filter>Source Files\Engine\Input</Filter>
-    </ClCompile>
     <ClCompile Include="ThirdParty\tracy\TracyClient.cpp">
       <Filter>Source Files\ThirdParty\tracy</Filter>
     </ClCompile>
