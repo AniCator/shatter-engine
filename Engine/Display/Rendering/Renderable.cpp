@@ -43,7 +43,7 @@ void CRenderable::SetShader( CShader* Shader )
 
 		if( Textures )
 		{
-			for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Max; )
+			for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
 			{
 				const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
 
@@ -63,7 +63,7 @@ void CRenderable::SetShader( CShader* Shader )
 
 CTexture* CRenderable::GetTexture( ETextureSlot Slot )
 {
-	if( Slot < ETextureSlot::Max )
+	if( Slot < ETextureSlot::Maximum )
 	{
 		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
 		return Textures[Index];
@@ -74,7 +74,7 @@ CTexture* CRenderable::GetTexture( ETextureSlot Slot )
 
 void CRenderable::SetTexture( CTexture* Texture, ETextureSlot Slot )
 {
-	if( Texture && Slot < ETextureSlot::Max )
+	if( Texture && Slot < ETextureSlot::Maximum )
 	{
 		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
 		this->Textures[Index] = Texture;
@@ -95,7 +95,7 @@ void CRenderable::Draw( EDrawMode DrawModeOverride )
 {
 	if( Textures )
 	{
-		for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Max; )
+		for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
 		{
 			const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
 

@@ -48,7 +48,7 @@ public:
 
 	FRenderDataInstanced& GetRenderData();
 private:
-	CTexture* Textures[static_cast<std::underlying_type<ETextureSlot>::type>( ETextureSlot::Max )];
+	CTexture* Textures[static_cast<std::underlying_type<ETextureSlot>::type>( ETextureSlot::Maximum )];
 	CShader* Shader;
 	CMesh* Mesh;
 

@@ -41,7 +41,7 @@ enum class ETextureSlot : uint16_t
 	Slot30,
 	Slot31,
 
-	Max
+	Maximum
 };
 
 class CTexture

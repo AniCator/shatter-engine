@@ -8,7 +8,7 @@
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
 
-static const GLenum EnumToSlot[ETextureSlot::Max]
+static const GLenum EnumToSlot[ETextureSlot::Maximum]
 {
 	GL_TEXTURE0,
 	GL_TEXTURE1,
