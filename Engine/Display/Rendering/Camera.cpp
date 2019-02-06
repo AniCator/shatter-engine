@@ -19,7 +19,8 @@ void CCamera::Update()
 
 	glm::vec3 CameraPosition = CameraSetup.CameraPosition;
 
-	CameraSetup.CameraRightVector = glm::cross( CameraSetup.CameraUpVector, CameraSetup.CameraDirection );
+	CameraSetup.CameraRightVector = glm::normalize( glm::cross( WorldUp, CameraSetup.CameraDirection ) );
+	CameraSetup.CameraUpVector = glm::normalize( glm::cross( CameraSetup.CameraDirection, CameraSetup.CameraRightVector ) );
 
 	ViewMatrix = glm::lookAt(
 		CameraPosition,
