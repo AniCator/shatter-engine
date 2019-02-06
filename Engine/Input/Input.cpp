@@ -50,8 +50,9 @@ void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int ActionIn
 	}
 #endif
 
+	const EMouse Mouse = InputGLFW::CodeToMouse( MouseButton );
 	const EAction Action = InputGLFW::CodeToAction( ActionInput );
-	CInputLocator::GetService().RegisterMouseButtonInput( MouseButton, Action, Modifiers );
+	CInputLocator::GetService().RegisterMouseButtonInput( Mouse, Action, Modifiers );
 }
 
 void InputMousePositionCallback( GLFWwindow* window, double PositionX, double PositionY )
@@ -119,9 +120,9 @@ void CInput::RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, int 
 	Input.Modifiers = Modifiers;
 }
 
-void CInput::RegisterMouseButtonInput( int MouseButton, EAction Action, int Modifiers )
+void CInput::RegisterMouseButtonInput( EMouse MouseButton, EAction Action, int Modifiers )
 {
-	FMouseInput& Input = MouseInput[MouseButton];
+	FMouseInput& Input = MouseInput[static_cast<EMouseType>( MouseButton )];
 
 	// Latch button states
 	if( Input.Action == EAction::Unknown )
@@ -168,11 +169,31 @@ void CInput::AddActionBinding( FActionBinding ActionBinding )
 	ActionBindings.push_back( ActionBinding );
 }
 
-void CInput::AddActionBinding( EActionBindingType BindingType, EKey KeyInput, EAction Action, ActionTarget TargetFunc )
+void CInput::AddActionBinding( EKey KeyInput, EAction Action, ActionTarget TargetFunc )
 {
 	FActionBinding ActionBinding;
-	ActionBinding.BindingType = BindingType;
-	ActionBinding.BindingInput = KeyInput;
+	ActionBinding.BindingType = EActionBindingType::Keyboard;
+	ActionBinding.BindingInput = static_cast<EKeyType>( KeyInput );
+	ActionBinding.BindingAction = Action;
+	ActionBinding.TargetFunc = TargetFunc;
+	AddActionBinding( ActionBinding );
+}
+
+void CInput::AddActionBinding( EMouse KeyInput, EAction Action, ActionTarget TargetFunc )
+{
+	FActionBinding ActionBinding;
+	ActionBinding.BindingType = EActionBindingType::Mouse;
+	ActionBinding.BindingInput = static_cast<EKeyType>( KeyInput );
+	ActionBinding.BindingAction = Action;
+	ActionBinding.TargetFunc = TargetFunc;
+	AddActionBinding( ActionBinding );
+}
+
+void CInput::AddActionBinding( EGamepad KeyInput, EAction Action, ActionTarget TargetFunc )
+{
+	FActionBinding ActionBinding;
+	ActionBinding.BindingType = EActionBindingType::Gamepad;
+	ActionBinding.BindingInput = static_cast<EKeyType>( KeyInput );
 	ActionBinding.BindingAction = Action;
 	ActionBinding.TargetFunc = TargetFunc;
 	AddActionBinding( ActionBinding );

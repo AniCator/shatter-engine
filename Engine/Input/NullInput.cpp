@@ -7,7 +7,7 @@ void CNullInput::RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, 
 
 }
 
-void CNullInput::RegisterMouseButtonInput( int MouseButton, EAction Action, int Modifiers )
+void CNullInput::RegisterMouseButtonInput( EMouse MouseButton, EAction Action, int Modifiers )
 {
 
 }
@@ -32,7 +32,17 @@ void CNullInput::AddActionBinding( FActionBinding ActionBinding )
 
 }
 
-void CNullInput::AddActionBinding( EActionBindingType BindingType, EKey KeyInput, EAction Action, ActionTarget TargetFunc )
+void CNullInput::AddActionBinding( EKey KeyInput, EAction Action, ActionTarget TargetFunc )
+{
+
+}
+
+void CNullInput::AddActionBinding( EMouse KeyInput, EAction Action, ActionTarget TargetFunc )
+{
+
+}
+
+void CNullInput::AddActionBinding( EGamepad KeyInput, EAction Action, ActionTarget TargetFunc )
 {
 
 }
