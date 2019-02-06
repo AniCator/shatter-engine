@@ -6,15 +6,17 @@
 #include <Engine/Profiling/Logging.h>
 
 std::vector<sf::Sound*> CSimpleSound::Sounds;
+std::vector<sf::SoundBuffer*> CSimpleSound::SoundBuffers;
 std::vector<sf::Music*> CSimpleSound::Streams;
 
 SoundHandle CSimpleSound::Sound( std::string ResourcePath )
 {
 	Log::Event( "Loading sound \"%s\"", ResourcePath.c_str() );
-	sf::SoundBuffer NewSoundBuffer;
-	NewSoundBuffer.loadFromFile( ResourcePath );
-	sf::Sound* NewSound = new sf::Sound( NewSoundBuffer );
+	sf::SoundBuffer* NewSoundBuffer = new sf::SoundBuffer();
+	NewSoundBuffer->loadFromFile( ResourcePath );
+	sf::Sound* NewSound = new sf::Sound( *NewSoundBuffer );
 
+	SoundBuffers.push_back( NewSoundBuffer );
 	Sounds.push_back( NewSound );
 
 	SoundHandle Handle;
@@ -73,6 +75,16 @@ void CSimpleSound::Rate( SoundHandle Handle, const float Rate )
 void CSimpleSound::Rate( MusicHandle Handle, const float Rate )
 {
 	Streams[Handle.Handle]->setPitch( Rate );
+}
+
+bool CSimpleSound::Playing( SoundHandle Handle )
+{
+	return Sounds[Handle.Handle]->getStatus() == sf::SoundSource::Status::Playing;
+}
+
+bool CSimpleSound::Playing( MusicHandle Handle )
+{
+	return Streams[Handle.Handle]->getStatus() == sf::SoundSource::Status::Playing;
 }
 
 void CSimpleSound::Shutdown()

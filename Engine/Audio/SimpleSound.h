@@ -17,6 +17,7 @@ union MusicHandle
 namespace sf
 {
 	class Sound;
+	class SoundBuffer;
 	class Music;
 }
 
@@ -38,9 +39,13 @@ public:
 	static void Rate( SoundHandle Handle, const float Rate );
 	static void Rate( MusicHandle Handle, const float Rate );
 
+	static bool Playing( SoundHandle Handle );
+	static bool Playing( MusicHandle Handle );
+
 	static void Shutdown();
 
 private:
 	static std::vector<sf::Sound*> Sounds;
+	static std::vector<sf::SoundBuffer*> SoundBuffers;
 	static std::vector<sf::Music*> Streams;
 };
