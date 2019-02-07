@@ -14,6 +14,7 @@ public:
 	template<typename T>
 	void operator<<( T& Object )
 	{
+		static_assert( !std::is_pointer<T>::value, "Pointers can not be serialized." );
 		const size_t Size = sizeof( T );
 		Data.write( reinterpret_cast<const char*>( &Object ), Size );
 	}
