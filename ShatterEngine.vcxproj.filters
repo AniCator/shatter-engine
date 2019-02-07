@@ -93,6 +93,9 @@
     <Filter Include="Source Files\ThirdParty\angelscript">
       <UniqueIdentifier>{919be637-6d2c-4c33-8779-b2515d7f075e}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Level">
+      <UniqueIdentifier>{0d31c8f8-ebcc-4514-ba8a-30c496af6b39}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source.cpp">
@@ -217,6 +220,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Display\Rendering\Framebuffer.cpp">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Level\Level.cpp">
+      <Filter>Source Files\Engine\World\Level</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -378,6 +384,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Display\Rendering\Framebuffer.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Level\Level.h">
+      <Filter>Source Files\Engine\World\Level</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
