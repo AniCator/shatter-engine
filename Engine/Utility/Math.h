@@ -2,6 +2,106 @@
 #pragma once
 
 #include <ThirdParty/glm/glm.hpp>
+#include <ThirdParty/glm/gtc/matrix_transform.hpp>
+#include <ThirdParty/glm/gtx/quaternion.hpp>
+
+const static glm::mat4 IdentityMatrix = glm::mat4( 1.0f );
+
+struct FFrustumPlane
+{
+
+};
+
+struct FFrustum
+{
+	FFrustumPlane Planes[6];
+};
+
+struct FTransform
+{
+public:
+	FTransform()
+	{
+		TransformMatrix = IdentityMatrix;
+		Position = glm::vec3( 0.0f );
+		Orientation = glm::vec3( 0.0f, 0.0f, 1.0f );
+		Size = glm::vec3( 1.0f );
+	}
+
+	FTransform( glm::vec3& Position, glm::vec3& Orientation, glm::vec3& Size )
+	{
+		SetTransform( Position, Orientation, Size );
+	}
+
+	void SetPosition( glm::vec3& Position )
+	{
+		this->Position = Position;
+		Update();
+	}
+
+	void SetOrientation( glm::vec3& Orientation )
+	{
+		this->Orientation = Orientation;
+		Update();
+	}
+
+	void SetSize( glm::vec3& Size )
+	{
+		this->Size = Size;
+		Update();
+	}
+
+	void SetTransform( glm::vec3& Position, glm::vec3& Orientation, glm::vec3& Size )
+	{
+		this->Position = Position;
+		this->Orientation = Orientation;
+		this->Size = Size;
+		Update();
+	}
+
+	void SetTransform( glm::vec3& Position, glm::vec3& Orientation )
+	{
+		this->Position = Position;
+		this->Orientation = Orientation;
+		Update();
+	}
+
+	glm::mat4& GetRotationMatrix()
+	{
+		return RotationMatrix;
+	}
+
+	glm::mat4& GetTransformMatrix()
+	{
+		return TransformMatrix;
+	}
+
+private:
+	void Update()
+	{
+		TransformMatrix = IdentityMatrix;
+
+		TransformMatrix = glm::translate( TransformMatrix, Position );
+
+		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
+		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
+		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
+
+		const glm::quat ModelQuaternion = glm::quat( Orientation );
+		RotationMatrix = glm::toMat4( ModelQuaternion );
+
+		TransformMatrix *= RotationMatrix;
+
+		TransformMatrix = glm::scale( TransformMatrix, Size );
+	}
+
+	glm::mat4 RotationMatrix;
+	glm::mat4 TransformMatrix;
+
+	glm::vec3 Position;
+	glm::vec3 Orientation;
+	glm::vec3 Size;
+};
 
 namespace Math
 {
@@ -84,14 +184,4 @@ namespace Math
 
 		return false;
 	}
-
-	struct FFrustumPlane
-	{
-
-	};
-
-	struct FFrustum
-	{
-		FFrustumPlane Planes[6];
-	};
 }
