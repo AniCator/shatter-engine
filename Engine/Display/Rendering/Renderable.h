@@ -9,17 +9,15 @@
 class CShader;
 #include <Engine/Display/Rendering/Texture.h>
 
+#include <Engine/Utility/Math.h>
+
 struct FRenderData
 {
-	FVertexBufferData VertexBufferData;
 	GLuint ShaderProgram = 0;
 
-	glm::vec3 Position;
-	glm::vec3 Orientation;
-	glm::vec3 Size;
+	FTransform Transform;
 	glm::vec4 Color;
 
-	FVertexData *VertexData = nullptr;
 	EDrawMode DrawMode = None;
 };
 

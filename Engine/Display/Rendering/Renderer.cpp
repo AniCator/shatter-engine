@@ -2,9 +2,6 @@
 #include "Renderer.h"
 
 #include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
-
-#include <glm/gtx/quaternion.hpp>
 
 #include <ThirdParty/glad/include/glad/glad.h>
 #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
@@ -20,6 +17,7 @@
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/Primitive.h>
 #include <Engine/Utility/MeshBuilder.h>
+#include <Engine/Utility/Math.h>
 
 #include <Game/Game.h>
 
@@ -56,20 +54,6 @@ void CRenderer::Initialize()
 
 	Assets.CreateNamedMesh( "square", Square );
 
-	/*static const uint32_t LineSquareIndexCount = 5;
-	static glm::uint LineSquareIndices[LineSquareIndexCount] =
-	{
-		2, 1, 0, // Top-right, Bottom-right, Bottom-left
-		0, 3, // 
-	};
-
-	CMesh* LineSquareMesh = Assets.CreateNamedMesh( "LineSquare", Square );
-	if( LineSquareMesh )
-	{
-		FVertexBufferData& VertexBufferData = LineSquareMesh->GetVertexBufferData();
-		VertexBufferData.DrawMode = GL_LINE_LOOP;
-	}*/
-
 	FPrimitive Cube;
 	MeshBuilder::Cube( Cube, 1.0f );
 
@@ -104,7 +88,6 @@ void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 	DynamicRenderables.push_back( Renderable );
 }
 
-const static glm::mat4 IdentityMatrix = glm::mat4( 1.0f );
 static CShader* DefaultShader = nullptr;
 GLuint ProgramHandle = -1;
 
@@ -144,20 +127,7 @@ void CRenderer::DrawQueuedRenderables()
 		RefreshShaderHandle( Renderable );
 		RenderData.ShaderProgram = ProgramHandle;
 
-		glm::mat4 ModelMatrix = IdentityMatrix;
-
-		ModelMatrix = glm::translate( ModelMatrix, RenderData.Position );
-
-		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
-		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
-		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
-
-		const glm::quat ModelQuaternion = glm::quat( RenderData.Orientation );
-		const glm::mat4 RotationMatrix = glm::toMat4( ModelQuaternion );
-
-		ModelMatrix *= RotationMatrix;
-
-		ModelMatrix = glm::scale( ModelMatrix, RenderData.Size );
+		const glm::mat4 ModelMatrix = RenderData.Transform.GetTransformMatrix();
 
 		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
 		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
