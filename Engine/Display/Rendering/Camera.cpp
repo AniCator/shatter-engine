@@ -5,7 +5,7 @@
 
 CCamera::CCamera()
 {
-
+	CameraOrientation = glm::vec3( 0.0f, 0.0f, 0.0f );
 }
 
 CCamera::~CCamera()
@@ -69,6 +69,14 @@ void CCamera::SetCameraPosition( glm::vec3& CameraPosition )
 void CCamera::SetCameraDirection( glm::vec3& CameraDirection )
 {
 	CameraSetup.CameraDirection = CameraDirection;
+
+	Update();
+}
+
+void CCamera::SetCameraOrientation( glm::vec3& CameraOrientation )
+{
+	this->CameraOrientation = CameraOrientation;
+	this->CameraQuaternion = glm::quat( CameraOrientation );
 
 	Update();
 }

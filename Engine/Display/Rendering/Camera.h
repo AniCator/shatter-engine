@@ -45,6 +45,7 @@ public:
 	void SetFarPlaneDistance( float& FarPlaneDistance );
 	void SetCameraPosition( glm::vec3& CameraPosition );
 	void SetCameraDirection( glm::vec3& CameraDirection );
+	void SetCameraOrientation( glm::vec3& CameraOrientation );
 	void SetCameraUpVector( glm::vec3& CameraUpVector );
 
 	const glm::mat4& GetProjectionMatrix() const;
@@ -54,10 +55,13 @@ public:
 	FCameraSetup& GetCameraSetup();
 private:
 	FCameraSetup CameraSetup;
-	Math::FFrustum Frustum;
+	FFrustum Frustum;
 
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
 
 	glm::mat4 ProjectionViewInverseMatrix;
+
+	glm::vec3 CameraOrientation;
+	glm::quat CameraQuaternion;
 };
