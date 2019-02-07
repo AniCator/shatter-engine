@@ -2,9 +2,16 @@
 #pragma once
 
 #include <vector>
-#include <ThirdParty/glm/glm.hpp>
+#include <Engine/Utility/Math.h>
 
 class CEntity;
+class CLevel;
+
+struct FLevel
+{
+	CLevel* Level;
+	FTransform Transform;
+};
 
 class CWorld
 {
@@ -17,7 +24,7 @@ public:
 	void Destroy();
 
 	template<typename T>
-	T* Spawn( glm::vec3 Position, glm::vec3 Orientation )
+	T* Spawn( FTransform& Transform )
 	{
 		T* Entity = new T();
 		Entities.push_back( Entity );
@@ -27,4 +34,5 @@ public:
 
 private:
 	std::vector<CEntity*> Entities;
+	std::vector<CLevel*> Levels;
 };
