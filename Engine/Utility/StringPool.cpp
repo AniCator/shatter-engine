@@ -1,3 +1,4 @@
+// Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "StringPool.h"
 #include <Engine/Profiling/Profiling.h>
 
