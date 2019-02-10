@@ -227,8 +227,8 @@ void CProfileVisualisation::SetEnabled( const bool EnabledIn )
 CTimerScope::CTimerScope( const char* ScopeNameIn, bool TextOnlyIn )
 {
 	strcpy_s( ScopeName, ScopeNameIn );
-	StartTime = std::chrono::steady_clock::now();
 	TextOnly = TextOnlyIn;
+	StartTime = std::chrono::steady_clock::now();
 };
 
 CTimerScope::~CTimerScope()
