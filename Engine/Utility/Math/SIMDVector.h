@@ -42,20 +42,20 @@ namespace SIMDMath
 
 namespace Math
 {
-	class SIMDVector4D
+	class Vector4D
 	{
 	public:
-		SIMDVector4D()
+		Vector4D()
 		{
 			StoredVector = _mm_setr_ps( 0.0f, 0.0f, 0.0f, 0.0f );
 		};
 
-		SIMDVector4D( const glm::vec3& Vector )
+		Vector4D( const glm::vec3& Vector )
 		{
 			AssignVector( Vector );
 		}
 
-		SIMDVector4D( const glm::vec4& Vector )
+		Vector4D( const glm::vec4& Vector )
 		{
 			AssignVector( Vector );
 		}
