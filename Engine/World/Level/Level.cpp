@@ -2,3 +2,27 @@
 #include "Level.h"
 
 
+CLevel::CLevel()
+{
+
+}
+
+CLevel::~CLevel()
+{
+
+}
+
+void CLevel::Construct()
+{
+
+}
+
+void CLevel::Tick()
+{
+
+}
+
+void CLevel::Destroy()
+{
+
+}
