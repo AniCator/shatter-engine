@@ -25,10 +25,10 @@ struct FProfileTimeEntry
 	int64_t Time;
 };
 
-class CProfileVisualisation
+class CProfiler
 {
 public:
-	~CProfileVisualisation();
+	~CProfiler();
 
 	void AddTimeEntry( FProfileTimeEntry& TimeEntry );
 	void AddCounterEntry( FProfileTimeEntry& TimeEntry, const bool PerFrame = false );
@@ -48,17 +48,19 @@ private:
 
 	bool Enabled;
 
+	void PlotPerformance();
+
 public:
-	static CProfileVisualisation& Get()
+	static CProfiler& Get()
 	{
-		static CProfileVisualisation StaticInstance;
+		static CProfiler StaticInstance;
 		return StaticInstance;
 	}
 private:
-	CProfileVisualisation();
+	CProfiler();
 
-	CProfileVisualisation( CProfileVisualisation const& ) = delete;
-	void operator=( CProfileVisualisation const& ) = delete;
+	CProfiler( CProfiler const& ) = delete;
+	void operator=( CProfiler const& ) = delete;
 };
 
 class CTimerScope
@@ -75,9 +77,11 @@ private:
 };
 
 #ifdef ProfileBuild
+#define ProfileScope() ZoneScoped; CTimerScope Scope_( __FUNCTION__, false )
 #define Profile( Name ) ZoneScoped; CTimerScope Scope_( Name, false )
 #define ProfileBare( Name ) ZoneScoped; CTimerScope Scope_( Name, true )
 #else
+#define ProfileScope() (void(0))
 #define Profile( Name ) (void(0))
 #define ProfileBare( Name ) (void(0))
 #endif

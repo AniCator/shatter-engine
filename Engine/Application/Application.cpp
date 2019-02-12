@@ -393,7 +393,7 @@ void DebugMenu( CApplication* Application )
 
 		if( ImGui::BeginMenu( "Windows" ) )
 		{
-			CProfileVisualisation& Profiler = CProfileVisualisation::Get();
+			CProfiler& Profiler = CProfiler::Get();
 			const bool Enabled = Profiler.IsEnabled();
 			if( ImGui::MenuItem( "Profiler", nullptr, Enabled ) )
 			{
@@ -564,9 +564,8 @@ void CApplication::Run()
 
 	while( !MainWindow.ShouldClose() )
 	{
-		ZoneScoped;
 		MainWindow.BeginFrame();
-		CTimerScope Scope_Frametime( "Frametime", false );
+		Profile( "Frametime" );
 
 		const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 		if( InputDeltaTime >= MaximumInputTime )
@@ -613,7 +612,7 @@ void CApplication::Run()
 #if defined( IMGUI_ENABLED )
 			if( Tools )
 			{
-				CProfileVisualisation::Get().Display();
+				CProfiler::Get().Display();
 
 				DebugMenu( this );
 			}

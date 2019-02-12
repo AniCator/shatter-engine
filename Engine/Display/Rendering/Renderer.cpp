@@ -29,12 +29,14 @@ static const size_t nRenderableCapacity = 4096;
 CRenderer::CRenderer()
 {
 	Renderables.reserve( nRenderableCapacity );
+	DynamicRenderables.reserve( nRenderableCapacity );
 	ForceWireFrame = false;
 }
 
 CRenderer::~CRenderer()
 {
 	Renderables.clear();
+	DynamicRenderables.clear();
 }
 
 void CRenderer::Initialize()
@@ -85,6 +87,7 @@ void CRenderer::QueueRenderable( CRenderable* Renderable )
 
 void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 {
+	ProfileScope();
 	DynamicRenderables.push_back( Renderable );
 }
 
@@ -93,6 +96,7 @@ GLuint ProgramHandle = -1;
 
 void CRenderer::DrawQueuedRenderables()
 {
+	ProfileScope();
 	if( !DefaultShader )
 	{
 		CAssets& Assets = CAssets::Get();
@@ -169,7 +173,7 @@ void CRenderer::DrawQueuedRenderables()
 		DrawCalls++;
 	}
 
-	CProfileVisualisation& Profiler = CProfileVisualisation::Get();
+	CProfiler& Profiler = CProfiler::Get();
 
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 

@@ -4,7 +4,7 @@
 
 #include <ThirdParty/imgui-1.52/imgui.h>
 
-CProfileVisualisation::CProfileVisualisation()
+CProfiler::CProfiler()
 {
 #ifdef ProfileBuild
 	Enabled = true;
@@ -13,12 +13,12 @@ CProfileVisualisation::CProfileVisualisation()
 #endif
 }
 
-CProfileVisualisation::~CProfileVisualisation()
+CProfiler::~CProfiler()
 {
 	Clear();
 }
 
-void CProfileVisualisation::AddTimeEntry( FProfileTimeEntry& TimeEntry )
+void CProfiler::AddTimeEntry( FProfileTimeEntry& TimeEntry )
 {
 	auto Iterator = TimeEntries.find( TimeEntry.Name );
 	if( Iterator == TimeEntries.end() )
@@ -33,7 +33,7 @@ void CProfileVisualisation::AddTimeEntry( FProfileTimeEntry& TimeEntry )
 	}
 }
 
-void CProfileVisualisation::AddCounterEntry( const char* NameIn, int TimeIn )
+void CProfiler::AddCounterEntry( const char* NameIn, int TimeIn )
 {
 	if( !Enabled )
 		return;
@@ -49,7 +49,7 @@ void CProfileVisualisation::AddCounterEntry( const char* NameIn, int TimeIn )
 	}
 }
 
-void CProfileVisualisation::AddCounterEntry( FProfileTimeEntry& TimeEntry, const bool PerFrame )
+void CProfiler::AddCounterEntry( FProfileTimeEntry& TimeEntry, const bool PerFrame )
 {
 	if( !Enabled && PerFrame )
 		return;
@@ -80,7 +80,7 @@ void CProfileVisualisation::AddCounterEntry( FProfileTimeEntry& TimeEntry, const
 	}
 }
 
-void CProfileVisualisation::AddDebugMessage( const char* NameIn, const char* Body )
+void CProfiler::AddDebugMessage( const char* NameIn, const char* Body )
 {
 	if( !Enabled )
 		return;
@@ -96,7 +96,73 @@ void CProfileVisualisation::AddDebugMessage( const char* NameIn, const char* Bod
 	}
 }
 
-void CProfileVisualisation::Display()
+void CProfiler::PlotPerformance()
+{
+	ImDrawList* DrawList = ImGui::GetWindowDrawList();
+	if( DrawList && Enabled )
+	{
+		ImVec2 Position = ImGui::GetCursorScreenPos();
+		ImVec2 Size = ImVec2( 500.0f, 300.0f );
+		if( Size.x < 50.0f ) Size.x = 50.0f;
+		if( Size.y < 50.0f ) Size.y = 50.0f;
+		DrawList->AddRectFilled( Position, ImVec2( Position.x + Size.x, Position.y + Size.y ), ImColor( 50, 50, 50 ), 2.0f);
+
+		ImGui::InvisibleButton( "PlotPerformance", Size );
+
+		DrawList->PushClipRect( Position, ImVec2( Position.x + Size.x, Position.y + Size.y ) );
+
+		int EntryIndex = 0;
+		static const float MaximumSize = 15.0f;
+		const float SlizeSize = Size.y / TimeEntries.size();
+		const float SliceHeight = SlizeSize > MaximumSize ? MaximumSize : SlizeSize;
+		const int SliceAlpha = 255 / TimeEntries.size();
+		static const float BarWindow = 1.0f / 24.0f * 1000.0f;
+
+		for( auto& TimeEntry : TimeEntries )
+		{
+			const char* TimeEntryName = TimeEntry.first.c_str();
+			CRingBuffer<int64_t, TimeWindow>& Buffer = TimeEntry.second;
+			const int Alpha = SliceAlpha * EntryIndex;
+
+			static const size_t AverageWindow = 128;
+			float Average = 0.0f;
+			int64_t Peak = 0;
+			for( size_t j = 0; j < AverageWindow; j++ )
+			{
+				int64_t Time = Buffer.Get( Buffer.Offset( -static_cast<int>( j ) ) );
+				Average += Time;
+
+				if( Time > Peak )
+				{
+					Peak = Time;
+				}
+			}
+
+			Average /= AverageWindow;
+
+			const int64_t Time = Buffer.Get( Buffer.Offset( -1 ) );
+			const float BarTime = Time / BarWindow;
+			const float BarAverage = Average / BarWindow;
+			const float BarPeak = Peak / BarWindow;
+
+			ImVec2 PositionA = ImVec2( 0.0f, EntryIndex * SliceHeight );
+			ImVec2 PositionB = ImVec2( Size.x * BarTime, ( EntryIndex + 1 ) * SliceHeight );
+			ImVec2 PositionC = ImVec2( Size.x * BarAverage, ( EntryIndex + 1 ) * SliceHeight );
+			ImVec2 PositionD = ImVec2( Size.x * BarPeak, ( EntryIndex + 1 ) * SliceHeight );
+
+			DrawList->AddRectFilled( ImVec2( Position.x + PositionA.x, Position.y + PositionA.y ), ImVec2( Position.x + PositionB.x, Position.y + PositionB.y ), IM_COL32( 255 - Alpha, 0, Alpha, 255 ) );
+			DrawList->AddRectFilled( ImVec2( Position.x + PositionA.x, Position.y + PositionA.y ), ImVec2( Position.x + PositionC.x, Position.y + PositionC.y ), IM_COL32( 255 - Alpha, 128, Alpha, 255 ) );
+			DrawList->AddRectFilled( ImVec2( Position.x + PositionD.x - 2.0f, Position.y + PositionA.y ), ImVec2( Position.x + PositionD.x, Position.y + PositionD.y ), IM_COL32( 255, 255, 255, 255 ) );
+			DrawList->AddText( ImGui::GetFont(), SliceHeight, ImVec2( Position.x + PositionA.x, Position.y + PositionA.y ), IM_COL32( 255, 255, 255, 255 ), TimeEntryName );
+
+			EntryIndex++;
+		}
+
+		DrawList->PopClipRect();
+	}
+}
+
+void CProfiler::Display()
 {
 	ImGui::SetNextWindowPos( ImVec2( 0.0f, 25.0f ), ImGuiCond_Always );
 	ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
@@ -110,9 +176,9 @@ void CProfileVisualisation::Display()
 				ImGui::Separator();
 			}
 
-			int EntryIndex = 0;
 			for( auto& TimeEntry : TimeEntries )
 			{
+				const bool Frametime = TimeEntry.first == "Frametime";
 				const char* TimeEntryName = TimeEntry.first.c_str();
 				CRingBuffer<int64_t, TimeWindow>& Buffer = TimeEntry.second;
 
@@ -138,9 +204,9 @@ void CProfileVisualisation::Display()
 
 				Average /= AverageWindow;
 
-				if( EntryIndex > 0 )
+				if( !Frametime )
 				{
-					ImGui::Text( "%s: %ims (Peak: %ims)", TimeEntryName, static_cast<int64_t>( Average ), Peak );
+					// ImGui::Text( "%s: %ims (Peak: %ims)", TimeEntryName, static_cast<int64_t>( Average ), Peak );
 				}
 				else
 				{
@@ -156,9 +222,9 @@ void CProfileVisualisation::Display()
 						ImGui::Text( "%s: %ims (Peak: %ims)\nFPS:%i (Lowest: %i)", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
 					}
 				}
-
-				EntryIndex++;
 			}
+
+			PlotPerformance();
 		}
 
 		if( Enabled )
@@ -207,19 +273,19 @@ void CProfileVisualisation::Display()
 	TimeCountersFrame.clear();
 }
 
-void CProfileVisualisation::Clear()
+void CProfiler::Clear()
 {
 	// TimeEntries.clear();
 	TimeCounters.clear();
 	// DebugMessages.clear();
 }
 
-bool CProfileVisualisation::IsEnabled() const
+bool CProfiler::IsEnabled() const
 {
 	return Enabled;
 }
 
-void CProfileVisualisation::SetEnabled( const bool EnabledIn )
+void CProfiler::SetEnabled( const bool EnabledIn )
 {
 	Enabled = EnabledIn;
 }
@@ -241,7 +307,7 @@ CTimerScope::~CTimerScope()
 	}
 	else
 	{
-		CProfileVisualisation::Get().AddTimeEntry( FProfileTimeEntry( ScopeName, int64_t( DeltaTime ) ) );
+		CProfiler::Get().AddTimeEntry( FProfileTimeEntry( ScopeName, int64_t( DeltaTime ) ) );
 	}
 };
 

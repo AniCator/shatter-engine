@@ -123,7 +123,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 	{
 		Create( NameString, NewMesh );
 
-		CProfileVisualisation& Profiler = CProfileVisualisation::Get();
+		CProfiler& Profiler = CProfiler::Get();
 		int64_t Mesh = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Meshes", Mesh ), false );
 
@@ -156,7 +156,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation 
 	{
 		Create( NameString, NewShader );
 
-		CProfileVisualisation& Profiler = CProfileVisualisation::Get();
+		CProfiler& Profiler = CProfiler::Get();
 		int64_t Shader = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
 
@@ -189,7 +189,7 @@ CTexture* CAssets::CreatedNamedTexture( const char* Name, const char* FileLocati
 	{
 		Create( NameString, NewTexture );
 
-		CProfileVisualisation& Profiler = CProfileVisualisation::Get();
+		CProfiler& Profiler = CProfiler::Get();
 		int64_t Texture = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", Texture ), false );
 
