@@ -98,9 +98,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
       <Filter>Source Files\ThirdParty\glad</Filter>
     </ClCompile>
@@ -124,9 +121,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Input\Input.cpp">
       <Filter>Source Files\Engine\Input</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Event\Event.cpp">
-      <Filter>Source Files\Engine\Event</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Profiling\Logging.cpp">
       <Filter>Source Files\Engine\Profiling</Filter>
@@ -172,9 +166,6 @@
     </ClCompile>
     <ClCompile Include="Game\ShatterLapse\ShatterLapse.cpp">
       <Filter>Source Files\Game\ShatterLapse</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Utility\Structures\SpatialGrid.cpp">
-      <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Input\NullInput.cpp">
       <Filter>Source Files\Engine\Input</Filter>
@@ -257,9 +248,6 @@
       <Filter>Source Files\Engine\Input</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Event\ActionTarget.h">
-      <Filter>Source Files\Engine\Event</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Event\Event.h">
       <Filter>Source Files\Engine\Event</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Profiling\Logging.h">
