@@ -101,8 +101,10 @@ void CProfiler::PlotPerformance()
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
 	if( DrawList && Enabled )
 	{
+		const float SliceHeight = 15.0f;
+
 		ImVec2 Position = ImGui::GetCursorScreenPos();
-		ImVec2 Size = ImVec2( 500.0f, 300.0f );
+		ImVec2 Size = ImVec2( 500.0f, SliceHeight * TimeEntries.size() );
 		if( Size.x < 50.0f ) Size.x = 50.0f;
 		if( Size.y < 50.0f ) Size.y = 50.0f;
 		DrawList->AddRectFilled( Position, ImVec2( Position.x + Size.x, Position.y + Size.y ), ImColor( 50, 50, 50 ), 2.0f);
@@ -112,9 +114,6 @@ void CProfiler::PlotPerformance()
 		DrawList->PushClipRect( Position, ImVec2( Position.x + Size.x, Position.y + Size.y ) );
 
 		int EntryIndex = 0;
-		static const float MaximumSize = 15.0f;
-		const float SlizeSize = Size.y / TimeEntries.size();
-		const float SliceHeight = SlizeSize > MaximumSize ? MaximumSize : SlizeSize;
 		const int SliceAlpha = 255 / TimeEntries.size();
 		static const float BarWindow = 1.0f / 24.0f * 1000.0f;
 
