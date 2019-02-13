@@ -28,7 +28,7 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 	return bCreatedVertexBuffer;
 }
 
-void CMesh::Draw( EDrawMode DrawModeOverride )
+void CMesh::Prepare( EDrawMode DrawModeOverride )
 {
 	const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
 
@@ -53,6 +53,22 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 		if( HasIndexBuffer )
 		{
 			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
+		}
+
+		/*glDisableVertexAttribArray( EVertexAttribute::Position );
+		glDisableVertexAttribArray( EVertexAttribute::TextureCoordinate );
+		glDisableVertexAttribArray( EVertexAttribute::Normal );*/
+	}
+}
+
+void CMesh::Draw( EDrawMode DrawModeOverride )
+{
+	const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
+
+	if( DrawMode != EDrawMode::None )
+	{
+		if( HasIndexBuffer )
+		{
 			glDrawElements( DrawMode, VertexBufferData.IndexCount, GL_UNSIGNED_INT, 0 );
 		}
 		else
@@ -60,9 +76,6 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 			glDrawArrays( DrawMode, 0, VertexBufferData.VertexCount );
 		}
 
-		glDisableVertexAttribArray( EVertexAttribute::Position );
-		glDisableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-		glDisableVertexAttribArray( EVertexAttribute::Normal );
 	}
 }
 

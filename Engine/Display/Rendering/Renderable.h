@@ -13,6 +13,8 @@ class CShader;
 
 struct FRenderData
 {
+	GLuint VertexBufferObject = 0;
+	GLuint IndexBufferObject = 0;
 	GLuint ShaderProgram = 0;
 
 	FTransform Transform;
@@ -42,13 +44,15 @@ public:
 	CTexture* GetTexture( ETextureSlot Slot );
 	void SetTexture( CTexture* Texture, ETextureSlot Slot );
 
-	virtual void Draw( EDrawMode DrawModeOverride = None );
+	virtual void Draw( const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride = None );
 
 	FRenderDataInstanced& GetRenderData();
 private:
 	CTexture* Textures[static_cast<std::underlying_type<ETextureSlot>::type>( ETextureSlot::Maximum )];
 	CShader* Shader;
 	CMesh* Mesh;
+
+	void Prepare();
 
 	FRenderDataInstanced RenderData;
 };

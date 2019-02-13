@@ -26,6 +26,10 @@ void CRenderable::SetMesh( CMesh* Mesh )
 	if( Mesh )
 	{
 		this->Mesh = Mesh;
+
+		FVertexBufferData& Data = Mesh->GetVertexBufferData();
+		RenderData.VertexBufferObject = Data.VertexBufferObject;
+		RenderData.IndexBufferObject = Data.IndexBufferObject;
 	}
 }
 
@@ -40,24 +44,6 @@ void CRenderable::SetShader( CShader* Shader )
 	{
 		this->Shader = Shader;
 		RenderData.ShaderProgram = Shader->Handle;
-
-		if( Textures )
-		{
-			for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
-			{
-				const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
-
-				GLuint Handle = Shader->Activate();
-
-				char UniformName[32];
-				sprintf_s( UniformName, "Texture%i", Index );
-
-				glUniform1i( glGetUniformLocation( Handle, UniformName ), Index );
-
-				Slot = static_cast<ETextureSlot>( Index + 1 );
-			}
-		}
-		
 	}
 }
 
@@ -78,40 +64,23 @@ void CRenderable::SetTexture( CTexture* Texture, ETextureSlot Slot )
 	{
 		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
 		this->Textures[Index] = Texture;
-
-		if( Shader )
-		{
-			GLuint Handle = Shader->Activate();
-
-			char UniformName[32];
-			sprintf_s( UniformName, "Texture%i", Index );
-
-			glUniform1i( glGetUniformLocation( Handle, UniformName ), Index );
-		}
 	}
 }
 
-void CRenderable::Draw( EDrawMode DrawModeOverride )
+void CRenderable::Draw( const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride )
 {
-	if( Textures )
-	{
-		for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
-		{
-			const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
-
-			CTexture* Texture = Textures[Index];
-			if( Texture )
-			{
-				Texture->Bind( Slot );
-			}
-
-			Slot = static_cast<ETextureSlot>( Index + 1 );
-		}
-	}
-
 	if( Mesh )
 	{
 		const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
+		Prepare();
+
+		const FVertexBufferData& Data = Mesh->GetVertexBufferData();
+		const bool BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
+		if( BindBuffers )
+		{
+			Mesh->Prepare( DrawMode );
+		}
+
 		Mesh->Draw( DrawMode );
 	}
 }
@@ -119,4 +88,30 @@ void CRenderable::Draw( EDrawMode DrawModeOverride )
 FRenderDataInstanced& CRenderable::GetRenderData()
 {
 	return RenderData;
+}
+
+void CRenderable::Prepare()
+{
+	if( Shader )
+	{
+		if( Textures )
+		{
+			for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
+			{
+				const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
+
+				char UniformName[32];
+				sprintf_s( UniformName, "Texture%i", Index );
+				glUniform1i( glGetUniformLocation( Shader->Handle, UniformName ), Index );
+
+				CTexture* Texture = Textures[Index];
+				if( Texture )
+				{
+					Texture->Bind( Slot );
+				}
+
+				Slot = static_cast<ETextureSlot>( Index + 1 );
+			}
+		}
+	}
 }

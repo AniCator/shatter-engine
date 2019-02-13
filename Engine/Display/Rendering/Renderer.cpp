@@ -87,7 +87,6 @@ void CRenderer::QueueRenderable( CRenderable* Renderable )
 
 void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 {
-	ProfileScope();
 	DynamicRenderables.push_back( Renderable );
 }
 
@@ -96,7 +95,6 @@ GLuint ProgramHandle = -1;
 
 void CRenderer::DrawQueuedRenderables()
 {
-	ProfileScope();
 	if( !DefaultShader )
 	{
 		CAssets& Assets = CAssets::Get();
@@ -124,9 +122,10 @@ void CRenderer::DrawQueuedRenderables()
 
 	int64_t DrawCalls = 0;
 
-	auto DrawRenderable = [this, ProjectionMatrix, ViewMatrix, CameraSetup] ( CRenderable* Renderable )
+	FRenderDataInstanced PreviousRenderData;
+	auto DrawRenderable = [this, ProjectionMatrix, ViewMatrix, CameraSetup] ( CRenderable* Renderable, FRenderDataInstanced& PreviousRenderData )
 	{
-		FRenderDataInstanced RenderData = Renderable->GetRenderData();
+		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 
 		RefreshShaderHandle( Renderable );
 		RenderData.ShaderProgram = ProgramHandle;
@@ -155,12 +154,13 @@ void CRenderer::DrawQueuedRenderables()
 			glUniform1fv( TimeLocation, 1, &Time );
 		}
 
-		Renderable->Draw();
+		Renderable->Draw( PreviousRenderData );
+		PreviousRenderData = RenderData;
 	};
 
 	for( auto Renderable : Renderables )
 	{
-		DrawRenderable( Renderable );
+		DrawRenderable( Renderable, PreviousRenderData );
 		DrawCalls++;
 	}
 
@@ -169,7 +169,7 @@ void CRenderer::DrawQueuedRenderables()
 
 	for( auto Renderable : DynamicRenderables )
 	{
-		DrawRenderable( Renderable );
+		DrawRenderable( Renderable, PreviousRenderData );
 		DrawCalls++;
 	}
 

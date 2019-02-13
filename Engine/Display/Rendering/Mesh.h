@@ -72,6 +72,8 @@ public:
 	~CMesh();
 
 	bool Populate( const FPrimitive& Primitive );
+
+	void Prepare( EDrawMode DrawModeOverride );
 	void Draw( EDrawMode DrawModeOverride = None );
 
 	FVertexBufferData& GetVertexBufferData();
