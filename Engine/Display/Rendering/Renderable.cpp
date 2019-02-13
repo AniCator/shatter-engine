@@ -94,19 +94,16 @@ void CRenderable::Prepare()
 {
 	if( Shader )
 	{
-		if( Textures )
+		if( Textures[0] )
 		{
 			for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
 			{
 				const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
 
-				char UniformName[32];
-				sprintf_s( UniformName, "Texture%i", Index );
-				glUniform1i( glGetUniformLocation( Shader->Handle, UniformName ), Index );
-
 				CTexture* Texture = Textures[Index];
 				if( Texture )
 				{
+					glUniform1i( glGetUniformLocation( Shader->Handle, TextureSlotName[Index] ), Index );
 					Texture->Bind( Slot );
 				}
 

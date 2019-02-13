@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Renderer.h"
 
+#include <algorithm>
+
 #include <glm/gtc/type_ptr.hpp>
 
 #include <ThirdParty/glad/include/glad/glad.h>
@@ -166,6 +168,13 @@ void CRenderer::DrawQueuedRenderables()
 
 	IInput& Input = CInputLocator::GetService();
 	FFixedPosition2D MousePosition = Input.GetMousePosition();
+
+	std::sort( DynamicRenderables.begin(), DynamicRenderables.end(), [] (CRenderable* A, CRenderable* B) {
+		FRenderDataInstanced& RenderDataA = A->GetRenderData();
+		FRenderDataInstanced& RenderDataB = B->GetRenderData();
+
+		return RenderDataA.VertexBufferObject > RenderDataB.VertexBufferObject;
+	} );
 
 	for( auto Renderable : DynamicRenderables )
 	{
