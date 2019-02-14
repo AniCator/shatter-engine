@@ -13,6 +13,7 @@ public:
 	void Run();
 
 	void InitializeDefaultInputs();
+	void ResetImGui();
 
 	std::string GetName() const;
 	void SetName( const char* Name );

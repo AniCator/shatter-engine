@@ -63,7 +63,7 @@ void InputRestartGameLayers(CApplication* Application)
 {
 	RestartLayers = false;
 
-	if(Application )
+	if( Application )
 		Application->InitializeDefaultInputs();
 
 	ScaledGameTime = 0.0f;
@@ -72,7 +72,15 @@ void InputRestartGameLayers(CApplication* Application)
 	CAngelEngine::Get().Initialize();
 
 	GameLayersInstance->Shutdown();
+
+#if defined( IMGUI_ENABLED )
+	ImGui_ImplGlfwGL3_Shutdown();
+#endif
+
 	GameLayersInstance->Initialize();
+
+	if( Application )
+		Application->ResetImGui();
 
 	// Force frame refresh
 	MainWindow.GetRenderer().RefreshFrame();
@@ -561,8 +569,6 @@ void CApplication::Run()
 		MainWindow.RenderFrame();
 	}
 
-	GameLayersInstance->Initialize();
-
 	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps", 60 );
 	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
@@ -680,6 +686,36 @@ void CApplication::InitializeDefaultInputs()
 	} );
 }
 
+void CApplication::ResetImGui()
+{
+#if defined( IMGUI_ENABLED )
+	Log::Event( "Setting font configuration.\n" );
+	static const char* FontLocation = "Resources/Roboto-Medium.ttf";
+	const bool FileExists = CFile::Exists( FontLocation );
+	if( FileExists )
+	{
+		ImGuiIO& IO = ImGui::GetIO();
+		static ImFont* RobotoFont = nullptr;
+
+		ImFontConfig DefaultFontConfig;
+		DefaultFontConfig.OversampleH = 4;
+		DefaultFontConfig.OversampleV = 2;
+		DefaultFontConfig.SizePixels = CConfiguration::Get().GetFloat( "font_size", 15.0f );
+
+		RobotoFont = IO.Fonts->AddFontFromFileTTF( FontLocation, DefaultFontConfig.SizePixels, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
+		IO.FontDefault = RobotoFont;
+	}
+	else
+	{
+		Log::Event( Log::Warning, "Could not find a default resource.\nMake sure you include the default engine items in the build directory.\n" );
+	}
+
+	ImGui_ImplGlfwGL3_NewFrame();
+
+	GenerateThemes();
+#endif
+}
+
 std::string CApplication::GetName() const
 {
 	return Name;
@@ -720,6 +756,10 @@ void CApplication::Initialize()
 #endif
 
 	Log::Event( "%s (Build: %s)\n\n", Name.c_str(), __DATE__ );
+
+#if defined( IMGUI_ENABLED )
+	ImGui_ImplGlfwGL3_Shutdown();
+#endif
 
 	unsigned char EndianTest[2] = { 1, 0 };
 	short CastShort;
@@ -781,34 +821,7 @@ void CApplication::Initialize()
 
 	CAngelEngine::Get().Initialize();
 
-#if defined( IMGUI_ENABLED )
-	Log::Event( "Setting font configuration.\n" );
+	GameLayersInstance->Initialize();
 
-	ImGui_ImplGlfwGL3_Shutdown();
-
-	static const char* FontLocation = "Resources/Roboto-Medium.ttf";
-	const bool FileExists = CFile::Exists( FontLocation );
-	if( FileExists )
-	{
-		ImGuiIO& IO = ImGui::GetIO();
-		static ImFont* RobotoFont = nullptr;
-
-		ImFontConfig DefaultFontConfig;
-		DefaultFontConfig.OversampleH = 4;
-		DefaultFontConfig.OversampleV = 2;
-		DefaultFontConfig.SizePixels = ConfigurationInstance.GetFloat( "font_size", 15.0f );
-
-		IO.Fonts->ClearTexData();
-		RobotoFont = IO.Fonts->AddFontFromFileTTF( FontLocation, DefaultFontConfig.SizePixels, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
-		IO.FontDefault = RobotoFont;
-	}
-	else
-	{
-		Log::Event( Log::Warning, "Could not find a default resource.\nMake sure you include the default engine items in the build directory.\n" );
-	}
-
-	ImGui_ImplGlfwGL3_NewFrame();
-
-	GenerateThemes();
-#endif
+	ResetImGui();
 }
