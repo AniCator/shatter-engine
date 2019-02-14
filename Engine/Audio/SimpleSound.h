@@ -33,6 +33,10 @@ public:
 	static void Stop( SoundHandle Handle );
 	static void Stop( MusicHandle Handle );
 
+	static void StopSounds();
+	static void StopMusic();
+	static void StopAll();
+
 	static void Loop( SoundHandle Handle, const bool Loop );
 	static void Loop( MusicHandle Handle, const bool Loop );
 

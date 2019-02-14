@@ -57,6 +57,28 @@ void CSimpleSound::Stop( MusicHandle Handle )
 	Streams[Handle.Handle]->stop();
 }
 
+void CSimpleSound::StopSounds()
+{
+	for( auto Sound : Sounds )
+	{
+		Sound->stop();
+	}
+}
+
+void CSimpleSound::StopMusic()
+{
+	for( auto Stream : Streams )
+	{
+		Stream->stop();
+	}
+}
+
+void CSimpleSound::StopAll()
+{
+	StopSounds();
+	StopMusic();
+}
+
 void CSimpleSound::Loop( SoundHandle Handle, const bool Loop )
 {
 	Sounds[Handle.Handle]->setLoop(Loop);
