@@ -30,6 +30,7 @@ FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
 bool PauseGame = false;
 bool ScaleTime = false;
 bool CursorVisible = true;
+bool RestartLayers = false;
 
 double ScaledGameTime = 0.0;
 
@@ -58,8 +59,13 @@ void InputReloadConfiguration()
 	CConfiguration::Get().Reload();
 }
 
-void InputRestartGameLayers()
+void InputRestartGameLayers(CApplication* Application)
 {
+	RestartLayers = false;
+
+	if(Application )
+		Application->InitializeDefaultInputs();
+
 	ScaledGameTime = 0.0f;
 
 	CAngelEngine::Get().Shutdown();
@@ -360,8 +366,7 @@ void DebugMenu( CApplication* Application )
 
 			if( ImGui::MenuItem( "Restart Game Layers", "G" ) )
 			{
-				Application->InitializeDefaultInputs();
-				InputRestartGameLayers();
+				RestartLayers = true;
 			}
 
 			if( ImGui::MenuItem( "Reload Shaders", "J" ) )
@@ -564,6 +569,9 @@ void CApplication::Run()
 
 	while( !MainWindow.ShouldClose() )
 	{
+		if( RestartLayers )
+			InputRestartGameLayers( this );
+
 		MainWindow.BeginFrame();
 		Profile( "Frametime" );
 
@@ -648,9 +656,8 @@ void CApplication::InitializeDefaultInputs()
 	Input.AddActionBinding( EKey::Enter, EAction::Release, InputScaleTimeDisable );
 
 	Input.AddActionBinding( EKey::H, EAction::Release, InputReloadConfiguration );
-	Input.AddActionBinding( EKey::G, EAction::Release, [this] () {
-		InitializeDefaultInputs();
-		InputRestartGameLayers();
+	Input.AddActionBinding( EKey::G, EAction::Release, [] () {
+		RestartLayers = true;
 	} );
 
 	Input.AddActionBinding( EKey::W, EAction::Press, InputMoveCameraUp );
