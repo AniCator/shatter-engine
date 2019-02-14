@@ -79,6 +79,7 @@ void CRenderer::RefreshFrame()
 	{
 		delete Renderable;
 	}
+
 	DynamicRenderables.clear();
 }
 
@@ -160,21 +161,26 @@ void CRenderer::DrawQueuedRenderables()
 		PreviousRenderData = RenderData;
 	};
 
+	auto SortRenderables = [] ( CRenderable* A, CRenderable* B ) {
+		FRenderDataInstanced& RenderDataA = A->GetRenderData();
+		FRenderDataInstanced& RenderDataB = B->GetRenderData();
+
+		const bool ShaderProgram = RenderDataA.ShaderProgram < RenderDataB.ShaderProgram && !( RenderDataA.ShaderProgram > RenderDataB.ShaderProgram );
+		const bool VertexBufferObject = RenderDataA.VertexBufferObject < RenderDataB.VertexBufferObject && !( RenderDataA.VertexBufferObject > RenderDataB.VertexBufferObject);
+		const bool IndexBufferObject = RenderDataA.IndexBufferObject < RenderDataB.IndexBufferObject && !( RenderDataA.IndexBufferObject > RenderDataB.IndexBufferObject);
+
+		return ShaderProgram && VertexBufferObject && IndexBufferObject;
+	};
+
+	std::sort( Renderables.begin(), Renderables.end(), SortRenderables );
+
 	for( auto Renderable : Renderables )
 	{
 		DrawRenderable( Renderable, PreviousRenderData );
 		DrawCalls++;
 	}
 
-	IInput& Input = CInputLocator::GetService();
-	FFixedPosition2D MousePosition = Input.GetMousePosition();
-
-	std::sort( DynamicRenderables.begin(), DynamicRenderables.end(), [] (CRenderable* A, CRenderable* B) {
-		FRenderDataInstanced& RenderDataA = A->GetRenderData();
-		FRenderDataInstanced& RenderDataB = B->GetRenderData();
-
-		return RenderDataA.VertexBufferObject > RenderDataB.VertexBufferObject;
-	} );
+	std::sort( DynamicRenderables.begin(), DynamicRenderables.end(), SortRenderables );
 
 	for( auto Renderable : DynamicRenderables )
 	{
@@ -183,7 +189,6 @@ void CRenderer::DrawQueuedRenderables()
 	}
 
 	CProfiler& Profiler = CProfiler::Get();
-
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
 	int64_t RenderablesSize = static_cast<int64_t>( Renderables.size() );
@@ -191,6 +196,9 @@ void CRenderer::DrawQueuedRenderables()
 
 	int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
+
+	IInput& Input = CInputLocator::GetService();
+	FFixedPosition2D MousePosition = Input.GetMousePosition();
 
 	char PositionXString[32];
 	sprintf_s( PositionXString, "%i", MousePosition.X );
