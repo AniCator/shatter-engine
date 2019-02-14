@@ -5,6 +5,7 @@
 #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW//glfw3.h>
 #include <ThirdParty/glm/glm.hpp>
 
+#include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
 
 enum EVertexAttribute
@@ -79,9 +80,13 @@ public:
 	FVertexBufferData& GetVertexBufferData();
 	const FVertexData& GetVertexData() const;
 	const FIndexData& GetIndexData() const;
+
+	const FBounds& GetBounds() const;
 private:
 	bool CreateVertexBuffer( const FPrimitive& Primitive );
 	bool CreateIndexBuffer( const FPrimitive& Primitive );
+
+	void GenerateAABB( const FPrimitive& Primitive );
 	void GenerateNormals( const FPrimitive& Primitive );
 
 	FVertexBufferData VertexBufferData;
@@ -93,4 +98,6 @@ private:
 	EMeshType MeshType;
 
 	uint32_t HasIndexBuffer : 1;
+
+	FBounds AABB;
 };

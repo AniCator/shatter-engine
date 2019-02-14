@@ -94,10 +94,17 @@ const FIndexData& CMesh::GetIndexData() const
 	return IndexData;
 }
 
+const FBounds& CMesh::GetBounds() const
+{
+	return AABB;
+}
+
 bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 {
 	if( VertexBufferData.VertexBufferObject == 0 )
 	{
+		GenerateAABB( Primitive );
+
 		const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
 
 		glGenVertexArrays( 1, &VertexArrayObject );
@@ -159,6 +166,43 @@ bool CMesh::CreateIndexBuffer( const FPrimitive& Primitive )
 		Log::Event( Log::Error, "Mesh index buffer has already been created.\n" );
 
 		return false;
+	}
+}
+
+void CMesh::GenerateAABB( const FPrimitive& Primitive )
+{
+	for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
+	{
+		const FVertex& Vertex = Primitive.Vertices[VertexIndex];
+		if( Vertex.Position[0] < AABB.Minimum[0] )
+		{
+			AABB.Minimum[0] = Vertex.Position[0];
+		}
+
+		if( Vertex.Position[1] < AABB.Minimum[1] )
+		{
+			AABB.Minimum[1] = Vertex.Position[1];
+		}
+
+		if( Vertex.Position[2] < AABB.Minimum[2] )
+		{
+			AABB.Minimum[2] = Vertex.Position[2];
+		}
+
+		if( Vertex.Position[0] > AABB.Maximum[0] )
+		{
+			AABB.Maximum[0] = Vertex.Position[0];
+		}
+
+		if( Vertex.Position[1] > AABB.Minimum[1] )
+		{
+			AABB.Maximum[1] = Vertex.Position[1];
+		}
+
+		if( Vertex.Position[2] > AABB.Maximum[2] )
+		{
+			AABB.Maximum[2] = Vertex.Position[2];
+		}
 	}
 }
 

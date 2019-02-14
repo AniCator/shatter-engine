@@ -17,6 +17,12 @@ struct FFrustum
 	FFrustumPlane Planes[6];
 };
 
+struct FBounds
+{
+	glm::vec3 Minimum;
+	glm::vec3 Maximum;
+};
+
 struct FTransform
 {
 public:
