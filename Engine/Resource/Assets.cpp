@@ -111,7 +111,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 	// Check if the mesh exists
 	if( CMesh* ExistingMesh = FindMesh( NameString ) )
 	{
-		Log::Event( "Found existing mesh named \"%s\"\n", NameString );
+		Log::Event( "Found existing mesh named \"%s\"\n", NameString.c_str() );
 		return ExistingMesh;
 	}
 
@@ -145,7 +145,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation 
 	// Check if the mesh exists
 	if( CShader* ExistingShader = FindShader( NameString ) )
 	{
-		Log::Event( "Found existing shader named \"%s\"\n", NameString );
+		Log::Event( "Found existing shader named \"%s\"\n", NameString.c_str() );
 		return ExistingShader;
 	}
 
@@ -178,7 +178,7 @@ CTexture* CAssets::CreatedNamedTexture( const char* Name, const char* FileLocati
 	// Check if the mesh exists
 	if( CTexture* ExistingTexture = FindTexture( NameString ) )
 	{
-		Log::Event( "Found existing texture named \"%s\"\n", NameString );
+		Log::Event( "Found existing texture named \"%s\"\n", NameString.c_str() );
 		return ExistingTexture;
 	}
 
