@@ -31,6 +31,17 @@ public:
 		return FileSize;
 	}
 
+	template<typename T>
+	void Extract( T& Object )
+	{
+		const char* RawData = Fetch<char>();
+		const size_t FileSize = Size();
+		CData Data;
+		Data.Load( RawData, FileSize );
+
+		Data >> Object;
+	}
+
 private:
 	char* Data;
 	size_t FileSize;

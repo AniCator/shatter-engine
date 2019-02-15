@@ -426,12 +426,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 
 void MeshBuilder::LM( FPrimitive& Primitive, CFile& File )
 {
-	const char* RawData = File.Fetch<char>();
-	const size_t FileSize = File.Size();
-	CData Data;
-	Data.Load( RawData, FileSize );
-
-	Data >> Primitive;
+	File.Extract( Primitive );
 }
 
 void MeshBuilder::Mesh( FPrimitive& Primitive, CMesh* MeshInstance )
