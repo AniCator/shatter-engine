@@ -2,15 +2,32 @@
 #pragma once
 
 #include <vector>
+
+#include <Engine/World/Level/Level.h>
 #include <Engine/Utility/Math.h>
 
 class CEntity;
-class CLevel;
 
 struct FLevel
 {
-	CLevel* Level;
+	CLevel Level;
 	FTransform Transform;
+
+	friend CData& operator<<( CData& Data, FLevel& Level )
+	{
+		Data << Level.Level;
+		Data << Level.Transform;
+
+		return Data;
+	};
+
+	friend CData& operator>>( CData& Data, FLevel& Level )
+	{
+		Data >> Level.Level;
+		Data >> Level.Transform;
+
+		return Data;
+	};
 };
 
 class CWorld
@@ -24,15 +41,23 @@ public:
 	void Destroy();
 
 	template<typename T>
-	T* Spawn( FTransform& Transform )
+	T* Spawn()
 	{
-		T* Entity = new T();
-		Entities.push_back( Entity );
+		if( ActiveLevel )
+			return ActiveLevel->Spawn<T>();
+		else
+			DebugBreak();
 
-		return Entity;
+		return nullptr;
 	}
 
+	void Add( FLevel& Level );
+
 private:
-	std::vector<CEntity*> Entities;
-	std::vector<CLevel*> Levels;
+	std::vector<FLevel> Levels;
+	CLevel* ActiveLevel;
+
+public:
+	friend CData& operator<<( CData& Data, CWorld& World );
+	friend CData& operator>>( CData& Data, CWorld& World );
 };

@@ -4,9 +4,10 @@
 class CEntity
 {
 public:
-	virtual ~CEntity() = 0;
+	CEntity() {};
+	virtual ~CEntity() {};
 
-	virtual void Construct() = 0;
-	virtual void Tick() = 0;
-	virtual void Destroy() = 0;
+	virtual void Construct() {};
+	virtual void Tick() {};
+	virtual void Destroy() {};
 };

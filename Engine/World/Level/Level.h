@@ -2,9 +2,10 @@
 #pragma once
 
 #include <vector>
-#include <Engine/Utility/Math.h>
 
-class CEntity;
+#include <Engine/World/Entity/Entity.h>
+#include <Engine/Utility/Data.h>
+#include <Engine/Utility/Math.h>
 
 class CLevel
 {
@@ -17,14 +18,17 @@ public:
 	void Destroy();
 
 	template<typename T>
-	T* Spawn( FTransform& Transform )
+	T* Spawn()
 	{
-		T* Entity = new T();
-		Entities.push_back( Entity );
+		Entities.push_back( new T() );
 
-		return Entity;
+		return dynamic_cast<T*>(Entities.back());
 	}
 
 private:
 	std::vector<CEntity*> Entities;
+
+public:
+	friend CData& operator<<( CData& Data, CLevel& Level );
+	friend CData& operator>>( CData& Data, CLevel& Level );
 };

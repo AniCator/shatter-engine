@@ -247,6 +247,7 @@
     <ClCompile Include="Engine\Utility\StringPool.cpp" />
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Engine\World\Entity\Entity.cpp" />
+    <ClCompile Include="Engine\World\Entity\MeshEntity\MeshEntity.cpp" />
     <ClCompile Include="Engine\World\Level\Level.cpp" />
     <ClCompile Include="Engine\World\World.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
@@ -307,6 +308,7 @@
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />
     <ClInclude Include="Engine\Utility\Timer.h" />
     <ClInclude Include="Engine\World\Entity\Entity.h" />
+    <ClInclude Include="Engine\World\Entity\MeshEntity\MeshEntity.h" />
     <ClInclude Include="Engine\World\Level\Level.h" />
     <ClInclude Include="Engine\World\World.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />

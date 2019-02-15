@@ -96,6 +96,9 @@
     <Filter Include="Source Files\Engine\World\Level">
       <UniqueIdentifier>{0d31c8f8-ebcc-4514-ba8a-30c496af6b39}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\MeshEntity">
+      <UniqueIdentifier>{94a3dc05-6b31-44e7-ba7c-7cf34644832a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -214,6 +217,9 @@
     </ClCompile>
     <ClCompile Include="Engine\World\Level\Level.cpp">
       <Filter>Source Files\Engine\World\Level</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\MeshEntity\MeshEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\MeshEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -375,6 +381,9 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Level\Level.h">
       <Filter>Source Files\Engine\World\Level</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\MeshEntity\MeshEntity.h">
+      <Filter>Source Files\Engine\World\Entity\MeshEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
