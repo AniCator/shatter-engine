@@ -254,6 +254,8 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 	std::stringstream StringStream;
 	StringStream << Data;
 
+	std::string Token;
+
 	std::string Line;
 	while( std::getline( StringStream, Line ) )
 	{
@@ -266,7 +268,6 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 
 				Line.erase( 0, 2 );
 				std::stringstream Stream( Line );
-				std::string Token;
 				std::vector<std::string> Tokens;
 				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 2 )
 				{
@@ -290,7 +291,6 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 
 				Line.erase( 0, 2 );
 				std::stringstream Stream( Line );
-				std::string Token;
 				std::vector<std::string> Tokens;
 				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 3 )
 				{
@@ -317,7 +317,6 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 
 				Line.erase( 0, 2 );
 				std::stringstream Stream( Line );
-				std::string Token;
 				std::vector<std::string> Tokens;
 				while( std::getline(Stream, Token, Delimiter ) && Tokens.size() < 3)
 				{
@@ -339,7 +338,6 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 			// Face.
 			Line.erase( 0, 2 );
 			std::stringstream Stream( Line );
-			std::string Token;
 			std::vector<std::string> VertexTokens;
 			std::vector<std::string> CoordinateTokens;
 			std::vector<std::string> NormalTokens;
