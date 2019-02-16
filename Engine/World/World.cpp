@@ -3,7 +3,8 @@
 
 #include <Engine/World/Entity/Entity.h>
 
-static const size_t WorldVersion = 0;
+static const char WorldIdentifier[5] = "LLWF"; // Lofty Lagoon World Format
+static const size_t WorldVersion = 1;
 
 CWorld::CWorld()
 {
@@ -47,6 +48,7 @@ void CWorld::Add( FLevel& Level )
 
 CData& operator<<( CData& Data, CWorld& World )
 {
+	Data << WorldIdentifier;
 	Data << WorldVersion;
 
 	const size_t Count = World.Levels.size();
@@ -62,10 +64,13 @@ CData& operator<<( CData& Data, CWorld& World )
 
 CData& operator>>( CData& Data, CWorld& World )
 {
+	char Identifier[4];
+	Data >> Identifier;
+
 	size_t Version;
 	Data >> Version;
 
-	if( Version >= WorldVersion )
+	if( strcmp( Identifier, WorldIdentifier ) == 0 && Version >= WorldVersion )
 	{
 		size_t Count;
 		Data >> Count;
@@ -83,6 +88,10 @@ CData& operator>>( CData& Data, CWorld& World )
 		{
 			World.ActiveLevel = &World.Levels[0].Level;
 		}
+	}
+	else
+	{
+		Data.Invalidate();
 	}
 
 	return Data;
