@@ -8,7 +8,7 @@ class CData
 public:
 	CData()
 	{
-
+		Invalid = false;
 	}
 
 	template<typename T>
@@ -22,7 +22,7 @@ public:
 	void operator<<( const char* Object )
 	{
 		const size_t Size = strlen( Object ) * sizeof( char );
-		Data.write( Object, Size );
+		Data.write( Object, Size + 1 );
 	}
 
 	template<typename T>
@@ -55,6 +55,18 @@ public:
 		return Data.tellp();
 	}
 
+	const bool Valid() const
+	{
+		return !Invalid;
+	}
+
+	void Invalidate()
+	{
+		Invalid = true;
+	}
+
 private:
 	std::stringstream Data;
+
+	bool Invalid;
 };

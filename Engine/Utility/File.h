@@ -2,6 +2,8 @@
 #pragma once
 
 #include <string>
+
+#include <Engine/Profiling/Logging.h>
 #include <Engine/Utility/Data.h>
 
 class CFile
@@ -40,6 +42,11 @@ public:
 		Data.Load( RawData, FileSize );
 
 		Data >> Object;
+
+		if( !Data.Valid() )
+		{
+			Log::Event( Log::Warning, "Couldn't extract data from \"%s\", possible format mismatch.\n", Location.c_str() );
+		}
 	}
 
 private:
