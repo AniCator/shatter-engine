@@ -175,6 +175,10 @@ namespace Log
 
 	void CLog::Event( LogSeverity Severity, const char* Format, va_list Arguments )
 	{
+#if !defined(_DEBUG)
+		if( Severity < Warning )
+			return;
+#endif
 		Print( Severity, Format, Arguments );
 
 		if( Severity >= Error )
