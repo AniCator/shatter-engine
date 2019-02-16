@@ -547,28 +547,6 @@ void CApplication::Run()
 	InputTimer.Start();
 	GameTimer.Start();
 
-	// Render a single frame to indicate we're initializing.
-	if( !MainWindow.ShouldClose() )
-	{
-		MainWindow.BeginFrame();
-
-#if defined( IMGUI_ENABLED )
-		ImGui::SetNextWindowPos( ImVec2( 0.0f, 0.0f ), ImGuiCond_Always );
-		ImGui::SetNextWindowSize( ImVec2( 500.0f, 20.0f ), ImGuiCond_Always );
-
-		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
-		if( ImGui::Begin( "Loading", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
-		{
-			ImGui::Text( "Loading..." );
-			ImGui::End();
-		}
-
-		ImGui::PopStyleColor();
-#endif
-
-		MainWindow.RenderFrame();
-	}
-
 	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps", 60 );
 	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
@@ -579,7 +557,7 @@ void CApplication::Run()
 			InputRestartGameLayers( this );
 
 		MainWindow.BeginFrame();
-		Profile( "Frametime" );
+		CTimerScope Scope_( "Frametime", false );
 
 		const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 		if( InputDeltaTime >= MaximumInputTime )
@@ -794,6 +772,34 @@ void CApplication::Initialize()
 	{
 		Log::Event( Log::Fatal, "Application window could not be created.\n" );
 	}
+
+	ResetImGui();
+
+	// Render a single frame to indicate we're initializing.
+	if( !MainWindow.ShouldClose() )
+	{
+		MainWindow.BeginFrame();
+
+#if defined( IMGUI_ENABLED )
+		ImGui::SetNextWindowPos( ImVec2( 0.0f, 0.0f ), ImGuiCond_Always );
+		ImGui::SetNextWindowSize( ImVec2( 500.0f, 20.0f ), ImGuiCond_Always );
+
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
+		if( ImGui::Begin( "Loading", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
+		{
+			ImGui::Text( "Loading..." );
+			ImGui::End();
+		}
+
+		ImGui::PopStyleColor();
+#endif
+
+		MainWindow.RenderFrame();
+	}
+
+#if defined( IMGUI_ENABLED )
+	ImGui_ImplGlfwGL3_Shutdown();
+#endif
 
 	Log::Event( "Binding engine inputs.\n" );
 
