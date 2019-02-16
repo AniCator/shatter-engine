@@ -5,7 +5,8 @@
 
 #include <Engine/Utility/Data.h>
 
-static const size_t PrimitiveVersion = 0;
+static const char PrimitiveIdentifier[5] = "LPRI"; // Lofty PRImitive
+static const size_t PrimitiveVersion = 1;
 
 struct FVertex
 {
@@ -70,10 +71,13 @@ struct FPrimitive
 
 	friend CData& operator<<( CData& Data, FPrimitive& Primitive )
 	{
+		Data << PrimitiveIdentifier;
 		Data << PrimitiveVersion;
 
 		Data << Primitive.VertexCount;
 		Data << Primitive.IndexCount;
+
+		Data << Primitive.HasNormals;
 
 		for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
 		{
@@ -90,13 +94,18 @@ struct FPrimitive
 
 	friend CData& operator>>( CData& Data, FPrimitive& Primitive )
 	{
+		char Identifier[5];
+		Data >> Identifier;
+
 		size_t Version;
 		Data >> Version;
 
-		if( Version >= PrimitiveVersion )
+		if( strcmp( Identifier, PrimitiveIdentifier ) == 0 && Version >= PrimitiveVersion )
 		{
 			Data >> Primitive.VertexCount;
 			Data >> Primitive.IndexCount;
+
+			Data >> Primitive.HasNormals;
 
 			Primitive.Vertices = new FVertex[Primitive.VertexCount];
 			for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
@@ -109,6 +118,10 @@ struct FPrimitive
 			{
 				Data >> Primitive.Indices[Index];
 			}
+		}
+		else
+		{
+			Data.Invalidate();
 		}
 
 		return Data;
