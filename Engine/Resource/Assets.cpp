@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <string>
 
+#include <Engine/Configuration/Configuration.h>
+
 #include <Engine/Display//Rendering/Mesh.h>
 #include <Engine/Display//Rendering/Shader.h>
 #include <Engine/Display//Rendering/Texture.h>
@@ -14,9 +16,11 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
 
+static bool ExportOBJToLM = false;
+
 CAssets::CAssets()
 {
-
+	ExportOBJToLM = CConfiguration::Get().GetInteger( "ExportOBJToLM", 0 ) > 0;
 }
 
 void CAssets::Create( const std::string& Name, CMesh* NewMesh )
@@ -73,7 +77,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation )
 			Mesh = CreateNamedMesh( Name, Primitive );
 
 			// Automatically export an LM file if the extension was OBJ.
-			if( Mesh && Extension == "obj" )
+			if( ExportOBJToLM && Mesh && Extension == "obj" )
 			{
 				Log::Event( "Exporting Lofty Model mesh \"%s\".", Name );
 
