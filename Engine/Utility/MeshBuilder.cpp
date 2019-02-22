@@ -300,9 +300,9 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 				if( Tokens.size() == 3 )
 				{
 					// Assume Y is up in the file.
-					Normal[0] = static_cast<float>( atof( Tokens[0].c_str() ) );
+					Normal[1] = static_cast<float>( atof( Tokens[0].c_str() ) );
 					Normal[2] = static_cast<float>( atof( Tokens[1].c_str() ) );
-					Normal[1] = static_cast<float>( atof( Tokens[2].c_str() ) );
+					Normal[0] = static_cast<float>( atof( Tokens[2].c_str() ) );
 
 					Normals.push_back( Normal );
 				}
@@ -327,9 +327,9 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 				if( Tokens.size() == 3 )
 				{
 					// Assume Y is up in the file.
-					Vertex[0] = static_cast<float>( atof( Tokens[0].c_str() ) );
+					Vertex[1] = static_cast<float>( atof( Tokens[0].c_str() ) );
 					Vertex[2] = static_cast<float>( atof( Tokens[1].c_str() ) );
-					Vertex[1] = static_cast<float>( atof( Tokens[2].c_str() ) );
+					Vertex[0] = static_cast<float>( atof( Tokens[2].c_str() ) );
 
 					Vertices.push_back( Vertex );
 				}
