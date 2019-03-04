@@ -258,7 +258,8 @@ void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 		Shader = DefaultShader;
 	}
 
-	if( Shader->Handle != ProgramHandle )
+	const FProgramHandles& Handles = Shader->GetHandles();
+	if( Handles.Program != ProgramHandle )
 	{
 		ProgramHandle = Shader->Activate();
 	}

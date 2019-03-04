@@ -10,6 +10,20 @@ enum class EShaderType : uint16_t
 	Fragment = GL_FRAGMENT_SHADER
 };
 
+struct FProgramHandles
+{
+	FProgramHandles()
+	{
+		Program = 0;
+		VertexShader = 0;
+		FragmentShader = 0;
+	}
+
+	GLuint Program;
+	GLuint VertexShader;
+	GLuint FragmentShader;
+};
+
 class CShader
 {
 public:
@@ -22,14 +36,12 @@ public:
 	bool Reload();
 
 	GLuint Activate() const;
-
-	GLuint Handle;
+	const FProgramHandles& GetHandles() const;
 
 private:
 	GLuint Link();
 
-	GLuint HandleVS;
-	GLuint HandleFS;
+	FProgramHandles Handles;
 
 	std::string Location;
 };

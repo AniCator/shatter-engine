@@ -6,6 +6,8 @@
 
 #include <ThirdParty/glad/include/glad/glad.h>
 
+#include <Engine/Utility/Data.h>
+
 enum class ETextureSlot : uint16_t
 {
 	Slot0 = 0,
@@ -44,7 +46,9 @@ enum class ETextureSlot : uint16_t
 	Maximum
 };
 
-static const uint16_t TextureSlots = static_cast<std::underlying_type<ETextureSlot>::type>( ETextureSlot::Maximum );
+typedef std::underlying_type<ETextureSlot>::type ETextureSlotType;
+
+static const uint16_t TextureSlots = static_cast<ETextureSlotType>( ETextureSlot::Maximum );
 static const char* TextureSlotName[TextureSlots] = {
 	"Slot0",
 	"Slot1",
@@ -84,6 +88,7 @@ class CTexture
 {
 public:
 	CTexture( const char* FileLocation );
+	CTexture( unsigned char* Pixels, int TextureWidth, int TextureHeight );
 	~CTexture();
 
 	bool Load();

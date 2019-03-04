@@ -8,9 +8,7 @@
 
 CShader::CShader()
 {
-	Handle = 0;
-	HandleVS = 0;
-	HandleFS = 0;
+	
 }
 
 CShader::~CShader()
@@ -20,10 +18,6 @@ CShader::~CShader()
 
 bool CShader::Load( const char* FileLocation )
 {
-	Handle = 0;
-	HandleVS = 0;
-	HandleFS = 0;
-
 	Location = FileLocation;
 
 	std::stringstream VertexPath;
@@ -32,14 +26,14 @@ bool CShader::Load( const char* FileLocation )
 	VertexPath << FileLocation << ".vs";
 	FragmentPath << FileLocation << ".fs";
 
-	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), HandleVS, EShaderType::Vertex );
-	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), HandleFS, EShaderType::Fragment );
+	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), Handles.VertexShader, EShaderType::Vertex );
+	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), Handles.FragmentShader, EShaderType::Fragment );
 
 	if( LoadedVertexShader && LoadedFragmentShader )
 	{
-		Handle = Link();
+		Link();
 
-		return Handle != 0;
+		return Handles.Program != 0;
 	}
 
 	return false;
@@ -75,9 +69,14 @@ bool CShader::Reload()
 
 GLuint CShader::Activate() const
 {
-	glUseProgram( Handle );
+	glUseProgram( Handles.Program );
 
-	return Handle;
+	return Handles.Program;
+}
+
+const FProgramHandles& CShader::GetHandles() const
+{
+	return Handles;
 }
 
 bool LogShaderCompilationErrors( GLuint v )
@@ -102,9 +101,31 @@ bool LogShaderCompilationErrors( GLuint v )
 	return false;
 }
 
+bool LogProgramCompilationErrors( GLuint v )
+{
+	GLint ByteLength = 0;
+	GLsizei StringLength = 0;
+
+	glGetProgramiv( v, GL_LINK_STATUS, &ByteLength );
+
+	if( ByteLength > 1 )
+	{
+		GLchar* CompileLog = new GLchar[ByteLength];
+		glGetProgramInfoLog( v, ByteLength, &StringLength, CompileLog );
+
+		Log::Event( Log::Error, "---Program Compilation Log---\n%s\n", CompileLog );
+
+		delete CompileLog;
+
+		return true;
+	}
+
+	return false;
+}
+
 GLuint CShader::Link()
 {
-	if( HandleVS == 0 || HandleFS == 0 )
+	if( Handles.VertexShader == 0 || Handles.FragmentShader == 0 )
 	{
 		return 0;
 	}
@@ -113,10 +134,10 @@ GLuint CShader::Link()
 	bool ShaderCompiled = false;
 	while( !ShaderCompiled )
 	{
-		glCompileShader( HandleVS );
-		const bool HasErrorsVS = LogShaderCompilationErrors( HandleVS );
-		glCompileShader( HandleFS );
-		const bool HasErrorsFS = LogShaderCompilationErrors( HandleFS );
+		glCompileShader( Handles.VertexShader );
+		const bool HasErrorsVS = LogShaderCompilationErrors( Handles.VertexShader );
+		glCompileShader( Handles.FragmentShader );
+		const bool HasErrorsFS = LogShaderCompilationErrors( Handles.FragmentShader );
 		ShaderCompiled = !HasErrorsVS && !HasErrorsFS;
 
 		if( !ShaderCompiled )
@@ -129,23 +150,23 @@ GLuint CShader::Link()
 	GLuint ProgramHandle = glCreateProgram();
 
 	// Attach shaders to program
-	glAttachShader( ProgramHandle, HandleVS );
-	glAttachShader( ProgramHandle, HandleFS );
+	glAttachShader( ProgramHandle, Handles.VertexShader );
+	glAttachShader( ProgramHandle, Handles.FragmentShader );
 
 	// Link and set program to use
 	glLinkProgram( ProgramHandle );
 
-	GLint LinkStatus;
-	glGetProgramiv( ProgramHandle, GL_LINK_STATUS, &LinkStatus );
+	const bool HasErrorsProgram = LogProgramCompilationErrors( ProgramHandle );
 
-	glDeleteShader( HandleVS );
-	glDeleteShader( HandleFS );
+	glDeleteShader( Handles.VertexShader );
+	glDeleteShader( Handles.FragmentShader );
 
-	if( LinkStatus == GL_FALSE )
+	if( HasErrorsProgram )
 	{
-		Log::Event( "Shader program compilation failed.\n" );
 		return 0;
 	}
+
+	Handles.Program = ProgramHandle;
 
 	return ProgramHandle;
 }

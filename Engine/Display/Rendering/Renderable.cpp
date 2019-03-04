@@ -2,6 +2,7 @@
 #include "Renderable.h"
 
 #include <Engine/Display/Rendering/Shader.h>
+#include <Engine/Profiling/Logging.h>
 
 CRenderable::CRenderable()
 {
@@ -43,7 +44,9 @@ void CRenderable::SetShader( CShader* Shader )
 	if( Shader )
 	{
 		this->Shader = Shader;
-		RenderData.ShaderProgram = Shader->Handle;
+
+		const FProgramHandles& Handles = Shader->GetHandles();
+		RenderData.ShaderProgram = Handles.Program;
 	}
 }
 
@@ -51,7 +54,7 @@ CTexture* CRenderable::GetTexture( ETextureSlot Slot )
 {
 	if( Slot < ETextureSlot::Maximum )
 	{
-		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
+		const auto Index = static_cast<ETextureSlotType>( Slot );
 		return Textures[Index];
 	}
 
@@ -62,7 +65,7 @@ void CRenderable::SetTexture( CTexture* Texture, ETextureSlot Slot )
 {
 	if( Texture && Slot < ETextureSlot::Maximum )
 	{
-		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
+		const auto Index = static_cast<ETextureSlotType>( Slot );
 		this->Textures[Index] = Texture;
 	}
 }
@@ -94,16 +97,17 @@ void CRenderable::Prepare()
 {
 	if( Shader )
 	{
+		const FProgramHandles& Handles = Shader->GetHandles();
 		if( Textures[0] )
 		{
 			for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
 			{
-				const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
+				const auto Index = static_cast<ETextureSlotType>( Slot );
 
 				CTexture* Texture = Textures[Index];
 				if( Texture )
 				{
-					glUniform1i( glGetUniformLocation( Shader->Handle, TextureSlotName[Index] ), Index );
+					glUniform1i( glGetUniformLocation( Handles.Program, TextureSlotName[Index] ), Index );
 					Texture->Bind( Slot );
 				}
 
