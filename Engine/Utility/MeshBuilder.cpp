@@ -5,6 +5,7 @@
 #include <sstream>
 
 #include <Engine/Profiling/Logging.h>
+#include <Engine/Profiling/Profiling.h>
 #include <Engine/Display/Rendering/Mesh.h>
 
 static const float Pi = static_cast<float>( acos( -1 ) );
@@ -212,42 +213,24 @@ void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
 	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
 }
 
-/*
-# List of geometric vertices, with( x, y, z[, w] ) coordinates, w is optional and defaults to 1.0.
-v 0.123 0.234 0.345 1.0
-v ...
-...
-# List of texture coordinates, in( u, [v, w] ) coordinates, these will vary between 0 and 1, v and w are optional and default to 0.
-vt 0.500 1[0]
-vt ...
-...
-# List of vertex normals in( x, y, z ) form; normals might not be unit vectors.
-vn 0.707 0.000 0.707
-vn ...
-...
-# Parameter space vertices in( u[, v][, w] ) form; free form geometry statement( see below )
-vp 0.310000 3.210000 2.100000
-vp ...
-...
-# Polygonal face element( see below )
-f 1 2 3
-f 3 / 1 4 / 2 5 / 3
-f 6 / 4 / 1 3 / 5 / 3 7 / 6 / 5
-f 7//1 8//2 9//3
-f ...
-...
-# Line element( see below )
-l 5 8 1 2 4 9*/
-
 void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 {
+	ProfileBare();
 	std::vector<glm::vec3> Vertices;
 	std::vector<glm::vec2> Coordinates;
 	std::vector<glm::vec3> Normals;
 
+	Vertices.reserve( 100000 );
+	Coordinates.reserve( 100000 );
+	Normals.reserve( 100000 );
+
 	std::vector<glm::uint> VertexIndices;
 	std::vector<size_t> CoordinateIndices;
 	std::vector<size_t> NormalIndices;
+
+	VertexIndices.reserve( 100000 );
+	CoordinateIndices.reserve( 100000 );
+	NormalIndices.reserve( 100000 );
 
 	const char Delimiter = ' ';
 	const char* Data = File.Fetch<char>();
@@ -266,12 +249,13 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 				// Texture coordinates.
 				glm::vec2 Coordinate;
 
-				Line.erase( 0, 2 );
+				Line.erase( 0, 3 );
 				std::stringstream Stream( Line );
 				std::vector<std::string> Tokens;
+				Tokens.reserve( 2 );
 				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 2 )
 				{
-					Tokens.push_back( Token );
+					Tokens.emplace_back( Token );
 				}
 
 				if( Tokens.size() == 2 )
@@ -279,7 +263,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 					Coordinate[0] = static_cast<float>( atof( Tokens[0].c_str() ) );
 					Coordinate[1] = static_cast<float>( atof( Tokens[1].c_str() ) );
 
-					Coordinates.push_back( Coordinate );
+					Coordinates.emplace_back( Coordinate );
 				}
 			}
 			else if( Line[1] == 'n' )
@@ -289,12 +273,13 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 
 				Primitive.HasNormals = true;
 
-				Line.erase( 0, 2 );
+				Line.erase( 0, 3 );
 				std::stringstream Stream( Line );
 				std::vector<std::string> Tokens;
+				Tokens.reserve( 3 );
 				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 3 )
 				{
-					Tokens.push_back( Token );
+					Tokens.emplace_back( Token );
 				}
 
 				if( Tokens.size() == 3 )
@@ -304,7 +289,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 					Normal[2] = static_cast<float>( atof( Tokens[1].c_str() ) );
 					Normal[0] = static_cast<float>( atof( Tokens[2].c_str() ) );
 
-					Normals.push_back( Normal );
+					Normals.emplace_back( Normal );
 				}
 			}
 			else if( Line[1] == 'p' )
@@ -319,9 +304,10 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 				Line.erase( 0, 2 );
 				std::stringstream Stream( Line );
 				std::vector<std::string> Tokens;
-				while( std::getline(Stream, Token, Delimiter ) && Tokens.size() < 3)
+				Tokens.reserve( 3 );
+				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 3 )
 				{
-					Tokens.push_back( Token );
+					Tokens.emplace_back( Token );
 				}
 
 				if( Tokens.size() == 3 )
@@ -331,7 +317,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 					Vertex[2] = static_cast<float>( atof( Tokens[1].c_str() ) );
 					Vertex[0] = static_cast<float>( atof( Tokens[2].c_str() ) );
 
-					Vertices.push_back( Vertex );
+					Vertices.emplace_back( Vertex );
 				}
 			}
 		}
@@ -343,19 +329,22 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 			std::vector<std::string> VertexTokens;
 			std::vector<std::string> CoordinateTokens;
 			std::vector<std::string> NormalTokens;
+			VertexTokens.reserve( 4 );
+			CoordinateTokens.reserve( 4 );
+			NormalTokens.reserve( 4 );
 			while( std::getline( Stream, Token, Delimiter ) && VertexTokens.size() < 3 )
 			{
 				const size_t VertexLocation = Token.find( '/' );
 				const std::string VertexIndex = Token.substr( 0, VertexLocation );
 
-				VertexTokens.push_back( VertexIndex );
+				VertexTokens.emplace_back( VertexIndex );
 
 				Token = Token.substr( VertexLocation + 1, std::string::npos );
 				const size_t CoordinateLocation = Token.find( '/' );
 				const std::string CoordinateIndex = Token.substr( 0, CoordinateLocation );
 				if( CoordinateIndex.length() > 0 )
 				{
-					CoordinateTokens.push_back( CoordinateIndex );
+					CoordinateTokens.emplace_back( CoordinateIndex );
 				}
 
 				Token = Token.substr( CoordinateLocation + 1, std::string::npos );
@@ -364,32 +353,32 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 
 				if( NormalIndex.length() > 0 )
 				{
-					NormalTokens.push_back( NormalIndex );
+					NormalTokens.emplace_back( NormalIndex );
 				}
 			}
 
 			if( VertexTokens.size() == 3 )
 			{
 				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
-				VertexIndices.push_back( atoi( VertexTokens[0].c_str() ) - 1 );
-				VertexIndices.push_back( atoi( VertexTokens[1].c_str() ) - 1 );
-				VertexIndices.push_back( atoi( VertexTokens[2].c_str() ) - 1 );
+				VertexIndices.emplace_back( atoi( VertexTokens[0].c_str() ) - 1 );
+				VertexIndices.emplace_back( atoi( VertexTokens[1].c_str() ) - 1 );
+				VertexIndices.emplace_back( atoi( VertexTokens[2].c_str() ) - 1 );
 			}
 
 			if( CoordinateTokens.size() == 3 )
 			{
 				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
-				CoordinateIndices.push_back( atoi( CoordinateTokens[0].c_str() ) - 1 );
-				CoordinateIndices.push_back( atoi( CoordinateTokens[1].c_str() ) - 1 );
-				CoordinateIndices.push_back( atoi( CoordinateTokens[2].c_str() ) - 1 );
+				CoordinateIndices.emplace_back( atoi( CoordinateTokens[0].c_str() ) - 1 );
+				CoordinateIndices.emplace_back( atoi( CoordinateTokens[1].c_str() ) - 1 );
+				CoordinateIndices.emplace_back( atoi( CoordinateTokens[2].c_str() ) - 1 );
 			}
 
 			if( NormalTokens.size() == 3 )
 			{
 				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
-				NormalIndices.push_back( atoi( NormalTokens[0].c_str() ) - 1 );
-				NormalIndices.push_back( atoi( NormalTokens[1].c_str() ) - 1 );
-				NormalIndices.push_back( atoi( NormalTokens[2].c_str() ) - 1 );
+				NormalIndices.emplace_back( atoi( NormalTokens[0].c_str() ) - 1 );
+				NormalIndices.emplace_back( atoi( NormalTokens[1].c_str() ) - 1 );
+				NormalIndices.emplace_back( atoi( NormalTokens[2].c_str() ) - 1 );
 			}
 		}
 	}
