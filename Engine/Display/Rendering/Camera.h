@@ -4,6 +4,8 @@
 #include <ThirdParty/glm/glm.hpp>
 #include <Engine/Utility/Math.h>
 
+static const glm::vec3 WorldRight = glm::vec3( 1.0f, 0.0f, 0.0f );
+static const glm::vec3 WorldForward = glm::vec3( 0.0f, 1.0f, 0.0f );
 static const glm::vec3 WorldUp = glm::vec3( 0.0f, 0.0f, 1.0f );
 
 struct FCameraSetup
@@ -43,10 +45,10 @@ public:
 	void SetAspectRatio( float& AspectRatio);
 	void SetNearPlaneDistance( float& NearPlaneDistance );
 	void SetFarPlaneDistance( float& FarPlaneDistance );
-	void SetCameraPosition( glm::vec3& CameraPosition );
-	void SetCameraDirection( glm::vec3& CameraDirection );
-	void SetCameraOrientation( glm::vec3& CameraOrientation );
-	void SetCameraUpVector( glm::vec3& CameraUpVector );
+	void SetCameraPosition( const glm::vec3& CameraPosition );
+	void SetCameraDirection( const glm::vec3& CameraDirection );
+	void SetCameraOrientation( const glm::vec3& CameraOrientation );
+	void SetCameraUpVector( const glm::vec3& CameraUpVector );
 
 	const glm::mat4& GetProjectionMatrix() const;
 	const glm::mat4& GetViewMatrix() const;

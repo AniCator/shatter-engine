@@ -59,29 +59,31 @@ void CCamera::SetFarPlaneDistance( float& FarPlaneDistance )
 	Update();
 }
 
-void CCamera::SetCameraPosition( glm::vec3& CameraPosition )
+void CCamera::SetCameraPosition( const glm::vec3& CameraPosition )
 {
 	CameraSetup.CameraPosition = CameraPosition;
 
 	Update();
 }
 
-void CCamera::SetCameraDirection( glm::vec3& CameraDirection )
+void CCamera::SetCameraDirection( const glm::vec3& CameraDirection )
 {
 	CameraSetup.CameraDirection = CameraDirection;
 
 	Update();
 }
 
-void CCamera::SetCameraOrientation( glm::vec3& CameraOrientation )
+void CCamera::SetCameraOrientation( const glm::vec3& CameraOrientation )
 {
 	this->CameraOrientation = CameraOrientation;
 	this->CameraQuaternion = glm::quat( CameraOrientation );
 
+	CameraSetup.CameraDirection = glm::rotate( CameraQuaternion, glm::vec4( this->CameraOrientation, 1.0f ) );
+
 	Update();
 }
 
-void CCamera::SetCameraUpVector( glm::vec3& CameraUpVector )
+void CCamera::SetCameraUpVector( const glm::vec3& CameraUpVector )
 {
 	CameraSetup.CameraUpVector = CameraUpVector;
 
