@@ -131,9 +131,13 @@ namespace Log
 	{
 		if( LogOutputStream.is_open() )
 		{
+#if !defined(_DEBUG)
 			char TimeCode[64];
 			sprintf_s( TimeCode, "%.3fs", static_cast<float>( Timer.GetElapsedTimeMilliseconds() ) * 0.001f );
 			LogOutputStream << TimeCode << ": " << Message;
+#else
+			LogOutputStream << Message;
+#endif
 
 #if defined(_DEBUG)
 			LogOutputStream.close();
@@ -175,10 +179,10 @@ namespace Log
 
 	void CLog::Event( LogSeverity Severity, const char* Format, va_list Arguments )
 	{
-#if !defined(_DEBUG)
-		if( Severity < Warning )
-			return;
-#endif
+// #if !defined(_DEBUG)
+// 		if( Severity < Warning )
+// 			return;
+// #endif
 		Print( Severity, Format, Arguments );
 
 		if( Severity >= Error )
