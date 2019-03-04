@@ -79,9 +79,11 @@ private:
 #ifdef ProfileBuild
 #define ProfileScope() ZoneScoped; CTimerScope Scope_( __FUNCTION__, false )
 #define Profile( Name ) ZoneScoped; CTimerScope Scope_( Name, false )
+#define ProfileBareScope() ZoneScoped; CTimerScope Scope_( __FUNCTION__, true )
 #define ProfileBare( Name ) ZoneScoped; CTimerScope Scope_( Name, true )
 #else
 #define ProfileScope() (void(0))
 #define Profile( Name ) (void(0))
+#define ProfileBareScope() (void(0))
 #define ProfileBare( Name ) (void(0))
 #endif

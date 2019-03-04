@@ -6,6 +6,9 @@
 #include <ThirdParty/glm/gtx/quaternion.hpp>
 
 const static glm::mat4 IdentityMatrix = glm::mat4( 1.0f );
+static const glm::vec3 WorldRight = glm::vec3( 1.0f, 0.0f, 0.0f );
+static const glm::vec3 WorldForward = glm::vec3( 0.0f, 1.0f, 0.0f );
+static const glm::vec3 WorldUp = glm::vec3( 0.0f, 0.0f, 1.0f );
 
 struct FFrustumPlane
 {
@@ -34,30 +37,30 @@ public:
 		Size = glm::vec3( 1.0f );
 	}
 
-	FTransform( glm::vec3& Position, glm::vec3& Orientation, glm::vec3& Size )
+	FTransform( const glm::vec3& Position, const glm::vec3& Orientation, const glm::vec3& Size )
 	{
 		SetTransform( Position, Orientation, Size );
 	}
 
-	void SetPosition( glm::vec3& Position )
+	void SetPosition( const glm::vec3& Position )
 	{
 		this->Position = Position;
 		Update();
 	}
 
-	void SetOrientation( glm::vec3& Orientation )
+	void SetOrientation( const glm::vec3& Orientation )
 	{
 		this->Orientation = Orientation;
 		Update();
 	}
 
-	void SetSize( glm::vec3& Size )
+	void SetSize( const glm::vec3& Size )
 	{
 		this->Size = Size;
 		Update();
 	}
 
-	void SetTransform( glm::vec3& Position, glm::vec3& Orientation, glm::vec3& Size )
+	void SetTransform( const glm::vec3& Position, const glm::vec3& Orientation, const glm::vec3& Size )
 	{
 		this->Position = Position;
 		this->Orientation = Orientation;
@@ -65,7 +68,7 @@ public:
 		Update();
 	}
 
-	void SetTransform( glm::vec3& Position, glm::vec3& Orientation )
+	void SetTransform( const glm::vec3& Position, const glm::vec3& Orientation )
 	{
 		this->Position = Position;
 		this->Orientation = Orientation;
@@ -80,6 +83,21 @@ public:
 	glm::mat4& GetTransformMatrix()
 	{
 		return TransformMatrix;
+	}
+
+	const glm::vec3& GetPosition() const
+	{
+		return Position;
+	}
+
+	const glm::vec3& GetOrientation() const
+	{
+		return Orientation;
+	}
+
+	const glm::vec3& GetSize() const
+	{
+		return Size;
 	}
 
 private:
@@ -111,7 +129,7 @@ private:
 
 namespace Math
 {
-	inline float Length( glm::vec2& Vector )
+	inline float Length( const glm::vec2& Vector )
 	{
 		return sqrtf( Vector[0] * Vector[0] + Vector[1] * Vector[1] );
 	}
@@ -136,7 +154,7 @@ namespace Math
 		return LengthBiased;
 	}
 
-	inline float Length( glm::vec3& Vector )
+	inline float Length( const glm::vec3& Vector )
 	{
 		return sqrtf( Vector[0] * Vector[0] + Vector[1] * Vector[1] + Vector[2] * Vector[2] );
 	}

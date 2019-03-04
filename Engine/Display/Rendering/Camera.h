@@ -4,10 +4,6 @@
 #include <ThirdParty/glm/glm.hpp>
 #include <Engine/Utility/Math.h>
 
-static const glm::vec3 WorldRight = glm::vec3( 1.0f, 0.0f, 0.0f );
-static const glm::vec3 WorldForward = glm::vec3( 0.0f, 1.0f, 0.0f );
-static const glm::vec3 WorldUp = glm::vec3( 0.0f, 0.0f, 1.0f );
-
 struct FCameraSetup
 {
 	FCameraSetup()

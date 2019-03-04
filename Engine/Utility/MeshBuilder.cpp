@@ -215,7 +215,7 @@ void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
 
 void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 {
-	ProfileBare();
+	ProfileBareScope();
 	std::vector<glm::vec3> Vertices;
 	std::vector<glm::vec2> Coordinates;
 	std::vector<glm::vec3> Normals;
