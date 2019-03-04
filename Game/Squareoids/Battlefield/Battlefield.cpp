@@ -31,12 +31,16 @@ CSquareoidsBattlefield::CSquareoidsBattlefield()
 		const float RandomOffsetY = ( ( static_cast<float>( std::rand() ) / RAND_MAX ) * 8192 ) - 4096;
 
 		FSquareoidUnitData& UnitData = NewUnit->GetUnitData();
-		UnitData.Position[0] = RandomOffsetX;
-		UnitData.Position[1] = RandomOffsetY;
+		glm::vec3 Position;
+		Position[0] = RandomOffsetX;
+		Position[1] = RandomOffsetY;
+		Position[2] = 100.0f;
+
+		UnitData.Transform.SetPosition( Position );
 
 		SquareoidUnits.push_back( NewUnit );
 
-		SpatialRegion->Insert( NewUnit, &UnitData.Position[0] );
+		// SpatialRegion->Insert( NewUnit, &UnitData.Transform.GetPosition()[0] );
 	}
 
 	PlayerUnit = new CSquareoidsPlayerUnit();
@@ -99,8 +103,7 @@ void CSquareoidsBattlefield::Update()
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 
 		RenderData.Color = UnitData.Color;
-		RenderData.Position = UnitData.Position;
-		RenderData.Size = UnitData.Size;
+		RenderData.Transform = UnitData.Transform;
 
 		Renderer.QueueDynamicRenderable( Renderable );
 	}
@@ -109,8 +112,10 @@ void CSquareoidsBattlefield::Update()
 	FCameraSetup& Setup = Camera->GetCameraSetup();
 	FSquareoidUnitData& UnitData = PlayerUnit->GetUnitData();
 
-	const float DeltaX = Setup.CameraPosition[0] + UnitData.Position[0];
-	const float DeltaY = Setup.CameraPosition[1] - UnitData.Position[1];
+	const glm::vec3& Position = UnitData.Transform.GetPosition();
+
+	const float DeltaX = Setup.CameraPosition[0] + Position[0];
+	const float DeltaY = Setup.CameraPosition[1] - Position[1];
 
 	const float InterpolationFactor = 0.314f;
 	const float OneMinusInterp = 1.0f - InterpolationFactor;
@@ -167,13 +172,12 @@ void CSquareoidsBattlefield::Update()
 	}
 
 	RenderData.Color = glm::vec4( 1.0f, 0.5f, 0.0f, 1.0f );
-	RenderData.Position = RayCastResult;
-	RenderData.Size = glm::vec3( 10.0f, 10.0f, 10.0f );
+	RenderData.Transform = { RayCastResult, WorldUp, glm::vec3( 10.0f ) };
 
 	Renderer.QueueDynamicRenderable( Renderable );
 
 	// Visualize in profiler
-	CProfileVisualisation& Profiler = CProfileVisualisation::Get();
+	CProfiler& Profiler = CProfiler::Get();
 
 	char PositionXString[32];
 	sprintf_s( PositionXString, "%f", MousePositionWorldSpace[0] );
@@ -215,7 +219,7 @@ void CSquareoidsBattlefield::UpdateBruteForce()
 		}
 	}
 
-	CProfileVisualisation::Get().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
+	CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
 }
 
 void CSquareoidsBattlefield::UpdateSpatialGrid()
@@ -241,9 +245,9 @@ void CSquareoidsBattlefield::UpdateSpatialGrid()
 
 		for( int Corner = 0; Corner < 4; Corner++ )
 		{
-			glm::vec3 CornerPosition = UnitData.Position;
+			glm::vec3 CornerPosition = UnitData.Transform.GetPosition();
 
-			const float SizeSplit = UnitData.Size[0] * 0.5f;
+			const float SizeSplit = UnitData.Transform.GetSize()[0] * 0.5f;
 
 			if( Corner == 0 )
 			{
@@ -291,7 +295,7 @@ void CSquareoidsBattlefield::UpdateSpatialGrid()
 		}
 	}
 
-	CProfileVisualisation::Get().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
+	CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Collision Checks", CollisionChecks ) );
 
 	SpatialRegion->Clear();
 
@@ -300,7 +304,7 @@ void CSquareoidsBattlefield::UpdateSpatialGrid()
 		if( SquareoidUnitA )
 		{
 			FSquareoidUnitData& UnitData = SquareoidUnitA->GetUnitData();
-			SpatialRegion->Insert( SquareoidUnitA, &UnitData.Position[0] );
+			// SpatialRegion->Insert( SquareoidUnitA, &UnitData.Position[0] );
 		}
 	}
 

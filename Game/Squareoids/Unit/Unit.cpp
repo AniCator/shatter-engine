@@ -5,10 +5,9 @@
 
 CSquareoidsUnit::CSquareoidsUnit()
 {
-	UnitData.Position = glm::vec3( 0.0f, 0.0f, 0.0f );
+	UnitData.Transform = { glm::vec3( 0.0f, 0.0f, 0.0f ), WorldUp, glm::vec3( 5.0f ) };
 	UnitData.Velocity = glm::vec3( 0.0f, 0.0f, 0.0f );
 	UnitData.Color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
-	UnitData.Size = glm::vec3( 5.0f, 5.0f, 5.0f );
 
 	UnitData.Health = 5.0f + static_cast<float>( std::rand() ) / RAND_MAX * 45.0f;
 }
@@ -42,10 +41,11 @@ void CSquareoidsUnit::Interaction( ISquareoidsUnit* Unit )
 
 void CSquareoidsUnit::Tick()
 {
-	UnitData.Size = glm::vec3( UnitData.Health * 0.5f, UnitData.Health * 0.5f, UnitData.Health * 0.5f );
+	glm::vec3 Position = UnitData.Transform.GetPosition() + UnitData.Velocity;
+	Position[2] = 100.0f;
 
-	UnitData.Position += UnitData.Velocity;
-	UnitData.Position[2] = 100.0f;
+	const FTransform Transform( Position, glm::vec3( 0.0f, 1.0f, 0.0f ), glm::vec3( UnitData.Health * 0.5f ) );
+	UnitData.Transform = Transform;
 	UnitData.Velocity *= 0.33f;
 }
 

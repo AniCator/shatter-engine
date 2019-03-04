@@ -89,14 +89,14 @@ void CDummyLayer::Tick()
 		if( !ValidRenderable )
 		{
 			TestRenderable->SetMesh( CAssets::Get().FindMesh( "square" ) );
-			RenderData.Size = glm::vec3( 5.0f, 5.0f, 5.0f );
+			RenderData.Transform.SetSize( glm::vec3( 5.0f ) );
 			RenderData.Color = glm::vec4( 1.0f, 0.0f, 0.0f, 1.0f );
 		}
 		else
 		{
-			RenderData.Position = glm::vec3( Cos2Time, Sin2Time, 100.0f );
+			RenderData.Transform.SetPosition( glm::vec3( Cos2Time, Sin2Time, 100.0f ) );
 
-			const float Distance = glm::clamp( 1.0f - glm::distance( RenderData.Position, glm::vec3( 0.0f, 0.0f, 0.0f ) ) * 0.002f, 0.25f, 1.0f );
+			const float Distance = glm::clamp( 1.0f - glm::distance( RenderData.Transform.GetPosition(), glm::vec3( 0.0f, 0.0f, 0.0f ) ) * 0.002f, 0.25f, 1.0f );
 
 			RenderData.Color = glm::vec4( Distance, 0.0f, 0.0f, 1.0f );
 		}

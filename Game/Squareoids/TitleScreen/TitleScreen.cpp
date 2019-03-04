@@ -72,8 +72,7 @@ void CSquareoidsTitleScreen::Display()
 				FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 
 				RenderData.Color = glm::vec4( VisibleSquare, 0.0f, !VisibleSquare, 1.0f );
-				RenderData.Position = glm::vec3( OffsetX, OffsetY, 0.0f );
-				RenderData.Size = glm::vec3( 5.0f, 5.0f, 5.0f ) * ( 1.0f - Amplitude );
+				RenderData.Transform = { glm::vec3( OffsetX, OffsetY, 0.0f ), WorldUp, glm::vec3( 5.0f ) * ( 1.0f - Amplitude ) };
 
 				Renderer.QueueDynamicRenderable( Renderable );
 			}

@@ -8,26 +8,25 @@
 
 CSquareoidsPlayerUnit::CSquareoidsPlayerUnit()
 {
-	UnitData.Position = glm::vec3( 0.0f, 0.0f, 0.0f );
+	UnitData.Transform = { glm::vec3( 0.0f, 0.0f, 0.0f ), WorldUp, glm::vec3( 5.0f ) };
 	UnitData.Velocity = glm::vec3( 0.0f, 0.0f, 0.0f );
 	UnitData.Color = glm::vec4( 0.0f, 0.0f, 1.0f, 1.0f );
-	UnitData.Size = glm::vec3( 5.0f, 5.0f, 5.0f );
 
 	UnitData.Health = 5.0f;
 	Absorbing = false;
 
 	IInput& Input = CInputLocator::GetService();
-	Input.AddActionBinding( EActionBindingType::Keyboard, 87, 1, std::bind( &CSquareoidsPlayerUnit::InputForwardPress, this ) );
-	Input.AddActionBinding( EActionBindingType::Keyboard, 87, 0, std::bind( &CSquareoidsPlayerUnit::InputForwardRelease, this ) );
+	Input.AddActionBinding( EKey::W, EAction::Press, std::bind( &CSquareoidsPlayerUnit::InputForwardPress, this ) );
+	Input.AddActionBinding( EKey::W, EAction::Release, std::bind( &CSquareoidsPlayerUnit::InputForwardRelease, this ) );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, 83, 1, std::bind( &CSquareoidsPlayerUnit::InputBackwardPress, this ) );
-	Input.AddActionBinding( EActionBindingType::Keyboard, 83, 0, std::bind( &CSquareoidsPlayerUnit::InputBackwardRelease, this ) );
+	Input.AddActionBinding( EKey::S, EAction::Press, std::bind( &CSquareoidsPlayerUnit::InputBackwardPress, this ) );
+	Input.AddActionBinding( EKey::S, EAction::Release, std::bind( &CSquareoidsPlayerUnit::InputBackwardRelease, this ) );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, 65, 1, std::bind( &CSquareoidsPlayerUnit::InputLeftPress, this ) );
-	Input.AddActionBinding( EActionBindingType::Keyboard, 65, 0, std::bind( &CSquareoidsPlayerUnit::InputLeftRelease, this ) );
+	Input.AddActionBinding( EKey::A, EAction::Press, std::bind( &CSquareoidsPlayerUnit::InputLeftPress, this ) );
+	Input.AddActionBinding( EKey::A, EAction::Release, std::bind( &CSquareoidsPlayerUnit::InputLeftRelease, this ) );
 
-	Input.AddActionBinding( EActionBindingType::Keyboard, 68, 1, std::bind( &CSquareoidsPlayerUnit::InputRightPress, this ) );
-	Input.AddActionBinding( EActionBindingType::Keyboard, 68, 0, std::bind( &CSquareoidsPlayerUnit::InputRightRelease, this ) );
+	Input.AddActionBinding( EKey::D, EAction::Press, std::bind( &CSquareoidsPlayerUnit::InputRightPress, this ) );
+	Input.AddActionBinding( EKey::D, EAction::Release, std::bind( &CSquareoidsPlayerUnit::InputRightRelease, this ) );
 }
 
 CSquareoidsPlayerUnit::~CSquareoidsPlayerUnit()
@@ -42,16 +41,22 @@ void CSquareoidsPlayerUnit::Interaction( ISquareoidsUnit* Unit )
 	{
 		FSquareoidUnitData& InteractionUnitData = CastUnit->GetUnitData();
 
-		const glm::vec3 InteractionBoundingMinimum = InteractionUnitData.Position - InteractionUnitData.Size;
-		const glm::vec3 InteractionBoundingMaximum = InteractionUnitData.Position + InteractionUnitData.Size;
+		const glm::vec3 PositionA = UnitData.Transform.GetPosition();
+		const glm::vec3 PositionB = InteractionUnitData.Transform.GetPosition();
 
-		const glm::vec3 BoundingMinimum = UnitData.Position - UnitData.Size;
-		const glm::vec3 BoundingMaximum = UnitData.Position + UnitData.Size;
+		const glm::vec3 SizeA = UnitData.Transform.GetSize();
+		const glm::vec3 SizeB = InteractionUnitData.Transform.GetSize();
+
+		const glm::vec3 InteractionBoundingMinimum = PositionB - SizeB;
+		const glm::vec3 InteractionBoundingMaximum = PositionB + SizeB;
+
+		const glm::vec3 BoundingMinimum = PositionA - SizeA;
+		const glm::vec3 BoundingMaximum = PositionA + SizeA;
 
 		if( Math::BoundingBoxIntersection( InteractionBoundingMinimum, InteractionBoundingMaximum, BoundingMinimum, BoundingMaximum ) )
 		{
-			const float AbsorptionRatio = ( InteractionUnitData.Size[0] / UnitData.Size[0] );
-			glm::vec3 Direction3D = InteractionUnitData.Position - UnitData.Position;
+			const float AbsorptionRatio = ( SizeB[0] / SizeA[0] );
+			glm::vec3 Direction3D = PositionB - PositionA;
 			InteractionUnitData.Velocity += Direction3D * 0.1f;
 
 			InteractionUnitData.Health -= AbsorptionRatio;
@@ -69,6 +74,8 @@ void CSquareoidsPlayerUnit::Tick()
 	const int Left = Inputs & ESquareoidsInputFlag::Left ? -1 : 0;
 	const int Right = Inputs & ESquareoidsInputFlag::Right ? 1 : 0;
 
+	glm::vec3 Position = UnitData.Transform.GetPosition();
+
 	const float Scale = 20.0f;
 	const float OffsetX = static_cast<float>( Left + Right ) * Scale;
 	const float OffsetY = static_cast<float>( Forward + Back ) * Scale;
@@ -78,11 +85,11 @@ void CSquareoidsPlayerUnit::Tick()
 	UnitData.Velocity[0] = ( UnitData.Velocity[0] * OneMinusInterp ) + (OffsetX * InterpolationFactor );
 	UnitData.Velocity[1] = ( UnitData.Velocity[1] * OneMinusInterp ) + (OffsetY * InterpolationFactor );
 
-	UnitData.Position[0] += UnitData.Velocity[0];
-	UnitData.Position[1] += UnitData.Velocity[1];
-	UnitData.Position[2] = 100.0f;
+	Position[0] += UnitData.Velocity[0];
+	Position[1] += UnitData.Velocity[1];
+	Position[2] = 100.0f;
 
-	UnitData.Size = glm::vec3( UnitData.Health * 0.5f, UnitData.Health * 0.5f, UnitData.Health * 0.5f );
+	UnitData.Transform.SetTransform( Position, UnitData.Transform.GetOrientation(), glm::vec3( UnitData.Health * 0.5f ) );
 
 	if( Absorbing )
 	{
@@ -95,12 +102,12 @@ void CSquareoidsPlayerUnit::Tick()
 	}
 
 	// Visualize in profiler
-	CProfileVisualisation& Profiler = CProfileVisualisation::Get();
+	CProfiler& Profiler = CProfiler::Get();
 
 	char PositionXString[32];
-	sprintf_s( PositionXString, "%f", UnitData.Position[0] );
+	sprintf_s( PositionXString, "%f", Position[0] );
 	char PositionYString[32];
-	sprintf_s( PositionYString, "%f", UnitData.Position[1] );
+	sprintf_s( PositionYString, "%f", Position[1] );
 
 	Profiler.AddDebugMessage( "PlayerPositionX", PositionXString );
 	Profiler.AddDebugMessage( "PlayerPositionY", PositionYString );

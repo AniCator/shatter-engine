@@ -2,13 +2,12 @@
 #pragma once
 
 #include "glm/glm.hpp"
+#include <Engine/Utility/Math.h>
 
 struct FSquareoidUnitData
 {
-	glm::vec3 Position;
+	FTransform Transform;
 	glm::vec3 Velocity;
-	glm::vec3 Orientation;
-	glm::vec3 Size;
 	glm::vec4 Color;
 
 	float Health;
