@@ -7,11 +7,11 @@
   </PropertyGroup>
   <ItemDefinitionGroup>
     <ClCompile>
-      <AdditionalIncludeDirectories>$(ProjectDir);$(EnginePath);$(EnginePath)\ThirdParty;$(EnginePath)\ThirdParty\glfw-3.2.1.bin.WIN64\include;$(EnginePath)\ThirdParty\glad\include%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);$(EnginePath);$(EnginePath)\ThirdParty\glad\include;$(EnginePath)\ThirdParty\SFML-2.5.1\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>$(EnginePath)\Library\;$(EnginePath)\ThirdParty\glfw-3.2.1.bin.WIN64\lib-vc2015;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>glfw3.lib;ShatterEngine$(Configuration).lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(EnginePath)\Library\;$(EnginePath)\ThirdParty\glfw-3.2.1.bin.WIN64\lib-vc2015;$(EnginePath)\ThirdParty\SFML-2.5.1\lib;$(EnginePath)\ThirdParty\discord-rpc\win64-static\lib;$(EnginePath)\ThirdParty\angelscript\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>angelscript64.lib;discord-rpc.lib;sfml-audio-s.lib;sfml-system-s.lib;openal32.lib;flac.lib;vorbisenc.lib;vorbisfile.lib;vorbis.lib;ogg.lib;glfw3.lib;ShatterEngine$(Configuration).lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup />
