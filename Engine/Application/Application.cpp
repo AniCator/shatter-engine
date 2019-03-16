@@ -611,9 +611,6 @@ void CApplication::Run()
 #endif
 
 			MainWindow.RenderFrame();
-
-			// Tracy profiling marker.
-			FrameMark;
 		}
 	}
 

@@ -5,10 +5,6 @@
 #include <vector>
 #include <map>
 
-// #include <ThirdParty/tracy/Tracy.hpp>
-#define ZoneScoped (void(0))
-#define FrameMark (void(0))
-
 #include <Engine/Utility/RingBuffer.h>
 
 static const size_t TimeWindow = 512;
@@ -77,10 +73,10 @@ private:
 };
 
 #ifdef ProfileBuild
-#define ProfileScope() ZoneScoped; CTimerScope Scope_( __FUNCTION__, false )
-#define Profile( Name ) ZoneScoped; CTimerScope Scope_( Name, false )
-#define ProfileBareScope() ZoneScoped; CTimerScope Scope_( __FUNCTION__, true )
-#define ProfileBare( Name ) ZoneScoped; CTimerScope Scope_( Name, true )
+#define ProfileScope() CTimerScope Scope_( __FUNCTION__, false )
+#define Profile( Name ) CTimerScope Scope_( Name, false )
+#define ProfileBareScope() CTimerScope Scope_( __FUNCTION__, true )
+#define ProfileBare( Name ) CTimerScope Scope_( Name, true )
 #else
 #define ProfileScope() (void(0))
 #define Profile( Name ) (void(0))

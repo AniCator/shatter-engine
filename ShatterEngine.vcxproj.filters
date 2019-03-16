@@ -69,9 +69,6 @@
     <Filter Include="Source Files\Engine\Utility\Locator">
       <UniqueIdentifier>{03e8c706-9369-463d-9f4c-4cffb9895f5c}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\ThirdParty\tracy">
-      <UniqueIdentifier>{46246e19-564d-4505-8688-af5d1026f34c}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Engine\Resource">
       <UniqueIdentifier>{674b90ce-9aef-4754-974c-7ebb4cd7eeac}</UniqueIdentifier>
     </Filter>
@@ -175,9 +172,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp">
       <Filter>Source Files\Engine\Utility\Service</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\tracy\TracyClient.cpp">
-      <Filter>Source Files\ThirdParty\tracy</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Resource\Assets.cpp">
       <Filter>Source Files\Engine\Resource</Filter>
@@ -343,9 +337,6 @@
     <ClInclude Include="Engine\Input\InputMapGLFW.h">
       <Filter>Source Files\Engine\Input</Filter>
     </ClInclude>
-    <ClInclude Include="ThirdParty\tracy\Tracy.hpp">
-      <Filter>Source Files\ThirdParty\tracy</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Resource\Assets.h">
       <Filter>Source Files\Engine\Resource</Filter>
     </ClInclude>
@@ -384,6 +375,12 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\MeshEntity\MeshEntity.h">
       <Filter>Source Files\Engine\World\Entity\MeshEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\KeyValue.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\angelscript\include\angelscript.h">
+      <Filter>Source Files\ThirdParty\angelscript</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
