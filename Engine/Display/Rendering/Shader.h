@@ -30,7 +30,7 @@ public:
 	CShader();
 	~CShader();
 
-	bool Load( const char* FileLocation );
+	bool Load( const char* FileLocation, bool ShouldLink = true );
 	bool Load( const char* FileLocation, GLuint& HandleIn, EShaderType ShaderType );
 
 	bool Reload();

@@ -16,7 +16,7 @@ CShader::~CShader()
 
 }
 
-bool CShader::Load( const char* FileLocation )
+bool CShader::Load( const char* FileLocation, bool ShouldLink )
 {
 	Location = FileLocation;
 
@@ -29,7 +29,7 @@ bool CShader::Load( const char* FileLocation )
 	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), Handles.VertexShader, EShaderType::Vertex );
 	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), Handles.FragmentShader, EShaderType::Fragment );
 
-	if( LoadedVertexShader && LoadedFragmentShader )
+	if( LoadedVertexShader && LoadedFragmentShader && ShouldLink )
 	{
 		Link();
 
@@ -127,13 +127,28 @@ GLuint CShader::Link()
 {
 	if( Handles.VertexShader == 0 || Handles.FragmentShader == 0 )
 	{
+		Log::Event( Log::Error, "Shader doesn't have vertex shader nor fragment shader.\n" );
 		return 0;
 	}
 
 	// Compile all shaders
 	bool ShaderCompiled = false;
+	bool Debugger = false;
+
+#ifdef WIN32
+	Debugger = IsDebuggerPresent() > 0;
+#endif
+
+	int Attempts = 0;
 	while( !ShaderCompiled )
 	{
+		if( Attempts > 5 && !Debugger )
+		{
+			Log::Event( Log::Error, "Failed to compile shader.\n" );
+			Attempts = 0;
+			return 0;
+		}
+
 		glCompileShader( Handles.VertexShader );
 		const bool HasErrorsVS = LogShaderCompilationErrors( Handles.VertexShader );
 		glCompileShader( Handles.FragmentShader );
@@ -142,8 +157,10 @@ GLuint CShader::Link()
 
 		if( !ShaderCompiled )
 		{
-			Reload();
+			Load( Location.c_str(), false );
 		}
+
+		Attempts++;
 	}
 
 	// Create the program
