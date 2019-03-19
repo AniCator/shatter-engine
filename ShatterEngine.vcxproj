@@ -107,6 +107,10 @@
     <Lib>
       <OutputFile>$(ProjectDir)Library\$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
+    <ProjectReference />
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -131,6 +135,10 @@
     <Lib>
       <OutputFile>$(ProjectDir)Library\$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
+    <ProjectReference />
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Development|x64'">
     <ClCompile>
@@ -155,6 +163,10 @@
     <Lib>
       <OutputFile>$(ProjectDir)Library\$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
+    <ProjectReference />
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Profile|x64'">
     <ClCompile>
@@ -177,6 +189,10 @@
     <Lib>
       <OutputFile>$(ProjectDir)Library\$(TargetName)$(TargetExt)</OutputFile>
     </Lib>
+    <ProjectReference />
+    <ProjectReference>
+      <LinkLibraryDependencies>true</LinkLibraryDependencies>
+    </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Application\Application.cpp" />
@@ -211,9 +227,6 @@
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
     <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Game\ShatterLapse\ShatterLapse.cpp" />
-    <ClCompile Include="ThirdParty\angelscript\add_on\scriptbuilder\scriptbuilder.cpp" />
-    <ClCompile Include="ThirdParty\angelscript\add_on\scriptstdstring\scriptstdstring.cpp" />
-    <ClCompile Include="ThirdParty\angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp" />
     <ClCompile Include="ThirdParty\glad\src\glad.c" />
     <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp" />
     <ClCompile Include="ThirdParty\imgui-1.52\imgui_demo.cpp" />

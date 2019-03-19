@@ -194,15 +194,6 @@
     <ClCompile Include="Engine\Utility\Script\AngelEngine.cpp">
       <Filter>Source Files\Engine\Utility\Script</Filter>
     </ClCompile>
-    <ClCompile Include="ThirdParty\angelscript\add_on\scriptbuilder\scriptbuilder.cpp">
-      <Filter>Source Files\ThirdParty\angelscript</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\angelscript\add_on\scriptstdstring\scriptstdstring.cpp">
-      <Filter>Source Files\ThirdParty\angelscript</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\angelscript\add_on\scriptstdstring\scriptstdstring_utils.cpp">
-      <Filter>Source Files\ThirdParty\angelscript</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Display\Rendering\Texture.cpp">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClCompile>
