@@ -223,6 +223,7 @@ CTexture* CAssets::FindTexture( std::string Name )
 
 void CAssets::ReloadShaders()
 {
+	Log::Event( "Reloading shaders.\n" );
 	for( auto Shader : Shaders )
 	{
 		Shader.second->Reload();
