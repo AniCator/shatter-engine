@@ -17,7 +17,7 @@
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int ActionInput, int Modifiers )
 {
 #if defined( IMGUI_ENABLED )
-	if( ImGui::IsAnyItemHovered() )
+	if( ImGui::IsAnyItemActive() )
 	{
 		ImGui_ImplGlfwGL3_KeyCallback( window, KeyInput, ScanCode, ActionInput, Modifiers );
 		return;
@@ -32,7 +32,7 @@ void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Actio
 void InputCharCallback( GLFWwindow* window, unsigned int Character )
 {
 #if defined( IMGUI_ENABLED )
-	if( ImGui::IsAnyItemHovered() )
+	if( ImGui::IsAnyItemActive() )
 	{
 		ImGui_ImplGlfwGL3_CharCallback( window, Character );
 		return;
@@ -63,7 +63,7 @@ void InputMousePositionCallback( GLFWwindow* window, double PositionX, double Po
 void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY )
 {
 #if defined( IMGUI_ENABLED )
-	if( ImGui::IsAnyItemActive() )
+	if( ImGui::IsAnyWindowHovered() )
 	{
 		ImGui_ImplGlfwGL3_ScrollCallback( window, OffsetX, OffsetY );
 		return;
