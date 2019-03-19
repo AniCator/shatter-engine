@@ -37,8 +37,8 @@ CAngelEngine::~CAngelEngine()
 
 EAngelResult CAngelEngine::Initialize()
 {
-	Engine = asCreateScriptEngine();
-	const int SetCallbackResult = Engine->SetMessageCallback( asFUNCTION( MessageCallback ), 0, asCALL_CDECL );
+	// Engine = asCreateScriptEngine();
+	/*const int SetCallbackResult = Engine->SetMessageCallback( asFUNCTION( MessageCallback ), 0, asCALL_CDECL );
 	if( SetCallbackResult < 0 )
 	{
 		Log::Event( Log::Error, "Failed to set message callback function for AngelScript.\n" );
@@ -52,7 +52,7 @@ EAngelResult CAngelEngine::Initialize()
 	{
 		Log::Event( Log::Error, "Failed to register global print function for AngelScript.\n" );
 		return EAngelResult::Engine;
-	}
+	}*/
 
 	if( !Engine )
 	{
@@ -86,70 +86,80 @@ void CAngelEngine::Shutdown()
 
 EAngelResult CAngelEngine::Add( const char* Name, CFile& File )
 {
-	CScriptBuilder Builder;
-	const int NewModuleResult = Builder.StartNewModule( Engine, Name );
-	if( NewModuleResult < 0 )
+	if( Engine )
 	{
-		Log::Event( Log::Error, "Failed to create AngelScript module (%s).\n", Name );
-		return EAngelResult::Module;
+		CScriptBuilder Builder;
+		const int NewModuleResult = Builder.StartNewModule( Engine, Name );
+		if( NewModuleResult < 0 )
+		{
+			Log::Event( Log::Error, "Failed to create AngelScript module (%s).\n", Name );
+			return EAngelResult::Module;
+		}
+
+		const char* Data = File.Fetch<char>();
+		const int AddSectionResult = Builder.AddSectionFromMemory( Name, Data, static_cast<unsigned int>( File.Size() ) );
+		if( AddSectionResult < 0 )
+		{
+			Log::Event( Log::Error, "Failed to load AngelScript section (%s).\n", Name );
+			return EAngelResult::Load;
+		}
+
+		const int CompileResult = Builder.BuildModule();
+		if( CompileResult < 0 )
+		{
+			Log::Event( Log::Error, "Failed to compile AngelScript module (%s).\n", Name );
+			return EAngelResult::Compile;
+		}
+
+		return EAngelResult::Success;
 	}
 
-	const char* Data = File.Fetch<char>();
-	const int AddSectionResult = Builder.AddSectionFromMemory( Name, Data, static_cast<unsigned int>( File.Size() ) );
-	if( AddSectionResult < 0 )
-	{
-		Log::Event( Log::Error, "Failed to load AngelScript section (%s).\n", Name );
-		return EAngelResult::Load;
-	}
-
-	const int CompileResult = Builder.BuildModule();
-	if( CompileResult < 0 )
-	{
-		Log::Event( Log::Error, "Failed to compile AngelScript module (%s).\n", Name );
-		return EAngelResult::Compile;
-	}
-
-	return EAngelResult::Success;
+	return EAngelResult::Unknown;
 }
 
 EAngelResult CAngelEngine::Execute( const char* Name )
 {
-	asIScriptModule* Module = Engine->GetModule( Name );
-	if( Module )
+	if( Engine )
 	{
-		asIScriptFunction* EntryFunction = Module->GetFunctionByDecl( "void main()" );
-
-		if( EntryFunction )
+		asIScriptModule* Module = Engine->GetModule( Name );
+		if( Module )
 		{
-			if( Context )
+			asIScriptFunction* EntryFunction = Module->GetFunctionByDecl( "void main()" );
+
+			if( EntryFunction )
 			{
-				Context->Prepare( EntryFunction );
-				const int ExecutionResult = Context->Execute();
-				if( ExecutionResult > asEXECUTION_FINISHED )
+				if( Context )
 				{
-					if( ExecutionResult == asEXECUTION_EXCEPTION )
+					Context->Prepare( EntryFunction );
+					const int ExecutionResult = Context->Execute();
+					if( ExecutionResult > asEXECUTION_FINISHED )
 					{
-						Log::Event( Log::Error, "Failed to execute \"%s\":\n%s.\n", Name, Context->GetExceptionString() );
-
-						// Determine the function where the exception occurred
-						const asIScriptFunction *Function = Context->GetExceptionFunction();
-						if( Function )
+						if( ExecutionResult == asEXECUTION_EXCEPTION )
 						{
-							Log::Event( Log::Error, "Declaration: %s\n", Function->GetDeclaration() );
-							Log::Event( Log::Error, "Section: %s\n", Function->GetScriptSectionName() );
-							Log::Event( Log::Error, "Line: %d\n", Context->GetExceptionLineNumber() );
-						}
+							Log::Event( Log::Error, "Failed to execute \"%s\":\n%s.\n", Name, Context->GetExceptionString() );
 
-						return EAngelResult::Exception;
+							// Determine the function where the exception occurred
+							const asIScriptFunction *Function = Context->GetExceptionFunction();
+							if( Function )
+							{
+								Log::Event( Log::Error, "Declaration: %s\n", Function->GetDeclaration() );
+								Log::Event( Log::Error, "Section: %s\n", Function->GetScriptSectionName() );
+								Log::Event( Log::Error, "Line: %d\n", Context->GetExceptionLineNumber() );
+							}
+
+							return EAngelResult::Exception;
+						}
 					}
 				}
 			}
+			else
+			{
+				Log::Event( Log::Warning, "Missing entry function in module \"%s\"\n", Name );
+			}
 		}
-		else
-		{
-			Log::Event( Log::Warning, "Missing entry function in module \"%s\"\n", Name );
-		}
+
+		return EAngelResult::Success;
 	}
 
-	return EAngelResult::Success;
+	return EAngelResult::Unknown;
 }
