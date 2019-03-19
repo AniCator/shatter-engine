@@ -213,7 +213,7 @@ void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
 	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
 }
 
-void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
+void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 {
 	ProfileBareScope();
 	std::vector<glm::vec3> Vertices;
@@ -371,6 +371,8 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 				CoordinateIndices.emplace_back( atoi( CoordinateTokens[0].c_str() ) - 1 );
 				CoordinateIndices.emplace_back( atoi( CoordinateTokens[1].c_str() ) - 1 );
 				CoordinateIndices.emplace_back( atoi( CoordinateTokens[2].c_str() ) - 1 );
+
+				Log::Event( "%s %s %s\n", CoordinateTokens[0].c_str(), CoordinateTokens[1].c_str(), CoordinateTokens[2].c_str() );
 			}
 
 			if( NormalTokens.size() == 3 )
@@ -399,6 +401,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 		if( HasCoordinateIndices )
 		{
 			VertexArray[VertexIndices[Index]].TextureCoordinate = Coordinates[CoordinateIndices[Index]];
+			Log::Event( "v %i c %i: %f %f\n", VertexIndices[Index], CoordinateIndices[Index], VertexArray[VertexIndices[Index]].TextureCoordinate[0], VertexArray[VertexIndices[Index]].TextureCoordinate[1] );
 		}
 
 		if( HasNormalIndices )
@@ -413,7 +416,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, CFile& File )
 	Primitive.IndexCount = static_cast<uint32_t>( VertexIndices.size() );
 }
 
-void MeshBuilder::LM( FPrimitive& Primitive, CFile& File )
+void MeshBuilder::LM( FPrimitive& Primitive, const CFile& File )
 {
 	File.Extract( Primitive );
 }

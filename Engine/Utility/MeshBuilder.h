@@ -27,8 +27,8 @@ public:
 	static void Dragon( FPrimitive& Primitive, const float Radius );
 	static void Buddha( FPrimitive& Primitive, const float Radius );
 
-	static void OBJ( FPrimitive& Primitive, CFile& File );
-	static void LM( FPrimitive& Primitive, CFile& File );
+	static void OBJ( FPrimitive& Primitive, const CFile& File );
+	static void LM( FPrimitive& Primitive, const CFile& File );
 
 	static void Mesh( FPrimitive& Primitive, CMesh* MeshInstance );
 
