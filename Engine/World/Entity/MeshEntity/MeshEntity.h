@@ -22,6 +22,8 @@ public:
 	virtual void Tick();
 	virtual void Destroy();
 
+	virtual const FTransform& GetTransform() const { return Transform; };
+
 private:
 	CMesh* Mesh;
 	CShader* Shader;
