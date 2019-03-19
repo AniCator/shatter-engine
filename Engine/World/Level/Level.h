@@ -5,6 +5,7 @@
 
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/Utility/Data.h>
+#include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
 
 class CLevel
@@ -24,6 +25,9 @@ public:
 
 		return dynamic_cast<T*>(Entities.back());
 	}
+
+	void Load( const CFile& File );
+	std::vector<CEntity*>& GetEntities() { return Entities; };
 
 private:
 	std::vector<CEntity*> Entities;

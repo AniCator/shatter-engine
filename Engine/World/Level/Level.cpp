@@ -39,6 +39,11 @@ void CLevel::Destroy()
 	}
 }
 
+void CLevel::Load( const CFile& File )
+{
+
+}
+
 CData& operator<<( CData& Data, CLevel& Level )
 {
 	Data << LevelVersion;
@@ -48,7 +53,7 @@ CData& operator<<( CData& Data, CLevel& Level )
 
 	for( size_t Index = 0; Index < Count; Index++ )
 	{
-		Data << *Level.Entities[Index];
+		// Data << *Level.Entities[Index];
 	}
 
 	return Data;
@@ -68,9 +73,7 @@ CData& operator>> ( CData& Data, CLevel& Level )
 
 		for( size_t Index = 0; Index < Count; Index++ )
 		{
-			/*CEntity* Entity = new CEntity();
-			Data >> Entity;
-			Level.Entities.push_back( Entity );*/
+			// 
 		}
 	}
 

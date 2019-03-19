@@ -52,6 +52,7 @@ public:
 	}
 
 	void Add( FLevel& Level );
+	std::vector<FLevel>& GetLevels() { return Levels; };
 
 private:
 	std::vector<FLevel> Levels;
