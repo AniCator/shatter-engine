@@ -99,7 +99,7 @@ bool CFile::Load( CData& Data )
 	const size_t Size = Data.Size();
 	char* Buffer = new char[Size];
 
-	Data.Read( Buffer, Size );
+	Data.Store( Buffer, Size );
 
 	return Load( Buffer, Size );
 }

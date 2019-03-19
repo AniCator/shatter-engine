@@ -32,7 +32,7 @@ public:
 		Data.read( reinterpret_cast<char*>( &Object ), Size );
 	}
 
-	void Read( char* Buffer, const size_t Size )
+	void Store( char* Buffer, const size_t Size )
 	{
 		Data.seekg( std::ios::beg );
 		Data.read( Buffer, Size );

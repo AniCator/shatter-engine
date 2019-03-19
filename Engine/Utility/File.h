@@ -34,7 +34,7 @@ public:
 	}
 
 	template<typename T>
-	void Extract( T& Object )
+	void Extract( T& Object ) const
 	{
 		const char* RawData = Fetch<char>();
 		const size_t FileSize = Size();
