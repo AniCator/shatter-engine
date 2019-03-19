@@ -456,7 +456,7 @@ void DebugMenu( CApplication* Application )
 				ImVec4( 1.0f,0.0f,0.0f,1.0f ),
 			};
 
-			const std::vector<Log::FHistory> LogHistory = Log::History();
+			const std::vector<Log::FHistory>& LogHistory = Log::History();
 			const size_t Count = LogHistory.size();
 			const size_t Entries = LogHistory.size() < 500 ? LogHistory.size() : 500;
 			for( size_t Index = 0; Index < Entries; Index++ )
