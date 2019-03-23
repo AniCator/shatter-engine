@@ -6,12 +6,12 @@
 
 union SoundHandle
 {
-	size_t Handle;
+	int32_t Handle;
 };
 
 union MusicHandle
 {
-	size_t Handle;
+	int32_t Handle;
 };
 
 namespace sf
@@ -21,6 +21,13 @@ namespace sf
 	class Music;
 }
 
+struct FStream
+{
+	sf::Music* Stream;
+	float FadeDuration;
+	float StartTime;
+};
+
 class CSimpleSound
 {
 public:
@@ -28,7 +35,7 @@ public:
 	static MusicHandle Music( std::string ResourcePath );
 
 	static void Start( SoundHandle Handle );
-	static void Start( MusicHandle Handle );
+	static void Start( MusicHandle Handle, const float FadeIn = -1.0f );
 
 	static void Stop( SoundHandle Handle );
 	static void Stop( MusicHandle Handle );
@@ -46,10 +53,12 @@ public:
 	static bool Playing( SoundHandle Handle );
 	static bool Playing( MusicHandle Handle );
 
+	static void Tick();
+
 	static void Shutdown();
 
 private:
 	static std::vector<sf::Sound*> Sounds;
 	static std::vector<sf::SoundBuffer*> SoundBuffers;
-	static std::vector<sf::Music*> Streams;
+	static std::vector<FStream> Streams;
 };

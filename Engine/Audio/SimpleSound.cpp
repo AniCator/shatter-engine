@@ -4,14 +4,15 @@
 #include <ThirdParty/SFML-2.5.1/include/SFML/Audio.hpp>
 
 #include <Engine/Profiling/Logging.h>
+#include <Game/Game.h>
 
 std::vector<sf::Sound*> CSimpleSound::Sounds;
 std::vector<sf::SoundBuffer*> CSimpleSound::SoundBuffers;
-std::vector<sf::Music*> CSimpleSound::Streams;
+std::vector<FStream> CSimpleSound::Streams;
 
 SoundHandle CSimpleSound::Sound( std::string ResourcePath )
 {
-	Log::Event( "Loading sound \"%s\"", ResourcePath.c_str() );
+	Log::Event( "Loading sound \"%s\"\n", ResourcePath.c_str() );
 	sf::SoundBuffer* NewSoundBuffer = new sf::SoundBuffer();
 	NewSoundBuffer->loadFromFile( ResourcePath );
 	sf::Sound* NewSound = new sf::Sound( *NewSoundBuffer );
@@ -30,7 +31,9 @@ MusicHandle CSimpleSound::Music( std::string ResourcePath )
 	sf::Music* NewMusic = new sf::Music();
 	NewMusic->openFromFile( ResourcePath );
 
-	Streams.push_back( NewMusic );
+	FStream Stream;
+	Stream.Stream = NewMusic;
+	Streams.push_back( Stream );
 
 	MusicHandle Handle;
 	Handle.Handle = Streams.size() - 1;
@@ -39,22 +42,35 @@ MusicHandle CSimpleSound::Music( std::string ResourcePath )
 
 void CSimpleSound::Start( SoundHandle Handle )
 {
-	Sounds[Handle.Handle]->play();
+	if( Handle.Handle > -1 )
+		Sounds[Handle.Handle]->play();
 }
 
-void CSimpleSound::Start( MusicHandle Handle )
+void CSimpleSound::Start( MusicHandle Handle, const float FadeIn )
 {
-	Streams[Handle.Handle]->play();
+	if( Handle.Handle < 0 )
+		return;
+
+	if( FadeIn > 0.0f )
+	{
+		Streams[Handle.Handle].Stream->setVolume( 0.0f );
+	}
+
+	Streams[Handle.Handle].Stream->play();
+	Streams[Handle.Handle].FadeDuration = FadeIn;
+	Streams[Handle.Handle].StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 }
 
 void CSimpleSound::Stop( SoundHandle Handle )
 {
-	Sounds[Handle.Handle]->stop();
+	if( Handle.Handle > -1 )
+		Sounds[Handle.Handle]->stop();
 }
 
 void CSimpleSound::Stop( MusicHandle Handle )
 {
-	Streams[Handle.Handle]->stop();
+	if( Handle.Handle > -1 )
+		Streams[Handle.Handle].Stream->stop();
 }
 
 void CSimpleSound::StopSounds()
@@ -69,7 +85,7 @@ void CSimpleSound::StopMusic()
 {
 	for( auto Stream : Streams )
 	{
-		Stream->stop();
+		Stream.Stream->stop();
 	}
 }
 
@@ -86,7 +102,7 @@ void CSimpleSound::Loop( SoundHandle Handle, const bool Loop )
 
 void CSimpleSound::Loop( MusicHandle Handle, const bool Loop )
 {
-	Streams[Handle.Handle]->setLoop( Loop );
+	Streams[Handle.Handle].Stream->setLoop( Loop );
 }
 
 void CSimpleSound::Rate( SoundHandle Handle, const float Rate )
@@ -96,7 +112,7 @@ void CSimpleSound::Rate( SoundHandle Handle, const float Rate )
 
 void CSimpleSound::Rate( MusicHandle Handle, const float Rate )
 {
-	Streams[Handle.Handle]->setPitch( Rate );
+	Streams[Handle.Handle].Stream->setPitch( Rate );
 }
 
 bool CSimpleSound::Playing( SoundHandle Handle )
@@ -106,7 +122,25 @@ bool CSimpleSound::Playing( SoundHandle Handle )
 
 bool CSimpleSound::Playing( MusicHandle Handle )
 {
-	return Streams[Handle.Handle]->getStatus() == sf::SoundSource::Status::Playing;
+	return Streams[Handle.Handle].Stream->getStatus() == sf::SoundSource::Status::Playing;
+}
+
+void CSimpleSound::Tick()
+{
+	const float CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
+	for( auto Stream : Streams )
+	{
+		if( Stream.FadeDuration > 0.0f )
+		{
+			const float DeltaTime = CurrentTime - Stream.StartTime;
+			float Alpha = DeltaTime / Stream.FadeDuration;
+			Alpha *= Alpha * Alpha;
+			if( Alpha < 100.0f && Alpha > 0.0f )
+			{
+				Stream.Stream->setVolume( Alpha * 100.0f );
+			}
+		}
+	}
 }
 
 void CSimpleSound::Shutdown()
@@ -120,7 +154,7 @@ void CSimpleSound::Shutdown()
 
 	for( auto Stream : Streams )
 	{
-		delete Stream;
+		delete Stream.Stream;
 	}
 
 	Streams.clear();
