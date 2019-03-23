@@ -4,6 +4,8 @@
 #include "glad/glad.h"
 #include <string>
 
+#include <Engine/Utility/File.h>
+
 enum class EShaderType : uint16_t
 {
 	Vertex = GL_VERTEX_SHADER,
@@ -39,6 +41,7 @@ public:
 	const FProgramHandles& GetHandles() const;
 
 private:
+	std::string Process( const CFile& File );
 	GLuint Link();
 
 	FProgramHandles Handles;

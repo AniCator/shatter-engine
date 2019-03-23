@@ -1,6 +1,5 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Shader.h"
-#include <Engine/Utility/File.h>
 #include <Engine/Profiling/Logging.h>
 
 #include <sstream>
@@ -46,8 +45,8 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 
 	if( Loaded )
 	{
-		const char* ShaderData = ShaderSource.Fetch<char>();
-
+		std::string Data = Process( ShaderSource );
+		const char* ShaderData = Data.c_str();
 		if( ShaderData )
 		{
 			GLuint ShaderTypeGL = static_cast<GLuint>( ShaderType );
@@ -121,6 +120,54 @@ bool LogProgramCompilationErrors( GLuint v )
 	}
 
 	return false;
+}
+
+std::string CShader::Process(const CFile& File)
+{
+	const char* ShaderData = File.Fetch<char>();
+	std::stringstream StringStream;
+	StringStream << ShaderData;
+
+	std::stringstream OutputStream;
+
+	std::string Line;
+	while( std::getline( StringStream, Line ) )
+	{
+		bool bParsed = false;
+		if( Line[0] == '#' )
+		{
+			std::stringstream Stream( Line );;
+			std::string Preprocessor;
+			Stream >> Preprocessor;
+
+			if( Preprocessor == "#include" )
+			{
+				std::string Path;
+				Stream >> Path;
+
+				Path = Path.substr(1, Path.length() - 2);
+				bParsed = true;
+
+				std::stringstream ShaderPath;
+				ShaderPath << "Shaders/" << Path;
+				CFile IncludeSource( ShaderPath.str().c_str() );
+				const bool Loaded = IncludeSource.Load();
+
+				if( Loaded )
+				{
+					const char* IncludeData = IncludeSource.Fetch<char>();
+					OutputStream << "\n" << IncludeData << "\n";
+				}
+			}
+		}
+
+		if( !bParsed )
+		{
+			OutputStream << Line << "\n";
+		}
+	}
+
+	return OutputStream.str();
 }
 
 GLuint CShader::Link()
