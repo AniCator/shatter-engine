@@ -239,8 +239,9 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 
 	std::string Token;
 
+	bool ShouldPrintToken = true;
 	std::string Line;
-	while( std::getline( StringStream, Line ) )
+	while( SafeGetline( StringStream, Line ) )
 	{
 		if( Line[0] == 'v' )
 		{
@@ -250,18 +251,11 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				glm::vec2 Coordinate;
 
 				Line.erase( 0, 3 );
-				std::stringstream Stream( Line );
-				std::vector<std::string> Tokens;
-				Tokens.reserve( 2 );
-				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 2 )
-				{
-					Tokens.emplace_back( Token );
-				}
-
+				auto Tokens = ExtractTokensFloat( Line, Delimiter, 2 );
 				if( Tokens.size() == 2 )
 				{
-					Coordinate[0] = static_cast<float>( atof( Tokens[0].c_str() ) );
-					Coordinate[1] = static_cast<float>( atof( Tokens[1].c_str() ) );
+					Coordinate[0] = Tokens[0];
+					Coordinate[1] = Tokens[1];
 
 					Coordinates.emplace_back( Coordinate );
 				}
@@ -274,20 +268,14 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				Primitive.HasNormals = true;
 
 				Line.erase( 0, 3 );
-				std::stringstream Stream( Line );
-				std::vector<std::string> Tokens;
-				Tokens.reserve( 3 );
-				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 3 )
-				{
-					Tokens.emplace_back( Token );
-				}
+				auto Tokens = ExtractTokensFloat( Line, Delimiter, 3 );
 
 				if( Tokens.size() == 3 )
 				{
 					// Assume Y is up in the file.
-					Normal[1] = static_cast<float>( atof( Tokens[0].c_str() ) );
-					Normal[2] = static_cast<float>( atof( Tokens[1].c_str() ) );
-					Normal[0] = static_cast<float>( atof( Tokens[2].c_str() ) );
+					Normal[1] = Tokens[0];
+					Normal[2] = Tokens[1];
+					Normal[0] = Tokens[2];
 
 					Normals.emplace_back( Normal );
 				}
@@ -302,20 +290,14 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				glm::vec3 Vertex;
 
 				Line.erase( 0, 2 );
-				std::stringstream Stream( Line );
-				std::vector<std::string> Tokens;
-				Tokens.reserve( 3 );
-				while( std::getline( Stream, Token, Delimiter ) && Tokens.size() < 3 )
-				{
-					Tokens.emplace_back( Token );
-				}
+				auto Tokens = ExtractTokensFloat( Line, Delimiter, 3 );
 
 				if( Tokens.size() == 3 )
 				{
 					// Assume Y is up in the file.
-					Vertex[1] = static_cast<float>( atof( Tokens[0].c_str() ) );
-					Vertex[2] = static_cast<float>( atof( Tokens[1].c_str() ) );
-					Vertex[0] = static_cast<float>( atof( Tokens[2].c_str() ) );
+					Vertex[1] = Tokens[0];
+					Vertex[2] = Tokens[1];
+					Vertex[0] = Tokens[2];
 
 					Vertices.emplace_back( Vertex );
 				}
@@ -325,62 +307,23 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 		{
 			// Face.
 			Line.erase( 0, 2 );
-			std::stringstream Stream( Line );
-			std::vector<std::string> VertexTokens;
-			std::vector<std::string> CoordinateTokens;
-			std::vector<std::string> NormalTokens;
-			VertexTokens.reserve( 4 );
-			CoordinateTokens.reserve( 4 );
-			NormalTokens.reserve( 4 );
-			while( std::getline( Stream, Token, Delimiter ) && VertexTokens.size() < 3 )
+			auto Tokens = ExtractTokens( Line, Delimiter, 4 );
+
+			for( auto& Token : Tokens )
 			{
-				const size_t VertexLocation = Token.find( '/' );
-				const std::string VertexIndex = Token.substr( 0, VertexLocation );
-
-				VertexTokens.emplace_back( VertexIndex );
-
-				Token = Token.substr( VertexLocation + 1, std::string::npos );
-				const size_t CoordinateLocation = Token.find( '/' );
-				const std::string CoordinateIndex = Token.substr( 0, CoordinateLocation );
-				if( CoordinateIndex.length() > 0 )
+				auto ComponentTokens = ExtractTokensInteger( Token, '/', 3 );
+				if( ComponentTokens.size() == 3 )
 				{
-					CoordinateTokens.emplace_back( CoordinateIndex );
+					// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
+					VertexIndices.emplace_back( ComponentTokens[0] - 1 );
+
+					if( ComponentTokens[1] != 0 )
+					{
+						CoordinateIndices.emplace_back( ComponentTokens[1] - 1 );
+					}
+
+					NormalIndices.emplace_back( ComponentTokens[2] - 1 );
 				}
-
-				Token = Token.substr( CoordinateLocation + 1, std::string::npos );
-				// const size_t NormalLocation = Token.find( '/' );
-				const std::string NormalIndex = Token.substr( 0, std::string::npos );
-
-				if( NormalIndex.length() > 0 )
-				{
-					NormalTokens.emplace_back( NormalIndex );
-				}
-			}
-
-			if( VertexTokens.size() == 3 )
-			{
-				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
-				VertexIndices.emplace_back( atoi( VertexTokens[0].c_str() ) - 1 );
-				VertexIndices.emplace_back( atoi( VertexTokens[1].c_str() ) - 1 );
-				VertexIndices.emplace_back( atoi( VertexTokens[2].c_str() ) - 1 );
-			}
-
-			if( CoordinateTokens.size() == 3 )
-			{
-				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
-				CoordinateIndices.emplace_back( atoi( CoordinateTokens[0].c_str() ) - 1 );
-				CoordinateIndices.emplace_back( atoi( CoordinateTokens[1].c_str() ) - 1 );
-				CoordinateIndices.emplace_back( atoi( CoordinateTokens[2].c_str() ) - 1 );
-
-				Log::Event( "%s %s %s\n", CoordinateTokens[0].c_str(), CoordinateTokens[1].c_str(), CoordinateTokens[2].c_str() );
-			}
-
-			if( NormalTokens.size() == 3 )
-			{
-				// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
-				NormalIndices.emplace_back( atoi( NormalTokens[0].c_str() ) - 1 );
-				NormalIndices.emplace_back( atoi( NormalTokens[1].c_str() ) - 1 );
-				NormalIndices.emplace_back( atoi( NormalTokens[2].c_str() ) - 1 );
 			}
 		}
 	}
@@ -401,7 +344,6 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 		if( HasCoordinateIndices )
 		{
 			VertexArray[VertexIndices[Index]].TextureCoordinate = Coordinates[CoordinateIndices[Index]];
-			Log::Event( "v %i c %i: %f %f\n", VertexIndices[Index], CoordinateIndices[Index], VertexArray[VertexIndices[Index]].TextureCoordinate[0], VertexArray[VertexIndices[Index]].TextureCoordinate[1] );
 		}
 
 		if( HasNormalIndices )
@@ -451,9 +393,6 @@ struct VectorComparator {
 
 void MeshBuilder::Soup( FPrimitive& Primitive, std::vector<glm::vec3> Vertices )
 {
-	Log::Event( "Soup\n" );
-	Log::Event( "In: %i\n", Vertices.size() );
-
 	std::map<glm::vec3, glm::uint, VectorComparator> Soup;
 	std::vector<glm::uint> SoupIndices;
 
@@ -492,7 +431,4 @@ void MeshBuilder::Soup( FPrimitive& Primitive, std::vector<glm::vec3> Vertices )
 	Primitive.VertexCount = static_cast<uint32_t>( SoupCount );
 	Primitive.Indices = Indices;
 	Primitive.IndexCount = static_cast<uint32_t>( IndexCount );
-
-	Log::Event( "OutV: %i\n", SoupCount );
-	Log::Event( "OutI: %i\n", IndexCount );
 }
