@@ -514,6 +514,28 @@ void DebugMenu( CApplication* Application )
 				}
 			}
 
+			ImGui::Text( "Import speed test." );
+
+			if( ImGui::Button( "Import Island OBJ" ) )
+			{
+				CTimer LoadTimer;
+				CTimer ParseTimer;
+
+				CFile File( "Models/LoftyLagoonTestModel.obj" );
+
+				LoadTimer.Start();
+				File.Load();
+				LoadTimer.Stop();
+
+				FPrimitive Primitive;
+
+				ParseTimer.Start();
+				MeshBuilder::OBJ( Primitive, File );
+				ParseTimer.Stop();
+
+				Log::Event( "Import speed test: Load %ims Parse %ims\n", LoadTimer.GetElapsedTimeMilliseconds(), ParseTimer.GetElapsedTimeMilliseconds() );
+			}
+
 			ImGui::End();
 		}
 	}
@@ -523,6 +545,7 @@ CApplication::CApplication()
 {
 	Name = "Unnamed Shatter Engine Application";
 	Tools = false;
+	DefaultExit = true;
 }
 
 CApplication::~CApplication()
@@ -624,6 +647,11 @@ void CApplication::Run()
 	CSimpleSound::Shutdown();
 }
 
+void CApplication::Close()
+{
+	glfwSetWindowShouldClose( MainWindow.Handle(), true );
+}
+
 void CApplication::InitializeDefaultInputs()
 {
 	IInput& Input = CInputLocator::GetService();
@@ -648,9 +676,12 @@ void CApplication::InitializeDefaultInputs()
 	Input.AddActionBinding( EKey::R, EAction::Press, InputMoveCameraLower );
 	Input.AddActionBinding( EKey::F, EAction::Press, InputMoveCameraHigher );
 
-	Input.AddActionBinding( EKey::Escape, EAction::Release, [] {
-		glfwSetWindowShouldClose( MainWindow.Handle(), true );
-	} );
+	if( DefaultExit )
+	{
+		Input.AddActionBinding( EKey::Escape, EAction::Release, [this] {
+			Close();
+		} );
+	}
 
 	Input.AddActionBinding( EKey::L, EAction::Release, [] {
 		DisplayLog = !DisplayLog;
@@ -709,6 +740,16 @@ const bool CApplication::ToolsEnabled() const
 void CApplication::EnableTools( const bool Enable )
 {
 	Tools = Enable;
+}
+
+const bool CApplication::DefaultExitEnabled() const
+{
+	return DefaultExit;
+}
+
+void CApplication::EnableDefaultExit( const bool Enable )
+{
+	DefaultExit = Enable;
 }
 
 #if defined(_WIN32)

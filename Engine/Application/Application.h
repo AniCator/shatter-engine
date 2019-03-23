@@ -11,6 +11,7 @@ public:
 
 	void Initialize();
 	void Run();
+	void Close();
 
 	void InitializeDefaultInputs();
 	void ResetImGui();
@@ -21,9 +22,13 @@ public:
 	const bool ToolsEnabled() const;
 	void EnableTools( const bool Enable );
 
+	const bool DefaultExitEnabled() const;
+	void EnableDefaultExit( const bool Enable );
+
 	CServiceRegistry ServiceRegistry;
 
 private:
 	std::string Name;
 	bool Tools;
+	bool DefaultExit;
 };
