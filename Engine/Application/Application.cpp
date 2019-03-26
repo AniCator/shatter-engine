@@ -668,6 +668,7 @@ void CApplication::InitializeDefaultInputs()
 	Input.AddActionBinding( EKey::G, EAction::Release, [] () {
 		RestartLayers = true;
 	} );
+	Input.AddActionBinding( EKey::J, EAction::Release, InputReloadShaders );
 
 	Input.AddActionBinding( EKey::W, EAction::Press, InputMoveCameraUp );
 	Input.AddActionBinding( EKey::S, EAction::Press, InputMoveCameraDown );
@@ -757,7 +758,15 @@ void CApplication::EnableDefaultExit( const bool Enable )
 
 LONG WINAPI ExceptionHandler( EXCEPTION_POINTERS* ExceptionInfo )
 {
-	Log::Event( Log::Fatal, "An exception has occured. Guess I'll die.\n" );
+	const std::vector<Log::FHistory>& LogHistory = Log::History();
+	if( LogHistory.size() > 0 )
+	{
+		Log::Event( Log::Fatal, "An exception has occured. Guess I'll die.\n\nLast log message:\n%s\n", LogHistory[LogHistory.size() - 1].Message.c_str() );
+	}
+	else
+	{
+		Log::Event( Log::Fatal, "An exception has occured. Guess I'll die.\n" );
+	}
 
 	return EXCEPTION_CONTINUE_SEARCH;
 }
