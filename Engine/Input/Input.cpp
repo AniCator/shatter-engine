@@ -149,7 +149,16 @@ void CInput::RegisterMousePositionInput( double PositionX, double PositionY )
 
 void CInput::RegisterScrollInput( int OffsetX, int OffsetY )
 {
-
+	FMouseInput& ScrollUp = MouseInput[static_cast<EMouseType>( EMouse::MouseScrollUp )];
+	FMouseInput& ScrollDown = MouseInput[static_cast<EMouseType>( EMouse::MouseScrollDown )];
+	if( OffsetY > 0 )
+	{
+		ScrollUp.Action = EAction::Release;
+	}
+	else if( OffsetY < 0 )
+	{
+		ScrollDown.Action = EAction::Release;
+	}
 }
 
 void CInput::RegisterJoystickStatus( int Joystick, int Event )
