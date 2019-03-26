@@ -3,19 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
 VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Squareoids", "Game\Squareoids\Squareoids.vcxproj", "{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}"
-	ProjectSection(ProjectDependencies) = postProject
-		{543705ED-F464-4739-A2A8-ACC9E4A5A467} = {543705ED-F464-4739-A2A8-ACC9E4A5A467}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dummy", "Game\Dummy\Dummy.vcxproj", "{753860C3-745E-4052-B400-7D6B7F31EF4F}"
-	ProjectSection(ProjectDependencies) = postProject
-		{543705ED-F464-4739-A2A8-ACC9E4A5A467} = {543705ED-F464-4739-A2A8-ACC9E4A5A467}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ShatterEngine", "ShatterEngine.vcxproj", "{543705ED-F464-4739-A2A8-ACC9E4A5A467}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Test", "Test\Test.vcxproj", "{6BA7ECB2-BA8D-4113-B078-3ED9055015CC}"
+	ProjectSection(ProjectDependencies) = postProject
+		{543705ED-F464-4739-A2A8-ACC9E4A5A467} = {543705ED-F464-4739-A2A8-ACC9E4A5A467}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -24,18 +17,6 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Debug|x64.ActiveCfg = Debug|x64
-		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Debug|x64.Build.0 = Debug|x64
-		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Profile|x64.ActiveCfg = Profile|x64
-		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Profile|x64.Build.0 = Profile|x64
-		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x64.ActiveCfg = Release|x64
-		{3BE8FF0D-349C-4AE9-BCE5-D7BDE422307D}.Release|x64.Build.0 = Release|x64
-		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Debug|x64.ActiveCfg = Debug|x64
-		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Debug|x64.Build.0 = Debug|x64
-		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Profile|x64.ActiveCfg = Profile|x64
-		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Profile|x64.Build.0 = Profile|x64
-		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Release|x64.ActiveCfg = Release|x64
-		{753860C3-745E-4052-B400-7D6B7F31EF4F}.Release|x64.Build.0 = Release|x64
 		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Debug|x64.ActiveCfg = Debug|x64
 		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Debug|x64.Build.0 = Debug|x64
 		{543705ED-F464-4739-A2A8-ACC9E4A5A467}.Profile|x64.ActiveCfg = Profile|x64

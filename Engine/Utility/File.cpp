@@ -5,10 +5,10 @@
 #include <fstream>
 #include <algorithm>
 
-CFile::CFile( const char* FileLocation )
+CFile::CFile( const char* FileLocationIn )
 {
 	Data = nullptr;
-	Location = FileLocation;
+	FileLocation = FileLocationIn;
 	Binary = false;
 
 	FileExtension = FileLocation;
@@ -43,11 +43,11 @@ bool CFile::Load( bool InBinary )
 	
 	if( Binary )
 	{
-		FileStream.open( Location.c_str(), std::ios::in | std::ios::binary );
+		FileStream.open( FileLocation.c_str(), std::ios::in | std::ios::binary );
 	}
 	else
 	{
-		FileStream.open( Location.c_str(), std::ios::in );
+		FileStream.open( FileLocation.c_str(), std::ios::in );
 	}
 	
 	if( !FileStream.fail() )
@@ -74,7 +74,7 @@ bool CFile::Load( bool InBinary )
 		return true;
 	}
 
-	Log::Event( Log::Warning, "Failed to load file \"%s\".\n", Location.c_str() );
+	Log::Event( Log::Warning, "Failed to load file \"%s\".\n", FileLocation.c_str() );
 
 	return false;
 }
@@ -112,11 +112,11 @@ bool CFile::Save()
 
 		if( Binary )
 		{
-			FileStream.open( Location.c_str(), std::ios::out | std::ios::binary );
+			FileStream.open( FileLocation.c_str(), std::ios::out | std::ios::binary );
 		}
 		else
 		{
-			FileStream.open( Location.c_str(), std::ios::out );
+			FileStream.open( FileLocation.c_str(), std::ios::out );
 		}
 
 		if( !FileStream.fail() )
@@ -136,14 +136,14 @@ bool CFile::Save()
 		}
 	}
 
-	Log::Event( "Failed to save file \"%s\".\n", Location.c_str() );
+	Log::Event( "Failed to save file \"%s\".\n", FileLocation.c_str() );
 
 	return false;
 }
 
 bool CFile::Exists()
 {
-	return Exists( Location.c_str() );
+	return Exists( FileLocation.c_str() );
 }
 
 bool CFile::Exists( const char* FileLocation )

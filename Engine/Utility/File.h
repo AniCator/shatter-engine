@@ -23,7 +23,12 @@ public:
 	bool Exists();
 	static bool Exists( const char* FileLocation );
 
-	const std::string Extension()
+	const std::string Location() const
+	{
+		return FileLocation;
+	}
+
+	const std::string Extension() const
 	{
 		return FileExtension;
 	}
@@ -45,14 +50,14 @@ public:
 
 		if( !Data.Valid() )
 		{
-			Log::Event( Log::Warning, "Couldn't extract data from \"%s\", possible format mismatch.\n", Location.c_str() );
+			Log::Event( Log::Warning, "Couldn't extract data from \"%s\", possible format mismatch.\n", FileLocation.c_str() );
 		}
 	}
 
 private:
 	char* Data;
 	size_t FileSize;
-	std::string Location;
+	std::string FileLocation;
 	std::string FileExtension;
 	bool Binary;
 };

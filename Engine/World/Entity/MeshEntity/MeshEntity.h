@@ -24,7 +24,7 @@ public:
 
 	virtual const FTransform& GetTransform() const { return Transform; };
 
-private:
+public:
 	CMesh* Mesh;
 	CShader* Shader;
 	CTexture* Texture;

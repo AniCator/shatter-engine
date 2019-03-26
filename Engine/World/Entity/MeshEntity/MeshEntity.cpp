@@ -50,7 +50,7 @@ void CMeshEntity::Construct()
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
-		RenderData.Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f ) * 0.4f;
+		RenderData.Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
 		RenderData.Color[3] = 1.0f;
 	}
 }
