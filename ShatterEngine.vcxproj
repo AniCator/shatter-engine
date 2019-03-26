@@ -219,6 +219,7 @@
     <ClCompile Include="Engine\Utility\Script\AngelEngine.cpp" />
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp" />
     <ClCompile Include="Engine\Utility\StringPool.cpp" />
+    <ClCompile Include="Engine\Utility\Structures\JSON.cpp" />
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Engine\World\Entity\Entity.cpp" />
     <ClCompile Include="Engine\World\Entity\MeshEntity\MeshEntity.cpp" />
@@ -268,6 +269,7 @@
     <ClInclude Include="Engine\Utility\Service\Service.h" />
     <ClInclude Include="Engine\Utility\Service\ServiceRegistry.h" />
     <ClInclude Include="Engine\Utility\StringPool.h" />
+    <ClInclude Include="Engine\Utility\Structures\JSON.h" />
     <ClInclude Include="Engine\Utility\Structures\KeyValue.h" />
     <ClInclude Include="Engine\Utility\Structures\SpatialGrid.h" />
     <ClInclude Include="Engine\Utility\Test.h" />

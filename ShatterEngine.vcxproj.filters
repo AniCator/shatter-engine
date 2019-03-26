@@ -206,6 +206,9 @@
     <ClCompile Include="Engine\World\Entity\MeshEntity\MeshEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\MeshEntity</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\Structures\JSON.cpp">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
@@ -372,6 +375,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\angelscript\include\angelscript.h">
       <Filter>Source Files\ThirdParty\angelscript</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\JSON.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
