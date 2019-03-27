@@ -3,6 +3,9 @@
 
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
+#include <Engine/Resource/Assets.h>
+
+static CEntityFactory<CMeshEntity> Factory("static_model");
 
 CMeshEntity::CMeshEntity()
 {
@@ -67,4 +70,59 @@ void CMeshEntity::Tick()
 void CMeshEntity::Destroy()
 {
 
+}
+
+void CMeshEntity::Load( const JSON::Vector& Objects )
+{
+	CAssets& Assets = CAssets::Get();
+
+	CMesh* Mesh = nullptr;
+	CShader* Shader = nullptr;
+	CTexture* Texture = nullptr;
+	glm::vec3 Position;
+	glm::vec3 Orientation;
+	glm::vec3 Size;
+
+	for( auto Property : Objects )
+	{
+		if( Property->Key == "mesh" )
+		{
+			Mesh = Assets.FindMesh( Property->Value );
+		}
+		else if( Property->Key == "shader" )
+		{
+			Shader = Assets.FindShader( Property->Value );
+		}
+		else if( Property->Key == "texture" )
+		{
+			Texture = Assets.FindTexture( Property->Value );
+		}
+		else if( Property->Key == "position" )
+		{
+			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
+			if( Coordinates.size() == 3 )
+			{
+				Position = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
+			}
+		}
+		else if( Property->Key == "rotation" )
+		{
+			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
+			if( Coordinates.size() == 3 )
+			{
+				Orientation = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
+			}
+		}
+		else if( Property->Key == "scale" )
+		{
+			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
+			if( Coordinates.size() == 3 )
+			{
+				Size = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
+			}
+		}
+	}
+
+	FTransform Transform( Position, Orientation, Size );
+	Spawn( Mesh, Shader, Texture, Transform );
 }

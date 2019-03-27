@@ -26,6 +26,21 @@ public:
 		return dynamic_cast<T*>(Entities.back());
 	}
 
+	CEntity* Spawn(std::string Type)
+	{
+		CEntity* Entity = CEntityMap::Get().Find( Type )( );
+		if( Entity )
+		{
+			Entities.push_back( Entity );
+		}
+		else
+		{
+			Log::Event( Log::Warning, "Unknown entity type requested \"%s\".\n", Type.c_str() );
+		}
+
+		return Entity;
+	}
+
 	void Load( const CFile& File );
 	std::vector<CEntity*>& GetEntities() { return Entities; };
 

@@ -120,75 +120,26 @@ void CLevel::Load( const CFile& File )
 				{
 					if( Object->Key == "entities" )
 					{
-						CMeshEntity* MeshEntity = nullptr;
-						for( auto Entity : Object->Objects )
+						CEntity* Entity = nullptr;
+						for( auto EntityObject : Object->Objects )
 						{
 							// Pass 1: Figure out type.
-							for( auto Property : Entity->Objects )
+							for( auto Property : EntityObject->Objects )
 							{
 								if( Property->Key == "type" )
 								{
 									if( Property->Value == "static_model" )
 									{
-										MeshEntity = Spawn<CMeshEntity>();
+										Entity = Spawn( Property->Value );
 										break;
 									}
 								}
 							}
 
 							// Pass 2: Fill data.
-							if( MeshEntity )
+							if( Entity )
 							{
-								CMesh* Mesh = nullptr;
-								CShader* Shader = nullptr;
-								CTexture* Texture = nullptr;
-								glm::vec3 Position;
-								glm::vec3 Orientation;
-								glm::vec3 Size;
-
-								for( auto Property : Entity->Objects )
-								{
-									if( Property->Key == "mesh" )
-									{
-										Mesh = Assets.FindMesh( Property->Value );
-									}
-									else if( Property->Key == "shader" )
-									{
-										Shader = Assets.FindShader( Property->Value );
-									}
-									else if( Property->Key == "texture" )
-									{
-										Texture = Assets.FindTexture( Property->Value );
-									}
-									else if( Property->Key == "position" )
-									{
-										const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-										if( Coordinates.size() == 3 )
-										{
-											Position = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
-										}
-									}
-									else if( Property->Key == "rotation" )
-									{
-										const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-										if( Coordinates.size() == 3 )
-										{
-											Orientation = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
-										}
-									}
-									else if( Property->Key == "scale" )
-									{
-										const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-										if( Coordinates.size() == 3 )
-										{
-											Size = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
-										}
-									}
-								}
-
-								FTransform Transform( Position, Orientation, Size );
-
-								MeshEntity->Spawn( Mesh, Shader, Texture, Transform );
+								Entity->Load( EntityObject->Objects );
 							}
 						}
 

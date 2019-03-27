@@ -14,15 +14,16 @@ class CMeshEntity : public CEntity
 public:
 	CMeshEntity();
 	CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform );
-	virtual ~CMeshEntity();
+	virtual ~CMeshEntity() override;
 
 	void Spawn( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform );
 
-	virtual void Construct();
-	virtual void Tick();
-	virtual void Destroy();
+	virtual void Construct() override;
+	virtual void Tick() override;
+	virtual void Destroy() override;
 
 	virtual const FTransform& GetTransform() const { return Transform; };
+	virtual void Load( const JSON::Vector& Objects ) override;
 
 public:
 	CMesh* Mesh;
