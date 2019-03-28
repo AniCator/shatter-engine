@@ -6,6 +6,7 @@
 
 namespace Presence
 {
+	bool Initialized = false;
 	void Initialize( std::string ApplicationID )
 	{
 #if defined(DiscordPresence)
@@ -13,6 +14,8 @@ namespace Presence
 		memset( &Handlers, 0, sizeof( Handlers ) );
 
 		Discord_Initialize( ApplicationID.c_str(), &Handlers, 1, nullptr );
+
+		Initialized = true;
 #else
 		Log::Event( Log::Warning, "Discord presence is disabled for debug builds.\n" );
 #endif
@@ -21,22 +24,28 @@ namespace Presence
 	void Update( const char* State, const char* Details, const char* ImageKey )
 	{
 #if defined(DiscordPresence)
-		DiscordRichPresence Presence;
-		memset( &Presence, 0, sizeof( Presence ) );
-		Presence.state = State;
-		Presence.details = Details;
-		Presence.largeImageKey = ImageKey;
-		Discord_UpdatePresence( &Presence );
+		if( Initialized )
+		{
+			DiscordRichPresence Presence;
+			memset( &Presence, 0, sizeof( Presence ) );
+			Presence.state = State;
+			Presence.details = Details;
+			Presence.largeImageKey = ImageKey;
+			Discord_UpdatePresence( &Presence );
+		}
 #endif
 	}
 
 	void Shutdown()
 	{
 #if defined(DiscordPresence)
+		if( Initialized )
+		{
 #ifdef DISCORD_DISABLE_IO_THREAD
-		Discord_UpdateConnection();
+			Discord_UpdateConnection();
 #endif
-		Discord_RunCallbacks();
+			Discord_RunCallbacks();
 #endif
+		}
 	}
 }
