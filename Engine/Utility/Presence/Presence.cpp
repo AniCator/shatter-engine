@@ -45,7 +45,7 @@ namespace Presence
 			Discord_UpdateConnection();
 #endif
 			Discord_RunCallbacks();
-#endif
 		}
+#endif
 	}
 }
