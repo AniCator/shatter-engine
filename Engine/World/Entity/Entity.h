@@ -8,7 +8,7 @@
 #include <Engine/Utility/Structures/JSON.h>
 
 class CEntity;
-typedef std::function< CEntity*( )> EntityFunction;
+typedef std::function<CEntity*()> EntityFunction;
 typedef std::map<std::string, EntityFunction> EntityMap;
 
 class CEntity
@@ -27,7 +27,7 @@ public:
 class CEntityMap
 {
 public:
-	void Add( const std::string& Type, EntityFunction );
+	void Add( const std::string& Type, EntityFunction Factory );
 	EntityFunction Find( const std::string& Type );
 private:
 	EntityMap Map;
@@ -51,9 +51,7 @@ class CEntityFactory
 public:
 	CEntityFactory( const std::string& Type )
 	{
-		CEntityMap::Get().Add(
-			Type,
-			[] () {return new T(); }
-		);
+		CEntityMap::Get().Add( Type, [] () {return new T(); } );
 	}
+
 };

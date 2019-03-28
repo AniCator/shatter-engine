@@ -5,7 +5,7 @@
 #include <Engine/Display/Window.h>
 #include <Engine/Resource/Assets.h>
 
-static CEntityFactory<CMeshEntity> Factory("static_model");
+static CEntityFactory<CMeshEntity> Factory( "static_model" );
 
 CMeshEntity::CMeshEntity()
 {

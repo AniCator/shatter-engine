@@ -28,7 +28,7 @@ public:
 
 	CEntity* Spawn(std::string Type)
 	{
-		CEntity* Entity = CEntityMap::Get().Find( Type )( );
+		CEntity* Entity = CEntityMap::Get().Find( Type )();
 		if( Entity )
 		{
 			Entities.push_back( Entity );
