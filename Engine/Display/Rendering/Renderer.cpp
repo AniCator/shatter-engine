@@ -209,6 +209,11 @@ void CRenderer::DrawQueuedRenderables()
 	Profiler.AddDebugMessage( "MouseScreenSpaceY", PositionYString );
 }
 
+const CCamera& CRenderer::GetCamera() const
+{
+	return Camera;
+}
+
 void CRenderer::SetCamera( CCamera& CameraIn )
 {
 	Camera = CameraIn;

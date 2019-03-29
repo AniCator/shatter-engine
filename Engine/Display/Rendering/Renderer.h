@@ -25,6 +25,7 @@ public:
 	void QueueDynamicRenderable( CRenderable* Renderable );
 	void DrawQueuedRenderables();
 
+	const CCamera& GetCamera() const;
 	void SetCamera( CCamera& CameraIn );
 	void SetViewport( int& Width, int& Height );
 
