@@ -54,6 +54,8 @@ void CLevel::Load( const CFile& File )
 	size_t Pass = 0;
 	while( Pass < 2 )
 	{
+		bool AssetsFound = false;
+		bool EntitiesFound = false;
 		for( auto Object : JSON.Tree )
 		{
 			if( Object )
@@ -64,6 +66,8 @@ void CLevel::Load( const CFile& File )
 					{
 						for( auto Asset : Object->Objects )
 						{
+							AssetsFound = true;
+
 							bool Mesh = false;
 							bool Shader = false;
 							bool Texture = false;
@@ -120,6 +124,7 @@ void CLevel::Load( const CFile& File )
 				{
 					if( Object->Key == "entities" )
 					{
+						EntitiesFound = true;
 						CEntity* Entity = nullptr;
 						for( auto EntityObject : Object->Objects )
 						{
@@ -128,11 +133,8 @@ void CLevel::Load( const CFile& File )
 							{
 								if( Property->Key == "type" )
 								{
-									if( Property->Value == "static_model" )
-									{
-										Entity = Spawn( Property->Value );
-										break;
-									}
+									Entity = Spawn( Property->Value );
+									break;
 								}
 							}
 
@@ -140,6 +142,7 @@ void CLevel::Load( const CFile& File )
 							if( Entity )
 							{
 								Entity->Load( EntityObject->Objects );
+								Entity = nullptr;
 							}
 						}
 
@@ -147,6 +150,16 @@ void CLevel::Load( const CFile& File )
 					}
 				}
 			}
+		}
+
+		// In case the file doesn't contain any asset or entity references, increment the pass counter.
+		if( Pass == 0 && !AssetsFound )
+		{
+			Pass++;
+		}
+		else if( Pass == 1 && !EntitiesFound )
+		{
+			Pass++;
 		}
 	}
 }
