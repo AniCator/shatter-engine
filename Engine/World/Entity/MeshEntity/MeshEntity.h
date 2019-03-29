@@ -16,7 +16,7 @@ public:
 	CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform );
 	virtual ~CMeshEntity() override;
 
-	void Spawn( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform );
+	virtual void Spawn( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform );
 
 	virtual void Construct() override;
 	virtual void Tick() override;
@@ -32,4 +32,5 @@ public:
 	CRenderable* Renderable;
 
 	FTransform Transform;
+	glm::vec4 Color;
 };

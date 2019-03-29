@@ -14,6 +14,8 @@ CMeshEntity::CMeshEntity()
 	Texture = nullptr;
 	Transform = FTransform();
 	Renderable = nullptr;
+
+	Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
 }
 
 CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CEntity()
@@ -53,8 +55,7 @@ void CMeshEntity::Construct()
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
-		RenderData.Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
-		RenderData.Color[3] = 1.0f;
+		RenderData.Color = Color;
 	}
 }
 
@@ -119,6 +120,18 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 			if( Coordinates.size() == 3 )
 			{
 				Size = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
+			}
+		}
+		else if( Property->Key == "color" )
+		{
+			const std::vector<float>& Components = ExtractTokensFloat( Property->Value, ' ', 4 );
+			if( Components.size() == 3 )
+			{
+				Color = glm::vec4( Components[0], Components[1], Components[2], 1.0f );
+			}
+			else if( Components.size() == 4 )
+			{
+				Color = glm::vec4( Components[0], Components[1], Components[2], Components[3] );
 			}
 		}
 	}
