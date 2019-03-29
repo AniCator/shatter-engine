@@ -90,6 +90,11 @@ void CCamera::SetCameraUpVector( const glm::vec3& CameraUpVector )
 	Update();
 }
 
+const glm::vec3& CCamera::GetCameraPosition() const
+{
+	return CameraSetup.CameraPosition;
+}
+
 const glm::mat4& CCamera::GetProjectionMatrix() const
 {
 	return ProjectionMatrix;
