@@ -6,6 +6,7 @@
 namespace Presence
 {
 	void Initialize( std::string ApplicationID );
+	void Tick();
 	void Update( const char* State, const char* Details, const char* ImageKey );
 	void Shutdown();
 };
