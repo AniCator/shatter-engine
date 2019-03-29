@@ -31,28 +31,28 @@ void CCamera::Update()
 	ProjectionViewInverseMatrix = glm::inverse( ProjectionMatrix * ViewMatrix );
 }
 
-void CCamera::SetFieldOfView( float& FieldOfView )
+void CCamera::SetFieldOfView( const float& FieldOfView )
 {
 	CameraSetup.FieldOfView = FieldOfView;
 
 	Update();
 }
 
-void CCamera::SetAspectRatio( float& AspectRatio )
+void CCamera::SetAspectRatio( const float& AspectRatio )
 {
 	CameraSetup.AspectRatio = AspectRatio;
 
 	Update();
 }
 
-void CCamera::SetNearPlaneDistance( float& NearPlaneDistance )
+void CCamera::SetNearPlaneDistance( const float& NearPlaneDistance )
 {
 	CameraSetup.NearPlaneDistance = NearPlaneDistance;
 
 	Update();
 }
 
-void CCamera::SetFarPlaneDistance( float& FarPlaneDistance )
+void CCamera::SetFarPlaneDistance( const float& FarPlaneDistance )
 {
 	CameraSetup.FarPlaneDistance = FarPlaneDistance;
 

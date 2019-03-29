@@ -37,10 +37,10 @@ public:
 
 	void Update();
 
-	void SetFieldOfView( float& FieldOfView );
-	void SetAspectRatio( float& AspectRatio);
-	void SetNearPlaneDistance( float& NearPlaneDistance );
-	void SetFarPlaneDistance( float& FarPlaneDistance );
+	void SetFieldOfView( const float& FieldOfView );
+	void SetAspectRatio( const float& AspectRatio);
+	void SetNearPlaneDistance( const float& NearPlaneDistance );
+	void SetFarPlaneDistance( const float& FarPlaneDistance );
 	void SetCameraPosition( const glm::vec3& CameraPosition );
 	void SetCameraDirection( const glm::vec3& CameraDirection );
 	void SetCameraOrientation( const glm::vec3& CameraOrientation );
