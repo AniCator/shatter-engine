@@ -25,6 +25,8 @@ public:
 	void QueueDynamicRenderable( CRenderable* Renderable );
 	void DrawQueuedRenderables();
 
+	void SetUniformBuffer( const std::string& Name, const glm::vec4& Value );
+
 	const CCamera& GetCamera() const;
 	void SetCamera( CCamera& CameraIn );
 	void SetViewport( int& Width, int& Height );
@@ -40,6 +42,7 @@ protected:
 private:
 	std::vector<CRenderable*> Renderables;
 	std::vector<CRenderable*> DynamicRenderables;
+	std::unordered_map<std::string, glm::vec4> GlobalUniformBuffers;
 
 	CCamera Camera;
 	

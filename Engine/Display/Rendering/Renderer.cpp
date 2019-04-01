@@ -26,12 +26,12 @@
 #include "Renderable.h"
 #include "Camera.h"
 
-static const size_t nRenderableCapacity = 4096;
+static const size_t RenderableCapacity = 4096;
 
 CRenderer::CRenderer()
 {
-	Renderables.reserve( nRenderableCapacity );
-	DynamicRenderables.reserve( nRenderableCapacity );
+	Renderables.reserve( RenderableCapacity );
+	DynamicRenderables.reserve( RenderableCapacity );
 	ForceWireFrame = false;
 }
 
@@ -39,6 +39,7 @@ CRenderer::~CRenderer()
 {
 	Renderables.clear();
 	DynamicRenderables.clear();
+	GlobalUniformBuffers.clear();
 }
 
 void CRenderer::Initialize()
@@ -67,6 +68,8 @@ void CRenderer::Initialize()
 	MeshBuilder::Cone( Pyramid, 1.0f, 4 );
 
 	Assets.CreateNamedMesh( "pyramid", Pyramid );
+
+	GlobalUniformBuffers.clear();
 }
 
 void CRenderer::RefreshFrame()
@@ -157,6 +160,12 @@ void CRenderer::DrawQueuedRenderables()
 			glUniform1fv( TimeLocation, 1, &Time );
 		}
 
+		for( auto& UniformBuffer : GlobalUniformBuffers )
+		{
+			GLuint UniformBufferLocation = glGetUniformLocation( RenderData.ShaderProgram, UniformBuffer.first.c_str() );
+			glUniform4fv( UniformBufferLocation, 1, glm::value_ptr( UniformBuffer.second ) );
+		}
+
 		Renderable->Draw( PreviousRenderData );
 		PreviousRenderData = RenderData;
 	};
@@ -207,6 +216,11 @@ void CRenderer::DrawQueuedRenderables()
 
 	Profiler.AddDebugMessage( "MouseScreenSpaceX", PositionXString );
 	Profiler.AddDebugMessage( "MouseScreenSpaceY", PositionYString );
+}
+
+void CRenderer::SetUniformBuffer( const std::string& Name, const glm::vec4& Value )
+{
+	GlobalUniformBuffers.insert_or_assign( Name, Value );
 }
 
 const CCamera& CRenderer::GetCamera() const
