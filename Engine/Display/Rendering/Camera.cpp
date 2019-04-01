@@ -78,7 +78,10 @@ void CCamera::SetCameraOrientation( const glm::vec3& CameraOrientation )
 	this->CameraOrientation = CameraOrientation;
 	this->CameraQuaternion = glm::quat( CameraOrientation );
 
-	CameraSetup.CameraDirection = glm::rotate( CameraQuaternion, glm::vec4( this->CameraOrientation, 1.0f ) );
+	CameraSetup.CameraDirection[1] = cos( glm::radians( CameraOrientation[0] ) ) * cos( glm::radians( CameraOrientation[1] ) );
+	CameraSetup.CameraDirection[2] = sin( glm::radians( CameraOrientation[0] ) );
+	CameraSetup.CameraDirection[0] = cos( glm::radians( CameraOrientation[0] ) ) * sin( glm::radians( CameraOrientation[1] ) );
+	CameraSetup.CameraDirection = glm::normalize( CameraSetup.CameraDirection );
 
 	Update();
 }

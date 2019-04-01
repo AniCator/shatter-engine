@@ -53,6 +53,8 @@ public:
 	const glm::mat4& GetViewProjectionInverse() const;
 
 	FCameraSetup& GetCameraSetup();
+
+	glm::vec3 CameraOrientation;
 private:
 	FCameraSetup CameraSetup;
 	FFrustum Frustum;
@@ -62,6 +64,5 @@ private:
 
 	glm::mat4 ProjectionViewInverseMatrix;
 
-	glm::vec3 CameraOrientation;
 	glm::quat CameraQuaternion;
 };
