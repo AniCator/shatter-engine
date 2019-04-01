@@ -26,11 +26,12 @@ public:
 		return dynamic_cast<T*>(Entities.back());
 	}
 
-	CEntity* Spawn(std::string Type)
+	CEntity* Spawn( const std::string& Type, const std::string& Name )
 	{
-		CEntity* Entity = CEntityMap::Get().Find( Type )();
+		CEntity* Entity = CEntityMap::Get().Find( Type )( );
 		if( Entity )
 		{
+			Entity->Name = Name;
 			Entities.push_back( Entity );
 		}
 		else
@@ -41,8 +42,16 @@ public:
 		return Entity;
 	}
 
+	CEntity* Spawn( const std::string& Type )
+	{
+		static size_t EntityID = 0;
+		return Spawn( Type, std::to_string( EntityID++ ) );
+	}
+
 	void Load( const CFile& File );
-	std::vector<CEntity*>& GetEntities() { return Entities; };
+	const std::vector<CEntity*>& GetEntities() const { return Entities; };
+
+	CEntity* Find( std::string Name ) const;
 
 private:
 	std::vector<CEntity*> Entities;

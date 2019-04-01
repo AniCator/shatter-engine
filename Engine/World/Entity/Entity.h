@@ -22,6 +22,8 @@ public:
 	virtual void Destroy() {};
 
 	virtual void Load( const JSON::Vector& Objects ) {};
+
+	std::string Name;
 };
 
 class CEntityMap

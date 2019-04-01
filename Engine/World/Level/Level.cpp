@@ -125,24 +125,64 @@ void CLevel::Load( const CFile& File )
 					if( Object->Key == "entities" )
 					{
 						EntitiesFound = true;
-						CEntity* Entity = nullptr;
+
+						struct EntityObjectLink
+						{
+							CEntity* Entity = nullptr;
+							JSON::Object* Object = nullptr;
+						};
+						std::vector<EntityObjectLink> EntityObjectLinks;
+						EntityObjectLinks.reserve( Object->Objects.size() );
+
+						// Pass 1: Determine type and spawn relevant entities.
 						for( auto EntityObject : Object->Objects )
 						{
-							// Pass 1: Figure out type.
+							EntityObjectLink Link;
+							Link.Object = EntityObject;
+
+							bool FoundClass = false;
+							bool FoundName = false;
+							std::string ClassName = "";
+							std::string EntityName = "";
+
 							for( auto Property : EntityObject->Objects )
 							{
+								if( FoundClass && FoundName )
+									break;
+
 								if( Property->Key == "type" )
 								{
-									Entity = Spawn( Property->Value );
-									break;
+									ClassName = Property->Value;
+									FoundClass = true;
+								}
+								else if( Property->Key == "name" )
+								{
+									EntityName = Property->Value;
+									FoundName = true;
 								}
 							}
 
-							// Pass 2: Fill data.
-							if( Entity )
+							if( FoundClass )
 							{
-								Entity->Load( EntityObject->Objects );
-								Entity = nullptr;
+								if( FoundName )
+								{
+									Link.Entity = Spawn( ClassName, EntityName );
+								}
+								else
+								{
+									Link.Entity = Spawn( ClassName );
+								}
+
+								EntityObjectLinks.emplace_back( Link );
+							}
+						}
+
+						// Pass 2: Load and configure entities.
+						for( auto Link : EntityObjectLinks )
+						{
+							if( Link.Entity && Link.Object )
+							{
+								Link.Entity->Load( Link.Object->Objects );
 							}
 						}
 
@@ -162,6 +202,19 @@ void CLevel::Load( const CFile& File )
 			Pass++;
 		}
 	}
+}
+
+CEntity* CLevel::Find( std::string Name ) const
+{
+	for( auto Entity : Entities )
+	{
+		if( Entity && Entity->Name == Name )
+		{
+			return Entity;
+		}
+	}
+
+	return nullptr;
 }
 
 CData& operator<<( CData& Data, CLevel& Level )
