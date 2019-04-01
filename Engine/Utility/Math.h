@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <math.h>
+
 #include <ThirdParty/glm/glm.hpp>
 #include <ThirdParty/glm/gtc/matrix_transform.hpp>
 #include <ThirdParty/glm/gtx/quaternion.hpp>
@@ -103,20 +105,18 @@ public:
 private:
 	void Update()
 	{
-		TransformMatrix = IdentityMatrix;
-
-		TransformMatrix = glm::translate( TransformMatrix, Position );
-
 		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
 		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
 		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
 
-		const glm::quat ModelQuaternion = glm::quat( Orientation );
-		RotationMatrix = glm::toMat4( ModelQuaternion );
+		glm::mat4 ScaleMatrix = glm::scale( IdentityMatrix, Size );
+		
+		glm::quat Quaternion = glm::quat( Orientation );
+		RotationMatrix = glm::toMat4( Quaternion );
 
-		TransformMatrix *= RotationMatrix;
+		TransformMatrix = glm::translate( IdentityMatrix, Position );
 
-		TransformMatrix = glm::scale( TransformMatrix, Size );
+		TransformMatrix = TransformMatrix * RotationMatrix * ScaleMatrix;
 	}
 
 	glm::mat4 RotationMatrix;
@@ -129,6 +129,20 @@ private:
 
 namespace Math
 {
+	static const float Pi = glm::pi<float>();
+	static const float Pi2 = Pi * 2.0f;
+
+	inline glm::vec3 EulerToDirection( const glm::vec3& Euler )
+	{
+		glm::vec3 Direction;
+		Direction[1] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[1] ) );
+		Direction[2] = sin( glm::radians( Euler[0] ) );
+		Direction[0] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[1] ) );
+		Direction = glm::normalize( Direction );
+
+		return Direction;
+	}
+
 	inline float Length( const glm::vec2& Vector )
 	{
 		return sqrtf( Vector[0] * Vector[0] + Vector[1] * Vector[1] );
