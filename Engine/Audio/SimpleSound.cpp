@@ -125,6 +125,16 @@ bool CSimpleSound::Playing( MusicHandle Handle )
 	return Streams[Handle.Handle].Stream->getStatus() == sf::SoundSource::Status::Playing;
 }
 
+void CSimpleSound::Volume( SoundHandle Handle, const float Volume )
+{
+	Sounds[Handle.Handle]->setVolume( Volume );
+}
+
+void CSimpleSound::Volume( MusicHandle Handle, const float Volume )
+{
+	Streams[Handle.Handle].Stream->setVolume( Volume );
+}
+
 void CSimpleSound::Tick()
 {
 	const float CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );

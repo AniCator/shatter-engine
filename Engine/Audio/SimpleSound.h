@@ -53,6 +53,9 @@ public:
 	static bool Playing( SoundHandle Handle );
 	static bool Playing( MusicHandle Handle );
 
+	static void Volume( SoundHandle Handle, const float Volume );
+	static void Volume( MusicHandle Handle, const float Volume );
+
 	static void Tick();
 
 	static void Shutdown();
