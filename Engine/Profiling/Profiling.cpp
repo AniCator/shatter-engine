@@ -259,24 +259,24 @@ void CProfiler::Display()
 					const char* DebugMessageBody = DebugMessage.second.c_str();
 					ImGui::Text( "%s: %s", DebugMessageName, DebugMessageBody );
 				}
-
-				DebugMessages.clear();
 			}
 		}
 
 		ImGui::End();
 	}
 	ImGui::PopStyleColor();
-
-	// Clear();
-	TimeCountersFrame.clear();
 }
 
 void CProfiler::Clear()
 {
 	// TimeEntries.clear();
-	TimeCounters.clear();
-	// DebugMessages.clear();
+	// TimeCounters.clear();
+	DebugMessages.clear();
+}
+
+void CProfiler::ClearFrame()
+{
+	TimeCountersFrame.clear();
 }
 
 bool CProfiler::IsEnabled() const

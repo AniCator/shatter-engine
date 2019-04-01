@@ -32,6 +32,7 @@ public:
 	void AddDebugMessage( const char* NameIn, const char* Body );
 	void Display();
 	void Clear();
+	void ClearFrame();
 
 	bool IsEnabled() const;
 	void SetEnabled( const bool EnabledIn );

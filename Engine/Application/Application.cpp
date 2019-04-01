@@ -306,7 +306,11 @@ void SetTheme( const char* Theme )
 	}
 }
 
+#if defined(_DEBUG)
 static bool DisplayLog = true;
+#else
+static bool DisplayLog = false;
+#endif
 static bool ExportDialog = false;
 static size_t PreviousSize = 0;
 void DebugMenu( CApplication* Application )
@@ -314,18 +318,18 @@ void DebugMenu( CApplication* Application )
 	if( !Application || !GameLayersInstance )
 		return;
 
-	std::vector<IGameLayer*> GameLayers = GameLayersInstance->GetGameLayers();
-	IGameLayer* TopLevelLayer = nullptr;
-
-	if( GameLayers.size() > 0 )
-	{
-		TopLevelLayer = GameLayers[0];
-	}
-
-	if( ImGui::BeginMainMenuBar() )
+	if( Application->ToolsEnabled() && ImGui::BeginMainMenuBar() )
 	{
 		Version Number;
 		
+		std::vector<IGameLayer*> GameLayers = GameLayersInstance->GetGameLayers();
+		IGameLayer* TopLevelLayer = nullptr;
+
+		if( GameLayers.size() > 0 )
+		{
+			TopLevelLayer = GameLayers[0];
+		}
+
 		if( TopLevelLayer )
 		{
 			Number = TopLevelLayer->GetVersion();
@@ -566,74 +570,81 @@ void CApplication::Run()
 
 	CTimer InputTimer( false );
 	CTimer GameTimer( false );
+	CTimer RenderTimer( false );
 
 	InputTimer.Start();
 	GameTimer.Start();
+	RenderTimer.Start();
 
-	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps", 60 );
+	const int FPSLimit = CConfiguration::Get().GetInteger( "fps", 300 );
+
 	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
+	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps", 60 );
 
 	while( !MainWindow.ShouldClose() )
 	{
 		if( RestartLayers )
 			InputRestartGameLayers( this );
 
-		MainWindow.BeginFrame();
-		CTimerScope Scope_( "Frametime", false );
-
-		const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
-		if( InputDeltaTime >= MaximumInputTime )
+		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
+		if( RenderDeltaTime >= MaximumFrameTime || FPSLimit < 1 )
 		{
-			MainWindow.ProcessInput();
+			CTimerScope Scope_( "Frametime", false );
+			MainWindow.BeginFrame();
 
-			InputTimer.Start();
-		}
-
-		const float TimeScale = ScaleTime ? 0.25f : 1.0f;
-
-		const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
-		if( GameDeltaTime >= MaximumGameTime )
-		{
-			if( !PauseGame )
+			const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
+			if( InputDeltaTime >= MaximumInputTime )
 			{
-				Renderer.RefreshFrame();
+				MainWindow.ProcessInput();
 
-				const float TimeScaleParameter = CConfiguration::Get().GetFloat( "timescale", 1.0f );
-				const float TimeScaleGlobal = TimeScale * TimeScaleParameter;
-				ScaledGameTime += GameDeltaTime * 0.001f * TimeScaleGlobal;
+				InputTimer.Start();
+			}
 
-				// Update time
-				GameLayersInstance->Time( ScaledGameTime );
-				GameLayersInstance->SetTimeScale( TimeScaleGlobal );
+			const float TimeScale = ScaleTime ? 0.25f : 1.0f;
 
-				// Tick all game layers
-				GameLayersInstance->Tick();
+			const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
+			if( GameDeltaTime >= MaximumGameTime )
+			{
+				if( !PauseGame )
+				{
+					CProfiler::Get().Clear();
+					Renderer.RefreshFrame();
 
-				CAngelEngine::Get().Tick();
+					const float TimeScaleParameter = CConfiguration::Get().GetFloat( "timescale", 1.0f );
+					const float TimeScaleGlobal = TimeScale * TimeScaleParameter;
+					ScaledGameTime += GameDeltaTime * 0.001f * TimeScaleGlobal;
 
+					// Update time
+					GameLayersInstance->Time( ScaledGameTime );
+					GameLayersInstance->SetTimeScale( TimeScaleGlobal );
+
+					// Tick all game layers
+					GameLayersInstance->Tick();
+
+					CAngelEngine::Get().Tick();
+
+					GameTimer.Start();
+				}
+			}
+
+			if( PauseGame )
+			{
 				GameTimer.Start();
 			}
-		}
 
-		if( PauseGame )
-		{
-			GameTimer.Start();
-		}
-
-		{
-			GameLayersInstance->Frame();
+			{
+				GameLayersInstance->Frame();
 
 #if defined( IMGUI_ENABLED )
-			if( Tools )
-			{
 				CProfiler::Get().Display();
-
+				CProfiler::Get().ClearFrame();
 				DebugMenu( this );
-			}
 #endif
 
-			MainWindow.RenderFrame();
+				MainWindow.RenderFrame();
+				RenderTimer.Start();
+			}
 		}
 	}
 
@@ -686,6 +697,11 @@ void CApplication::InitializeDefaultInputs()
 
 	Input.AddActionBinding( EKey::L, EAction::Release, [] {
 		DisplayLog = !DisplayLog;
+	} );
+
+	Input.AddActionBinding( EKey::P, EAction::Release, [] {
+		CProfiler& Profiler = CProfiler::Get();
+		Profiler.SetEnabled( !Profiler.IsEnabled() );
 	} );
 
 	Input.AddActionBinding( EKey::NumpadSubtract, EAction::Release, [this] {
