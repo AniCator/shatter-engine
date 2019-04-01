@@ -275,3 +275,9 @@ FFixedPosition2D CInput::GetMousePosition() const
 {
 	return MousePosition;
 }
+
+void CInput::SetMousePosition( const FFixedPosition2D& Position )
+{
+	MousePosition = Position;
+	glfwSetCursorPos( CWindow::Get().Handle(), MousePosition.X, MousePosition.Y );
+}

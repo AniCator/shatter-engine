@@ -300,6 +300,11 @@ namespace InputGLFW
 
 	static const int MouseToCode[EMouse::Maximum]
 	{
+		GLFW_DONT_CARE,
+		GLFW_DONT_CARE,
+		GLFW_DONT_CARE,
+		GLFW_DONT_CARE,
+		GLFW_DONT_CARE,
 		GLFW_MOUSE_BUTTON_LEFT,
 		GLFW_MOUSE_BUTTON_RIGHT,
 		GLFW_MOUSE_BUTTON_MIDDLE,
@@ -324,6 +329,25 @@ namespace InputGLFW
 			case GLFW_MOUSE_BUTTON_7:		return EMouse::MouseButton7;
 			case GLFW_MOUSE_BUTTON_8:		return EMouse::MouseButton8;
 			default:						return EMouse::Unknown;
+		}
+	}
+
+	static const int CursorToCode[ECursor::Maximum]
+	{
+		GLFW_DONT_CARE,
+		GLFW_CURSOR_NORMAL,
+		GLFW_CURSOR_HIDDEN,
+		GLFW_CURSOR_DISABLED,
+	};
+
+	static ECursor CodeToCursor( int Action )
+	{
+		switch( Action )
+		{
+			case GLFW_CURSOR_NORMAL:	return ECursor::Normal;
+			case GLFW_CURSOR_HIDDEN:	return ECursor::Hidden;
+			case GLFW_CURSOR_DISABLED:	return ECursor::Disabled;
+			default:						return ECursor::Unknown;
 		}
 	}
 }

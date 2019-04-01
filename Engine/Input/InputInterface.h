@@ -17,6 +17,18 @@ void InputJoystickStatusCallback( int Joystick, int Event );
 
 struct FFixedPosition2D
 {
+	FFixedPosition2D()
+	{
+		X = 0;
+		Y = 0;
+	}
+
+	FFixedPosition2D( const int32_t& X, const int32_t& Y )
+	{
+		this->X = X;
+		this->Y = Y;
+	}
+
 	int32_t X;
 	int32_t Y;
 };
@@ -66,6 +78,7 @@ public:
 	virtual bool IsKeyDown( int KeyInput ) const = 0;
 	virtual bool IsAnyKeyDown() const = 0;
 	virtual FFixedPosition2D GetMousePosition() const = 0;
+	virtual void SetMousePosition( const FFixedPosition2D& Position ) = 0;
 };
 
 

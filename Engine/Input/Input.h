@@ -7,7 +7,7 @@
 
 static const EKeyType MaximumKeyboardInputs = static_cast<EKeyType>( EKey::Maximum );
 static const int MaximumJoysticks = 16;
-static const int MaximumMouseButtons = 8;
+static const EMouseType MaximumMouseButtons = static_cast<EMouseType>( EMouse::Maximum );
 
 struct FKeyInput
 {
@@ -48,6 +48,7 @@ public:
 	virtual bool IsKeyDown( int KeyInput ) const override;
 	virtual bool IsAnyKeyDown() const override;
 	virtual FFixedPosition2D GetMousePosition() const override;
+	virtual void SetMousePosition( const FFixedPosition2D& Position ) override;
 
 private:
 	std::vector<FActionBinding> ActionBindings;

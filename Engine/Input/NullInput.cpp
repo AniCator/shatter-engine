@@ -71,3 +71,8 @@ FFixedPosition2D CNullInput::GetMousePosition() const
 {
 	return FFixedPosition2D();
 }
+
+void CNullInput::SetMousePosition( const FFixedPosition2D& Position )
+{
+	
+}

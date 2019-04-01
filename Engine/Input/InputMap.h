@@ -191,6 +191,19 @@ enum class EMouse : uint32_t
 
 typedef std::underlying_type<EMouse>::type EMouseType;
 
+enum class ECursor : uint32_t
+{
+	Unknown = 0,
+
+	Normal,
+	Hidden,
+	Disabled,
+
+	Maximum
+};
+
+typedef std::underlying_type<ECursor>::type ECursorType;
+
 enum class EGamepad : uint32_t
 {
 	Unknown = 0,

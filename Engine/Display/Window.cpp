@@ -185,10 +185,10 @@ void CWindow::ProcessInput()
 
 	glfwSetInputMode( WindowHandle, GLFW_CURSOR, ShowCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED );
 
-	if( !ShowCursor )
+	/*if( !ShowCursor )
 	{
 		glfwSetCursorPos( WindowHandle, Width * 0.5, Height * 0.5 );
-	}
+	}*/
 
 	CInputLocator::GetService().Tick();
 }
