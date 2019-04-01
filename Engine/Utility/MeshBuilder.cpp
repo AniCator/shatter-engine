@@ -8,6 +8,12 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Display/Rendering/Mesh.h>
 
+// #define USE_TINYOBJ
+#if defined(USE_TINYOBJ)
+#define TINYOBJLOADER_IMPLEMENTATION
+#include <ThirdParty/tiny_obj_loader.h>
+#endif
+
 static const float Pi = static_cast<float>( acos( -1 ) );
 
 void MeshBuilder::Triangle( FPrimitive& Primitive, const float Radius )
@@ -213,6 +219,102 @@ void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
 	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
 }
 
+#if defined(USE_TINYOBJ)
+void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
+{
+	ProfileBareScope();
+	tinyobj::attrib_t Attributes;
+	std::vector<tinyobj::shape_t> Shapes;
+	std::vector<tinyobj::material_t> Materials;
+
+	std::string ErrorMessage;
+	const bool Success = tinyobj::LoadObj( &Attributes, &Shapes, &Materials, &ErrorMessage, File.Location().c_str() );
+	if( !Success )
+	{
+		Log::Event( Log::Warning, "OBJ import failed: %s.\n", ErrorMessage.c_str() );
+	}
+	else
+	{
+		std::vector<glm::vec3> Vertices;
+		Vertices.reserve( Attributes.vertices.size() );
+		std::vector<glm::vec2> Coordinates;
+		Coordinates.reserve( Attributes.texcoords.size() );
+		std::vector<glm::vec3> Normals;
+		Normals.reserve( Attributes.normals.size() );
+
+		for( size_t Vertex = 0; Vertex < Attributes.vertices.size(); Vertex += 3 )
+		{
+			Vertices.push_back( { Attributes.vertices[Vertex], Attributes.vertices[Vertex + 1], Attributes.vertices[Vertex + 2] } );
+		}
+
+		for( size_t Coordinate = 0; Coordinate < Attributes.texcoords.size(); Coordinate += 2 )
+		{
+			Coordinates.push_back( { Attributes.texcoords[Coordinate], Attributes.texcoords[Coordinate + 1] } );
+		}
+
+		for( size_t Normal = 0; Normal < Attributes.normals.size(); Normal += 3 )
+		{
+			Normals.push_back( { Attributes.normals[Normal], Attributes.normals[Normal + 1], Attributes.normals[Normal + 2] } );
+		}
+
+		std::vector<glm::uint> VertexIndices;
+		std::vector<size_t> CoordinateIndices;
+		std::vector<size_t> NormalIndices;
+
+		for( const auto& Shape : Shapes )
+		{
+			for( const auto& Index : Shape.mesh.indices )
+			{
+				if( Index.vertex_index > -1 )
+					VertexIndices.emplace_back( Index.vertex_index );
+
+				if( Index.texcoord_index > -1)
+					CoordinateIndices.emplace_back( Index.texcoord_index );
+
+				if( Index.normal_index > -1 )
+					NormalIndices.emplace_back( Index.normal_index );
+			}
+		}
+
+		FVertex* VertexArray = new FVertex[Vertices.size()];
+		for( size_t Index = 0; Index < Vertices.size(); Index++ )
+		{
+			VertexArray[Index].Position = Vertices[Index];
+		}
+
+		const bool HasCoordinateIndices = CoordinateIndices.size() == VertexIndices.size();
+		const bool HasNormalIndices = NormalIndices.size() == VertexIndices.size();
+		glm::uint* IndexArray = new glm::uint[VertexIndices.size()];
+		for( size_t Index = 0; Index < VertexIndices.size(); Index++ )
+		{
+			IndexArray[Index] = VertexIndices[Index];
+
+			if( HasCoordinateIndices )
+			{
+				VertexArray[VertexIndices[Index]].TextureCoordinate = Coordinates[CoordinateIndices[Index]];
+			}
+
+			if( HasNormalIndices )
+			{
+				VertexArray[VertexIndices[Index]].Normal = Normals[NormalIndices[Index]];
+			}
+		}
+
+		// glm::mat4 RotationMatrix = glm::rotate( glm::mat4(), 90.0f, glm::vec3( 1, 0, 0 ) );
+		// for( size_t Index = 0; Index < Vertices.size(); Index++ )
+		// {
+		// 	VertexArray[Index].Position = RotationMatrix * glm::vec4( VertexArray[Index].Position, 1.0f);
+		// 	VertexArray[Index].Normal = RotationMatrix * glm::vec4( VertexArray[Index].Normal, 1.0f );
+		// }
+
+		Primitive.HasNormals = Normals.size() > 0;
+		Primitive.Vertices = VertexArray;
+		Primitive.VertexCount = static_cast<uint32_t>( Vertices.size() );
+		Primitive.Indices = IndexArray;
+		Primitive.IndexCount = static_cast<uint32_t>( VertexIndices.size() );
+	}
+}
+#else
 void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 {
 	ProfileBareScope();
@@ -357,6 +459,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 	Primitive.Indices = IndexArray;
 	Primitive.IndexCount = static_cast<uint32_t>( VertexIndices.size() );
 }
+#endif
 
 void MeshBuilder::LM( FPrimitive& Primitive, const CFile& File )
 {
