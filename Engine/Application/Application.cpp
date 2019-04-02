@@ -64,7 +64,10 @@ void InputRestartGameLayers(CApplication* Application)
 	RestartLayers = false;
 
 	if( Application )
+	{
 		Application->InitializeDefaultInputs();
+		Application->UnregisterDebugUI();
+	}
 
 	ScaledGameTime = 0.0f;
 
@@ -408,6 +411,15 @@ void DebugMenu( CApplication* Application )
 			ImGui::EndMenu();
 		}
 
+		if( Application->DebugFunctions() > 0 )
+		{
+			if( ImGui::BeginMenu( "Game" ) )
+			{
+				Application->RenderDebugUI( true );
+				ImGui::EndMenu();
+			}
+		}
+
 		if( ImGui::BeginMenu( "Windows" ) )
 		{
 			CProfiler& Profiler = CProfiler::Get();
@@ -543,6 +555,8 @@ void DebugMenu( CApplication* Application )
 			ImGui::End();
 		}
 	}
+
+	Application->RenderDebugUI( false );
 }
 
 CApplication::CApplication()
@@ -769,6 +783,29 @@ void CApplication::EnableDefaultExit( const bool Enable )
 	DefaultExit = Enable;
 }
 
+void CApplication::RegisterDebugUI( DebugUIFunction Function )
+{
+	DebugUIFunctions.push_back( Function );
+}
+
+void CApplication::RenderDebugUI( const bool Menu )
+{
+	for( auto& DebugUIFunction : DebugUIFunctions )
+	{
+		DebugUIFunction( Menu );
+	}
+}
+
+void CApplication::UnregisterDebugUI()
+{
+	DebugUIFunctions.clear();
+}
+
+const glm::size_t CApplication::DebugFunctions() const
+{
+	return DebugUIFunctions.size();
+}
+
 #if defined(_WIN32)
 #include "Windows.h"
 
@@ -887,6 +924,8 @@ void CApplication::Initialize()
 	{
 		CameraSpeed = CConfiguration::Get().GetFloat( "cameraspeed", 1.0f );
 	}
+
+	UnregisterDebugUI();
 
 	CAngelEngine::Get().Initialize();
 

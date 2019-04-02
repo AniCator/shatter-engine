@@ -1,7 +1,11 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <functional>
+
 #include <Engine/Utility/Service/ServiceRegistry.h>
+
+typedef std::function<void(bool)> DebugUIFunction;
 
 class CApplication
 {
@@ -25,10 +29,17 @@ public:
 	const bool DefaultExitEnabled() const;
 	void EnableDefaultExit( const bool Enable );
 
+	void RegisterDebugUI( DebugUIFunction Function );
+	void RenderDebugUI( const bool Menu );
+	void UnregisterDebugUI();
+	const size_t DebugFunctions() const;
+
 	CServiceRegistry ServiceRegistry;
 
 private:
 	std::string Name;
 	bool Tools;
 	bool DefaultExit;
+
+	std::vector<DebugUIFunction> DebugUIFunctions;
 };
