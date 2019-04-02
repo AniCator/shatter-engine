@@ -32,6 +32,8 @@ public:
 		if( Entity )
 		{
 			Entity->Name = Name;
+			Entity->SetID( Entities.size() );
+			Entity->SetLevel( this );
 			Entities.push_back( Entity );
 		}
 		else
@@ -44,12 +46,12 @@ public:
 
 	CEntity* Spawn( const std::string& Type )
 	{
-		static size_t EntityID = 0;
-		return Spawn( Type, std::to_string( EntityID++ ) );
+		return Spawn( Type, std::to_string( Entities.size() ) );
 	}
 
 	void Load( const CFile& File );
 	const std::vector<CEntity*>& GetEntities() const { return Entities; };
+	void Remove( CEntity* Entity );
 
 	CEntity* Find( std::string Name ) const;
 

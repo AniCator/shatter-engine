@@ -204,6 +204,19 @@ void CLevel::Load( const CFile& File )
 	}
 }
 
+void CLevel::Remove( CEntity* MarkEntity )
+{
+	const size_t ID = MarkEntity->GetID();
+	if( ID < Entities.size() )
+	{
+		if( Entities[ID] )
+		{
+			delete Entities[ID];
+			Entities[ID] = nullptr;
+		}
+	}
+}
+
 CEntity* CLevel::Find( std::string Name ) const
 {
 	for( auto Entity : Entities )

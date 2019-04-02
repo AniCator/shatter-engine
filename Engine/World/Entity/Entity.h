@@ -8,22 +8,56 @@
 #include <Engine/Utility/Structures/JSON.h>
 
 class CEntity;
+class CLevel;
 typedef std::function<CEntity*()> EntityFunction;
 typedef std::map<std::string, EntityFunction> EntityMap;
+
+namespace EntityIOType
+{
+	enum Type
+	{
+		Unknown = 0,
+
+		Float,
+		Integer,
+		Vector,
+		String,
+
+		Maximum
+	};
+}
 
 class CEntity
 {
 public:
-	CEntity() {};
+	CEntity();
 	virtual ~CEntity() {};
 
-	virtual void Construct() {};
+	void SetID( const size_t EntityID );
+	const size_t GetID() const;
+
+	void SetLevel( CLevel* SpawnLevel );
+	CLevel* GetLevel() const;
+
+	virtual void Construct();
 	virtual void Tick() {};
-	virtual void Destroy() {};
+	virtual void Destroy();
 
 	virtual void Load( const JSON::Vector& Objects ) {};
 
 	std::string Name;
+
+	// Entity I/O
+	void Send( const std::string& Entity, const std::string& Name );
+	void Receive( const std::string& Name );
+	void Track( CEntity* Entity );
+
+	// const std::vector<std::string>& GetInputs() const;
+	// const std::vector<std::string>& GetOutputs() const;
+
+private:
+	size_t ID;
+	CLevel* Level;
 };
 
 class CEntityMap
