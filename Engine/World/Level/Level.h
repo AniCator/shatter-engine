@@ -53,7 +53,8 @@ public:
 	const std::vector<CEntity*>& GetEntities() const { return Entities; };
 	void Remove( CEntity* Entity );
 
-	CEntity* Find( std::string Name ) const;
+	CEntity* Find( const std::string& Name ) const;
+	CEntity* Find( const size_t ID ) const;
 
 private:
 	std::vector<CEntity*> Entities;

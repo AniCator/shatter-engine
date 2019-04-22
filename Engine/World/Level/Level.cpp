@@ -217,7 +217,7 @@ void CLevel::Remove( CEntity* MarkEntity )
 	}
 }
 
-CEntity* CLevel::Find( std::string Name ) const
+CEntity* CLevel::Find( const std::string& Name ) const
 {
 	for( auto Entity : Entities )
 	{
@@ -225,6 +225,16 @@ CEntity* CLevel::Find( std::string Name ) const
 		{
 			return Entity;
 		}
+	}
+
+	return nullptr;
+}
+
+CEntity* CLevel::Find( const size_t ID ) const
+{
+	if( ID < Entities.size() )
+	{
+		return Entities[ID];
 	}
 
 	return nullptr;
