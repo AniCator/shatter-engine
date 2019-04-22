@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "JSON.h"
 
+#include <Engine/Profiling/Logging.h>
+
 namespace JSON
 {
 	void PopString( const char*& Token, const char*& Start, const char*& End, size_t& Length )
@@ -30,8 +32,6 @@ namespace JSON
 
 		bool Entry = true;
 		Object* Current = nullptr;
-		Object* PreviousArrayParent = nullptr;
-		Object* PreviousObjectParent = nullptr;
 		Object* Parent = nullptr;
 		while( !Finished )
 		{
@@ -57,7 +57,6 @@ namespace JSON
 							Current->Parent->Objects.push_back( Current );
 						}
 
-						PreviousObjectParent = Parent;
 						Parent = Current;
 					}
 				}
@@ -67,7 +66,10 @@ namespace JSON
 				Depth--;
 				Entry = true;
 
-				Parent = PreviousObjectParent;
+				if( Parent )
+				{
+					Parent = Parent->Parent;
+				}
 
 				if( Depth == 0 && ArrayDepth == 0 )
 				{
@@ -128,7 +130,6 @@ namespace JSON
 				ArrayDepth++;
 				Entry = true;
 
-				PreviousArrayParent = Parent;
 				Parent = Current;
 			}
 			else if( Token[0] == ']' )
@@ -136,7 +137,10 @@ namespace JSON
 				ArrayDepth--;
 				Entry = true;
 
-				Parent = PreviousArrayParent;
+				if( Parent )
+				{
+					Parent = Parent->Parent;
+				}
 			}
 
 			Token++;
