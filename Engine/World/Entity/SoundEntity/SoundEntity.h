@@ -1,0 +1,25 @@
+// Copyright © 2017, Christiaan Bakker, All rights reserved.
+#pragma once
+
+#include <Engine/World/Entity/Entity.h>
+#include <Engine/Utility/Math.h>
+
+class CSoundEntity : public CEntity
+{
+public:
+	CSoundEntity();
+	CSoundEntity( FTransform& Transform );
+	virtual ~CSoundEntity() override;
+
+	virtual void Spawn( FTransform& Transform );
+
+	virtual void Construct() override;
+	virtual void Tick() override;
+	virtual void Destroy() override;
+
+	virtual const FTransform& GetTransform() const { return Transform; };
+	virtual void Load( const JSON::Vector& Objects ) override;
+
+public:
+	FTransform Transform;
+};
