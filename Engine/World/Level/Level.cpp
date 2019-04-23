@@ -71,8 +71,10 @@ void CLevel::Load( const CFile& File )
 							bool Mesh = false;
 							bool Shader = false;
 							bool Texture = false;
+							bool Sound = false;
 							std::string Name = "";
-							std::string Path = "";
+							std::vector<std::string> Paths;
+							Paths.reserve( 10 );
 
 							for( auto Property : Asset->Objects )
 							{
@@ -81,30 +83,51 @@ void CLevel::Load( const CFile& File )
 									Mesh = Property->Value == "mesh";
 									Shader = Property->Value == "shader";
 									Texture = Property->Value == "texture";
+									Sound = Property->Value == "sound";
 								}
 								else if( Property->Key == "name" )
 								{
 									Name = Property->Value;
 								}
-								else if( Property->Key == "path" )
+								else if( Property->Key == "path" && Property->Value.length() > 0 )
 								{
-									Path = Property->Value;
+									Paths.emplace_back( Property->Value );
+								}
+								else if( Property->Key == "paths" )
+								{
+									for( auto Path : Property->Objects )
+									{
+										Paths.emplace_back( Path->Value );
+									}
 								}
 							}
 
-							if( Name.length() > 0 && Path.length() > 0 )
+							if( Name.length() > 0 && Paths.size() > 0 )
 							{
 								if( Mesh )
 								{
-									Assets.CreateNamedMesh( Name.c_str(), Path.c_str() );
+									for( const auto& Path : Paths )
+									{
+										Assets.CreateNamedMesh( Name.c_str(), Path.c_str() );
+									}
 								}
 								else if( Shader )
 								{
-									Assets.CreateNamedShader( Name.c_str(), Path.c_str() );
+									for( const auto& Path : Paths )
+									{
+										Assets.CreateNamedShader( Name.c_str(), Path.c_str() );
+									}
 								}
 								else if( Texture )
 								{
-									Assets.CreatedNamedTexture( Name.c_str(), Path.c_str() );
+									for( const auto& Path : Paths )
+									{
+										Assets.CreatedNamedTexture( Name.c_str(), Path.c_str() );
+									}
+								}
+								else if( Sound )
+								{
+									// 
 								}
 								else
 								{
