@@ -12,6 +12,8 @@ class CLevel;
 typedef std::function<CEntity*()> EntityFunction;
 typedef std::map<std::string, EntityFunction> EntityMap;
 
+typedef std::map<size_t, size_t> MessageMap;
+
 namespace EntityIOType
 {
 	enum Type
@@ -44,6 +46,7 @@ public:
 	virtual void Destroy();
 
 	virtual void Load( const JSON::Vector& Objects ) {};
+	void Link( const JSON::Vector& Objects );
 
 	std::string Name;
 
@@ -52,12 +55,14 @@ public:
 	void Receive( const std::string& Name );
 	void Track( CEntity* Entity );
 
-	// const std::vector<std::string>& GetInputs() const;
+	// static const std::vector<std::string>& Inputs() const;
 	// const std::vector<std::string>& GetOutputs() const;
 
 private:
 	size_t ID;
 	CLevel* Level;
+
+	static std::vector<std::string> InputMap;
 };
 
 class CEntityMap
