@@ -96,6 +96,9 @@
     <Filter Include="Source Files\Engine\World\Entity\MeshEntity">
       <UniqueIdentifier>{94a3dc05-6b31-44e7-ba7c-7cf34644832a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\SoundEntity">
+      <UniqueIdentifier>{fdf7dbdd-5fea-4e21-9a15-be0cae04e926}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -208,6 +211,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\Structures\JSON.cpp">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\SoundEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -378,6 +384,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Structures\JSON.h">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h">
+      <Filter>Source Files\Engine\World\Entity\SoundEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
