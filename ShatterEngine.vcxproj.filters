@@ -99,6 +99,12 @@
     <Filter Include="Source Files\Engine\World\Entity\SoundEntity">
       <UniqueIdentifier>{fdf7dbdd-5fea-4e21-9a15-be0cae04e926}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\Logic">
+      <UniqueIdentifier>{d75f5f3c-b31e-47cd-b40f-af62c832645b}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\Logic\StartEntity">
+      <UniqueIdentifier>{4afe22b0-49b1-48c8-ba04-8e9549d66577}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -214,6 +220,9 @@
     </ClCompile>
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\SoundEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\Logic\StartEntity\StartEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\Logic\StartEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -387,6 +396,9 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h">
       <Filter>Source Files\Engine\World\Entity\SoundEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\Logic\StartEntity\StartEntity.h">
+      <Filter>Source Files\Engine\World\Entity\Logic\StartEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
