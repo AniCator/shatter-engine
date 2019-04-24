@@ -20,6 +20,9 @@ public:
 	virtual const FTransform& GetTransform() const { return Transform; };
 	virtual void Load( const JSON::Vector& Objects ) override;
 
+	void Play();
+	void Stop();
+
 public:
 	FTransform Transform;
 };

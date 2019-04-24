@@ -1,15 +1,15 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "SoundEntity.h"
 
-#include <Engine/Display/Rendering/Renderable.h>
-#include <Engine/Display/Window.h>
-#include <Engine/Resource/Assets.h>
+#include <Engine/Profiling/Logging.h>
 
 static CEntityFactory<CSoundEntity> Factory( "sound" );
 
 CSoundEntity::CSoundEntity()
 {
 	Transform = FTransform();
+
+	Inputs["Play"] = [this] () {this->Play(); };
 }
 
 CSoundEntity::CSoundEntity( FTransform& Transform ) : CEntity()
@@ -44,7 +44,7 @@ void CSoundEntity::Destroy()
 
 void CSoundEntity::Load( const JSON::Vector& Objects )
 {
-	CAssets& Assets = CAssets::Get();
+	// CAssets& Assets = CAssets::Get();
 
 	glm::vec3 Position;
 	glm::vec3 Orientation;
@@ -84,4 +84,14 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 
 	FTransform Transform( Position, Orientation, Size );
 	Spawn( Transform );
+}
+
+void CSoundEntity::Play()
+{
+	Log::Event( "CSoundEntity::Play()\n" );
+}
+
+void CSoundEntity::Stop()
+{
+
 }
