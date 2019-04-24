@@ -44,6 +44,12 @@ void CWorld::Add( FLevel& Level )
 {
 	Levels.push_back( Level );
 	ActiveLevel = &Levels[0].Level;
+
+	auto& Back = Levels.back();
+	for( auto Entity : Back.Level.GetEntities() )
+	{
+		Entity->SetLevel( &Back.Level );
+	}
 }
 
 CData& operator<<( CData& Data, CWorld& World )

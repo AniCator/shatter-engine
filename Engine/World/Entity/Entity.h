@@ -12,8 +12,6 @@ class CLevel;
 typedef std::function<CEntity*()> EntityFunction;
 typedef std::map<std::string, EntityFunction> EntityMap;
 
-typedef std::map<size_t, size_t> MessageMap;
-
 namespace EntityIOType
 {
 	enum Type
@@ -28,6 +26,15 @@ namespace EntityIOType
 		Maximum
 	};
 }
+
+struct FMessage
+{
+	size_t TargetID;
+	std::vector<std::string> Inputs;
+};
+
+typedef std::map<std::string, std::function<void()>> MessageInput;
+typedef std::map<std::string, std::vector<FMessage>> MessageOutput;
 
 class CEntity
 {
@@ -45,24 +52,26 @@ public:
 	virtual void Tick() {};
 	virtual void Destroy();
 
-	virtual void Load( const JSON::Vector& Objects ) {};
+	virtual void Load( const JSON::Vector& Objects );
 	void Link( const JSON::Vector& Objects );
 
 	std::string Name;
 
 	// Entity I/O
-	void Send( const std::string& Entity, const std::string& Name );
-	void Receive( const std::string& Name );
-	void Track( CEntity* Entity );
-
-	// static const std::vector<std::string>& Inputs() const;
-	// const std::vector<std::string>& GetOutputs() const;
+	void Send( const char* Output );
+	void Receive( const char* Input );
+	void Track( const CEntity* Entity );
+	void Unlink( const size_t EntityID );
 
 private:
 	size_t ID;
 	CLevel* Level;
 
-	static std::vector<std::string> InputMap;
+	std::vector<size_t> TrackedEntityIDs;
+	MessageOutput Outputs;
+
+protected:
+	MessageInput Inputs;
 };
 
 class CEntityMap
@@ -70,6 +79,7 @@ class CEntityMap
 public:
 	void Add( const std::string& Type, EntityFunction Factory );
 	EntityFunction Find( const std::string& Type );
+
 private:
 	EntityMap Map;
 
@@ -79,6 +89,7 @@ public:
 		static CEntityMap StaticInstance;
 		return StaticInstance;
 	}
+
 private:
 	CEntityMap() {};
 
@@ -94,5 +105,4 @@ public:
 	{
 		CEntityMap::Get().Add( Type, [] () {return new T(); } );
 	}
-
 };

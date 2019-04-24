@@ -206,6 +206,7 @@ void CLevel::Load( const CFile& File )
 							if( Link.Entity && Link.Object )
 							{
 								Link.Entity->Load( Link.Object->Objects );
+								Link.Entity->Link( Link.Object->Objects );
 							}
 						}
 
