@@ -102,7 +102,7 @@
     <Filter Include="Source Files\Engine\World\Entity\Logic">
       <UniqueIdentifier>{d75f5f3c-b31e-47cd-b40f-af62c832645b}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Engine\World\Entity\Logic\StartEntity">
+    <Filter Include="Source Files\Engine\World\Entity\Logic\LogicStartEntity">
       <UniqueIdentifier>{4afe22b0-49b1-48c8-ba04-8e9549d66577}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
@@ -221,8 +221,8 @@
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\SoundEntity</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\World\Entity\Logic\StartEntity\StartEntity.cpp">
-      <Filter>Source Files\Engine\World\Entity\Logic\StartEntity</Filter>
+    <ClCompile Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\Logic\LogicStartEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -397,8 +397,8 @@
     <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h">
       <Filter>Source Files\Engine\World\Entity\SoundEntity</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\World\Entity\Logic\StartEntity\StartEntity.h">
-      <Filter>Source Files\Engine\World\Entity\Logic\StartEntity</Filter>
+    <ClInclude Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.h">
+      <Filter>Source Files\Engine\World\Entity\Logic\LogicStartEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
