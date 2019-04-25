@@ -3,10 +3,10 @@
 
 #include <Engine/World/Entity/Entity.h>
 
-class CStartEntity : public CEntity
+class CLogicStartEntity : public CEntity
 {
 public:
-	CStartEntity();
+	CLogicStartEntity();
 
 	virtual void Construct() override;
 	virtual void Tick() override;
