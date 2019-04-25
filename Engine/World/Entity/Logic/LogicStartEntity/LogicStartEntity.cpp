@@ -1,5 +1,5 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
-#include "StartEntity.h"
+#include "LogicStartEntity.h"
 
 static CEntityFactory<CLogicStartEntity> Factory( "logic_start" );
 
