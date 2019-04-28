@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Level.h"
 
+#include <Engine/Audio/Sound.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
@@ -75,6 +76,7 @@ void CLevel::Load( const CFile& File )
 							std::string Name = "";
 							std::vector<std::string> Paths;
 							Paths.reserve( 10 );
+							ESoundPlayMode::Type PlayMode = ESoundPlayMode::Sequential;
 
 							for( auto Property : Asset->Objects )
 							{
@@ -97,7 +99,14 @@ void CLevel::Load( const CFile& File )
 								{
 									for( auto Path : Property->Objects )
 									{
-										Paths.emplace_back( Path->Value );
+										Paths.emplace_back( Path->Key );
+									}
+								}
+								else if( Property->Key == "mode" )
+								{
+									if( Property->Value == "random" )
+									{
+										PlayMode = ESoundPlayMode::Random;
 									}
 								}
 							}
@@ -127,7 +136,17 @@ void CLevel::Load( const CFile& File )
 								}
 								else if( Sound )
 								{
-									// 
+									CSound* NewSound = Assets.CreateNamedSound( Name.c_str() );
+									if( NewSound )
+									{
+										NewSound->Clear();
+										NewSound->SetPlayMode( PlayMode );
+
+										for( const auto& Path : Paths )
+										{
+											NewSound->Load( Path.c_str() );
+										}
+									}
 								}
 								else
 								{

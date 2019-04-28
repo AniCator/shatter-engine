@@ -4,6 +4,8 @@
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/Utility/Math.h>
 
+class CSound;
+
 class CSoundEntity : public CEntity
 {
 public:
@@ -25,4 +27,5 @@ public:
 
 public:
 	FTransform Transform;
+	CSound* Sound;
 };

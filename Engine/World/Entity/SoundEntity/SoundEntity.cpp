@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "SoundEntity.h"
 
+#include <Engine/Audio/Sound.h>
+#include <Engine/Resource/Assets.h>
 #include <Engine/Profiling/Logging.h>
 
 static CEntityFactory<CSoundEntity> Factory( "sound" );
@@ -44,7 +46,7 @@ void CSoundEntity::Destroy()
 
 void CSoundEntity::Load( const JSON::Vector& Objects )
 {
-	// CAssets& Assets = CAssets::Get();
+	CAssets& Assets = CAssets::Get();
 
 	glm::vec3 Position;
 	glm::vec3 Orientation;
@@ -78,7 +80,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "sound" )
 		{
-			
+			Sound = Assets.FindSound( Property->Value );
 		}
 	}
 
@@ -88,10 +90,16 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 
 void CSoundEntity::Play()
 {
-	Log::Event( "CSoundEntity::Play()\n" );
+	if( Sound )
+	{
+		Sound->Start();
+	}
 }
 
 void CSoundEntity::Stop()
 {
-
+	if( Sound )
+	{
+		Sound->Stop();
+	}
 }

@@ -227,4 +227,14 @@ namespace Math
 
 		return false;
 	}
+
+	inline void Seed( uint32_t Value )
+	{
+		std::srand( Value );
+	}
+
+	inline double Random()
+	{
+		return static_cast<double>( std::rand() ) / RAND_MAX;
+	}
 }

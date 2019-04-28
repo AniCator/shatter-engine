@@ -4,6 +4,8 @@
 #include <algorithm>
 #include <string>
 
+#include <Engine/Audio/Sound.h>
+
 #include <Engine/Configuration/Configuration.h>
 
 #include <Engine/Display//Rendering/Mesh.h>
@@ -36,6 +38,11 @@ void CAssets::Create( const std::string& Name, CShader* NewShader )
 void CAssets::Create( const std::string& Name, CTexture* NewTexture )
 {
 	Textures.insert_or_assign( Name, NewTexture );
+}
+
+void CAssets::Create( const std::string& Name, CSound* NewSound )
+{
+	Sounds.insert_or_assign( Name, NewSound );
 }
 
 CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation )
@@ -206,6 +213,64 @@ CTexture* CAssets::CreatedNamedTexture( const char* Name, const char* FileLocati
 	return nullptr;
 }
 
+CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
+{
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the mesh exists
+	if( CSound* ExistingSound = FindSound( NameString ) )
+	{
+		Log::Event( "Found existing texture named \"%s\"\n", NameString.c_str() );
+		return ExistingSound;
+	}
+
+	CSound* NewSound = new CSound();
+	const bool bSuccessfulCreation = NewSound->Load( FileLocation );
+
+	if( bSuccessfulCreation )
+	{
+		Create( NameString, NewSound );
+
+		CProfiler& Profiler = CProfiler::Get();
+		int64_t Sound = 1;
+		Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
+
+		Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
+
+		return NewSound;
+	}
+
+	// This should never happen because we check for existing textures before creating new ones, but you never know.
+	return nullptr;
+}
+
+CSound* CAssets::CreateNamedSound( const char* Name )
+{
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the mesh exists
+	if( CSound* ExistingSound = FindSound( NameString ) )
+	{
+		Log::Event( "Found existing texture named \"%s\"\n", NameString.c_str() );
+		return ExistingSound;
+	}
+
+	CSound* NewSound = new CSound();
+	Create( NameString, NewSound );
+
+	CProfiler& Profiler = CProfiler::Get();
+	int64_t Sound = 1;
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
+
+	Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
+
+	return NewSound;
+}
+
 CMesh* CAssets::FindMesh( std::string Name )
 {
 	return Find<CMesh>( Name, Meshes );
@@ -219,6 +284,11 @@ CShader* CAssets::FindShader( std::string Name )
 CTexture* CAssets::FindTexture( std::string Name )
 {
 	return Find<CTexture>( Name, Textures );
+}
+
+CSound* CAssets::FindSound( std::string Name )
+{
+	return Find<CSound>( Name, Sounds );
 }
 
 void CAssets::ReloadShaders()
