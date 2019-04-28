@@ -12,6 +12,8 @@ public:
 	void Start();
 	void Stop();
 
+	bool Enabled() const;
+
 	int64_t GetElapsedTimeMicroseconds();
 	int64_t GetElapsedTimeMilliseconds();
 	double GetElapsedTimeSeconds();

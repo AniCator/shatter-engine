@@ -223,6 +223,7 @@
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Engine\World\Entity\Entity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.cpp" />
+    <ClCompile Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\MeshEntity\MeshEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp" />
     <ClCompile Include="Engine\World\Level\Level.cpp" />
@@ -280,6 +281,7 @@
     <ClInclude Include="Engine\Utility\Timer.h" />
     <ClInclude Include="Engine\World\Entity\Entity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.h" />
+    <ClInclude Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.h" />
     <ClInclude Include="Engine\World\Entity\MeshEntity\MeshEntity.h" />
     <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h" />
     <ClInclude Include="Engine\World\Level\Level.h" />

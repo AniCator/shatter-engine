@@ -333,6 +333,11 @@ void CTimer::Stop()
 	IsRunning = false;
 }
 
+bool CTimer::Enabled() const
+{
+	return IsRunning;
+}
+
 int64_t CTimer::GetElapsedTimeMicroseconds()
 {
 	if( IsRunning )
