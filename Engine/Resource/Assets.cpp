@@ -45,9 +45,14 @@ void CAssets::Create( const std::string& Name, CSound* NewSound )
 	Sounds.insert_or_assign( Name, NewSound );
 }
 
-CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation )
+CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad )
 {
-	CMesh* Mesh = nullptr;
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	CMesh* Mesh = FindMesh( NameString );
+	const bool ShouldLoad = Mesh == nullptr || ForceLoad;
 
 	std::stringstream ExportLocation;
 	ExportLocation << "Models/" << Name << ".lm";
@@ -64,24 +69,35 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation )
 		std::string Extension = File.Extension();
 		FPrimitive Primitive;
 
-		if( Extension == "obj" )
+		if( ShouldLoad )
 		{
-			File.Load();
-			MeshBuilder::OBJ( Primitive, File );
-		}
-		else if( Extension == "lm" )
-		{
-			File.Load( true );
-			MeshBuilder::LM( Primitive, File );
-		}
-		else
-		{
-			Log::Event( Log::Warning, "Unknown mesh extension \"%s\".\n", Extension.c_str() );
+			if( Extension == "obj" )
+			{
+				File.Load();
+				MeshBuilder::OBJ( Primitive, File );
+			}
+			else if( Extension == "lm" )
+			{
+				File.Load( true );
+				MeshBuilder::LM( Primitive, File );
+			}
+			else
+			{
+				Log::Event( Log::Warning, "Unknown mesh extension \"%s\".\n", Extension.c_str() );
+			}
 		}
 
 		if( Primitive.Vertices )
 		{
-			Mesh = CreateNamedMesh( Name, Primitive );
+			if( !Mesh )
+			{
+				Mesh = CreateNamedMesh( Name, Primitive );
+			}
+			else if ( ShouldLoad )
+			{
+				Mesh->Destroy();
+				Mesh->Populate( Primitive );
+			}
 
 			// Automatically export an LM file if the extension was OBJ.
 			if( ExportOBJToLM && Mesh && Extension == "obj" )
@@ -123,6 +139,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 	if( CMesh* ExistingMesh = FindMesh( NameString ) )
 	{
 		Log::Event( "Found existing mesh named \"%s\"\n", NameString.c_str() );
+
 		return ExistingMesh;
 	}
 

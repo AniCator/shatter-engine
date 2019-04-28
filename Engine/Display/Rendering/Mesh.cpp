@@ -15,6 +15,24 @@ CMesh::~CMesh()
 
 }
 
+void CMesh::Destroy()
+{
+	if( VertexBufferData.VertexBufferObject != 0 )
+	{
+		glDeleteVertexArrays( 1, &VertexArrayObject );
+		VertexArrayObject = 0;
+
+		glDeleteBuffers( 1, &VertexBufferData.VertexBufferObject );
+		VertexBufferData.VertexBufferObject = 0;
+	}
+
+	if( VertexBufferData.IndexBufferObject != 0 )
+	{
+		glDeleteBuffers( 1, &VertexBufferData.IndexBufferObject );
+		VertexBufferData.IndexBufferObject = 0;
+	}
+}
+
 bool CMesh::Populate( const FPrimitive& Primitive )
 {
 	bool bCreatedVertexBuffer = CreateVertexBuffer( Primitive );

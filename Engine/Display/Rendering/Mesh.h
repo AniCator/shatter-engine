@@ -72,6 +72,8 @@ public:
 	CMesh( EMeshType MeshType = Static );
 	~CMesh();
 
+	void Destroy();
+
 	bool Populate( const FPrimitive& Primitive );
 
 	void Prepare( EDrawMode DrawModeOverride );

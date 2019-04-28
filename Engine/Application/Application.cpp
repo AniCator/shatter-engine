@@ -537,7 +537,7 @@ void DebugMenu( CApplication* Application )
 				CTimer LoadTimer;
 				CTimer ParseTimer;
 
-				CFile File( "Models/LoftyLagoonTestModel.obj" );
+				CFile File( "Models/island.obj" );
 
 				LoadTimer.Start();
 				File.Load();
@@ -551,6 +551,29 @@ void DebugMenu( CApplication* Application )
 
 				Log::Event( "Import speed test: Load %ims Parse %ims\n", LoadTimer.GetElapsedTimeMilliseconds(), ParseTimer.GetElapsedTimeMilliseconds() );
 			}
+
+			ImGui::Text( "Re-import" );
+
+			ImGui::Columns( 3 );
+			static char AssetName[128];
+			ImGui::InputText( "Asset name", AssetName, 128 );
+			ImGui::NextColumn();
+
+			static char AssetPath[512];
+			ImGui::InputText( "Asset path", AssetPath, 512 );
+			ImGui::NextColumn();
+
+			if( ImGui::Button( "Import" ) )
+			{
+				auto& Assets = CAssets::Get();
+				if( Assets.FindMesh( AssetName ) )
+				{
+					Assets.CreateNamedMesh( AssetName, AssetPath, true );
+				}
+			}
+			ImGui::NextColumn();
+
+			ImGui::Columns();
 
 			ImGui::End();
 		}

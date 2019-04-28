@@ -19,7 +19,7 @@ public:
 	void Create( const std::string& Name, CTexture* NewTexture );
 	void Create( const std::string& Name, CSound* NewSound );
 
-	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation );
+	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation );
 	CTexture* CreatedNamedTexture( const char* Name, const char* FileLocation );
