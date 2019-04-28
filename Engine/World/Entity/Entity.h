@@ -63,15 +63,17 @@ public:
 	void Track( const CEntity* Entity );
 	void Unlink( const size_t EntityID );
 
+	MessageOutput Outputs;
+	MessageInput Inputs;
+
 private:
 	size_t ID;
 	CLevel* Level;
 
 	std::vector<size_t> TrackedEntityIDs;
-	MessageOutput Outputs;
 
 protected:
-	MessageInput Inputs;
+	bool Enabled;
 };
 
 class CEntityMap
