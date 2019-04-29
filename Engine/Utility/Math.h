@@ -35,7 +35,7 @@ public:
 	{
 		TransformMatrix = IdentityMatrix;
 		StoredPosition = glm::vec3( 0.0f );
-		StoredOrientation = glm::vec3( 0.0f, 0.0f, 1.0f );
+		StoredOrientation = glm::vec3( 0.0f, 0.0f, 0.0f );
 		StoredSize = glm::vec3( 1.0f );
 	}
 
@@ -116,7 +116,7 @@ private:
 
 		glm::mat4 ScaleMatrix = glm::scale( IdentityMatrix, StoredSize );
 		
-		glm::quat Quaternion = glm::quat( StoredOrientation );
+		glm::quat Quaternion = glm::quat( glm::radians( StoredOrientation ) );
 		RotationMatrix = glm::toMat4( Quaternion );
 
 		TransformMatrix = glm::translate( IdentityMatrix, StoredPosition );
