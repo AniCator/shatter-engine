@@ -494,8 +494,9 @@ void DebugMenu( CApplication* Application )
 				ImGui::SetScrollHere( 1.0f );
 				PreviousSize = Count;
 			}
-			ImGui::End();
 		}
+		ImGui::End();
+
 		ImGui::PopStyleColor();
 	}
 
@@ -574,9 +575,9 @@ void DebugMenu( CApplication* Application )
 			ImGui::NextColumn();
 
 			ImGui::Columns();
-
-			ImGui::End();
 		}
+
+		ImGui::End();
 	}
 
 	Application->RenderDebugUI( false );
