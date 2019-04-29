@@ -191,7 +191,7 @@ GLuint CShader::Link()
 	{
 		if( Attempts > 5 && !Debugger )
 		{
-			Log::Event( Log::Error, "Failed to compile shader.\n" );
+			Log::Event( Log::Error, "Failed to compile shader \"%s\".\n", Location.c_str() );
 			Attempts = 0;
 			return 0;
 		}
