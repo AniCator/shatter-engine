@@ -86,13 +86,48 @@ bool CTexture::Load()
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
 		stbi_set_flip_vertically_on_load( 1 );
-		ImageData = stbi_load_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 3 );
-		if( ImageData && ImageData[0] != '\0' )
-		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ImageData );
-			glGenerateMipmap( GL_TEXTURE_2D );
+		ImageData = stbi_load_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
 
-			return true;
+		if( ImageData )
+		{
+			bool Supported = false;
+
+			const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
+			const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
+			if( PowerOfTwoWidth && PowerOfTwoHeight )
+			{
+				if( Channels == 1 )
+				{
+					glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, Width, Height, 0, GL_RED, GL_UNSIGNED_BYTE, ImageData );
+					Supported = true;
+				}
+				else if( Channels == 2 )
+				{
+					glTexImage2D( GL_TEXTURE_2D, 0, GL_RG, Width, Height, 0, GL_RG, GL_UNSIGNED_BYTE, ImageData );
+					Supported = true;
+				}
+				else if( Channels == 3 )
+				{
+					glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ImageData );
+					Supported = true;
+				}
+				else if( Channels == 4 )
+				{
+					glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, ImageData );
+					Supported = true;
+				}
+			}
+			else
+			{
+				Log::Event( Log::Warning, "Not a power of two texture (\"%s\").\n", Location.c_str() );
+			}
+
+			if( Supported )
+			{
+				glGenerateMipmap( GL_TEXTURE_2D );
+			}
+
+			return Supported;
 		}
 		else
 		{
