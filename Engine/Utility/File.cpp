@@ -260,10 +260,10 @@ std::vector<std::string> ExtractTokens( const std::string& Line, char Delimiter,
 	}
 }
 
-std::vector<float> ExtractTokensFloat( const std::string& Line, char Delimiter, const size_t ExpectedTokens /*= 3 */ )
+float FloatBuffer[1024];
+float* ExtractTokensFloat( const std::string& Line, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens /*= 3 */ )
 {
-	std::vector<float> Tokens;
-	Tokens.reserve( ExpectedTokens );
+	size_t Location = 0;
 
 	const char* Token = Line.c_str();
 	const char* Start = Token;
@@ -281,7 +281,11 @@ std::vector<float> ExtractTokensFloat( const std::string& Line, char Delimiter, 
 			{
 				strncpy_s( Buffer, Start, Length );
 				Buffer[Length + 1] = '\0';
-				Tokens.emplace_back( static_cast<float>( ParseDouble( Buffer ) ) );
+
+				if( Location < ExpectedTokens )
+				{
+					FloatBuffer[Location++] = static_cast<float>( ParseDouble( Buffer ) );
+				}
 			}
 
 			Start = Token + 1;
@@ -293,15 +297,24 @@ std::vector<float> ExtractTokensFloat( const std::string& Line, char Delimiter, 
 
 		if( EndOfLine )
 		{
-			return Tokens;
+			if( Location == ExpectedTokens )
+			{
+				OutTokenCount = Location;
+				return FloatBuffer;
+			}
+			else
+			{
+				OutTokenCount = 0;
+				return nullptr;
+			}
 		}
 	}
 }
 
-std::vector<int> ExtractTokensInteger( const std::string& Line, char Delimiter, const size_t ExpectedTokens /*= 3 */ )
+int IntegerBuffer[1024];
+int* ExtractTokensInteger( const std::string& Line, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens /*= 3 */ )
 {
-	std::vector<int> Tokens;
-	Tokens.reserve( ExpectedTokens );
+	size_t Location = 0;
 
 	const char* Token = Line.c_str();
 	const char* Start = Token;
@@ -319,7 +332,11 @@ std::vector<int> ExtractTokensInteger( const std::string& Line, char Delimiter, 
 			{
 				strncpy_s( Buffer, Start, Length );
 				Buffer[Length + 1] = '\0';
-				Tokens.emplace_back( atoi( Buffer ) );
+
+				if( Location < ExpectedTokens )
+				{
+					IntegerBuffer[Location++] = atoi( Buffer );
+				}
 			}
 
 			Start = Token + 1;
@@ -331,7 +348,16 @@ std::vector<int> ExtractTokensInteger( const std::string& Line, char Delimiter, 
 
 		if( EndOfLine )
 		{
-			return Tokens;
+			if( Location == ExpectedTokens )
+			{
+				OutTokenCount = Location;
+				return IntegerBuffer;
+			}
+			else
+			{
+				OutTokenCount = 0;
+				return nullptr;
+			}
 		}
 	}
 }

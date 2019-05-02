@@ -65,5 +65,5 @@ private:
 std::istream& SafeGetline( std::istream& is, std::string& t );
 double ParseDouble( const char* p );
 std::vector<std::string> ExtractTokens( const std::string& Line, char Delimiter, const size_t ExpectedTokens = 3 );
-std::vector<float> ExtractTokensFloat( const std::string& Line, char Delimiter, const size_t ExpectedTokens = 3 );
-std::vector<int> ExtractTokensInteger( const std::string& Line, char Delimiter, const size_t ExpectedTokens = 3 );
+float* ExtractTokensFloat( const std::string& Line, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens = 3 );
+int* ExtractTokensInteger( const std::string& Line, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens = 3 );

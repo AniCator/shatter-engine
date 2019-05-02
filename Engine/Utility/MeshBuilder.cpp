@@ -353,8 +353,10 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				glm::vec2 Coordinate;
 
 				Line.erase( 0, 3 );
-				auto Tokens = ExtractTokensFloat( Line, Delimiter, 2 );
-				if( Tokens.size() == 2 )
+
+				size_t OutTokenCount = 0;
+				auto Tokens = ExtractTokensFloat( Line, Delimiter, OutTokenCount, 2 );
+				if( Tokens && OutTokenCount == 2 )
 				{
 					Coordinate[0] = Tokens[0];
 					Coordinate[1] = Tokens[1];
@@ -370,9 +372,11 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				Primitive.HasNormals = true;
 
 				Line.erase( 0, 3 );
-				auto Tokens = ExtractTokensFloat( Line, Delimiter, 3 );
 
-				if( Tokens.size() == 3 )
+				size_t OutTokenCount = 0;
+				auto Tokens = ExtractTokensFloat( Line, Delimiter, OutTokenCount, 3 );
+
+				if( Tokens && OutTokenCount == 3 )
 				{
 					// Assume Y is up in the file.
 					Normal[1] = Tokens[0];
@@ -392,9 +396,11 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				glm::vec3 Vertex;
 
 				Line.erase( 0, 2 );
-				auto Tokens = ExtractTokensFloat( Line, Delimiter, 3 );
 
-				if( Tokens.size() == 3 )
+				size_t OutTokenCount = 0;
+				auto Tokens = ExtractTokensFloat( Line, Delimiter, OutTokenCount, 3 );
+
+				if( Tokens && OutTokenCount == 3 )
 				{
 					// Assume Y is up in the file.
 					Vertex[1] = Tokens[0];
@@ -413,8 +419,9 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 
 			for( auto& Token : Tokens )
 			{
-				auto ComponentTokens = ExtractTokensInteger( Token, '/', 3 );
-				if( ComponentTokens.size() == 3 )
+				size_t OutTokenCount = 0;
+				auto ComponentTokens = ExtractTokensInteger( Token, '/', OutTokenCount, 3 );
+				if( ComponentTokens && OutTokenCount == 3 )
 				{
 					// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
 					VertexIndices.emplace_back( ComponentTokens[0] - 1 );

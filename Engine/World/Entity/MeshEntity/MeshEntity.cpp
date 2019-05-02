@@ -100,36 +100,44 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "position" )
 		{
-			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-			if( Coordinates.size() == 3 )
+			size_t ExpectedTokenCount = 3;
+			size_t OutTokenCount = 0;
+			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, ExpectedTokenCount  );
+			if( OutTokenCount == 3 )
 			{
 				Position = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
 			}
 		}
 		else if( Property->Key == "rotation" )
 		{
-			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-			if( Coordinates.size() == 3 )
+			size_t ExpectedTokenCount = 3;
+			size_t OutTokenCount = 0;
+			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, ExpectedTokenCount );
+			if(  OutTokenCount == 3 )
 			{
 				Orientation = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
 			}
 		}
 		else if( Property->Key == "scale" )
 		{
-			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-			if( Coordinates.size() == 3 )
+			size_t ExpectedTokenCount = 3;
+			size_t OutTokenCount = 0;
+			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, ExpectedTokenCount );
+			if( OutTokenCount == 3 )
 			{
 				Size = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
 			}
 		}
 		else if( Property->Key == "color" )
 		{
-			const std::vector<float>& Components = ExtractTokensFloat( Property->Value, ' ', 4 );
-			if( Components.size() == 3 )
+			size_t ExpectedTokenCount = 4;
+			size_t OutTokenCount = 0;
+			auto Components = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, ExpectedTokenCount );
+			if( OutTokenCount == 3 )
 			{
 				Color = glm::vec4( Components[0], Components[1], Components[2], 1.0f );
 			}
-			else if( Components.size() == 4 )
+			else if( OutTokenCount == 4 )
 			{
 				Color = glm::vec4( Components[0], Components[1], Components[2], Components[3] );
 			}

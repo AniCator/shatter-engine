@@ -56,24 +56,27 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 	{
 		if( Property->Key == "position" )
 		{
-			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-			if( Coordinates.size() == 3 )
+			size_t OutTokenCount = 0;
+			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
+			if( OutTokenCount == 3 )
 			{
 				Position = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
 			}
 		}
 		else if( Property->Key == "rotation" )
 		{
-			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-			if( Coordinates.size() == 3 )
+			size_t OutTokenCount = 0;
+			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
+			if( OutTokenCount == 3 )
 			{
 				Orientation = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
 			}
 		}
 		else if( Property->Key == "scale" )
 		{
-			const std::vector<float>& Coordinates = ExtractTokensFloat( Property->Value, ' ', 3 );
-			if( Coordinates.size() == 3 )
+			size_t OutTokenCount = 0;
+			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
+			if( OutTokenCount == 3 )
 			{
 				Size = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
 			}
