@@ -100,7 +100,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			}
 
 			// Automatically export an LM file if the extension was OBJ.
-			if( ExportOBJToLM && Mesh && Extension == "obj" )
+			if( ( ForceLoad || ExportOBJToLM ) && Mesh && Extension == "obj" )
 			{
 				Log::Event( "Exporting Lofty Model mesh \"%s\".", Name );
 
