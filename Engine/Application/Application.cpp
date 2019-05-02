@@ -564,12 +564,20 @@ void DebugMenu( CApplication* Application )
 			ImGui::InputText( "Asset path", AssetPath, 512 );
 			ImGui::NextColumn();
 
-			if( ImGui::Button( "Import" ) )
+			if( ImGui::Button( "Re-Import" ) )
 			{
 				auto& Assets = CAssets::Get();
 				if( Assets.FindMesh( AssetName ) )
 				{
-					Assets.CreateNamedMesh( AssetName, AssetPath, true );
+					CTimer LoadTimer;
+
+					LoadTimer.Start();
+					auto Mesh = Assets.CreateNamedMesh( AssetName, AssetPath, true );
+					LoadTimer.Stop();
+
+					const size_t Triangles = Mesh->GetVertexBufferData().IndexCount / 3;
+
+					Log::Event( "Re-import: %ims %i triangles\n", LoadTimer.GetElapsedTimeMilliseconds(), Triangles );
 				}
 			}
 			ImGui::NextColumn();
