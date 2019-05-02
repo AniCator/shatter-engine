@@ -59,7 +59,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 	std::string ExportPath = ExportLocation.str();
 
 	CFile File( ExportPath.c_str() );
-	if( !File.Exists() )
+	if( !File.Exists() || ForceLoad )
 	{
 		File = CFile( FileLocation );
 	}
