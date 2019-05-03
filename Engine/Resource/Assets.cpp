@@ -22,7 +22,7 @@ static bool ExportOBJToLM = false;
 
 CAssets::CAssets()
 {
-	ExportOBJToLM = CConfiguration::Get().GetInteger( "ExportOBJToLM", 0 ) > 0;
+	ExportOBJToLM = CConfiguration::Get().GetInteger( "ExportOBJToLM", 1 ) > 0;
 }
 
 void CAssets::Create( const std::string& Name, CMesh* NewMesh )
