@@ -260,7 +260,8 @@ std::vector<std::string> ExtractTokens( const std::string& Line, char Delimiter,
 	}
 }
 
-float FloatBuffer[1024];
+static const size_t TokenBufferSize = 1024;
+float FloatBuffer[TokenBufferSize];
 float* ExtractTokensFloat( const std::string& Line, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens /*= 3 */ )
 {
 	size_t Location = 0;
@@ -282,7 +283,7 @@ float* ExtractTokensFloat( const std::string& Line, char Delimiter, size_t& OutT
 				strncpy_s( Buffer, Start, Length );
 				Buffer[Length + 1] = '\0';
 
-				if( Location < ExpectedTokens )
+				if( Location < TokenBufferSize )
 				{
 					FloatBuffer[Location++] = static_cast<float>( ParseDouble( Buffer ) );
 				}
@@ -297,7 +298,7 @@ float* ExtractTokensFloat( const std::string& Line, char Delimiter, size_t& OutT
 
 		if( EndOfLine )
 		{
-			if( Location == ExpectedTokens )
+			if( Location <= ExpectedTokens )
 			{
 				OutTokenCount = Location;
 				return FloatBuffer;
@@ -311,7 +312,7 @@ float* ExtractTokensFloat( const std::string& Line, char Delimiter, size_t& OutT
 	}
 }
 
-int IntegerBuffer[1024];
+int IntegerBuffer[TokenBufferSize];
 int* ExtractTokensInteger( const std::string& Line, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens /*= 3 */ )
 {
 	size_t Location = 0;
@@ -333,7 +334,7 @@ int* ExtractTokensInteger( const std::string& Line, char Delimiter, size_t& OutT
 				strncpy_s( Buffer, Start, Length );
 				Buffer[Length + 1] = '\0';
 
-				if( Location < ExpectedTokens )
+				if( Location < TokenBufferSize )
 				{
 					IntegerBuffer[Location++] = atoi( Buffer );
 				}
@@ -348,7 +349,7 @@ int* ExtractTokensInteger( const std::string& Line, char Delimiter, size_t& OutT
 
 		if( EndOfLine )
 		{
-			if( Location == ExpectedTokens )
+			if( Location <= ExpectedTokens )
 			{
 				OutTokenCount = Location;
 				return IntegerBuffer;
