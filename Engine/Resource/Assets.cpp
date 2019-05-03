@@ -95,8 +95,11 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			}
 			else if ( ShouldLoad )
 			{
-				Mesh->Destroy();
-				Mesh->Populate( Primitive );
+				if (Primitive.VertexCount > 0 && Primitive.IndexCount > 0)
+				{
+					Mesh->Destroy();
+					Mesh->Populate(Primitive);
+				}
 			}
 
 			// Automatically export an LM file if the extension was OBJ.
