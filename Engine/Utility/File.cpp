@@ -149,7 +149,7 @@ bool CFile::Exists()
 bool CFile::Exists( const char* FileLocation )
 {
 	struct stat Buffer;
-	const bool Exists = stat( FileLocation, &Buffer ) == 0;
+	const bool Exists = stat( FileLocation, &Buffer ) == 0 || errno == 132;
 
 	if( !Exists )
 	{
