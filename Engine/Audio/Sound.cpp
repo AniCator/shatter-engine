@@ -86,6 +86,11 @@ void CSound::SetPlayMode( ESoundPlayMode::Type NewPlayMode )
 	PlayMode = NewPlayMode;
 }
 
+size_t CSound::HandleCount() const
+{
+	return Handles.size();
+}
+
 SoundHandle CSound::Select()
 {
 	if( PlayMode == ESoundPlayMode::Unknown || PlayMode == ESoundPlayMode::Sequential )
@@ -99,7 +104,13 @@ SoundHandle CSound::Select()
 	}
 	else if( PlayMode == ESoundPlayMode::Random )
 	{
-		Location = static_cast<uint32_t>( Math::Random() * Handles.size() );
+		uint32_t NewLocation = static_cast<uint32_t>( Math::Random() * Handles.size() );
+		if( NewLocation == Location )
+		{
+			NewLocation = ( NewLocation + 1 ) % Handles.size();
+		}
+
+		Location = NewLocation;
 		return Handles[Location];
 	}
 

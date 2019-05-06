@@ -67,6 +67,7 @@ bool CFile::Load( bool InBinary )
 		else
 		{
 			FileStream.getline( Data, FileSize, '\0' );
+			Data[FileSize - 1] = '\0';
 		}
 
 		FileStream.close();
@@ -157,6 +158,55 @@ bool CFile::Exists( const char* FileLocation )
 	}
 
 	return Exists;
+}
+
+const char* GetLine( const char* Start, std::string& Line )
+{
+	const char* Token = Start;
+	const char* End = Start;
+
+	static const size_t BufferSize = 2048;
+	char Buffer[BufferSize];
+	while( true )
+	{
+		const bool EndOfLine = Token[0] == std::streambuf::traits_type::eof() || Token[0] == '\0' || Token[0] == '\n' || ( Token[0] == '\r' && Token[1] == '\n' );
+		if( EndOfLine )
+		{
+			const size_t Length = End - Start;
+			if( Length < BufferSize - 1 )
+			{
+				strncpy_s( Buffer, Start, Length );
+				Buffer[Length + 1] = '\0';
+				Line = Buffer;
+
+				Start = Token + 1;
+				End = Start;
+
+				return Start;
+			}
+		}
+
+		Token++;
+		End = Token;
+
+		if( Token[0] == std::streambuf::traits_type::eof() || Token[0] == '\0' )
+		{
+			const size_t Length = End - Start;
+			if( Length < BufferSize - 1 )
+			{
+				strncpy_s( Buffer, Start, Length );
+				Buffer[Length + 1] = '\0';
+				Line = Buffer;
+
+				Start = Token + 1;
+				End = Start;
+
+				return nullptr;
+			}
+		}
+	}
+
+	return nullptr;
 }
 
 std::istream& SafeGetline( std::istream& is, std::string& t )

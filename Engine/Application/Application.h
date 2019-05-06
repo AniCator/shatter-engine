@@ -23,6 +23,9 @@ public:
 	std::string GetName() const;
 	void SetName( const char* Name );
 
+	void RedirectLogToConsole();
+	void ProcessCommandLine( int argc, char** argv );
+
 	const bool ToolsEnabled() const;
 	void EnableTools( const bool Enable );
 

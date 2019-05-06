@@ -74,6 +74,8 @@ public:
 
 	void Destroy();
 
+	bool IsValid();
+
 	bool Populate( const FPrimitive& Primitive );
 
 	void Prepare( EDrawMode DrawModeOverride );

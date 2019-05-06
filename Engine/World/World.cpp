@@ -45,11 +45,32 @@ void CWorld::Add( FLevel& Level )
 	Levels.push_back( Level );
 	ActiveLevel = &Levels[0].Level;
 
+	if( Levels.size() > 0 )
+	{
+		Levels[Levels.size() - 1].Level.SetWorld( this );
+	}
+
 	auto& Back = Levels.back();
 	for( auto Entity : Back.Level.GetEntities() )
 	{
 		Entity->SetLevel( &Back.Level );
 	}
+}
+
+void CWorld::SetActiveCamera( CCamera* CameraIn )
+{
+	Camera = CameraIn;
+}
+
+static const FCameraSetup DummySetup = FCameraSetup();
+const FCameraSetup& CWorld::GetActiveCameraSetup() const
+{
+	if( Camera )
+	{
+		return Camera->GetCameraSetup();
+	}
+
+	return DummySetup;
 }
 
 CData& operator<<( CData& Data, CWorld& World )

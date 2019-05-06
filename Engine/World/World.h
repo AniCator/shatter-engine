@@ -6,6 +6,8 @@
 #include <Engine/World/Level/Level.h>
 #include <Engine/Utility/Math.h>
 
+#include <Engine/Display/Rendering/Camera.h>
+
 class CEntity;
 
 struct FLevel
@@ -54,9 +56,14 @@ public:
 	void Add( FLevel& Level );
 	std::vector<FLevel>& GetLevels() { return Levels; };
 
+	void SetActiveCamera(CCamera* Camera);
+	const FCameraSetup& GetActiveCameraSetup() const;
+
 private:
 	std::vector<FLevel> Levels;
 	CLevel* ActiveLevel;
+
+	CCamera* Camera;
 
 public:
 	friend CData& operator<<( CData& Data, CWorld& World );

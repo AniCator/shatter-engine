@@ -4,12 +4,19 @@
 #include <Engine/Audio/Sound.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Profiling/Logging.h>
+#include <Engine/World/World.h>
 
 static CEntityFactory<CSoundEntity> Factory( "sound" );
 
 CSoundEntity::CSoundEntity()
 {
 	Transform = FTransform();
+
+	Falloff = EFalloff::None;
+	Radius = 0.0f;
+
+	AutoPlay = false;
+	Loop = false;
 
 	Inputs["Play"] = [this] () {this->Play(); };
 }
@@ -36,12 +43,56 @@ void CSoundEntity::Construct()
 
 void CSoundEntity::Tick()
 {
-	
+	if( Sound )
+	{
+		if( AutoPlay )
+		{
+			AutoPlay = false;
+			Sound->Loop( Loop );
+			Sound->Start();
+		}
+
+		if( Falloff == EFalloff::None )
+		{
+			Sound->Volume( 100.0f );
+		}
+		else if( Falloff == EFalloff::Linear )
+		{
+			auto World = GetWorld();
+			if( World )
+			{
+				const auto& CameraSetup = World->GetActiveCameraSetup();
+				glm::vec3 Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+
+				float Length = Math::Length( Delta );
+				Length /= Radius;
+				Length = glm::clamp( Length, 0.0f, 1.0f );
+
+				Sound->Volume( Length * 100.0f );
+			}
+		}
+		else if( Falloff == EFalloff::InverseSquare )
+		{
+			auto World = GetWorld();
+			if( World )
+			{
+				const auto& CameraSetup = World->GetActiveCameraSetup();
+				glm::vec3 Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+
+				const float Factor = 1.0f / Radius;
+				float Length = Math::Length( Delta ) * Factor;
+				Length = 1.0f / ( Length * Length );
+				Length = glm::clamp( Length, 0.0f, 1.0f );
+
+				Sound->Volume( Length * 100.0f );
+			}
+		}
+	}
 }
 
 void CSoundEntity::Destroy()
 {
-
+	Sound->Stop();
 }
 
 void CSoundEntity::Load( const JSON::Vector& Objects )
@@ -84,6 +135,40 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "sound" )
 		{
 			Sound = Assets.FindSound( Property->Value );
+		}
+		else if( Property->Key == "falloff" )
+		{
+			if( Property->Value == "linear" )
+			{
+				Falloff = EFalloff::Linear;
+			}
+			else if( Property->Value == "inversesqr" )
+			{
+				Falloff = EFalloff::InverseSquare;
+			}
+		}
+		else if( Property->Key == "radius" )
+		{
+			size_t OutTokenCount = 0;
+			auto TokenDistance = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 1 );
+			if( OutTokenCount == 1 )
+			{
+				Radius = TokenDistance[0];
+			}
+		}
+		else if( Property->Key == "autoplay" )
+		{
+			if( Property->Value == "1" )
+			{
+				AutoPlay = true;
+			}
+		}
+		else if( Property->Key == "loop" )
+		{
+			if( Property->Value == "1" )
+			{
+				Loop = true;
+			}
 		}
 	}
 

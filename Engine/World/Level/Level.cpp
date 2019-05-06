@@ -5,13 +5,14 @@
 #include <Engine/Resource/Assets.h>
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
+#include <Engine/World/World.h>
 #include <Engine/Utility/Structures/JSON.h>
 
 static const size_t LevelVersion = 0;
 
 CLevel::CLevel()
 {
-
+	World = nullptr;
 }
 
 CLevel::~CLevel()
@@ -65,6 +66,8 @@ void CLevel::Load( const CFile& File )
 				{
 					if( Object->Key == "assets" )
 					{
+						std::vector<FPrimitivePayload> MeshList;
+						std::vector<FGenericAssetPayload> GenericAssets;
 						for( auto Asset : Object->Objects )
 						{
 							AssetsFound = true;
@@ -117,21 +120,38 @@ void CLevel::Load( const CFile& File )
 								{
 									for( const auto& Path : Paths )
 									{
-										Assets.CreateNamedMesh( Name.c_str(), Path.c_str() );
+										// Assets.CreateNamedMesh( Name.c_str(), Path.c_str() );
+										
+										FPrimitivePayload Payload;
+										Payload.Name = Name;
+										Payload.Location = Path;
+										MeshList.emplace_back( Payload );
 									}
 								}
 								else if( Shader )
 								{
 									for( const auto& Path : Paths )
 									{
-										Assets.CreateNamedShader( Name.c_str(), Path.c_str() );
+										// Assets.CreateNamedShader( Name.c_str(), Path.c_str() );
+
+										FGenericAssetPayload Payload;
+										Payload.Type = EAsset::Shader;
+										Payload.Name = Name;
+										Payload.Location = Path;
+										GenericAssets.emplace_back( Payload );
 									}
 								}
 								else if( Texture )
 								{
 									for( const auto& Path : Paths )
 									{
-										Assets.CreatedNamedTexture( Name.c_str(), Path.c_str() );
+										// Assets.CreatedNamedTexture( Name.c_str(), Path.c_str() );
+
+										FGenericAssetPayload Payload;
+										Payload.Type = EAsset::Texture;
+										Payload.Name = Name;
+										Payload.Location = Path;
+										GenericAssets.emplace_back( Payload );
 									}
 								}
 								else if( Sound )
@@ -144,7 +164,13 @@ void CLevel::Load( const CFile& File )
 
 										for( const auto& Path : Paths )
 										{
-											NewSound->Load( Path.c_str() );
+											// NewSound->Load( Path.c_str() );
+
+											FGenericAssetPayload Payload;
+											Payload.Type = EAsset::Sound;
+											Payload.Name = Name;
+											Payload.Location = Path;
+											GenericAssets.emplace_back( Payload );
 										}
 									}
 								}
@@ -158,6 +184,8 @@ void CLevel::Load( const CFile& File )
 								Log::Event( Log::Error, "Invalid asset entry in level file.\n" );
 							}
 						}
+
+						Assets.CreatedNamedAssets( MeshList, GenericAssets );
 
 						Pass++;
 					}
@@ -281,6 +309,16 @@ CEntity* CLevel::Find( const size_t ID ) const
 	}
 
 	return nullptr;
+}
+
+CWorld* CLevel::GetWorld()
+{
+	return World;
+}
+
+void CLevel::SetWorld( CWorld* NewWorld )
+{
+	World = NewWorld;
 }
 
 CData& operator<<( CData& Data, CLevel& Level )

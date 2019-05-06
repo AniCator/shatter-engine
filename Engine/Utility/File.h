@@ -62,6 +62,7 @@ private:
 	bool Binary;
 };
 
+const char* GetLine( const char* Start, std::string& Line );
 std::istream& SafeGetline( std::istream& is, std::string& t );
 double ParseDouble( const char* p );
 std::vector<std::string> ExtractTokens( const std::string& Line, char Delimiter, const size_t ExpectedTokens = 3 );

@@ -2,6 +2,7 @@
 #include "Entity.h"
 
 #include <Engine/World/Level/Level.h>
+#include <Engine/World/World.h>
 
 void CEntityMap::Add( const std::string& Type, EntityFunction Factory )
 {
@@ -44,6 +45,11 @@ void CEntity::SetLevel( CLevel* SpawnLevel )
 CLevel* CEntity::GetLevel() const
 {
 	return Level;
+}
+
+CWorld* CEntity::GetWorld()
+{
+	return Level->GetWorld();
 }
 
 void CEntity::Construct()

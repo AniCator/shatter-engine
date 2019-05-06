@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <chrono>
+#include <atomic>
 
 #ifdef _WIN32
 
@@ -29,7 +30,9 @@ inline void BreakDebugger()
 
 namespace Log
 {
-	static const int nMaximumLogMessageLength = 8192;
+	static const int MaximumLogMessageLength = 8192;
+	static const int PrintThreshold = 10;
+	static std::atomic<int> PrintCount = 0;
 
 	void Event( const char* Format, ... )
 	{
@@ -56,6 +59,12 @@ namespace Log
 	{
 		if( LogName[0] != '\0' )
 		{
+#if defined( _WIN32 )
+			ToStdOut = false;
+#else
+			ToStdOut = true;
+#endif
+
 			strcpy_s( Name, LogName );
 
 			char LogFileName[256];
@@ -72,6 +81,12 @@ namespace Log
 
 	CLog::CLog()
 	{
+#if defined( _WIN32 )
+		ToStdOut = false;
+#else
+		ToStdOut = true;
+#endif
+
 		Name[0] = '\0';
 		LogOutputStream.open( "ShatterGlobalLog.log" );
 
@@ -91,10 +106,10 @@ namespace Log
 
 	void CLog::Print( LogSeverity Severity, const char* Format, va_list Arguments )
 	{
-		char FullMessage[nMaximumLogMessageLength];
+		char FullMessage[MaximumLogMessageLength];
 		vsprintf_s( FullMessage, Format, Arguments );
 
-		char LogMessage[nMaximumLogMessageLength];
+		char LogMessage[MaximumLogMessageLength];
 		if( Name[0] != '\0' )
 		{
 			sprintf_s( LogMessage, "%s: %s", Name, FullMessage );
@@ -104,20 +119,24 @@ namespace Log
 			strcpy_s( LogMessage, FullMessage );
 		}
 
+		if( ToStdOut )
+		{
+			printf( LogMessage );
+		}
+		else
+		{
+			if( IsDebuggerPresent() )
+			{
+				OutputDebugString( LogMessage );
+			}
+		}
+
+		LogMutex.lock();
 		CLog& GlobalInstance = CLog::Get();
 		if( this != &GlobalInstance )
 		{
 			GlobalInstance.PrintDirect( LogMessage );
 		}
-
-#if !defined( ConsoleWindowDisabled )
-		printf( LogMessage );
-#else
-		if( IsDebuggerPresent() )
-		{
-			OutputDebugString( LogMessage );
-		}
-#endif
 
 		FHistory NewHistory;
 		NewHistory.Severity = Severity;
@@ -125,6 +144,7 @@ namespace Log
 		LogHistory.push_back( NewHistory );
 
 		PrintDirect( LogMessage );
+		LogMutex.unlock();
 	}
 
 	void CLog::PrintDirect( const char* Message )
@@ -139,20 +159,24 @@ namespace Log
 			LogOutputStream << Message;
 #endif
 
-#if defined(_DEBUG)
-			LogOutputStream.close();
+			PrintCount++;
 
-			if( Name[0] != '\0' )
+			if( PrintCount > PrintThreshold )
 			{
-				char LogFileName[256];
-				sprintf_s( LogFileName, "Shatter%s.log", Name );
-				LogOutputStream.open( LogFileName, std::fstream::out | std::fstream::app );
+				PrintCount = 0;
+				LogOutputStream.close();
+
+				if( Name[0] != '\0' )
+				{
+					char LogFileName[256];
+					sprintf_s( LogFileName, "%s.log", Name );
+					LogOutputStream.open( LogFileName, std::fstream::out | std::fstream::app );
+				}
+				else
+				{
+					LogOutputStream.open( "ShatterGlobalLog.log", std::fstream::out | std::fstream::app );
+				}
 			}
-			else
-			{
-				LogOutputStream.open( "ShatterGlobalLog.log", std::fstream::out | std::fstream::app );
-			}
-#endif
 		}
 	}
 
@@ -193,7 +217,7 @@ namespace Log
 		if( Severity >= Fatal )
 		{
 #ifdef _WIN32
-			char FullMessage[nMaximumLogMessageLength];
+			char FullMessage[MaximumLogMessageLength];
 			vsprintf_s( FullMessage, Format, Arguments );
 
 			const bool ValidName = Name[0] != '\0';

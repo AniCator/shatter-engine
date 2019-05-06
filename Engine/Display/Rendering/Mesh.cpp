@@ -33,6 +33,11 @@ void CMesh::Destroy()
 	}
 }
 
+bool CMesh::IsValid()
+{
+	return VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject != 0;
+}
+
 bool CMesh::Populate( const FPrimitive& Primitive )
 {
 	bool bCreatedVertexBuffer = CreateVertexBuffer( Primitive );
@@ -48,52 +53,58 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 
 void CMesh::Prepare( EDrawMode DrawModeOverride )
 {
-	const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
-
-	if( DrawMode != EDrawMode::None )
+	if( IsValid() )
 	{
-		glBindVertexArray( VertexArrayObject );
+		const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
 
-		glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
-
-		glEnableVertexAttribArray( EVertexAttribute::Position );
-		const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
-		glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
-
-		glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-		const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
-		glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
-
-		glEnableVertexAttribArray( EVertexAttribute::Normal );
-		const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
-		glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
-
-		if( HasIndexBuffer )
+		if( DrawMode != EDrawMode::None )
 		{
-			glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
-		}
+			glBindVertexArray( VertexArrayObject );
 
-		/*glDisableVertexAttribArray( EVertexAttribute::Position );
-		glDisableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-		glDisableVertexAttribArray( EVertexAttribute::Normal );*/
+			glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
+
+			glEnableVertexAttribArray( EVertexAttribute::Position );
+			const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
+			glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
+
+			glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
+			const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
+			glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
+
+			glEnableVertexAttribArray( EVertexAttribute::Normal );
+			const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
+			glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
+
+			if( HasIndexBuffer )
+			{
+				glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
+			}
+
+			/*glDisableVertexAttribArray( EVertexAttribute::Position );
+			glDisableVertexAttribArray( EVertexAttribute::TextureCoordinate );
+			glDisableVertexAttribArray( EVertexAttribute::Normal );*/
+		}
 	}
 }
 
 void CMesh::Draw( EDrawMode DrawModeOverride )
 {
-	const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
-
-	if( DrawMode != EDrawMode::None )
+	if( IsValid() )
 	{
-		if( HasIndexBuffer )
-		{
-			glDrawElements( DrawMode, VertexBufferData.IndexCount, GL_UNSIGNED_INT, 0 );
-		}
-		else
-		{
-			glDrawArrays( DrawMode, 0, VertexBufferData.VertexCount );
-		}
+		const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
 
+		if( DrawMode != EDrawMode::None )
+		{
+			if( HasIndexBuffer )
+			{
+				glDrawElements( DrawMode, VertexBufferData.IndexCount, GL_UNSIGNED_INT, 0 );
+			}
+			else
+			{
+				glDrawArrays( DrawMode, 0, VertexBufferData.VertexCount );
+			}
+
+		}
 	}
 }
 
@@ -121,6 +132,12 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 {
 	if( VertexBufferData.VertexBufferObject == 0 )
 	{
+		if( Primitive.VertexCount == 0 )
+		{
+			Log::Event( Log::Error, "Mesh vertex buffer has no vertices.\n" );
+			return false;
+		}
+
 		GenerateAABB( Primitive );
 
 		const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;

@@ -8,6 +8,8 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
 
+class CWorld;
+
 class CLevel
 {
 public:
@@ -56,8 +58,13 @@ public:
 	CEntity* Find( const std::string& Name ) const;
 	CEntity* Find( const size_t ID ) const;
 
+	CWorld* GetWorld();
+	void SetWorld( CWorld* NewWorld );
+
 private:
 	std::vector<CEntity*> Entities;
+
+	CWorld* World;
 
 public:
 	friend CData& operator<<( CData& Data, CLevel& Level );

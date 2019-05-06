@@ -6,8 +6,9 @@
 #include <stdarg.h>
 #include <fstream>
 #include <vector>
+#include <mutex>
 
-#if defined( _WIN32 )
+#if defined(_WIN32)
 #define ConsoleWindowDisabled
 #endif
 
@@ -64,6 +65,8 @@ namespace Log
 
 		const std::vector<FHistory>& History() const;
 
+		bool ToStdOut;
+
 	private:
 		CLog();
 
@@ -75,5 +78,7 @@ namespace Log
 
 		CTimer Timer;
 		static std::vector<FHistory> LogHistory;
+
+		std::mutex LogMutex;
 	};
 }

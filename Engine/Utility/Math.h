@@ -153,6 +153,11 @@ namespace Math
 		return sqrtf( Vector[0] * Vector[0] + Vector[1] * Vector[1] );
 	}
 
+	inline float LengthSquared( const glm::vec2& Vector )
+	{
+		return Vector[0] * Vector[0] + Vector[1] * Vector[1];
+	}
+
 	inline float Normalize( glm::vec2& Vector )
 	{
 		const float LengthBiased = 1.f / ( Length( Vector ) + FLT_EPSILON );
@@ -176,6 +181,11 @@ namespace Math
 	inline float Length( const glm::vec3& Vector )
 	{
 		return sqrtf( Vector[0] * Vector[0] + Vector[1] * Vector[1] + Vector[2] * Vector[2] );
+	}
+
+	inline float LengthSquared( const glm::vec3& Vector )
+	{
+		return Vector[0] * Vector[0] + Vector[1] * Vector[1] + Vector[2] * Vector[2];
 	}
 
 	inline float Normalize( glm::vec3& Vector )

@@ -32,6 +32,8 @@ public:
 
 	void SetPlayMode( ESoundPlayMode::Type NewPlayMode );
 
+	size_t HandleCount() const;
+
 private:
 	std::vector<SoundHandle> Handles;
 	SoundHandle CurrentHandle;

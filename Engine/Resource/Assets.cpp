@@ -2,6 +2,7 @@
 #include "Assets.h"
 
 #include <algorithm>
+#include <future>
 #include <string>
 
 #include <Engine/Audio/Sound.h>
@@ -43,6 +44,108 @@ void CAssets::Create( const std::string& Name, CTexture* NewTexture )
 void CAssets::Create( const std::string& Name, CSound* NewSound )
 {
 	Sounds.insert_or_assign( Name, NewSound );
+}
+
+void ParsePayload(FPrimitivePayload* Payload )
+{
+	Payload->Native = false;
+
+	std::stringstream ExportLocation;
+	ExportLocation << "Models/" << Payload->Name << ".lm";
+	std::string ExportPath = ExportLocation.str();
+
+	CFile File( ExportPath.c_str() );
+	if( !File.Exists() )
+	{
+		File = CFile( Payload->Location.c_str() );
+	}
+
+	if( File.Exists() )
+	{
+		std::string Extension = File.Extension();
+
+		// Shatter does not support parsing of OBJ files on multiple threads.
+		if( Extension == "lm" )
+		{
+			File.Load( true );
+			MeshBuilder::LM( Payload->Primitive, File );
+			Payload->Native = true;
+		}
+	}
+}
+
+void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
+{
+	CTimer LoadTimer;
+	LoadTimer.Start();
+
+	std::vector<std::future<void>> Futures;
+	for( auto& Payload : Meshes )
+	{
+		// Transform given name into lower case string
+		std::transform( Payload.Name.begin(), Payload.Name.end(), Payload.Name.begin(), ::tolower );
+
+		if( !FindMesh( Payload.Name ) )
+		{
+			Futures.emplace_back( std::async( std::launch::async, ParsePayload, &Payload ) );
+		}
+	}
+
+	for( auto& Payload : GenericAssets )
+	{
+		if( Payload.Type == EAsset::Mesh )
+		{
+			if( !FindMesh( Payload.Name ) )
+			{
+				CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
+			}
+		}
+		else if( Payload.Type == EAsset::Shader )
+		{
+			if( !FindShader( Payload.Name ) )
+			{
+				CreateNamedShader( Payload.Name.c_str(), Payload.Location.c_str() );
+			}
+		}
+		else if( Payload.Type == EAsset::Texture )
+		{
+			if( !FindTexture( Payload.Name ) )
+			{
+				CreatedNamedTexture( Payload.Name.c_str(), Payload.Location.c_str() );
+			}
+		}
+		else if( Payload.Type == EAsset::Sound )
+		{
+			// TODO: This will reload sounds right now even if we've already loaded them.
+			CSound* NewSound = FindSound( Payload.Name );
+			if( NewSound )
+			{
+				NewSound->Load( Payload.Location.c_str() );
+			}
+		}
+	}
+
+	for( auto& Future : Futures )
+	{
+		Future.get();
+	}
+
+	for( auto& Payload : Meshes )
+	{
+		if( Payload.Native && Payload.Primitive.Vertices && Payload.Primitive.VertexCount > 0 )
+		{
+			CreateNamedMesh( Payload.Name.c_str(), Payload.Primitive );
+		}
+		else if( !Payload.Native )
+		{
+			// Try to load the mesh synchronously.
+			CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
+		}
+	}
+
+	LoadTimer.Stop();
+
+	Log::Event( "Parallel mesh list load time: %ims\n", LoadTimer.GetElapsedTimeMilliseconds() );
 }
 
 CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad )

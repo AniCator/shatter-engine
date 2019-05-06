@@ -1,6 +1,12 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Application.h"
 
+#if defined(_WIN32)
+#include <Windows.h>
+#include <fcntl.h>
+#include <io.h>
+#endif
+
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Audio/SimpleSound.h>
@@ -502,11 +508,11 @@ void DebugMenu( CApplication* Application )
 
 	if( ExportDialog )
 	{
-		if( ImGui::Begin( "Export", &ExportDialog ) )
+		if( ImGui::Begin( "Export", &ExportDialog, ImVec2( 600.0f, 800.0f ) ) )
 		{
 			ImGui::Text( "Click on an asset to convert it." );
 
-			auto Map = CAssets::Get().GetMeshMap();
+			auto Map = CAssets::Get().GetMeshes();
 			for( auto Entry : Map )
 			{
 				if( ImGui::Button( Entry.first.c_str() ) )
@@ -793,6 +799,72 @@ std::string CApplication::GetName() const
 void CApplication::SetName( const char* NameIn )
 {
 	Name = NameIn;
+}
+
+void CApplication::RedirectLogToConsole()
+{
+#if defined(_WIN32)
+	if( FreeConsole() && AttachConsole( ATTACH_PARENT_PROCESS ) )
+	{
+		Log::CLog::Get().ToStdOut = true;
+
+		FILE* fp;
+		freopen_s( &fp, "CONOUT$", "w", stdout );
+
+		std::ios::sync_with_stdio();
+	}
+#endif
+}
+
+void CApplication::ProcessCommandLine( int argc, char ** argv )
+{
+	for( int Index = 0; Index < argc; Index++ )
+	{
+		if( strcmp( argv[Index], "-tools" ) == 0 )
+		{
+			EnableTools( true );
+		}
+		else if( strcmp( argv[Index], "-convert" ) == 0 )
+		{
+			RedirectLogToConsole();
+
+			if( Index + 1 < argc )
+			{			
+				CTimer LoadTimer;
+				CTimer ParseTimer;
+
+				const char* Location = argv[Index + 1];
+				CFile File( Location );
+				if( File.Extension() == "obj" )
+				{
+					LoadTimer.Start();
+					File.Load();
+					LoadTimer.Stop();
+
+					FPrimitive Primitive;
+
+					ParseTimer.Start();
+					MeshBuilder::OBJ( Primitive, File );
+					ParseTimer.Stop();
+
+					CData Data;
+					Data << Primitive;
+
+					std::string ExportPath = Location;
+					ExportPath = ExportPath.substr( 0, ExportPath.length() - 3 );
+					ExportPath.append( "lm" );
+
+					CFile File( ExportPath.c_str() );
+					File.Load( Data );
+					File.Save();
+
+					Log::Event( "OBJ Import | Load %ims Parse %ims\n", LoadTimer.GetElapsedTimeMilliseconds(), ParseTimer.GetElapsedTimeMilliseconds() );
+				}
+
+				exit( 1337 );
+			}
+		}
+	}
 }
 
 const bool CApplication::ToolsEnabled() const

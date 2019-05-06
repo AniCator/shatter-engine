@@ -11,6 +11,33 @@ class CShader;
 class CTexture;
 class CSound;
 
+struct FPrimitivePayload
+{
+	std::string Name;
+	std::string Location;
+	FPrimitive Primitive;
+	bool Native;
+};
+
+namespace EAsset
+{
+	enum Type
+	{
+		Unknown = 0,
+		Mesh,
+		Shader,
+		Texture,
+		Sound
+	};
+}
+
+struct FGenericAssetPayload
+{
+	EAsset::Type Type;
+	std::string Name;
+	std::string Location;
+};
+
 class CAssets
 {
 public:
@@ -18,6 +45,8 @@ public:
 	void Create( const std::string& Name, CShader* NewShader );
 	void Create( const std::string& Name, CTexture* NewTexture );
 	void Create( const std::string& Name, CSound* NewSound );
+
+	void CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
@@ -45,9 +74,24 @@ public:
 
 	void ReloadShaders();
 
-	const std::unordered_map<std::string, CMesh*>& GetMeshMap() const
+	const std::unordered_map<std::string, CMesh*>& GetMeshes() const
 	{
 		return Meshes;
+	}
+
+	const std::unordered_map<std::string, CShader*>& GetShaders() const
+	{
+		return Shaders;
+	}
+
+	const std::unordered_map<std::string, CTexture*>& GetTextures() const
+	{
+		return Textures;
+	}
+
+	const std::unordered_map<std::string, CSound*>& GetSounds() const
+	{
+		return Sounds;
 	}
 
 private:

@@ -7,8 +7,10 @@
 
 #include <Engine/Utility/Structures/JSON.h>
 
-class CEntity;
 class CLevel;
+class CWorld;
+
+class CEntity;
 typedef std::function<CEntity*()> EntityFunction;
 typedef std::map<std::string, EntityFunction> EntityMap;
 
@@ -47,6 +49,8 @@ public:
 
 	void SetLevel( CLevel* SpawnLevel );
 	CLevel* GetLevel() const;
+
+	CWorld* GetWorld();
 
 	virtual void Construct();
 	virtual void Tick() {};
