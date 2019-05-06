@@ -77,8 +77,8 @@ void InputRestartGameLayers(CApplication* Application)
 
 	ScaledGameTime = 0.0f;
 
-	CAngelEngine::Get().Shutdown();
-	CAngelEngine::Get().Initialize();
+	// CAngelEngine::Get().Shutdown();
+	// CAngelEngine::Get().Initialize();
 
 	GameLayersInstance->Shutdown();
 
@@ -674,7 +674,7 @@ void CApplication::Run()
 					// Tick all game layers
 					GameLayersInstance->Tick();
 
-					CAngelEngine::Get().Tick();
+					// CAngelEngine::Get().Tick();
 
 					GameTimer.Start();
 				}
@@ -700,7 +700,7 @@ void CApplication::Run()
 		}
 	}
 
-	CAngelEngine::Get().Shutdown();
+	// CAngelEngine::Get().Shutdown();
 
 	GameLayersInstance->Shutdown();
 	delete GameLayersInstance;
@@ -1031,7 +1031,7 @@ void CApplication::Initialize()
 
 	UnregisterDebugUI();
 
-	CAngelEngine::Get().Initialize();
+	// CAngelEngine::Get().Initialize();
 
 	GameLayersInstance->Initialize();
 

@@ -1,4 +1,5 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
+#if 0
 #include "AngelEngine.h"
 
 #include <string>
@@ -163,3 +164,4 @@ EAngelResult CAngelEngine::Execute( const char* Name )
 
 	return EAngelResult::Unknown;
 }
+#endif

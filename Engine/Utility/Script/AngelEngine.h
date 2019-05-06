@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#if 0
 #include <stdint.h>
 
 #include <Engine/Utility/File.h>
@@ -48,3 +49,4 @@ private:
 	CAngelEngine( CAngelEngine const& ) = delete;
 	void operator=( CAngelEngine const& ) = delete;
 };
+#endif
