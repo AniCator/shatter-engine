@@ -45,9 +45,7 @@ CRenderer::~CRenderer()
 void CRenderer::Initialize()
 {
 	CAssets& Assets = CAssets::Get();
-	Assets.CreateNamedShader( "Default", "Shaders/default" );
-	Assets.CreateNamedShader( "DefaultInstanced", "Shaders/DefaultInstanced" );
-	Assets.CreateNamedShader( "PyramidOcean", "Shaders/PyramidOcean" );
+	Assets.CreateNamedShader( "Default", "Shaders/Default" );
 
 	FPrimitive Triangle;
 	MeshBuilder::Triangle( Triangle, 1.0f );
