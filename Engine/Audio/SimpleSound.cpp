@@ -10,18 +10,18 @@ std::vector<sf::Sound*> CSimpleSound::Sounds;
 std::vector<sf::SoundBuffer*> CSimpleSound::SoundBuffers;
 std::vector<FStream> CSimpleSound::Streams;
 
-SoundHandle CSimpleSound::Sound( std::string ResourcePath )
+SoundBufferHandle CSimpleSound::Sound( std::string ResourcePath )
 {
 	Log::Event( "Loading sound \"%s\"\n", ResourcePath.c_str() );
 	sf::SoundBuffer* NewSoundBuffer = new sf::SoundBuffer();
 	NewSoundBuffer->loadFromFile( ResourcePath );
-	sf::Sound* NewSound = new sf::Sound( *NewSoundBuffer );
+	// sf::Sound* NewSound = new sf::Sound( *NewSoundBuffer );
 
 	SoundBuffers.push_back( NewSoundBuffer );
-	Sounds.push_back( NewSound );
+	// Sounds.push_back( NewSound );
 
-	SoundHandle Handle;
-	Handle.Handle = Sounds.size() - 1;
+	SoundBufferHandle Handle;
+	Handle.Handle = SoundBuffers.size() - 1;
 	return Handle;
 }
 
@@ -40,10 +40,22 @@ MusicHandle CSimpleSound::Music( std::string ResourcePath )
 	return Handle;
 }
 
-void CSimpleSound::Start( SoundHandle Handle )
+SoundHandle CSimpleSound::Start( SoundBufferHandle Handle )
 {
 	if( Handle.Handle > -1 )
-		Sounds[Handle.Handle]->play();
+	{
+		sf::Sound* NewSound = new sf::Sound( *SoundBuffers[Handle.Handle] );
+		Sounds.push_back( NewSound );
+		NewSound->play();
+
+		SoundHandle NewHandle;
+		NewHandle.Handle = Sounds.size() - 1;
+		return NewHandle;
+	}
+
+	SoundHandle EmptyHandle;
+	EmptyHandle.Handle = -1;
+	return EmptyHandle;
 }
 
 void CSimpleSound::Start( MusicHandle Handle, const float FadeIn )

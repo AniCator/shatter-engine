@@ -9,6 +9,11 @@ union SoundHandle
 	int32_t Handle;
 };
 
+union SoundBufferHandle
+{
+	int32_t Handle;
+};
+
 union MusicHandle
 {
 	int32_t Handle;
@@ -31,10 +36,10 @@ struct FStream
 class CSimpleSound
 {
 public:
-	static SoundHandle Sound( std::string ResourcePath );
+	static SoundBufferHandle Sound( std::string ResourcePath );
 	static MusicHandle Music( std::string ResourcePath );
 
-	static void Start( SoundHandle Handle );
+	static SoundHandle Start( SoundBufferHandle Handle );
 	static void Start( MusicHandle Handle, const float FadeIn = -1.0f );
 
 	static void Stop( SoundHandle Handle );

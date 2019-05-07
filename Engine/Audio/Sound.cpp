@@ -11,12 +11,12 @@ CSound::CSound()
 
 CSound::~CSound()
 {
-
+	Clear();
 }
 
 bool CSound::Load( const char* FileLocation )
 {
-	Handles.push_back( CSimpleSound::Sound( FileLocation ) );
+	BufferHandles.push_back( CSimpleSound::Sound( FileLocation ) );
 
 	return true;
 }
@@ -25,18 +25,18 @@ void CSound::Clear()
 {
 	Stop();
 	Location = 0;
-	Handles.clear();
+	BufferHandles.clear();
+	SoundHandles.clear();
 }
 
 void CSound::Start()
 {
-	CurrentHandle = Select();
-	CSimpleSound::Start( CurrentHandle );
+	SoundHandles.push_back( CSimpleSound::Start( Select() ) );
 }
 
 void CSound::Stop()
 {
-	for( const auto& Handle : Handles )
+	for( const auto& Handle : SoundHandles )
 	{
 		CSimpleSound::Stop( Handle );
 	}
@@ -44,7 +44,7 @@ void CSound::Stop()
 
 void CSound::Loop( const bool Loop )
 {
-	for( const auto& Handle : Handles )
+	for( const auto& Handle : SoundHandles )
 	{
 		CSimpleSound::Loop( Handle, Loop );
 	}
@@ -52,7 +52,7 @@ void CSound::Loop( const bool Loop )
 
 void CSound::Rate( const float Rate )
 {
-	for( const auto& Handle : Handles )
+	for( const auto& Handle : SoundHandles )
 	{
 		CSimpleSound::Rate( Handle, Rate );
 	}
@@ -61,7 +61,7 @@ void CSound::Rate( const float Rate )
 bool CSound::Playing()
 {
 	bool IsPlaying = false;
-	for( const auto& Handle : Handles )
+	for( const auto& Handle : SoundHandles )
 	{
 		if( CSimpleSound::Playing( Handle ) )
 		{
@@ -75,7 +75,7 @@ bool CSound::Playing()
 
 void CSound::Volume( const float Volume )
 {
-	for( const auto& Handle : Handles )
+	for( const auto& Handle : SoundHandles )
 	{
 		CSimpleSound::Volume( Handle, Volume );
 	}
@@ -86,35 +86,30 @@ void CSound::SetPlayMode( ESoundPlayMode::Type NewPlayMode )
 	PlayMode = NewPlayMode;
 }
 
-size_t CSound::HandleCount() const
-{
-	return Handles.size();
-}
-
-SoundHandle CSound::Select()
+SoundBufferHandle CSound::Select()
 {
 	if( PlayMode == ESoundPlayMode::Unknown || PlayMode == ESoundPlayMode::Sequential )
 	{
-		if( Location >= Handles.size() )
+		if( Location >= BufferHandles.size() )
 		{
 			Location = 0;
 		}
 
-		return Handles[Location++];
+		return BufferHandles[Location++];
 	}
 	else if( PlayMode == ESoundPlayMode::Random )
 	{
-		uint32_t NewLocation = static_cast<uint32_t>( Math::Random() * Handles.size() );
+		uint32_t NewLocation = static_cast<uint32_t>( Math::Random() * BufferHandles.size() );
 		if( NewLocation == Location )
 		{
-			NewLocation = ( NewLocation + 1 ) % Handles.size();
+			NewLocation = ( NewLocation + 1 ) % BufferHandles.size();
 		}
 
 		Location = NewLocation;
-		return Handles[Location];
+		return BufferHandles[Location];
 	}
 
-	SoundHandle Invalid;
+	SoundBufferHandle Invalid;
 	Invalid.Handle = -1;
 	return Invalid;
 }

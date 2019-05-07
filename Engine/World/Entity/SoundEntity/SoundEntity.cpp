@@ -48,8 +48,8 @@ void CSoundEntity::Tick()
 		if( AutoPlay )
 		{
 			AutoPlay = false;
-			Sound->Loop( Loop );
 			Sound->Start();
+			Sound->Loop( Loop );
 		}
 
 		if( Falloff == EFalloff::None )

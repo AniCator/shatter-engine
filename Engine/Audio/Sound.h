@@ -32,13 +32,11 @@ public:
 
 	void SetPlayMode( ESoundPlayMode::Type NewPlayMode );
 
-	size_t HandleCount() const;
-
 private:
-	std::vector<SoundHandle> Handles;
-	SoundHandle CurrentHandle;
+	std::vector<SoundBufferHandle> BufferHandles;
+	std::vector<SoundHandle> SoundHandles;
 	ESoundPlayMode::Type PlayMode;
 
-	SoundHandle Select();
+	SoundBufferHandle Select();
 	uint32_t Location;
 };
