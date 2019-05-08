@@ -230,6 +230,7 @@
     <ClCompile Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\MeshEntity\MeshEntity.cpp" />
+    <ClCompile Include="Engine\World\Entity\PointEntity\PointEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp" />
     <ClCompile Include="Engine\World\Level\Level.cpp" />
     <ClCompile Include="Engine\World\World.cpp" />
@@ -289,6 +290,7 @@
     <ClInclude Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.h" />
     <ClInclude Include="Engine\World\Entity\MeshEntity\MeshEntity.h" />
+    <ClInclude Include="Engine\World\Entity\PointEntity\PointEntity.h" />
     <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h" />
     <ClInclude Include="Engine\World\Level\Level.h" />
     <ClInclude Include="Engine\World\World.h" />

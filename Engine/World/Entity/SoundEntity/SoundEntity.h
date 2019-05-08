@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <Engine/World/Entity/Entity.h>
+#include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math.h>
 
 class CSound;
@@ -16,7 +16,7 @@ namespace EFalloff
 	};
 }
 
-class CSoundEntity : public CEntity
+class CSoundEntity : public CPointEntity
 {
 public:
 	CSoundEntity();
@@ -29,18 +29,17 @@ public:
 	virtual void Tick() override;
 	virtual void Destroy() override;
 
-	virtual const FTransform& GetTransform() const { return Transform; };
 	virtual void Load( const JSON::Vector& Objects ) override;
 
 	void Play();
 	void Stop();
 
 public:
-	FTransform Transform;
 	CSound* Sound;
 
 	EFalloff::Type Falloff;
 	float Radius;
+	float Volume;
 	bool AutoPlay;
 	bool Loop;
 };

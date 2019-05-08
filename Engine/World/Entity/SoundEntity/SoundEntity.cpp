@@ -14,6 +14,7 @@ CSoundEntity::CSoundEntity()
 
 	Falloff = EFalloff::None;
 	Radius = 0.0f;
+	Volume = 100.0f;
 
 	AutoPlay = false;
 	Loop = false;
@@ -21,7 +22,7 @@ CSoundEntity::CSoundEntity()
 	Inputs["Play"] = [this] () {this->Play(); };
 }
 
-CSoundEntity::CSoundEntity( FTransform& Transform ) : CEntity()
+CSoundEntity::CSoundEntity( FTransform& Transform ) : CPointEntity()
 {
 	Spawn( Transform );
 }
@@ -54,7 +55,7 @@ void CSoundEntity::Tick()
 
 		if( Falloff == EFalloff::None )
 		{
-			Sound->Volume( 100.0f );
+			Sound->Volume( Volume );
 		}
 		else if( Falloff == EFalloff::Linear )
 		{
@@ -62,13 +63,13 @@ void CSoundEntity::Tick()
 			if( World )
 			{
 				const auto& CameraSetup = World->GetActiveCameraSetup();
-				glm::vec3 Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+				Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
-				float Length = Math::Length( Delta );
+				float Length = Delta.Length();
 				Length /= Radius;
 				Length = glm::clamp( Length, 0.0f, 1.0f );
 
-				Sound->Volume( Length * 100.0f );
+				Sound->Volume( Length * Volume );
 			}
 		}
 		else if( Falloff == EFalloff::InverseSquare )
@@ -77,14 +78,14 @@ void CSoundEntity::Tick()
 			if( World )
 			{
 				const auto& CameraSetup = World->GetActiveCameraSetup();
-				glm::vec3 Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+				Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
 				const float Factor = 1.0f / Radius;
-				float Length = Math::Length( Delta ) * Factor;
+				float Length = Delta.Length() * Factor;
 				Length = 1.0f / ( Length * Length );
 				Length = glm::clamp( Length, 0.0f, 1.0f );
 
-				Sound->Volume( Length * 100.0f );
+				Sound->Volume( Length * Volume );
 			}
 		}
 	}
@@ -97,11 +98,12 @@ void CSoundEntity::Destroy()
 
 void CSoundEntity::Load( const JSON::Vector& Objects )
 {
+	CPointEntity::Load( Objects );
 	CAssets& Assets = CAssets::Get();
 
-	glm::vec3 Position;
-	glm::vec3 Orientation;
-	glm::vec3 Size;
+	Vector3D Position;
+	Vector3D Orientation;
+	Vector3D Size;
 
 	for( auto Property : Objects )
 	{
@@ -111,7 +113,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
 			if( OutTokenCount == 3 )
 			{
-				Position = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
+				Position = { Coordinates[0], Coordinates[1], Coordinates[2] };
 			}
 		}
 		else if( Property->Key == "rotation" )
@@ -120,7 +122,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
 			if( OutTokenCount == 3 )
 			{
-				Orientation = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
+				Orientation = { Coordinates[0], Coordinates[1], Coordinates[2] };
 			}
 		}
 		else if( Property->Key == "scale" )
@@ -129,7 +131,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
 			if( OutTokenCount == 3 )
 			{
-				Size = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
+				Size = { Coordinates[0], Coordinates[1], Coordinates[2] };
 			}
 		}
 		else if( Property->Key == "sound" )
@@ -154,6 +156,15 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 			if( OutTokenCount == 1 )
 			{
 				Radius = TokenDistance[0];
+			}
+		}
+		else if( Property->Key == "volume" )
+		{
+			size_t OutTokenCount = 0;
+			auto TokenDistance = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 1 );
+			if( OutTokenCount == 1 )
+			{
+				Volume = TokenDistance[0];
 			}
 		}
 		else if( Property->Key == "autoplay" )

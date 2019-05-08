@@ -52,13 +52,15 @@ public:
 
 	CWorld* GetWorld();
 
+	void SetParent( CEntity* Entity );
+	CEntity* GetParent();
+
 	virtual void Construct();
 	virtual void Tick() {};
 	virtual void Destroy();
 
 	virtual void Load( const JSON::Vector& Objects );
 	void Link( const JSON::Vector& Objects );
-
 	std::string Name;
 
 	// Entity I/O
@@ -73,6 +75,7 @@ public:
 private:
 	size_t ID;
 	CLevel* Level;
+	CEntity* Parent;
 
 	std::vector<size_t> TrackedEntityIDs;
 

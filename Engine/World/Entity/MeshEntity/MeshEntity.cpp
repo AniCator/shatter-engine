@@ -12,13 +12,12 @@ CMeshEntity::CMeshEntity()
 	Mesh = nullptr;
 	Shader = nullptr;
 	Texture = nullptr;
-	Transform = FTransform();
 	Renderable = nullptr;
 
 	Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
 }
 
-CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CEntity()
+CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CPointEntity()
 {
 	Spawn( Mesh, Shader, Texture, Transform );
 }
@@ -75,14 +74,12 @@ void CMeshEntity::Destroy()
 
 void CMeshEntity::Load( const JSON::Vector& Objects )
 {
+	CPointEntity::Load( Objects );
 	CAssets& Assets = CAssets::Get();
 
 	CMesh* Mesh = nullptr;
 	CShader* Shader = nullptr;
 	CTexture* Texture = nullptr;
-	glm::vec3 Position;
-	glm::vec3 Orientation;
-	glm::vec3 Size;
 
 	for( auto Property : Objects )
 	{
@@ -97,36 +94,6 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "texture" )
 		{
 			Texture = Assets.FindTexture( Property->Value );
-		}
-		else if( Property->Key == "position" )
-		{
-			size_t ExpectedTokenCount = 3;
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, ExpectedTokenCount  );
-			if( OutTokenCount == 3 )
-			{
-				Position = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
-			}
-		}
-		else if( Property->Key == "rotation" )
-		{
-			size_t ExpectedTokenCount = 3;
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, ExpectedTokenCount );
-			if(  OutTokenCount == 3 )
-			{
-				Orientation = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
-			}
-		}
-		else if( Property->Key == "scale" )
-		{
-			size_t ExpectedTokenCount = 3;
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, ExpectedTokenCount );
-			if( OutTokenCount == 3 )
-			{
-				Size = glm::vec3( Coordinates[0], Coordinates[1], Coordinates[2] );
-			}
 		}
 		else if( Property->Key == "color" )
 		{
@@ -144,6 +111,5 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 	}
 
-	FTransform Transform( Position, Orientation, Size );
 	Spawn( Mesh, Shader, Texture, Transform );
 }

@@ -23,6 +23,7 @@ EntityFunction CEntityMap::Find( const std::string& Type )
 CEntity::CEntity()
 {
 	Level = nullptr;
+	Parent = nullptr;
 
 	Enabled = false;
 }
@@ -50,6 +51,16 @@ CLevel* CEntity::GetLevel() const
 CWorld* CEntity::GetWorld()
 {
 	return Level->GetWorld();
+}
+
+void CEntity::SetParent( CEntity* Entity )
+{
+	Parent = Entity;
+}
+
+CEntity* CEntity::GetParent()
+{
+	return Parent;
 }
 
 void CEntity::Construct()

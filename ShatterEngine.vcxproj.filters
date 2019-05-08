@@ -108,6 +108,9 @@
     <Filter Include="Source Files\Engine\World\Entity\Logic\LogicTimerEntity">
       <UniqueIdentifier>{ba13e93c-bb7d-4f00-afe8-50d0a0d5cb84}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\PointEntity">
+      <UniqueIdentifier>{d71bf6f9-3166-4288-82b2-64f52fe3be29}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -232,6 +235,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\Math\Vector.cpp">
       <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\PointEntity\PointEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\PointEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -414,6 +420,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Math\Vector.h">
       <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\PointEntity\PointEntity.h">
+      <Filter>Source Files\Engine\World\Entity\PointEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
