@@ -9,10 +9,16 @@
 #include <ThirdParty/glm/gtc/matrix_transform.hpp>
 #include <ThirdParty/glm/gtx/quaternion.hpp>
 
+#define Vector3DToInitializerList(Vector) { Vector[0],Vector[1],Vector[2] }
+#define Vector3DToGLM(Vector) glm::vec3( Vector[0],Vector[1],Vector[2] )
+
+#define Vector2DToInitializerList(Vector) { Vector[0],Vector[1] }
+#define Vector2DToGLM(Vector) glm::vec2( Vector[0],Vector[1] )
+
 const static glm::mat4 IdentityMatrix = glm::mat4( 1.0f );
-static const glm::vec3 WorldRight = glm::vec3( 1.0f, 0.0f, 0.0f );
-static const glm::vec3 WorldForward = glm::vec3( 0.0f, 1.0f, 0.0f );
-static const glm::vec3 WorldUp = glm::vec3( 0.0f, 0.0f, 1.0f );
+static const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
+static const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
+static const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };
 
 struct FFrustumPlane
 {
@@ -26,8 +32,8 @@ struct FFrustum
 
 struct FBounds
 {
-	glm::vec3 Minimum;
-	glm::vec3 Maximum;
+	Vector3D Minimum;
+	Vector3D Maximum;
 };
 
 struct FTransform
@@ -36,35 +42,35 @@ public:
 	FTransform()
 	{
 		TransformMatrix = IdentityMatrix;
-		StoredPosition = glm::vec3( 0.0f );
-		StoredOrientation = glm::vec3( 0.0f, 0.0f, 0.0f );
-		StoredSize = glm::vec3( 1.0f );
+		StoredPosition = Vector3D( 0.0f, 0.0f, 0.0f );
+		StoredOrientation = Vector3D( 0.0f, 0.0f, 0.0f );
+		StoredSize = Vector3D( 1.0f, 1.0f, 1.0f );
 	}
 
-	FTransform( const glm::vec3& Position, const glm::vec3& Orientation, const glm::vec3& Size )
+	FTransform( const Vector3D& Position, const Vector3D& Orientation, const Vector3D& Size )
 	{
 		SetTransform( Position, Orientation, Size );
 	}
 
-	void SetPosition( const glm::vec3& Position )
+	void SetPosition( const Vector3D& Position )
 	{
 		this->StoredPosition = Position;
 		Update();
 	}
 
-	void SetOrientation( const glm::vec3& Orientation )
+	void SetOrientation( const Vector3D& Orientation )
 	{
 		this->StoredOrientation = Orientation;
 		Update();
 	}
 
-	void SetSize( const glm::vec3& Size )
+	void SetSize( const Vector3D& Size )
 	{
 		this->StoredSize = Size;
 		Update();
 	}
 
-	void SetTransform( const glm::vec3& Position, const glm::vec3& Orientation, const glm::vec3& Size )
+	void SetTransform( const Vector3D& Position, const Vector3D& Orientation, const Vector3D& Size )
 	{
 		this->StoredPosition = Position;
 		this->StoredOrientation = Orientation;
@@ -72,7 +78,7 @@ public:
 		Update();
 	}
 
-	void SetTransform( const glm::vec3& Position, const glm::vec3& Orientation )
+	void SetTransform( const Vector3D& Position, const Vector3D& Orientation )
 	{
 		this->StoredPosition = Position;
 		this->StoredOrientation = Orientation;
@@ -89,17 +95,17 @@ public:
 		return TransformMatrix;
 	}
 
-	const glm::vec3& GetPosition() const
+	const Vector3D& GetPosition() const
 	{
 		return StoredPosition;
 	}
 
-	const glm::vec3& GetOrientation() const
+	const Vector3D& GetOrientation() const
 	{
 		return StoredOrientation;
 	}
 
-	const glm::vec3& GetSize() const
+	const Vector3D& GetSize() const
 	{
 		return StoredSize;
 	}
@@ -112,16 +118,16 @@ public:
 private:
 	void Update()
 	{
-		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
-		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
-		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
+		static const Vector3D AxisX = Vector3D( 1.0f, 0.0f, 0.0f );
+		static const Vector3D AxisY = Vector3D( 0.0f, 1.0f, 0.0f );
+		static const Vector3D AxisZ = Vector3D( 0.0f, 0.0f, 1.0f );
 
-		glm::mat4 ScaleMatrix = glm::scale( IdentityMatrix, StoredSize );
+		glm::mat4 ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
 		
-		glm::quat Quaternion = glm::quat( glm::radians( StoredOrientation ) );
+		glm::quat Quaternion = glm::quat( glm::radians( glm::vec3( StoredOrientation[0], StoredOrientation[1], StoredOrientation[2] ) ) );
 		RotationMatrix = glm::toMat4( Quaternion );
 
-		TransformMatrix = glm::translate( IdentityMatrix, StoredPosition );
+		TransformMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
 
 		TransformMatrix = TransformMatrix * RotationMatrix * ScaleMatrix;
 	}
@@ -129,9 +135,9 @@ private:
 	glm::mat4 RotationMatrix;
 	glm::mat4 TransformMatrix;
 
-	glm::vec3 StoredPosition;
-	glm::vec3 StoredOrientation;
-	glm::vec3 StoredSize;
+	Vector3D StoredPosition;
+	Vector3D StoredOrientation;
+	Vector3D StoredSize;
 };
 
 namespace Math

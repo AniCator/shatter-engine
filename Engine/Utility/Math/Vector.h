@@ -51,6 +51,11 @@ public:
 		this->Y = Y;
 	}
 
+	inline float* Base()
+	{
+		return &X;
+	}
+
 	inline float& operator[]( size_t Index )
 	{
 		return ( &X )[Index];
@@ -174,6 +179,11 @@ public:
 		this->X = X;
 		this->Y = Y;
 		this->Z = Z;
+	}
+
+	inline const float* Base() const
+	{
+		return &X;
 	}
 
 	inline float& operator[]( size_t Index )
@@ -308,6 +318,11 @@ public:
 			Z * Vector.X - Vector.Z * X,
 			X * Vector.Y - Vector.X * Y
 		);
+	}
+
+	inline float Length()
+	{
+		return sqrt( Dot( *this ) );
 	}
 
 	inline float Length( const Vector3D& Vector )

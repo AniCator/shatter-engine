@@ -149,7 +149,7 @@ void CRenderer::DrawQueuedRenderables()
 		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
 
 		GLuint CameraPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraPosition" );
-		glUniform3fv( CameraPositionLocation, 1, glm::value_ptr( CameraSetup.CameraPosition ) );
+		glUniform3fv( CameraPositionLocation, 1, CameraSetup.CameraPosition.Base() );
 
 		if( GameLayersInstance )
 		{
