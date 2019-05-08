@@ -218,7 +218,7 @@
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
     <ClCompile Include="Engine\Resource\Assets.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
-    <ClCompile Include="Engine\Utility\Math\SIMDVector.cpp" />
+    <ClCompile Include="Engine\Utility\Math\Vector.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilder.cpp" />
     <ClCompile Include="Engine\Utility\Presence\Presence.cpp" />
     <ClCompile Include="Engine\Utility\Script\AngelEngine.cpp" />
@@ -269,7 +269,7 @@
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />
     <ClInclude Include="Engine\Utility\Math.h" />
-    <ClInclude Include="Engine\Utility\Math\SIMDVector.h" />
+    <ClInclude Include="Engine\Utility\Math\Vector.h" />
     <ClInclude Include="Engine\Utility\MeshBuilder.h" />
     <ClInclude Include="Engine\Utility\Presence\Precense.h" />
     <ClInclude Include="Engine\Utility\Primitive.h" />

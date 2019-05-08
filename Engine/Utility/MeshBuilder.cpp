@@ -21,11 +21,11 @@ void MeshBuilder::Triangle( FPrimitive& Primitive, const float Radius )
 	Log::Event( "Generating triangle with radius %.2f\n", Radius );
 
 	static const uint32_t VertexCount = 6;
-	std::vector<glm::vec3> Vertices =
+	std::vector<Vector3D> Vertices =
 	{
-		glm::vec3( -1.0f, -1.0f, 0.0f ) * Radius,
-		glm::vec3( 1.0f, -1.0f, 0.0f ) * Radius,
-		glm::vec3( 0.0f, 1.0f, 0.0f ) * Radius,
+		Vector3D( -1.0f, -1.0f, 0.0f ) * Radius,
+		Vector3D( 1.0f, -1.0f, 0.0f ) * Radius,
+		Vector3D( 0.0f, 1.0f, 0.0f ) * Radius,
 	};
 
 	Soup( Primitive, Vertices );
@@ -35,15 +35,15 @@ void MeshBuilder::Plane( FPrimitive& Primitive, const float Radius )
 {
 	Log::Event( "Generating plane with radius %.2f\n", Radius );
 
-	static const glm::vec3 Normal = glm::vec3( 0.0f, 0.0f, 1.0f );
+	static const Vector3D Normal = Vector3D( 0.0f, 0.0f, 1.0f );
 
 	static const uint32_t VertexCount = 4;
 	FVertex* Vertices = new FVertex[VertexCount]
 	{
-		FVertex( glm::vec3( -1.0f, -1.0f, 0.0f ) * Radius, Normal ), // Bottom-left
-		FVertex( glm::vec3( 1.0f, -1.0f, 0.0f ) * Radius, Normal ), // Bottom-right
-		FVertex( glm::vec3( 1.0f,  1.0f, 0.0f ) * Radius, Normal ), // Top-right
-		FVertex( glm::vec3( -1.0f,  1.0f, 0.0f ) * Radius, Normal ), // Top-left
+		FVertex( Vector3D( -1.0f, -1.0f, 0.0f ) * Radius, Normal ), // Bottom-left
+		FVertex( Vector3D( 1.0f, -1.0f, 0.0f ) * Radius, Normal ), // Bottom-right
+		FVertex( Vector3D( 1.0f,  1.0f, 0.0f ) * Radius, Normal ), // Top-right
+		FVertex( Vector3D( -1.0f,  1.0f, 0.0f ) * Radius, Normal ), // Top-left
 	};
 
 	static const uint32_t IndexCount = 6;
@@ -66,15 +66,15 @@ void MeshBuilder::Cube( FPrimitive& Primitive, const float Radius )
 	static const uint32_t VertexCount = 8;
 	FVertex* Vertices = new FVertex[VertexCount]
 	{
-		FVertex( glm::vec3( -1.0f, -1.0f, -1.0f ) * Radius ),
-		FVertex( glm::vec3( 1.0f, -1.0f, -1.0f ) * Radius ),
-		FVertex( glm::vec3( 1.0f,  1.0f, -1.0f ) * Radius ),
-		FVertex( glm::vec3( -1.0f,  1.0f, -1.0f ) * Radius ),
+		FVertex( Vector3D( -1.0f, -1.0f, -1.0f ) * Radius ),
+		FVertex( Vector3D( 1.0f, -1.0f, -1.0f ) * Radius ),
+		FVertex( Vector3D( 1.0f,  1.0f, -1.0f ) * Radius ),
+		FVertex( Vector3D( -1.0f,  1.0f, -1.0f ) * Radius ),
 
-		FVertex( glm::vec3( -1.0f, -1.0f, 1.0f ) * Radius ),
-		FVertex( glm::vec3( 1.0f, -1.0f, 1.0f ) * Radius ),
-		FVertex( glm::vec3( 1.0f,  1.0f, 1.0f ) * Radius ),
-		FVertex( glm::vec3( -1.0f,  1.0f, 1.0f ) * Radius ),
+		FVertex( Vector3D( -1.0f, -1.0f, 1.0f ) * Radius ),
+		FVertex( Vector3D( 1.0f, -1.0f, 1.0f ) * Radius ),
+		FVertex( Vector3D( 1.0f,  1.0f, 1.0f ) * Radius ),
+		FVertex( Vector3D( -1.0f,  1.0f, 1.0f ) * Radius ),
 	};
 
 	static const uint32_t IndexCount = 36;
@@ -155,28 +155,28 @@ void MeshBuilder::Cone( FPrimitive& Primitive, const float Radius, const uint32_
 	Soup( Primitive, UnindexedVertices, IndexCount );*/
 
 	const float SidesInverse = 1.0f / static_cast<float>( Sides );
-	std::vector<glm::vec3> Vertices;
+	std::vector<Vector3D> Vertices;
 	for( size_t Index = 0; Index < Sides; Index++ )
 	{
 		// Tip
-		Vertices.push_back( glm::vec3( 0.0f, 0.0f, 1.0f ) * Radius );
+		Vertices.push_back( Vector3D( 0.0f, 0.0f, 1.0f ) * Radius );
 
 		// V0
 		const float Angle0 = 2.0f * Pi * static_cast<float>( Index ) * SidesInverse;
 		const float X0 = sin( Angle0 );
 		const float Y0 = cos( Angle0 );
-		const glm::vec3 V0 = glm::vec3( X0, Y0, -1.0f ) * Radius;
+		const Vector3D V0 = Vector3D( X0, Y0, -1.0f ) * Radius;
 		Vertices.push_back( V0 );
 
 		// V1
 		const float Angle1 = 2.0f * Pi * static_cast<float>( Index + 1 ) * SidesInverse;
 		const float X1 = sin( Angle1 );
 		const float Y1 = cos( Angle1 );
-		const glm::vec3 V1 = glm::vec3( X1, Y1, -1.0f ) * Radius;
+		const Vector3D V1 = Vector3D( X1, Y1, -1.0f ) * Radius;
 		Vertices.push_back( V1 );
 
 		// Bottom
-		Vertices.push_back( glm::vec3( 0.0f, 0.0f, -1.0f ) * Radius );
+		Vertices.push_back( Vector3D( 0.0f, 0.0f, -1.0f ) * Radius );
 		Vertices.push_back( V0 );
 		Vertices.push_back( V1 );
 	}
@@ -318,9 +318,9 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 {
 	ProfileBareScope();
-	std::vector<glm::vec3> Vertices;
-	std::vector<glm::vec2> Coordinates;
-	std::vector<glm::vec3> Normals;
+	std::vector<Vector3D> Vertices;
+	std::vector<Vector2D> Coordinates;
+	std::vector<Vector3D> Normals;
 
 	Vertices.reserve( 100000 );
 	Coordinates.reserve( 100000 );
@@ -354,7 +354,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 			if( Line[1] == 't' )
 			{
 				// Texture coordinates.
-				glm::vec2 Coordinate;
+				Vector2D Coordinate;
 
 				Line.erase( 0, 3 );
 
@@ -371,7 +371,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 			else if( Line[1] == 'n' )
 			{
 				// Normals.
-				glm::vec3 Normal;
+				Vector3D Normal;
 
 				Primitive.HasNormals = true;
 
@@ -397,7 +397,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 			else
 			{
 				// Vertex.
-				glm::vec3 Vertex;
+				Vector3D Vertex;
 
 				Line.erase( 0, 2 );
 
@@ -499,15 +499,15 @@ void MeshBuilder::Mesh( FPrimitive& Primitive, CMesh* MeshInstance )
 }
 
 struct VectorComparator {
-	bool operator()( const glm::vec3& A, const glm::vec3& B ) const
+	bool operator()( const Vector3D& A, const Vector3D& B ) const
 	{
 		return std::make_tuple( A[0], A[1], A[2] ) < std::make_tuple( B[0], B[1], B[2] );
 	}
 };
 
-void MeshBuilder::Soup( FPrimitive& Primitive, std::vector<glm::vec3> Vertices )
+void MeshBuilder::Soup( FPrimitive& Primitive, std::vector<Vector3D> Vertices )
 {
-	std::map<glm::vec3, glm::uint, VectorComparator> Soup;
+	std::map<Vector3D, glm::uint, VectorComparator> Soup;
 	std::vector<glm::uint> SoupIndices;
 
 	glm::uint UniqueIndex = 0;

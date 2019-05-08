@@ -4,6 +4,7 @@
 #include <ThirdParty/glm/glm.hpp>
 
 #include <Engine/Utility/Data.h>
+#include <Engine/Utility/Math.h>
 
 static const char PrimitiveIdentifier[5] = "LPRI"; // Lofty PRImitive
 static const size_t PrimitiveVersion = 1;
@@ -14,27 +15,27 @@ struct FVertex
 	{
 	}
 
-	FVertex( const glm::vec3& InPosition )
+	FVertex( const Vector3D& InPosition )
 	{
 		Position = InPosition;
 	}
 
-	FVertex( const glm::vec3& InPosition, const glm::vec3& InNormal)
+	FVertex( const Vector3D& InPosition, const Vector3D& InNormal)
 	{
 		Position = InPosition;
 		Normal = InNormal;
 	}
 
-	FVertex( const glm::vec3& InPosition, const glm::vec3& InNormal, const glm::vec2& InTextureCoordinate )
+	FVertex( const Vector3D& InPosition, const Vector3D& InNormal, const Vector2D& InTextureCoordinate )
 	{
 		Position = InPosition;
 		TextureCoordinate = InTextureCoordinate;
 		Normal = InNormal;
 	}
 
-	glm::vec3 Position;
-	glm::vec2 TextureCoordinate;
-	glm::vec3 Normal;
+	Vector3D Position;
+	Vector2D TextureCoordinate;
+	Vector3D Normal;
 };
 
 struct FPrimitive

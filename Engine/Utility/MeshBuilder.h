@@ -5,6 +5,7 @@
 #include <vector>
 
 #include <Engine/Utility/File.h>
+#include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
 
 class CMesh;
@@ -33,5 +34,5 @@ public:
 	static void Mesh( FPrimitive& Primitive, CMesh* MeshInstance );
 
 private:
-	static void Soup( FPrimitive& Primitive, std::vector<glm::vec3> Vertices );
+	static void Soup( FPrimitive& Primitive, std::vector<Vector3D> Vertices );
 };

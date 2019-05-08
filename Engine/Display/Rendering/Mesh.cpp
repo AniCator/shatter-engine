@@ -251,30 +251,30 @@ void CMesh::GenerateNormals( const FPrimitive& Primitive )
 	{
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 		{
-			VertexData.Vertices[VertexIndex].Normal = glm::vec3( 0.0f, 0.0f, 1.0f );
+			VertexData.Vertices[VertexIndex].Normal = Vector3D( 0.0f, 0.0f, 1.0f );
 		}
 
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex += 3 )
 		{
 			if( ( Primitive.VertexCount - VertexIndex ) > 2 )
 			{
-				const glm::vec3 U = Primitive.Vertices[VertexIndex + 1].Position - Primitive.Vertices[VertexIndex].Position;
-				const glm::vec3 V = Primitive.Vertices[VertexIndex + 2].Position - Primitive.Vertices[VertexIndex].Position;
-				const glm::vec3 Normal = glm::cross( U, V );
+				const Vector3D U = Primitive.Vertices[VertexIndex + 1].Position - Primitive.Vertices[VertexIndex].Position;
+				const Vector3D V = Primitive.Vertices[VertexIndex + 2].Position - Primitive.Vertices[VertexIndex].Position;
+				const Vector3D Normal = U.Cross( V );
 				VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex + 1].Normal = VertexData.Vertices[VertexIndex + 2].Normal = Normal;
 			}
 		}
 
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 		{
-			VertexData.Vertices[VertexIndex].Normal = glm::normalize( VertexData.Vertices[VertexIndex].Normal );
+			VertexData.Vertices[VertexIndex].Normal.Normalize();
 		}
 	}
 	else
 	{
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 		{
-			VertexData.Vertices[VertexIndex].Normal = glm::vec3( 0.0f, 0.0f, 0.0f );
+			VertexData.Vertices[VertexIndex].Normal = Vector3D( 0.0f, 0.0f, 0.0f );
 		}
 
 		if( !Primitive.HasNormals )
@@ -283,13 +283,13 @@ void CMesh::GenerateNormals( const FPrimitive& Primitive )
 			{
 				if( ( Primitive.IndexCount - Index ) > 2 )
 				{
-					const glm::vec3& Vertex0 = Primitive.Vertices[Primitive.Indices[Index]].Position;
-					const glm::vec3& Vertex1 = Primitive.Vertices[Primitive.Indices[Index + 1]].Position;
-					const glm::vec3& Vertex2 = Primitive.Vertices[Primitive.Indices[Index + 2]].Position;
+					const Vector3D& Vertex0 = Primitive.Vertices[Primitive.Indices[Index]].Position;
+					const Vector3D& Vertex1 = Primitive.Vertices[Primitive.Indices[Index + 1]].Position;
+					const Vector3D& Vertex2 = Primitive.Vertices[Primitive.Indices[Index + 2]].Position;
 
-					const glm::vec3 U = Vertex0 - Vertex1;
-					const glm::vec3 V = Vertex0 - Vertex2;
-					const glm::vec3 Normal = glm::cross( U, V );
+					const Vector3D U = Vertex0 - Vertex1;
+					const Vector3D V = Vertex0 - Vertex2;
+					const Vector3D Normal = U.Cross( V );
 
 					VertexData.Vertices[Primitive.Indices[Index]].Normal += Normal;
 					VertexData.Vertices[Primitive.Indices[Index + 1]].Normal += Normal;
@@ -302,11 +302,11 @@ void CMesh::GenerateNormals( const FPrimitive& Primitive )
 		{
 			if( Primitive.HasNormals )
 			{
-				VertexData.Vertices[VertexIndex].Normal = glm::normalize( Primitive.Vertices[VertexIndex].Normal );
+				VertexData.Vertices[VertexIndex].Normal = Primitive.Vertices[VertexIndex].Normal.Normalized();
 			}
 			else
 			{
-				VertexData.Vertices[VertexIndex].Normal = glm::normalize( VertexData.Vertices[VertexIndex].Normal );
+				VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex].Normal.Normalized();
 			}
 		}
 	}

@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Utility/Math/Vector.h>
+
 #include <math.h>
 
 #include <ThirdParty/glm/glm.hpp>
@@ -148,14 +150,14 @@ namespace Math
 		return Direction;
 	}
 
-	inline float Length( const glm::vec2& Vector )
-	{
-		return sqrtf( Vector[0] * Vector[0] + Vector[1] * Vector[1] );
-	}
-
 	inline float LengthSquared( const glm::vec2& Vector )
 	{
 		return Vector[0] * Vector[0] + Vector[1] * Vector[1];
+	}
+
+	inline float Length( const glm::vec2& Vector )
+	{
+		return sqrtf( LengthSquared( Vector ) );
 	}
 
 	inline float Normalize( glm::vec2& Vector )
@@ -178,14 +180,14 @@ namespace Math
 		return LengthBiased;
 	}
 
-	inline float Length( const glm::vec3& Vector )
-	{
-		return sqrtf( Vector[0] * Vector[0] + Vector[1] * Vector[1] + Vector[2] * Vector[2] );
-	}
-
 	inline float LengthSquared( const glm::vec3& Vector )
 	{
 		return Vector[0] * Vector[0] + Vector[1] * Vector[1] + Vector[2] * Vector[2];
+	}
+
+	inline float Length( const glm::vec3& Vector )
+	{
+		return sqrtf( LengthSquared( Vector ) );
 	}
 
 	inline float Normalize( glm::vec3& Vector )

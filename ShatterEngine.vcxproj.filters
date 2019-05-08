@@ -173,9 +173,6 @@
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp">
       <Filter>Source Files\Engine\Utility\Test</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Utility\Math\SIMDVector.cpp">
-      <Filter>Source Files\Engine\Utility\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Game\ShatterLapse\ShatterLapse.cpp">
       <Filter>Source Files\Game\ShatterLapse</Filter>
     </ClCompile>
@@ -232,6 +229,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Audio\Sound.cpp">
       <Filter>Source Files\Engine\Audio</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Math\Vector.cpp">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -318,9 +318,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h">
       <Filter>Source Files\Engine\Utility\Test</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Utility\Math\SIMDVector.h">
-      <Filter>Source Files\Engine\Utility\Math</Filter>
     </ClInclude>
     <ClInclude Include="Game\ShatterLapse\ShatterLapse.h">
       <Filter>Source Files\Game\ShatterLapse</Filter>
@@ -414,6 +411,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Audio\Sound.h">
       <Filter>Source Files\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Math\Vector.h">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
