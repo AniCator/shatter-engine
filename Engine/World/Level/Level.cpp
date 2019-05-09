@@ -15,6 +15,14 @@ CLevel::CLevel()
 	World = nullptr;
 }
 
+CLevel::CLevel( CWorld* NewWorld )
+{
+	if( NewWorld )
+	{
+		World = NewWorld;
+	}
+}
+
 CLevel::~CLevel()
 {
 	
@@ -215,6 +223,14 @@ void CLevel::Load( const CFile& File )
 							std::string ClassName = "";
 							std::string EntityName = "";
 
+							std::string LevelPath = "";
+							std::string LevelPositionString = "";
+							std::string LevelOrientationString = "";
+							std::string LevelSizeString = "";
+							Vector3D LevelPosition = { 0,0,0 };
+							Vector3D LevelOrientation = { 0,0,0 };
+							Vector3D LevelSize = { 1,1,1 };
+
 							for( auto Property : EntityObject->Objects )
 							{
 								if( FoundClass && FoundName )
@@ -230,20 +246,71 @@ void CLevel::Load( const CFile& File )
 									EntityName = Property->Value;
 									FoundName = true;
 								}
+								else if( Property->Key == "path" )
+								{
+									LevelPath = Property->Value;
+								}
+								else if( Property->Key == "position" )
+								{
+									LevelPositionString = Property->Value;
+								}
+								else if( Property->Key == "rotation" )
+								{
+									LevelOrientationString = Property->Value;
+								}
+								else if( Property->Key == "scale" )
+								{
+									LevelSizeString = Property->Value;
+								}
 							}
 
 							if( FoundClass )
 							{
-								if( FoundName )
+								if( ClassName != "level" )
 								{
-									Link.Entity = Spawn( ClassName, EntityName );
-								}
-								else
-								{
-									Link.Entity = Spawn( ClassName );
-								}
+									if( FoundName )
+									{
+										Link.Entity = Spawn( ClassName, EntityName );
+									}
+									else
+									{
+										Link.Entity = Spawn( ClassName );
+									}
 
-								EntityObjectLinks.emplace_back( Link );
+									Link.Entity->SetLevel( this );
+									EntityObjectLinks.emplace_back( Link );
+								}
+								else if ( LevelPath.length() > 0 )
+								{
+									size_t OutTokenCount = 0;
+									auto Coordinates = ExtractTokensFloat( LevelPositionString, ' ', OutTokenCount, 3 );
+									if( OutTokenCount == 3 )
+									{
+										LevelPosition = { Coordinates[0], Coordinates[1], Coordinates[2] };
+									}
+
+									Coordinates = ExtractTokensFloat( LevelOrientationString, ' ', OutTokenCount, 3 );
+									if( OutTokenCount == 3 )
+									{
+										LevelOrientation = { Coordinates[0], Coordinates[1], Coordinates[2] };
+									}
+
+									Coordinates = ExtractTokensFloat( LevelSizeString, ' ', OutTokenCount, 3 );
+									if( OutTokenCount == 3 )
+									{
+										LevelSize = { Coordinates[0], Coordinates[1], Coordinates[2] };
+									}
+
+									CFile File( LevelPath.c_str() );
+									if( File.Exists() )
+									{
+										File.Load();
+
+										CLevel SubLevel( GetWorld() );
+										SubLevel.Transform = FTransform( LevelPosition, LevelOrientation, LevelSize );
+										SubLevel.Load( File );
+									}
+								}
 							}
 						}
 
@@ -277,13 +344,16 @@ void CLevel::Load( const CFile& File )
 
 void CLevel::Remove( CEntity* MarkEntity )
 {
-	const size_t ID = MarkEntity->GetID();
-	if( ID < Entities.size() )
+	if( MarkEntity->GetLevel() == this )
 	{
-		if( Entities[ID] )
+		const size_t ID = MarkEntity->GetID();
+		if( ID < Entities.size() )
 		{
-			delete Entities[ID];
-			Entities[ID] = nullptr;
+			if( Entities[ID] )
+			{
+				delete Entities[ID];
+				Entities[ID] = nullptr;
+			}
 		}
 	}
 }

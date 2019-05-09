@@ -42,7 +42,7 @@ class CEntity
 {
 public:
 	CEntity();
-	virtual ~CEntity() {};
+	virtual ~CEntity();
 
 	void SetID( const size_t EntityID );
 	const size_t GetID() const;
@@ -74,12 +74,12 @@ public:
 
 private:
 	size_t ID;
-	CLevel* Level;
 	CEntity* Parent;
 
 	std::vector<size_t> TrackedEntityIDs;
 
 protected:
+	CLevel* Level;
 	bool Enabled;
 };
 

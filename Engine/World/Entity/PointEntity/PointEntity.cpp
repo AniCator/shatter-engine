@@ -6,8 +6,6 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/World/World.h>
 
-static CEntityFactory<CPointEntity> Factory( "logic_point" );
-
 CPointEntity::CPointEntity()
 {
 	Transform = FTransform();
@@ -60,6 +58,13 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 				Size = { Coordinates[0], Coordinates[1], Coordinates[2] };
 			}
 		}
+	}
+
+	if( Level )
+	{
+		auto Transform = Level->GetTransform();
+		auto NewPosition = Transform.Position( Vector3DToGLM( Position ) );
+		Position = { NewPosition[0], NewPosition[1], NewPosition[2] };
 	}
 
 	Transform.SetTransform( Position, Orientation, Size );

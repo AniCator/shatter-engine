@@ -14,6 +14,7 @@ class CLevel
 {
 public:
 	CLevel();
+	CLevel(CWorld* NewWorld);
 	~CLevel();
 
 	void Construct();
@@ -52,14 +53,41 @@ public:
 	}
 
 	void Load( const CFile& File );
-	const std::vector<CEntity*>& GetEntities() const { return Entities; };
+	const std::vector<CEntity*>& GetEntities() const
+	{ 
+		return Entities;
+	};
+
 	void Remove( CEntity* Entity );
 
 	CEntity* Find( const std::string& Name ) const;
 	CEntity* Find( const size_t ID ) const;
+	
+	template<class T>
+	std::vector<T*> Find() const
+	{
+		std::vector<T*> FoundEntities;
+		for( auto Entity : Entities )
+		{
+			if( T* CastEntity = dynamic_cast<T*>( Entity ) )
+			{
+				FoundEntities.emplace_back( CastEntity );
+			}
+		}
+
+		return FoundEntities;
+	}
 
 	CWorld* GetWorld();
 	void SetWorld( CWorld* NewWorld );
+
+	FTransform GetTransform() const
+	{
+		return Transform;
+	}
+
+protected:
+	FTransform Transform;
 
 private:
 	std::vector<CEntity*> Entities;

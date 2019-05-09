@@ -20,7 +20,7 @@ void CWorld::Construct()
 {
 	for( auto Level : Levels )
 	{
-		Level.Level.Construct();
+		Level.Construct();
 	}
 }
 
@@ -28,7 +28,7 @@ void CWorld::Tick()
 {
 	for( auto Level : Levels )
 	{
-		Level.Level.Tick();
+		Level.Tick();
 	}
 }
 
@@ -36,24 +36,19 @@ void CWorld::Destroy()
 {
 	for( auto Level : Levels )
 	{
-		Level.Level.Destroy();
+		Level.Destroy();
 	}
 }
 
-void CWorld::Add( FLevel& Level )
+CLevel& CWorld::Add()
 {
-	Levels.push_back( Level );
-	ActiveLevel = &Levels[0].Level;
+	Levels.push_back( CLevel( this ) );
+	ActiveLevel = &Levels[0];
 
 	if( Levels.size() > 0 )
 	{
-		Levels[Levels.size() - 1].Level.SetWorld( this );
-	}
-
-	auto& Back = Levels.back();
-	for( auto Entity : Back.Level.GetEntities() )
-	{
-		Entity->SetLevel( &Back.Level );
+		auto LevelIndex = Levels.size() - 1;
+		return Levels[LevelIndex];
 	}
 }
 
@@ -106,14 +101,14 @@ CData& operator>>( CData& Data, CWorld& World )
 
 		for( size_t Index = 0; Index < Count; Index++ )
 		{
-			FLevel Level;
+			CLevel Level;
 			Data >> Level;
 			World.Levels.push_back( Level );
 		}
 
 		if( World.Levels.size() > 0 )
 		{
-			World.ActiveLevel = &World.Levels[0].Level;
+			World.ActiveLevel = &World.Levels[0];
 		}
 	}
 	else

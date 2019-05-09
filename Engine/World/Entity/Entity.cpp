@@ -28,6 +28,11 @@ CEntity::CEntity()
 	Enabled = false;
 }
 
+CEntity::~CEntity()
+{
+	
+}
+
 void CEntity::SetID( const size_t EntityID )
 {
 	ID = EntityID;

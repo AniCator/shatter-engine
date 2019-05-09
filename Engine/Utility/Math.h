@@ -42,6 +42,8 @@ public:
 	FTransform()
 	{
 		TransformMatrix = IdentityMatrix;
+		RotationMatrix = IdentityMatrix;
+		ScaleMatrix = IdentityMatrix;
 		StoredPosition = Vector3D( 0.0f, 0.0f, 0.0f );
 		StoredOrientation = Vector3D( 0.0f, 0.0f, 0.0f );
 		StoredSize = Vector3D( 1.0f, 1.0f, 1.0f );
@@ -115,6 +117,11 @@ public:
 		return TransformMatrix * glm::vec4( Position, 1.0f );
 	}
 
+	glm::vec3 Transform( const glm::vec3& Position ) const
+	{
+		return TransformMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
+	}
+
 private:
 	void Update()
 	{
@@ -122,7 +129,7 @@ private:
 		static const Vector3D AxisY = Vector3D( 0.0f, 1.0f, 0.0f );
 		static const Vector3D AxisZ = Vector3D( 0.0f, 0.0f, 1.0f );
 
-		glm::mat4 ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
+		ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
 		
 		glm::quat Quaternion = glm::quat( glm::radians( glm::vec3( StoredOrientation[0], StoredOrientation[1], StoredOrientation[2] ) ) );
 		RotationMatrix = glm::toMat4( Quaternion );
@@ -134,6 +141,7 @@ private:
 
 	glm::mat4 RotationMatrix;
 	glm::mat4 TransformMatrix;
+	glm::mat4 ScaleMatrix;
 
 	Vector3D StoredPosition;
 	Vector3D StoredOrientation;
