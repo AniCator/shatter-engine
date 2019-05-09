@@ -277,7 +277,7 @@ void CLevel::Load( const CFile& File )
 										Link.Entity = Spawn( ClassName );
 									}
 
-									Link.Entity->SetLevel( this );
+									Link.Entity->SetLevel(this);
 									EntityObjectLinks.emplace_back( Link );
 								}
 								else if ( LevelPath.length() > 0 )
@@ -306,9 +306,13 @@ void CLevel::Load( const CFile& File )
 									{
 										File.Load();
 
-										CLevel SubLevel( GetWorld() );
-										SubLevel.Transform = FTransform( LevelPosition, LevelOrientation, LevelSize );
-										SubLevel.Load( File );
+										auto NewWorld = GetWorld();
+										if (NewWorld)
+										{
+											CLevel& SubLevel = NewWorld->Add();
+											SubLevel.Transform = FTransform(LevelPosition, LevelOrientation, LevelSize);
+											SubLevel.Load(File);
+										}
 									}
 								}
 							}

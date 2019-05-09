@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vector>
+#include <deque>
 
 #include <Engine/World/Level/Level.h>
 #include <Engine/Utility/Math.h>
@@ -32,7 +33,7 @@ public:
 	}
 
 	CLevel& Add();
-	std::vector<CLevel>& GetLevels() { return Levels; };
+	std::deque<CLevel>& GetLevels() { return Levels; };
 
 	CEntity* Find( const std::string& Name ) const
 	{
@@ -79,7 +80,7 @@ public:
 	const FCameraSetup& GetActiveCameraSetup() const;
 
 private:
-	std::vector<CLevel> Levels;
+	std::deque<CLevel> Levels;
 	CLevel* ActiveLevel;
 
 	CCamera* Camera;

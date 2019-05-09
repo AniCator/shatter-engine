@@ -45,11 +45,8 @@ CLevel& CWorld::Add()
 	Levels.push_back( CLevel( this ) );
 	ActiveLevel = &Levels[0];
 
-	if( Levels.size() > 0 )
-	{
-		auto LevelIndex = Levels.size() - 1;
-		return Levels[LevelIndex];
-	}
+	auto LevelIndex = Levels.size() - 1;
+	return Levels[LevelIndex];
 }
 
 void CWorld::SetActiveCamera( CCamera* CameraIn )
@@ -96,8 +93,6 @@ CData& operator>>( CData& Data, CWorld& World )
 	{
 		size_t Count;
 		Data >> Count;
-
-		World.Levels.reserve( Count );
 
 		for( size_t Index = 0; Index < Count; Index++ )
 		{
