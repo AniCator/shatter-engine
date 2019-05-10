@@ -340,26 +340,25 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 	// StringStream << Data;
 
 	const char* Start = Data;
+	const char* End = nullptr;
 
 	std::string Token;
 
 	bool ShouldPrintToken = true;
 	std::string Line;
-	while( Start )
+	while( GetLine( Start, End ) )
 	{
-		Start = GetLine( Start, Line );
-
-		if( Line[0] == 'v' )
+		if( Start[0] == 'v' )
 		{
-			if( Line[1] == 't' )
+			if( Start[1] == 't' )
 			{
 				// Texture coordinates.
 				Vector2D Coordinate;
 
-				Line.erase( 0, 3 );
+				Start += 3;
 
 				size_t OutTokenCount = 0;
-				auto Tokens = ExtractTokensFloat( Line, Delimiter, OutTokenCount, 2 );
+				auto Tokens = ExtractTokensFloat( Start, Delimiter, OutTokenCount, 2 );
 				if( Tokens && OutTokenCount == 2 )
 				{
 					Coordinate[0] = Tokens[0];
@@ -368,17 +367,17 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 					Coordinates.emplace_back( Coordinate );
 				}
 			}
-			else if( Line[1] == 'n' )
+			else if( Start[1] == 'n' )
 			{
 				// Normals.
 				Vector3D Normal;
 
 				Primitive.HasNormals = true;
 
-				Line.erase( 0, 3 );
+				Start += 3;
 
 				size_t OutTokenCount = 0;
-				auto Tokens = ExtractTokensFloat( Line, Delimiter, OutTokenCount, 3 );
+				auto Tokens = ExtractTokensFloat( Start, Delimiter, OutTokenCount, 3 );
 
 				if( Tokens && OutTokenCount == 3 )
 				{
@@ -390,7 +389,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 					Normals.emplace_back( Normal );
 				}
 			}
-			else if( Line[1] == 'p' )
+			else if( Start[1] == 'p' )
 			{
 				// Something?
 			}
@@ -399,10 +398,10 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				// Vertex.
 				Vector3D Vertex;
 
-				Line.erase( 0, 2 );
+				Start += 3;
 
 				size_t OutTokenCount = 0;
-				auto Tokens = ExtractTokensFloat( Line, Delimiter, OutTokenCount, 3 );
+				auto Tokens = ExtractTokensFloat( Start, Delimiter, OutTokenCount, 3 );
 
 				if( Tokens && OutTokenCount == 3 )
 				{
@@ -415,16 +414,16 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				}
 			}
 		}
-		else if( Line[0] == 'f' )
+		else if( Start[0] == 'f' )
 		{
 			// Face.
-			Line.erase( 0, 2 );
-			auto Tokens = ExtractTokens( Line, Delimiter, 4 );
+			Start += 2;
+			auto Tokens = ExtractTokens( Start, Delimiter, 3 );
 
 			for( auto& Token : Tokens )
 			{
 				size_t OutTokenCount = 0;
-				auto ComponentTokens = ExtractTokensInteger( Token, '/', OutTokenCount, 3 );
+				auto ComponentTokens = ExtractTokensInteger( Token.c_str(), '/', OutTokenCount, 3 );
 				if( ComponentTokens && OutTokenCount == 3 )
 				{
 					// Indices start from 1 in OBJ files, subtract 1 to make them valid for our own arrays.
@@ -439,6 +438,8 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 				}
 			}
 		}
+
+		Start = End;
 	}
 
 	FVertex* VertexArray = new FVertex[Vertices.size()];
@@ -463,6 +464,11 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 		{
 			VertexArray[VertexIndices[Index]].Normal = Normals[NormalIndices[Index]];
 		}
+	}
+
+	for( size_t Index = 0; Index < Vertices.size(); Index++ )
+	{
+		Log::Event( "v %.6f %.6f %.6f\n", VertexArray[Index].Position.X, VertexArray[Index].Position.Y, VertexArray[Index].Position.Z );
 	}
 
 	Primitive.Vertices = VertexArray;

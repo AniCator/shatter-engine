@@ -99,7 +99,7 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		{
 			size_t ExpectedTokenCount = 4;
 			size_t OutTokenCount = 0;
-			auto Components = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, ExpectedTokenCount );
+			auto Components = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, ExpectedTokenCount );
 			if( OutTokenCount == 3 )
 			{
 				Color = glm::vec4( Components[0], Components[1], Components[2], 1.0f );

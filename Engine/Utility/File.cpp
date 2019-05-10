@@ -160,30 +160,19 @@ bool CFile::Exists( const char* FileLocation )
 	return Exists;
 }
 
-const char* GetLine( const char* Start, std::string& Line )
+const char* GetLine( const char*& Start, const char*& End )
 {
 	const char* Token = Start;
-	const char* End = Start;
+	End = Start;
 
-	static const size_t BufferSize = 2048;
-	char Buffer[BufferSize];
 	while( true )
 	{
 		const bool EndOfLine = Token[0] == std::streambuf::traits_type::eof() || Token[0] == '\0' || Token[0] == '\n' || ( Token[0] == '\r' && Token[1] == '\n' );
 		if( EndOfLine )
 		{
-			const size_t Length = End - Start;
-			if( Length < BufferSize - 1 )
-			{
-				strncpy_s( Buffer, Start, Length );
-				Buffer[Length + 1] = '\0';
-				Line = Buffer;
+			End = Token + 1;
 
-				Start = Token + 1;
-				End = Start;
-
-				return Start;
-			}
+			return Start;
 		}
 
 		Token++;
@@ -191,18 +180,9 @@ const char* GetLine( const char* Start, std::string& Line )
 
 		if( Token[0] == std::streambuf::traits_type::eof() || Token[0] == '\0' )
 		{
-			const size_t Length = End - Start;
-			if( Length < BufferSize - 1 )
-			{
-				strncpy_s( Buffer, Start, Length );
-				Buffer[Length + 1] = '\0';
-				Line = Buffer;
+			End = Token + 1;
 
-				Start = Token + 1;
-				End = Start;
-
-				return nullptr;
-			}
+			return nullptr;
 		}
 	}
 
@@ -272,13 +252,13 @@ double ParseDouble( const char* p )
 	return s * acc;
 }
 
-std::vector<std::string> ExtractTokens( const std::string& Line, char Delimiter, const size_t ExpectedTokens /*= 3 */ )
+std::vector<std::string> ExtractTokens( const char* Start, char Delimiter, const size_t ExpectedTokens /*= 3 */ )
 {
 	std::vector<std::string> Tokens;
-	Tokens.reserve( ExpectedTokens );
+	Tokens.resize( ExpectedTokens );
+	size_t TokenCount = 0;
 
-	const char* Token = Line.c_str();
-	const char* Start = Token;
+	const char* Token = Start;
 	const char* End = Start;
 
 	static const size_t BufferSize = 256;
@@ -293,7 +273,11 @@ std::vector<std::string> ExtractTokens( const std::string& Line, char Delimiter,
 			{
 				strncpy_s( Buffer, Start, Length );
 				Buffer[Length + 1] = '\0';
-				Tokens.emplace_back( Buffer );
+
+				if( TokenCount < ExpectedTokens )
+				{
+					Tokens[TokenCount++] = Buffer;
+				}
 			}
 
 			Start = Token + 1;
@@ -312,12 +296,11 @@ std::vector<std::string> ExtractTokens( const std::string& Line, char Delimiter,
 
 static const size_t TokenBufferSize = 1024;
 float FloatBuffer[TokenBufferSize];
-float* ExtractTokensFloat( const std::string& Line, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens /*= 3 */ )
+float* ExtractTokensFloat( const char* Start, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens /*= 3 */ )
 {
 	size_t Location = 0;
 
-	const char* Token = Line.c_str();
-	const char* Start = Token;
+	const char* Token = Start;
 	const char* End = Start;
 
 	static const size_t BufferSize = 256;
@@ -363,12 +346,11 @@ float* ExtractTokensFloat( const std::string& Line, char Delimiter, size_t& OutT
 }
 
 int IntegerBuffer[TokenBufferSize];
-int* ExtractTokensInteger( const std::string& Line, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens /*= 3 */ )
+int* ExtractTokensInteger( const char* Start, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens /*= 3 */ )
 {
 	size_t Location = 0;
 
-	const char* Token = Line.c_str();
-	const char* Start = Token;
+	const char* Token = Start;
 	const char* End = Start;
 
 	static const size_t BufferSize = 256;

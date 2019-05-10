@@ -110,7 +110,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		if( Property->Key == "position" )
 		{
 			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
+			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
 			if( OutTokenCount == 3 )
 			{
 				Position = { Coordinates[0], Coordinates[1], Coordinates[2] };
@@ -119,7 +119,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "rotation" )
 		{
 			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
+			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
 			if( OutTokenCount == 3 )
 			{
 				Orientation = { Coordinates[0], Coordinates[1], Coordinates[2] };
@@ -128,7 +128,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "scale" )
 		{
 			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 3 );
+			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
 			if( OutTokenCount == 3 )
 			{
 				Size = { Coordinates[0], Coordinates[1], Coordinates[2] };
@@ -152,7 +152,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "radius" )
 		{
 			size_t OutTokenCount = 0;
-			auto TokenDistance = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 1 );
+			auto TokenDistance = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 1 );
 			if( OutTokenCount == 1 )
 			{
 				Radius = TokenDistance[0];
@@ -161,7 +161,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "volume" )
 		{
 			size_t OutTokenCount = 0;
-			auto TokenDistance = ExtractTokensFloat( Property->Value, ' ', OutTokenCount, 1 );
+			auto TokenDistance = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 1 );
 			if( OutTokenCount == 1 )
 			{
 				Volume = TokenDistance[0];

@@ -283,19 +283,19 @@ void CLevel::Load( const CFile& File )
 								else if ( LevelPath.length() > 0 )
 								{
 									size_t OutTokenCount = 0;
-									auto Coordinates = ExtractTokensFloat( LevelPositionString, ' ', OutTokenCount, 3 );
+									auto Coordinates = ExtractTokensFloat( LevelPositionString.c_str(), ' ', OutTokenCount, 3 );
 									if( OutTokenCount == 3 )
 									{
 										LevelPosition = { Coordinates[0], Coordinates[1], Coordinates[2] };
 									}
 
-									Coordinates = ExtractTokensFloat( LevelOrientationString, ' ', OutTokenCount, 3 );
+									Coordinates = ExtractTokensFloat( LevelOrientationString.c_str(), ' ', OutTokenCount, 3 );
 									if( OutTokenCount == 3 )
 									{
 										LevelOrientation = { Coordinates[0], Coordinates[1], Coordinates[2] };
 									}
 
-									Coordinates = ExtractTokensFloat( LevelSizeString, ' ', OutTokenCount, 3 );
+									Coordinates = ExtractTokensFloat( LevelSizeString.c_str(), ' ', OutTokenCount, 3 );
 									if( OutTokenCount == 3 )
 									{
 										LevelSize = { Coordinates[0], Coordinates[1], Coordinates[2] };
