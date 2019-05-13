@@ -336,18 +336,18 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 
 	const char Delimiter = ' ';
 	const char* Data = File.Fetch<char>();
-	// std::stringstream StringStream;
-	// StringStream << Data;
 
 	const char* Start = Data;
 	const char* End = nullptr;
 
-	std::string Token;
+	const char* LoopToken = Start;
 
 	bool ShouldPrintToken = true;
 	std::string Line;
-	while( GetLine( Start, End ) )
+	while( LoopToken )
 	{
+		LoopToken = GetLine( Start, End );
+
 		if( Start[0] == 'v' )
 		{
 			if( Start[1] == 't' )

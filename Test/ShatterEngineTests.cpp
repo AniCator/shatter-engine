@@ -111,9 +111,9 @@ namespace Test
 			if( LevelFile.Exists() )
 			{
 				LevelFile.Load();
-				FLevel Test;
-				Test.Level.Load( LevelFile );
-				bSuccess = Test.Level.GetEntities().size() > 0;
+				CLevel Test;
+				Test.Load( LevelFile );
+				bSuccess = Test.GetEntities().size() > 0;
 			}
 
 			Assert::AreEqual( 1, bSuccess ? 1 : 0 );
@@ -125,7 +125,7 @@ namespace Test
 			bool bSuccess = false;
 
 			std::string String = "-0.173 0.251 -0.704\r\n";
-			std::vector<std::string> Tokens = ExtractTokens( String, ' ', 3 );
+			std::vector<std::string> Tokens = ExtractTokens( String.c_str(), ' ', 3 );
 
 			if( Tokens.size() == 3 )
 			{

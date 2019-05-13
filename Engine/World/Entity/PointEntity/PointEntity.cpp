@@ -65,6 +65,12 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 		auto Transform = Level->GetTransform();
 		auto NewPosition = Transform.Position( Vector3DToGLM( Position ) );
 		Position = { NewPosition[0], NewPosition[1], NewPosition[2] };
+
+		auto NewOrientation = Transform.Rotate( Vector3DToGLM( Orientation ) );
+		Orientation = { NewOrientation[0], NewOrientation[1], NewOrientation[2] };
+
+		auto NewSize = Transform.Rotate( Vector3DToGLM( Size ) );
+		Size = { NewSize[0], NewSize[1], NewSize[2] };
 	}
 
 	Transform.SetTransform( Position, Orientation, Size );

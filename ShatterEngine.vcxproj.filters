@@ -239,6 +239,9 @@
     <ClCompile Include="Engine\World\Entity\PointEntity\PointEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\PointEntity</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\Structures\Name.cpp">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
@@ -423,6 +426,9 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\PointEntity\PointEntity.h">
       <Filter>Source Files\Engine\World\Entity\PointEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\Name.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

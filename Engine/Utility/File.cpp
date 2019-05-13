@@ -165,7 +165,7 @@ const char* GetLine( const char*& Start, const char*& End )
 	const char* Token = Start;
 	End = Start;
 
-	while( true )
+	while( Start )
 	{
 		const bool EndOfLine = Token[0] == std::streambuf::traits_type::eof() || Token[0] == '\0' || Token[0] == '\n' || ( Token[0] == '\r' && Token[1] == '\n' );
 		if( EndOfLine )
@@ -189,7 +189,7 @@ const char* GetLine( const char*& Start, const char*& End )
 	return nullptr;
 }
 
-std::istream& SafeGetline( std::istream& is, std::string& t )
+std::istream& GetLineStream( std::istream& is, std::string& t )
 {
 	t.clear();
 

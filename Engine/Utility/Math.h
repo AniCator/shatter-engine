@@ -117,6 +117,16 @@ public:
 		return TransformMatrix * glm::vec4( Position, 1.0f );
 	}
 
+	glm::vec3 Rotate( const glm::vec3& Vector ) const
+	{
+		return RotationMatrix * glm::vec4( Vector, 1.0f );
+	}
+
+	glm::vec3 Scale( const glm::vec3& Vector ) const
+	{
+		return ScaleMatrix * glm::vec4( Vector, 1.0f );
+	}
+
 	glm::vec3 Transform( const glm::vec3& Position ) const
 	{
 		return TransformMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
