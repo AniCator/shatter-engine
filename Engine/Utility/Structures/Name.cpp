@@ -3,18 +3,39 @@
 
 #include "Name.h"
 
-std::map<std::string, NameIndex> FName::Pool;
 static NameIndex PoolIndex = 0;
+
+FName::FName( const char* Name )
+{
+	auto String = std::string( Name );
+	auto& NamePool = Pool();
+
+	auto& Iterator = NamePool.find( String );
+	if( Iterator == NamePool.end() )
+	{
+		auto& Result = NamePool.insert_or_assign( String, PoolIndex++ );
+		Index = Result.first->second;
+	}
+	else
+	{
+		Index = Iterator->second;
+	}
+}
 
 FName::FName( const std::string& Name )
 {
-	auto& Iterator = Pool.find( Name );
-	if( Iterator == Pool.end() )
-	{
-		Pool.insert_or_assign( Name, PoolIndex++ );
-	}
+	auto& NamePool = Pool();
 
-	Index = Iterator->second;
+	auto& Iterator = NamePool.find( Name );
+	if( Iterator == NamePool.end() )
+	{
+		auto& Result = NamePool.insert_or_assign( Name, PoolIndex++ );
+		Index = Result.first->second;
+	}
+	else
+	{
+		Index = Iterator->second;
+	}
 }
 
 FName::FName( const NameIndex& Index )
@@ -27,17 +48,38 @@ FName::FName()
 	Index = Invalid.Index;
 }
 
-bool FName::operator==( const FName& Name )
+std::string FName::String() const
+{
+	const auto& NamePool = const_cast<FName*>( this )->Pool();
+	for( auto& Iterator : NamePool )
+	{
+		if( Iterator.second == Index )
+		{
+			return Iterator.first;
+		}
+	}
+
+	return Invalid.String();
+}
+
+bool FName::operator<( const FName& Name ) const
+{
+	return Index < Name.Index;
+}
+
+bool FName::operator==( const FName& Name ) const
 {
 	return Index == Name.Index;
 }
 
-FName FName::operator=( const std::string& String )
+FName& FName::operator=( const std::string& String )
 {
-	return FName( String );
+	*this = FName( String );
+	return *this;
 }
 
-FName FName::operator=( const FName& Name )
+FName& FName::operator=( const FName& Name )
 {
-	return FName( Name.Index );
+	Index = Name.Index;
+	return *this;
 }

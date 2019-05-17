@@ -107,34 +107,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 
 	for( auto Property : Objects )
 	{
-		if( Property->Key == "position" )
-		{
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
-			if( OutTokenCount == 3 )
-			{
-				Position = { Coordinates[0], Coordinates[1], Coordinates[2] };
-			}
-		}
-		else if( Property->Key == "rotation" )
-		{
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
-			if( OutTokenCount == 3 )
-			{
-				Orientation = { Coordinates[0], Coordinates[1], Coordinates[2] };
-			}
-		}
-		else if( Property->Key == "scale" )
-		{
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
-			if( OutTokenCount == 3 )
-			{
-				Size = { Coordinates[0], Coordinates[1], Coordinates[2] };
-			}
-		}
-		else if( Property->Key == "sound" )
+		if( Property->Key == "sound" )
 		{
 			Sound = Assets.FindSound( Property->Value );
 		}
@@ -183,7 +156,6 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		}
 	}
 
-	FTransform Transform( Position, Orientation, Size );
 	Spawn( Transform );
 }
 

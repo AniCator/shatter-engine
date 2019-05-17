@@ -311,6 +311,7 @@ void CLevel::Load( const CFile& File )
 										{
 											CLevel& SubLevel = NewWorld->Add();
 											SubLevel.Transform = FTransform(LevelPosition, LevelOrientation, LevelSize);
+											SubLevel.Transform = GetTransform().Transform( SubLevel.Transform );
 											SubLevel.Load(File);
 										}
 									}

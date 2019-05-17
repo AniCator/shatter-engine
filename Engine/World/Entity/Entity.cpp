@@ -139,7 +139,7 @@ void CEntity::Link( const JSON::Vector& Objects )
 						}
 						else
 						{
-							Log::Event( Log::Warning, "Target entity \"%s\" not found for entity \"%s\".\n", TargetName.c_str(), Name.c_str() );
+							Log::Event( Log::Warning, "Target entity \"%s\" not found for entity \"%s\".\n", TargetName.c_str(), Name.String().c_str() );
 						}
 					}
 				}
@@ -174,7 +174,7 @@ void CEntity::Receive( const char* Input )
 {
 	if( Inputs.find( Input ) != Inputs.end() )
 	{
-		Log::Event( "Receiving input \"%s\" on entity \"%s\".\n", Input, Name.c_str() );
+		Log::Event( "Receiving input \"%s\" on entity \"%s\".\n", Input, Name.String().c_str() );
 		Inputs[Input]();
 	}
 }

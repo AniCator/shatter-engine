@@ -6,6 +6,7 @@
 #include <functional>
 
 #include <Engine/Utility/Structures/JSON.h>
+#include <Engine/Utility/Structures/Name.h>
 
 class CLevel;
 class CWorld;
@@ -35,8 +36,8 @@ struct FMessage
 	std::vector<std::string> Inputs;
 };
 
-typedef std::map<std::string, std::function<void()>> MessageInput;
-typedef std::map<std::string, std::vector<FMessage>> MessageOutput;
+typedef std::map<FName, std::function<void()>> MessageInput;
+typedef std::map<FName, std::vector<FMessage>> MessageOutput;
 
 class CEntity
 {
@@ -61,7 +62,7 @@ public:
 
 	virtual void Load( const JSON::Vector& Objects );
 	void Link( const JSON::Vector& Objects );
-	std::string Name;
+	FName Name;
 
 	// Entity I/O
 	void Send( const char* Output );

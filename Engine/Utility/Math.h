@@ -117,19 +117,40 @@ public:
 		return TransformMatrix * glm::vec4( Position, 1.0f );
 	}
 
-	glm::vec3 Rotate( const glm::vec3& Vector ) const
+	glm::vec3 Rotate( const glm::vec3& Position ) const
 	{
-		return RotationMatrix * glm::vec4( Vector, 1.0f );
+		return RotationMatrix * glm::vec4( Position, 1.0f );
 	}
 
-	glm::vec3 Scale( const glm::vec3& Vector ) const
+	glm::vec3 RotateEuler( const glm::vec3& EulerRadians ) const
 	{
-		return ScaleMatrix * glm::vec4( Vector, 1.0f );
+		return glm::eulerAngles( glm::quat( RotationMatrix ) * glm::quat( EulerRadians ) );
+	}
+
+	glm::vec3 Scale( const glm::vec3& Position ) const
+	{
+		return ScaleMatrix * glm::vec4( Position, 1.0f );
 	}
 
 	glm::vec3 Transform( const glm::vec3& Position ) const
 	{
 		return TransformMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
+	}
+
+	FTransform Transform( const FTransform& B ) const
+	{
+		auto NewPosition = Position( Vector3DToGLM( B.GetPosition() ) );
+		Vector3D Position3D = { NewPosition[0], NewPosition[1], NewPosition[2] };
+
+		auto OrientationRadians = glm::radians( Vector3DToGLM( B.GetOrientation() ) );
+		auto NewOrientation = RotateEuler( OrientationRadians );
+		NewOrientation = glm::degrees( NewOrientation );
+		Vector3D Orientation3D = { NewOrientation[0], NewOrientation[1], NewOrientation[2] };
+
+		auto NewSize = Scale( Vector3DToGLM( B.GetSize() ) );
+		Vector3D Size3D = { NewSize[0], NewSize[1], NewSize[2] };
+
+		return FTransform( Position3D, Orientation3D, Size3D );
 	}
 
 private:
@@ -141,7 +162,7 @@ private:
 
 		ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
 		
-		glm::quat Quaternion = glm::quat( glm::radians( glm::vec3( StoredOrientation[0], StoredOrientation[1], StoredOrientation[2] ) ) );
+		glm::quat Quaternion = glm::quat( glm::radians( Vector3DToGLM( StoredOrientation ) ) );
 		RotationMatrix = glm::toMat4( Quaternion );
 
 		TransformMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );

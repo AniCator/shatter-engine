@@ -11,17 +11,24 @@ struct FName
 {
 public:
 	FName();
+	FName( const char* Name );
 	FName( const std::string& Name );
 	FName( const NameIndex& Index );
 
-	inline FName operator=( const FName& Name );
-	inline FName operator=( const std::string& String );
+	FName& operator=( const FName& Name );
+	FName& operator=( const std::string& String );
+	std::string String() const;
 
-	inline bool operator==( const FName& Name );
+	bool operator==( const FName& Name ) const;
+	bool operator<( const FName& Name ) const;
+
+	static std::map<std::string, NameIndex>& Pool()
+	{
+		static std::map<std::string, NameIndex> NamePool;
+		return NamePool;
+	}
 private:
 	NameIndex Index;
-
-	static std::map<std::string, NameIndex> Pool;
 };
 
 static FName Invalid( "INVALID STRING" );
