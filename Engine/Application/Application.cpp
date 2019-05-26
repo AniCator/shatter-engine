@@ -611,11 +611,9 @@ CApplication::~CApplication()
 
 void CApplication::Run()
 {
-	Initialize();
-
 	CRenderer& Renderer = MainWindow.GetRenderer();
 
-	Renderer.Initialize();
+	Initialize();
 
 	Setup.AspectRatio = static_cast<float>( MainWindow.GetWidth() ) / static_cast<float>( MainWindow.GetHeight() );
 	Renderer.SetCamera( DefaultCamera );

@@ -60,7 +60,7 @@ void CWindow::Create( const char* Title )
 	glfwWindowHint( GLFW_RESIZABLE, false );
 	glfwWindowHint( GLFW_DECORATED, EnableBorder );
 
-	glfwWindowHint( GLFW_SAMPLES, config.GetInteger( "aasamples", 4 ) );
+	glfwWindowHint( GLFW_SAMPLES, 0 );
 	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, config.IsEnabled( "opengldebugcontext", false ) );
 
 	const int MajorVersion = config.GetInteger( "openglversionmajor", 3 );
@@ -163,6 +163,8 @@ void CWindow::Create( const char* Title )
 
 	Initialized = true;
 	Log::Event( "Initialized window.\n" );
+
+	Renderer.Initialize();
 }
 
 void CWindow::Terminate()
