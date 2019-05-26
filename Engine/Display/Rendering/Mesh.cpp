@@ -63,26 +63,10 @@ void CMesh::Prepare( EDrawMode DrawModeOverride )
 
 			glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
 
-			glEnableVertexAttribArray( EVertexAttribute::Position );
-			const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
-			glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
-
-			glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-			const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
-			glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
-
-			glEnableVertexAttribArray( EVertexAttribute::Normal );
-			const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
-			glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
-
 			if( HasIndexBuffer )
 			{
 				glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
 			}
-
-			/*glDisableVertexAttribArray( EVertexAttribute::Position );
-			glDisableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-			glDisableVertexAttribArray( EVertexAttribute::Normal );*/
 		}
 	}
 }
@@ -103,7 +87,6 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 			{
 				glDrawArrays( DrawMode, 0, VertexBufferData.VertexCount );
 			}
-
 		}
 	}
 }
@@ -143,6 +126,7 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 		const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
 
 		glGenVertexArrays( 1, &VertexArrayObject );
+		glBindVertexArray( VertexArrayObject );
 
 		glGenBuffers( 1, &VertexBufferData.VertexBufferObject );
 		glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
@@ -161,6 +145,18 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 		VertexBufferData.VertexCount = Primitive.VertexCount;
 
 		glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
+
+		glEnableVertexAttribArray( EVertexAttribute::Position );
+		const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
+		glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
+
+		glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
+		const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
+		glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
+
+		glEnableVertexAttribArray( EVertexAttribute::Normal );
+		const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
+		glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
 
 		return true;
 	}

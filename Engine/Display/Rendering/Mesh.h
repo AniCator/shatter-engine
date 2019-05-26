@@ -8,13 +8,16 @@
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
 
-enum EVertexAttribute
+namespace EVertexAttribute
 {
-	Position = 0,
-	TextureCoordinate,
-	Normal,
-	Color
-};
+	enum Type
+	{
+		Position = 0,
+		TextureCoordinate,
+		Normal,
+		Color
+	};
+}
 
 enum EMeshType
 {
