@@ -41,7 +41,7 @@ struct FTransform
 public:
 	FTransform()
 	{
-		TransformMatrix = IdentityMatrix;
+		TransformationMatrix = IdentityMatrix;
 		RotationMatrix = IdentityMatrix;
 		ScaleMatrix = IdentityMatrix;
 		StoredPosition = Vector3D( 0.0f, 0.0f, 0.0f );
@@ -92,9 +92,9 @@ public:
 		return RotationMatrix;
 	}
 
-	glm::mat4& GetTransformMatrix()
+	glm::mat4& GetTransformationMatrix()
 	{
-		return TransformMatrix;
+		return TransformationMatrix;
 	}
 
 	const Vector3D& GetPosition() const
@@ -114,7 +114,7 @@ public:
 
 	glm::vec3 Position( const glm::vec3& Position ) const
 	{
-		return TransformMatrix * glm::vec4( Position, 1.0f );
+		return TransformationMatrix * glm::vec4( Position, 1.0f );
 	}
 
 	glm::vec3 Rotate( const glm::vec3& Position ) const
@@ -134,7 +134,7 @@ public:
 
 	glm::vec3 Transform( const glm::vec3& Position ) const
 	{
-		return TransformMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
+		return TransformationMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
 	}
 
 	FTransform Transform( const FTransform& B ) const
@@ -165,13 +165,13 @@ private:
 		glm::quat Quaternion = glm::quat( glm::radians( Vector3DToGLM( StoredOrientation ) ) );
 		RotationMatrix = glm::toMat4( Quaternion );
 
-		TransformMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
+		TransformationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
 
-		TransformMatrix = TransformMatrix * RotationMatrix * ScaleMatrix;
+		TransformationMatrix = TransformationMatrix * RotationMatrix * ScaleMatrix;
 	}
 
 	glm::mat4 RotationMatrix;
-	glm::mat4 TransformMatrix;
+	glm::mat4 TransformationMatrix;
 	glm::mat4 ScaleMatrix;
 
 	Vector3D StoredPosition;
