@@ -11,6 +11,7 @@
 #include <Engine/Display/Rendering/Mesh.h>
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Texture.h>
+#include <Engine/Display/Rendering/RenderTexture.h>
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
@@ -28,11 +29,21 @@
 
 static const size_t RenderableCapacity = 4096;
 
+static CShader* DefaultShader = nullptr;
+GLuint ProgramHandle = -1;
+
+static CRenderTexture* Framebuffer = nullptr;
+static CRenderable FramebufferRenderable;
+static CRenderable RedQuadRenderable;
+
 CRenderer::CRenderer()
 {
 	Renderables.reserve( RenderableCapacity );
 	DynamicRenderables.reserve( RenderableCapacity );
 	ForceWireFrame = false;
+
+	ViewportWidth = -1;
+	ViewportHeight = -1;
 }
 
 CRenderer::~CRenderer()
@@ -45,7 +56,7 @@ CRenderer::~CRenderer()
 void CRenderer::Initialize()
 {
 	CAssets& Assets = CAssets::Get();
-	Assets.CreateNamedShader( "Default", "Shaders/Default" );
+	DefaultShader = Assets.CreateNamedShader( "Default", "Shaders/Default" );
 
 	FPrimitive Triangle;
 	MeshBuilder::Triangle( Triangle, 1.0f );
@@ -55,7 +66,7 @@ void CRenderer::Initialize()
 	FPrimitive Square;
 	MeshBuilder::Plane( Square, 1.0f );
 
-	Assets.CreateNamedMesh( "square", Square );
+	CMesh* SquareMesh = Assets.CreateNamedMesh( "square", Square );
 
 	FPrimitive Cube;
 	MeshBuilder::Cube( Cube, 1.0f );
@@ -66,6 +77,14 @@ void CRenderer::Initialize()
 	MeshBuilder::Cone( Pyramid, 1.0f, 4 );
 
 	Assets.CreateNamedMesh( "pyramid", Pyramid );
+
+	CShader* CompositeShader = Assets.CreateNamedShader( "composite", "Shaders/Composite" );
+	FramebufferRenderable.SetMesh( SquareMesh );
+	FramebufferRenderable.SetShader( CompositeShader );
+
+	CShader* RedQuadShader = Assets.CreateNamedShader( "redquad", "Shaders/RedQuad" );
+	RedQuadRenderable.SetMesh( SquareMesh );
+	RedQuadRenderable.SetShader( RedQuadShader );
 
 	GlobalUniformBuffers.clear();
 }
@@ -94,15 +113,22 @@ void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 	DynamicRenderables.push_back( Renderable );
 }
 
-static CShader* DefaultShader = nullptr;
-GLuint ProgramHandle = -1;
-
 void CRenderer::DrawQueuedRenderables()
 {
-	if( !DefaultShader )
+	if( !Framebuffer )
 	{
-		CAssets& Assets = CAssets::Get();
-		DefaultShader = Assets.FindShader( "default" );
+		if( ViewportWidth > -1 && ViewportHeight > -1 )
+		{
+			Framebuffer = new CRenderTexture( "Framebuffer", ViewportWidth * 4, ViewportHeight * 4 );
+			Framebuffer->Initalize();
+
+			FramebufferRenderable.SetTexture( Framebuffer, ETextureSlot::Slot0 );
+		}
+	}
+
+	if( Framebuffer )
+	{
+		Framebuffer->Push();
 	}
 
 	glEnable( GL_DEPTH_TEST );
@@ -134,7 +160,7 @@ void CRenderer::DrawQueuedRenderables()
 		RefreshShaderHandle( Renderable );
 		RenderData.ShaderProgram = ProgramHandle;
 
-		const glm::mat4 ModelMatrix = RenderData.Transform.GetTransformMatrix();
+		const glm::mat4 ModelMatrix = RenderData.Transform.GetTransformationMatrix();
 
 		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
 		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
@@ -156,6 +182,13 @@ void CRenderer::DrawQueuedRenderables()
 			float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 			GLuint TimeLocation = glGetUniformLocation( RenderData.ShaderProgram, "Time" );
 			glUniform1fv( TimeLocation, 1, &Time );
+		}
+
+		// Viewport coordinates
+		{
+			const glm::vec4 Viewport = glm::vec4( ViewportWidth, ViewportHeight, 1.0f / ViewportWidth, 1.0f / ViewportHeight );
+			GLuint ViewportLocation = glGetUniformLocation( RenderData.ShaderProgram, "Viewport" );
+			glUniform4fv( ViewportLocation, 1, glm::value_ptr( Viewport ) );
 		}
 
 		for( auto& UniformBuffer : GlobalUniformBuffers )
@@ -193,6 +226,19 @@ void CRenderer::DrawQueuedRenderables()
 	{
 		DrawRenderable( Renderable, PreviousRenderData );
 		DrawCalls++;
+	}
+
+	if( Framebuffer )
+	{
+		DrawRenderable( &RedQuadRenderable, PreviousRenderData );
+
+		Framebuffer->Pop();
+
+		glViewport( 0, 0, (GLsizei) ViewportWidth, (GLsizei) ViewportHeight );
+
+		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+		glDisable( GL_CULL_FACE );
+		DrawRenderable( &FramebufferRenderable, PreviousRenderData );
 	}
 
 	CProfiler& Profiler = CProfiler::Get();

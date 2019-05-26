@@ -209,6 +209,7 @@
     <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Renderable.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Renderer.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\RenderTexture.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Shader.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Texture.cpp" />
     <ClCompile Include="Engine\Display\Window.cpp" />
@@ -254,6 +255,7 @@
     <ClInclude Include="Engine\Display\Rendering\Mesh.h" />
     <ClInclude Include="Engine\Display\Rendering\Renderable.h" />
     <ClInclude Include="Engine\Display\Rendering\Renderer.h" />
+    <ClInclude Include="Engine\Display\Rendering\RenderTexture.h" />
     <ClInclude Include="Engine\Display\Rendering\Shader.h" />
     <ClInclude Include="Engine\Display\Rendering\Texture.h" />
     <ClInclude Include="Engine\Display\Window.h" />

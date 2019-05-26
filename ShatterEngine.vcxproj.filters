@@ -242,6 +242,9 @@
     <ClCompile Include="Engine\Utility\Structures\Name.cpp">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\RenderTexture.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
@@ -429,6 +432,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Structures\Name.h">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\RenderTexture.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
