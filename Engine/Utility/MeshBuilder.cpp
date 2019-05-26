@@ -466,22 +466,6 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 		}
 	}
 
-#if 0
-	for( size_t Index = 0; Index < Vertices.size(); Index++ )
-	{
-		Log::Event( "v %.6f %.6f %.6f\n", VertexArray[Index].Position.X, VertexArray[Index].Position.Y, VertexArray[Index].Position.Z );
-	}
-
-	for( size_t Index = 0; Index < VertexIndices.size(); Index += 3 )
-	{
-		Log::Event( "f %i/%i/%i %i/%i/%i %i/%i/%i\n",
-			IndexArray[Index] + 1, CoordinateIndices[Index] + 1, NormalIndices[Index] + 1,
-			IndexArray[Index + 1] + 1, CoordinateIndices[Index + 1] + 1, NormalIndices[Index + 1] + 1,
-			IndexArray[Index + 2] + 1, CoordinateIndices[Index + 2] + 1, NormalIndices[Index + 2] + 1
-		);
-	}
-#endif
-
 	Primitive.Vertices = VertexArray;
 	Primitive.VertexCount = static_cast<uint32_t>( Vertices.size() );
 	Primitive.Indices = IndexArray;
