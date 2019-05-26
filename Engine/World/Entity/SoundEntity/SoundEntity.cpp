@@ -101,10 +101,6 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 	CPointEntity::Load( Objects );
 	CAssets& Assets = CAssets::Get();
 
-	Vector3D Position;
-	Vector3D Orientation;
-	Vector3D Size;
-
 	for( auto Property : Objects )
 	{
 		if( Property->Key == "sound" )

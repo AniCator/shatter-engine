@@ -19,7 +19,7 @@ CMeshEntity::CMeshEntity()
 
 CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CPointEntity()
 {
-	Spawn( Mesh, Shader, Texture, Transform );
+	// Spawn( Mesh, Shader, Texture, Transform );
 }
 
 CMeshEntity::~CMeshEntity()
@@ -33,6 +33,11 @@ void CMeshEntity::Spawn( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTrans
 	this->Shader = Shader;
 	this->Texture = Texture;
 	this->Transform = Transform;
+
+	/*if( !this->Shader )
+	{
+		this->Shader = CAssets::Get().FindShader( "pyramidocean" );
+	}*/
 }
 
 void CMeshEntity::Construct()
