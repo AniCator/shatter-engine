@@ -7,11 +7,13 @@
 
 #include <ThirdParty/glad/include/glad/glad.h>
 #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
+#include <ThirdParty/glm/glm.hpp>
 
 #include <Engine/Display/Rendering/Mesh.h>
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
+#include <Engine/Display/Rendering/RenderPass.h>
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
@@ -33,8 +35,12 @@ static CShader* DefaultShader = nullptr;
 GLuint ProgramHandle = -1;
 
 static CRenderTexture* Framebuffer = nullptr;
+static CRenderTexture* Resolve = nullptr;
+
 static CRenderable FramebufferRenderable;
-static CRenderable RedQuadRenderable;
+
+static CShader* SuperSampleBicubicShader = nullptr;
+static CShader* ResolveShader = nullptr;
 
 CRenderer::CRenderer()
 {
@@ -78,13 +84,11 @@ void CRenderer::Initialize()
 
 	Assets.CreateNamedMesh( "pyramid", Pyramid );
 
-	CShader* CompositeShader = Assets.CreateNamedShader( "composite", "Shaders/Composite" );
+	SuperSampleBicubicShader = Assets.CreateNamedShader( "SuperSampleBicubic", "Shaders/SuperSampleBicubic" );
 	FramebufferRenderable.SetMesh( SquareMesh );
-	FramebufferRenderable.SetShader( CompositeShader );
+	FramebufferRenderable.SetShader( SuperSampleBicubicShader );
 
-	CShader* RedQuadShader = Assets.CreateNamedShader( "redquad", "Shaders/RedQuad" );
-	RedQuadRenderable.SetMesh( SquareMesh );
-	RedQuadRenderable.SetShader( RedQuadShader );
+	ResolveShader = Assets.CreateNamedShader( "Resolve", "Shaders/Resolve" );
 
 	GlobalUniformBuffers.clear();
 }
@@ -121,15 +125,13 @@ void CRenderer::DrawQueuedRenderables()
 		{
 			Framebuffer = new CRenderTexture( "Framebuffer", ViewportWidth * 4, ViewportHeight * 4 );
 			Framebuffer->Initalize();
-
-			FramebufferRenderable.SetTexture( Framebuffer, ETextureSlot::Slot0 );
 		}
 	}
 
-	if( Framebuffer )
-	{
-		Framebuffer->Push();
-	}
+	CRenderPass MainPass;
+	MainPass.Target = Framebuffer;
+
+	MainPass.Begin();
 
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LESS );
@@ -194,7 +196,7 @@ void CRenderer::DrawQueuedRenderables()
 		for( auto& UniformBuffer : GlobalUniformBuffers )
 		{
 			GLuint UniformBufferLocation = glGetUniformLocation( RenderData.ShaderProgram, UniformBuffer.first.c_str() );
-			glUniform4fv( UniformBufferLocation, 1, glm::value_ptr( UniformBuffer.second ) );
+			glUniform4fv( UniformBufferLocation, 1, &UniformBuffer.second.X );
 		}
 
 		Renderable->Draw( PreviousRenderData );
@@ -228,17 +230,46 @@ void CRenderer::DrawQueuedRenderables()
 		DrawCalls++;
 	}
 
-	if( Framebuffer )
-	{
-		DrawRenderable( &RedQuadRenderable, PreviousRenderData );
+	MainPass.End();
 
-		Framebuffer->Pop();
+	if( Framebuffer && SuperSampleBicubicShader && ResolveShader )
+	{
+		FramebufferRenderable.SetShader( SuperSampleBicubicShader );
+		FramebufferRenderable.SetTexture( Framebuffer, ETextureSlot::Slot0 );
+
+		if( !Resolve )
+		{
+			if( ViewportWidth > -1 && ViewportHeight > -1 )
+			{
+				Resolve = new CRenderTexture( "Resolve", ViewportWidth, ViewportHeight );
+				Resolve->Initalize();
+			}
+		}
+
+		CRenderPass AntiAliasingResolve;
+		AntiAliasingResolve.Target = Resolve;
+
+		AntiAliasingResolve.Begin();
 
 		glViewport( 0, 0, (GLsizei) ViewportWidth, (GLsizei) ViewportHeight );
 
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glDisable( GL_CULL_FACE );
 		DrawRenderable( &FramebufferRenderable, PreviousRenderData );
+
+		AntiAliasingResolve.End();
+
+		if( Resolve )
+		{
+			FramebufferRenderable.SetShader( ResolveShader );
+			FramebufferRenderable.SetTexture( Resolve, ETextureSlot::Slot0 );
+
+			glViewport( 0, 0, (GLsizei) ViewportWidth, (GLsizei) ViewportHeight );
+
+			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
+			glDisable( GL_CULL_FACE );
+			DrawRenderable( &FramebufferRenderable, PreviousRenderData );
+		}
 	}
 
 	CProfiler& Profiler = CProfiler::Get();
@@ -262,7 +293,7 @@ void CRenderer::DrawQueuedRenderables()
 	Profiler.AddDebugMessage( "MouseScreenSpaceY", PositionYString );
 }
 
-void CRenderer::SetUniformBuffer( const std::string& Name, const glm::vec4& Value )
+void CRenderer::SetUniformBuffer( const std::string& Name, const Vector4D& Value )
 {
 	GlobalUniformBuffers.insert_or_assign( Name, Value );
 }
@@ -283,7 +314,7 @@ void CRenderer::SetViewport( int& Width, int& Height )
 	ViewportHeight = Height;
 }
 
-glm::vec3 CRenderer::ScreenPositionToWorld( const glm::vec2& ScreenPosition ) const
+Vector3D CRenderer::ScreenPositionToWorld( const Vector2D& ScreenPosition ) const
 {
 	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
 	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
@@ -298,17 +329,19 @@ glm::vec3 CRenderer::ScreenPositionToWorld( const glm::vec2& ScreenPosition ) co
 	ScreenPositionViewSpace[2] = -1.0f;
 	ScreenPositionViewSpace[3] = 1.0f;
 
-	return ViewInverse * ScreenPositionViewSpace;
+	glm::vec3 WorldSpacePosition = ViewInverse * ScreenPositionViewSpace;
+
+	return Vector3D( WorldSpacePosition[0], WorldSpacePosition[1], WorldSpacePosition[2] );
 }
 
-bool CRenderer::PlaneIntersection( glm::vec3& Intersection, const glm::vec3& RayOrigin, const glm::vec3& RayTarget, const glm::vec3& PlaneOrigin, const glm::vec3& PlaneNormal ) const
+bool CRenderer::PlaneIntersection( Vector3D& Intersection, const Vector3D& RayOrigin, const Vector3D& RayTarget, const Vector3D& PlaneOrigin, const Vector3D& PlaneNormal ) const
 {
-	const glm::vec3 RayVector = RayTarget - RayOrigin;
-	const glm::vec3 PlaneVector = PlaneOrigin - RayOrigin;
+	const Vector3D RayVector = RayTarget - RayOrigin;
+	const Vector3D PlaneVector = PlaneOrigin - RayOrigin;
 
-	const float DistanceRatio = glm::dot( PlaneVector, PlaneNormal ) / glm::dot( RayVector, PlaneNormal );
+	const float DistanceRatio = PlaneVector.Dot( PlaneNormal ) / RayVector.Dot( PlaneNormal );
 
-	Intersection = RayOrigin + DistanceRatio * RayVector;
+	Intersection = RayOrigin + RayVector * DistanceRatio;
 
 	return DistanceRatio >= 0.0f;
 }

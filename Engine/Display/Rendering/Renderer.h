@@ -3,8 +3,9 @@
 
 #include <vector>
 #include <unordered_map>
+#include <queue>
 
-#include <ThirdParty/glm/glm.hpp>
+#include <Engine/Display/Rendering/RenderPass.h>
 
 #include "Camera.h"
 
@@ -25,14 +26,14 @@ public:
 	void QueueDynamicRenderable( CRenderable* Renderable );
 	void DrawQueuedRenderables();
 
-	void SetUniformBuffer( const std::string& Name, const glm::vec4& Value );
+	void SetUniformBuffer( const std::string& Name, const Vector4D& Value );
 
 	const CCamera& GetCamera() const;
 	void SetCamera( CCamera& CameraIn );
 	void SetViewport( int& Width, int& Height );
 
-	glm::vec3 ScreenPositionToWorld( const glm::vec2& ScreenPosition ) const;
-	bool PlaneIntersection( glm::vec3& Intersection, const glm::vec3& RayOrigin, const glm::vec3& RayTarget, const glm::vec3& PlaneOrigin, const glm::vec3& PlaneNormal ) const;
+	Vector3D ScreenPositionToWorld( const Vector2D& ScreenPosition ) const;
+	bool PlaneIntersection( Vector3D& Intersection, const Vector3D& RayOrigin, const Vector3D& RayTarget, const Vector3D& PlaneOrigin, const Vector3D& PlaneNormal ) const;
 
 	bool ForceWireFrame;
 
@@ -42,10 +43,12 @@ protected:
 private:
 	std::vector<CRenderable*> Renderables;
 	std::vector<CRenderable*> DynamicRenderables;
-	std::unordered_map<std::string, glm::vec4> GlobalUniformBuffers;
+	std::unordered_map<std::string, Vector4D> GlobalUniformBuffers;
 
 	CCamera Camera;
 	
 	int ViewportWidth;
 	int ViewportHeight;
+
+	std::queue<CRenderPass> Passes;
 };

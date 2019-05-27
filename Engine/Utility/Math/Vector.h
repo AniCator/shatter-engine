@@ -363,14 +363,209 @@ public:
 class Vector4D
 {
 public:
+	float X, Y, Z, W;
 	Vector4D() = default;
+	Vector4D( float X, float Y, float Z, float W )
+	{
+		this->X = X;
+		this->Y = Y;
+		this->Z = Z;
+		this->W = W;
+	}
 
-	Vector4D( const Vector3D& Vector )
+	inline const float* Base() const
+	{
+		return &X;
+	}
+
+	inline float& operator[]( size_t Index )
+	{
+		return ( &X )[Index];
+	}
+
+	inline const float& operator[]( size_t Index ) const
+	{
+		return ( &X )[Index];
+	}
+
+	inline Vector4D operator=( const Vector4D& Vector )
+	{
+		this->X = Vector.X;
+		this->Y = Vector.Y;
+		this->Z = Vector.Z;
+		return *this;
+	}
+
+	inline Vector4D operator+( const Vector4D& Vector ) const
+	{
+		return Vector4D(
+			X + Vector.X,
+			Y + Vector.Y,
+			Z + Vector.Z,
+			W + Vector.W
+		);
+	};
+
+	inline Vector4D operator-( const Vector4D& Vector ) const
+	{
+		return Vector4D(
+			X - Vector.X,
+			Y - Vector.Y,
+			Z - Vector.Z,
+			W - Vector.W
+		);
+	};
+
+	inline Vector4D operator*( const Vector4D& Vector ) const
+	{
+		return Vector4D(
+			X * Vector.X,
+			Y * Vector.Y,
+			Z * Vector.Z,
+			W * Vector.W
+		);
+	};
+
+	inline Vector4D operator+( const float& Scalar ) const
+	{
+		return Vector4D(
+			X + Scalar,
+			Y + Scalar,
+			Z + Scalar,
+			W + Scalar
+		);
+	};
+
+	inline Vector4D operator-( const float& Scalar ) const
+	{
+		return Vector4D(
+			X - Scalar,
+			Y - Scalar,
+			Z - Scalar,
+			W - Scalar
+		);
+	};
+
+	inline Vector4D operator*( const float& Scalar ) const
+	{
+		return Vector4D(
+			X * Scalar,
+			Y * Scalar,
+			Z * Scalar,
+			W * Scalar
+		);
+	};
+
+	inline Vector4D operator+=( const Vector4D& Vector )
+	{
+		X += Vector.X;
+		Y += Vector.Y;
+		Z += Vector.Z;
+		W += Vector.W;
+		return *this;
+	};
+
+	inline Vector4D operator-=( const Vector4D& Vector )
+	{
+		X -= Vector.X;
+		Y -= Vector.Y;
+		Z -= Vector.Z;
+		W -= Vector.W;
+		return *this;
+	};
+
+	inline Vector4D operator*=( const Vector4D& Vector )
+	{
+		X *= Vector.X;
+		Y *= Vector.Y;
+		Z *= Vector.Z;
+		W *= Vector.W;
+		return *this;
+	};
+
+	inline Vector4D operator+=( const float& Scalar )
+	{
+		X += Scalar;
+		Y += Scalar;
+		Z += Scalar;
+		W += Scalar;
+		return *this;
+	};
+
+	inline Vector4D operator-=( const float& Scalar )
+	{
+		X -= Scalar;
+		Y -= Scalar;
+		Z -= Scalar;
+		W -= Scalar;
+		return *this;
+	};
+
+	inline Vector4D operator*=( const float& Scalar )
+	{
+		X *= Scalar;
+		Y *= Scalar;
+		Z *= Scalar;
+		W *= Scalar;
+		return *this;
+	};
+
+	inline float Dot( const Vector4D& Vector ) const
+	{
+		return X * Vector.X + Y * Vector.Y + Z * Vector.Z + W * Vector.W;
+	}
+
+	inline float Length()
+	{
+		return sqrt( Dot( *this ) );
+	}
+
+	inline float Length( const Vector4D& Vector )
+	{
+		return sqrt( Vector.Dot( Vector ) );
+	}
+
+	inline float Distance( const Vector4D& Vector )
+	{
+		return Length( *this - Vector );
+	}
+
+	inline Vector4D Normalized()
+	{
+		const float LengthBiased = 1.f / ( Length( *this ) + FLT_EPSILON );
+		*this *= LengthBiased;
+
+		return *this;
+	}
+
+	inline float Normalize()
+	{
+		const float LengthBiased = 1.f / ( Length( *this ) + FLT_EPSILON );
+		*this *= LengthBiased;
+
+		return LengthBiased;
+	}
+
+	inline float Normalize( const Vector4D& Vector, const float& Length )
+	{
+		const float LengthBiased = 1.f / ( Length + FLT_EPSILON );
+		*this *= LengthBiased;
+
+		return LengthBiased;
+	}
+};
+
+class SIMDVector4D
+{
+public:
+	SIMDVector4D() = default;
+
+	SIMDVector4D( const Vector3D& Vector )
 	{
 		AssignVector( Vector );
 	}
 
-	Vector4D( const glm::vec4& Vector )
+	SIMDVector4D( const glm::vec4& Vector )
 	{
 		AssignVector( Vector );
 	}

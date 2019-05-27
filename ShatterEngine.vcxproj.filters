@@ -245,6 +245,9 @@
     <ClCompile Include="Engine\Display\Rendering\RenderTexture.cpp">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\RenderPass.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
@@ -434,6 +437,9 @@
       <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Display\Rendering\RenderTexture.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\RenderPass.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
