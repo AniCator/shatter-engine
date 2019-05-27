@@ -275,7 +275,7 @@ void CRenderer::DrawQueuedRenderables()
 	int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
 
-	IInput& Input = CInputLocator::GetService();
+	IInput& Input = CInputLocator::Get();
 	FFixedPosition2D MousePosition = Input.GetMousePosition();
 
 	char PositionXString[32];

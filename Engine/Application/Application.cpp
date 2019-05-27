@@ -715,7 +715,7 @@ void CApplication::Close()
 
 void CApplication::InitializeDefaultInputs()
 {
-	IInput& Input = CInputLocator::GetService();
+	IInput& Input = CInputLocator::Get();
 
 	Input.ClearActionBindings();
 

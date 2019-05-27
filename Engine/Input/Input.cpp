@@ -26,7 +26,7 @@ void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Actio
 
 	const EKey Key = InputGLFW::CodeToKey( KeyInput );
 	const EAction Action = InputGLFW::CodeToAction( ActionInput );
-	CInputLocator::GetService().RegisterKeyInput( Key, ScanCode, Action, Modifiers );
+	CInputLocator::Get().RegisterKeyInput( Key, ScanCode, Action, Modifiers );
 }
 
 void InputCharCallback( GLFWwindow* window, unsigned int Character )
@@ -52,12 +52,12 @@ void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int ActionIn
 
 	const EMouse Mouse = InputGLFW::CodeToMouse( MouseButton );
 	const EAction Action = InputGLFW::CodeToAction( ActionInput );
-	CInputLocator::GetService().RegisterMouseButtonInput( Mouse, Action, Modifiers );
+	CInputLocator::Get().RegisterMouseButtonInput( Mouse, Action, Modifiers );
 }
 
 void InputMousePositionCallback( GLFWwindow* window, double PositionX, double PositionY )
 {
-	CInputLocator::GetService().RegisterMousePositionInput( PositionX, PositionY );
+	CInputLocator::Get().RegisterMousePositionInput( PositionX, PositionY );
 }
 
 void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY )
@@ -69,12 +69,12 @@ void InputScrollCallback( GLFWwindow* window, double OffsetX, double OffsetY )
 		return;
 	}
 #endif
-	CInputLocator::GetService().RegisterScrollInput( static_cast<int>( OffsetX ), static_cast<int>( OffsetY ) );
+	CInputLocator::Get().RegisterScrollInput( static_cast<int>( OffsetX ), static_cast<int>( OffsetY ) );
 }
 
 void InputJoystickStatusCallback( int Joystick, int Event )
 {
-	CInputLocator::GetService().RegisterJoystickStatus( Joystick, Event );
+	CInputLocator::Get().RegisterJoystickStatus( Joystick, Event );
 }
 
 CInput::CInput()

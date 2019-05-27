@@ -24,7 +24,7 @@ public:
 		}
 	}
 
-	static ServiceType& GetService()
+	static ServiceType& Get()
 	{
 		if( !Service )
 		{

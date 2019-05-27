@@ -192,7 +192,7 @@ void CWindow::ProcessInput()
 		glfwSetCursorPos( WindowHandle, Width * 0.5, Height * 0.5 );
 	}*/
 
-	CInputLocator::GetService().Tick();
+	CInputLocator::Get().Tick();
 }
 
 void CWindow::BeginFrame()
