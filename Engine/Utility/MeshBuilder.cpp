@@ -49,8 +49,8 @@ void MeshBuilder::Plane( FPrimitive& Primitive, const float Radius )
 	static const uint32_t IndexCount = 6;
 	static glm::uint* Indices = new glm::uint[IndexCount]
 	{
-		2, 1, 0, // Top-right, Bottom-right, Bottom-left
-		0, 3, 2, // 
+		0, 1, 2, // Top-right, Bottom-right, Bottom-left
+		2, 3, 0, // 
 	};
 
 	Primitive.Vertices = Vertices;

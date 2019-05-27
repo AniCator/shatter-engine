@@ -123,7 +123,7 @@ void CRenderer::DrawQueuedRenderables()
 	{
 		if( ViewportWidth > -1 && ViewportHeight > -1 )
 		{
-			Framebuffer = new CRenderTexture( "Framebuffer", ViewportWidth * 4, ViewportHeight * 4 );
+			Framebuffer = new CRenderTexture( "Framebuffer", ViewportWidth * 2, ViewportHeight * 2 );
 			Framebuffer->Initalize();
 		}
 	}
@@ -252,9 +252,6 @@ void CRenderer::DrawQueuedRenderables()
 		AntiAliasingResolve.Begin();
 
 		glViewport( 0, 0, (GLsizei) ViewportWidth, (GLsizei) ViewportHeight );
-
-		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-		glDisable( GL_CULL_FACE );
 		DrawRenderable( &FramebufferRenderable, PreviousRenderData );
 
 		AntiAliasingResolve.End();
@@ -265,9 +262,6 @@ void CRenderer::DrawQueuedRenderables()
 			FramebufferRenderable.SetTexture( Resolve, ETextureSlot::Slot0 );
 
 			glViewport( 0, 0, (GLsizei) ViewportWidth, (GLsizei) ViewportHeight );
-
-			glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
-			glDisable( GL_CULL_FACE );
 			DrawRenderable( &FramebufferRenderable, PreviousRenderData );
 		}
 	}
