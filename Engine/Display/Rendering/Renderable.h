@@ -2,7 +2,7 @@
 #pragma once
 
 #include <ThirdParty/glad/include/glad/glad.h>
-#include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW//glfw3.h>
+// #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW//glfw3.h>
 #include <ThirdParty/glm/glm.hpp>
 
 #include <Engine/Display/Rendering/Mesh.h>
@@ -44,7 +44,7 @@ public:
 	CTexture* GetTexture( ETextureSlot Slot );
 	void SetTexture( CTexture* Texture, ETextureSlot Slot );
 
-	virtual void Draw( const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride = None );
+	virtual void Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride = None );
 
 	FRenderDataInstanced& GetRenderData();
 private:
@@ -52,7 +52,7 @@ private:
 	CShader* Shader;
 	CMesh* Mesh;
 
-	void Prepare();
+	void Prepare( FRenderData& RenderData );
 
 	FRenderDataInstanced RenderData;
 };

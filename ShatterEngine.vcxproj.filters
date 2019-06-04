@@ -111,6 +111,15 @@
     <Filter Include="Source Files\Engine\World\Entity\PointEntity">
       <UniqueIdentifier>{d71bf6f9-3166-4288-82b2-64f52fe3be29}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\Logic\LogicPointEntity">
+      <UniqueIdentifier>{99271e2c-7658-4109-99d1-1a4127123f08}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\CameraEntity">
+      <UniqueIdentifier>{0e7b5254-55bf-4da6-a22c-c43a1a6dbfbe}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\TriggerProximityEntity">
+      <UniqueIdentifier>{baaf6e28-74fd-4a86-9067-26c7a55708f8}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -247,6 +256,15 @@
     </ClCompile>
     <ClCompile Include="Engine\Display\Rendering\RenderPass.cpp">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\Logic\LogicPointEntity\LogicPointEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\Logic\LogicPointEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\CameraEntity\CameraEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\CameraEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\TriggerProximityEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -441,6 +459,15 @@
     </ClInclude>
     <ClInclude Include="Engine\Display\Rendering\RenderPass.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\Logic\LogicPointEntity\LogicPointEntity.h">
+      <Filter>Source Files\Engine\World\Entity\Logic\LogicPointEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\CameraEntity\CameraEntity.h">
+      <Filter>Source Files\Engine\World\Entity\CameraEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.h">
+      <Filter>Source Files\Engine\World\Entity\TriggerProximityEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -31,7 +31,7 @@ void CSound::Clear()
 
 void CSound::Start()
 {
-	// SoundHandles.push_back( CSimpleSound::Start( Select() ) );
+	SoundHandles.push_back( CSimpleSound::Start( Select() ) );
 }
 
 void CSound::Stop()

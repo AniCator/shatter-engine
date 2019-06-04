@@ -62,14 +62,18 @@ void CSoundEntity::Tick()
 			auto World = GetWorld();
 			if( World )
 			{
-				const auto& CameraSetup = World->GetActiveCameraSetup();
-				Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+				auto ActiveCamera = World->GetActiveCamera();
+				if( ActiveCamera )
+				{
+					const auto& CameraSetup = ActiveCamera->GetCameraSetup();
+					Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
-				float Length = Delta.Length();
-				Length /= Radius;
-				Length = glm::clamp( Length, 0.0f, 1.0f );
+					float Length = Delta.Length();
+					Length /= Radius;
+					Length = glm::clamp( Length, 0.0f, 1.0f );
 
-				Sound->Volume( Length * Volume );
+					Sound->Volume( Length * Volume );
+				}
 			}
 		}
 		else if( Falloff == EFalloff::InverseSquare )
@@ -77,15 +81,19 @@ void CSoundEntity::Tick()
 			auto World = GetWorld();
 			if( World )
 			{
-				const auto& CameraSetup = World->GetActiveCameraSetup();
-				Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+				auto ActiveCamera = World->GetActiveCamera();
+				if( ActiveCamera )
+				{
+					const auto& CameraSetup = ActiveCamera->GetCameraSetup();
+					Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
-				const float Factor = 1.0f / Radius;
-				float Length = Delta.Length() * Factor;
-				Length = 1.0f / ( Length * Length );
-				Length = glm::clamp( Length, 0.0f, 1.0f );
+					const float Factor = 1.0f / Radius;
+					float Length = Delta.Length() * Factor;
+					Length = 1.0f / ( Length * Length );
+					Length = glm::clamp( Length, 0.0f, 1.0f );
 
-				Sound->Volume( Length * Volume );
+					Sound->Volume( Length * Volume );
+				}
 			}
 		}
 	}

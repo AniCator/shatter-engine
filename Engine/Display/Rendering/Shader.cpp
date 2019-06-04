@@ -63,6 +63,7 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 
 bool CShader::Reload()
 {
+	Log::Event( "Recompiling \"%s\"...\n", Location.c_str() );
 	return Load( Location.c_str() );
 }
 

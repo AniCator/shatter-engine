@@ -24,7 +24,7 @@ void CCamera::Update()
 
 	ViewMatrix = glm::lookAt(
 		CameraPosition,
-		CameraPosition + Vector3DToGLM( CameraSetup.CameraDirection ),
+		CameraPosition + Math::ToGLM( CameraSetup.CameraDirection ),
 		Vector3DToInitializerList( CameraSetup.CameraUpVector )
 	);
 

@@ -20,6 +20,193 @@ static const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
 static const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
 static const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };
 
+namespace Math
+{
+	static const float Pi = glm::pi<float>();
+	static const float Pi2 = Pi * 2.0f;
+
+	inline glm::vec3 EulerToDirection( const glm::vec3& Euler )
+	{
+		glm::vec3 Direction;
+		Direction[1] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[1] ) );
+		Direction[2] = sin( glm::radians( Euler[0] ) );
+		Direction[0] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[1] ) );
+		Direction = glm::normalize( Direction );
+
+		return Direction;
+	}
+
+	inline float LengthSquared( const glm::vec2& Vector )
+	{
+		return Vector[0] * Vector[0] + Vector[1] * Vector[1];
+	}
+
+	inline float Length( const glm::vec2& Vector )
+	{
+		return sqrtf( LengthSquared( Vector ) );
+	}
+
+	inline float Normalize( glm::vec2& Vector )
+	{
+		const float LengthBiased = 1.f / ( Length( Vector ) + FLT_EPSILON );
+
+		Vector[0] *= LengthBiased;
+		Vector[1] *= LengthBiased;
+
+		return LengthBiased;
+	}
+
+	inline float Normalize( glm::vec2& Vector, float Length )
+	{
+		const float LengthBiased = 1.f / ( Length + FLT_EPSILON );
+
+		Vector[0] *= LengthBiased;
+		Vector[1] *= LengthBiased;
+
+		return LengthBiased;
+	}
+
+	inline float LengthSquared( const glm::vec3& Vector )
+	{
+		return Vector[0] * Vector[0] + Vector[1] * Vector[1] + Vector[2] * Vector[2];
+	}
+
+	inline float Length( const glm::vec3& Vector )
+	{
+		return sqrtf( LengthSquared( Vector ) );
+	}
+
+	inline float Normalize( glm::vec3& Vector )
+	{
+		const float LengthBiased = 1.f / ( Length( Vector ) + FLT_EPSILON );
+
+		Vector[0] *= LengthBiased;
+		Vector[1] *= LengthBiased;
+		Vector[2] *= LengthBiased;
+
+		return LengthBiased;
+	}
+
+	inline float Normalize( glm::vec3& Vector, float Length )
+	{
+		const float LengthBiased = 1.f / ( Length + FLT_EPSILON );
+
+		Vector[0] *= LengthBiased;
+		Vector[1] *= LengthBiased;
+		Vector[2] *= LengthBiased;
+
+		return LengthBiased;
+	}
+
+	inline float Lerp( float A, float B, const float Alpha )
+	{
+		return A + Alpha * ( B - A );
+	}
+
+	inline Vector3D Lerp( const Vector3D& A, const Vector3D& B, const float Alpha )
+	{
+		return A + Vector3D( Alpha, Alpha, Alpha ) * ( B - A );
+	}
+
+	inline bool PointInBoundingBox( const glm::vec3& Vector, const glm::vec3& Minimum, const glm::vec3& Maximum )
+	{
+		if( Vector[0] > Minimum[0] && Vector[1] > Minimum[1] && Vector[2] > Minimum[2] &&
+			Vector[0] < Maximum[0] && Vector[1] < Maximum[1] && Vector[2] < Maximum[2] )
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	inline bool BoundingBoxIntersection( const glm::vec3& MinimumA, const glm::vec3& MaximumA, const glm::vec3& MinimumB, const glm::vec3& MaximumB )
+	{
+		if( ( MinimumA[0] < MaximumB[0] && MaximumA[0] > MinimumB[0] ) &&
+			( MinimumA[1] < MaximumB[1] && MaximumA[1] > MinimumB[1] ) &&
+			( MinimumA[2] < MaximumB[2] && MaximumA[2] > MinimumB[2] ) )
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	inline bool PointInBoundingBox( const Vector3D& Vector, const Vector3D& Minimum, const Vector3D& Maximum )
+	{
+		if( Vector[0] > Minimum[0] && Vector[1] > Minimum[1] && Vector[2] > Minimum[2] &&
+			Vector[0] < Maximum[0] && Vector[1] < Maximum[1] && Vector[2] < Maximum[2] )
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	inline bool BoundingBoxIntersection( const Vector3D& MinimumA, const Vector3D& MaximumA, const Vector3D& MinimumB, const Vector3D& MaximumB )
+	{
+		if( ( MinimumA[0] < MaximumB[0] && MaximumA[0] > MinimumB[0] ) &&
+			( MinimumA[1] < MaximumB[1] && MaximumA[1] > MinimumB[1] ) &&
+			( MinimumA[2] < MaximumB[2] && MaximumA[2] > MinimumB[2] ) )
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	inline bool PlaneIntersection( Vector3D& Intersection, const Vector3D& RayOrigin, const Vector3D& RayTarget, const Vector3D& PlaneOrigin, const Vector3D& PlaneNormal )
+	{
+		const Vector3D RayVector = RayTarget - RayOrigin;
+		const Vector3D PlaneVector = PlaneOrigin - RayOrigin;
+
+		const float DistanceRatio = PlaneVector.Dot( PlaneNormal ) / RayVector.Dot( PlaneNormal );
+
+		Intersection = RayOrigin + RayVector * DistanceRatio;
+
+		return DistanceRatio >= 0.0f;
+	}
+
+	inline void Seed( uint32_t Value )
+	{
+		std::srand( Value );
+	}
+
+	inline float Random()
+	{
+		return static_cast<float>( std::rand() ) / RAND_MAX;
+	}
+
+	inline float RandomRange( const float Minimum, const float Maximum )
+	{
+		return ( Maximum - Minimum ) * static_cast<float>( std::rand() ) / static_cast<float>( RAND_MAX ) + Minimum;
+	}
+
+	inline int32_t RandomRangeInteger( const int32_t Minimum, const int32_t Maximum )
+	{
+		return ( Maximum - Minimum ) * static_cast<int32_t>( std::rand() ) / static_cast<int32_t>( RAND_MAX ) + Minimum;
+	}
+
+	inline Vector3D FromGLM( const glm::vec3& Vector )
+	{
+		return Vector3D( Vector[0], Vector[1], Vector[2] );
+	}
+
+	inline glm::vec3 ToGLM( const Vector3D& Vector )
+	{
+		return glm::vec3( Vector[0], Vector[1], Vector[2] );
+	}
+
+	inline Vector2D FromGLM( const glm::vec2& Vector )
+	{
+		return Vector2D( Vector[0], Vector[1] );
+	}
+
+	inline glm::vec2 ToGLM( const Vector2D& Vector )
+	{
+		return glm::vec2( Vector[0], Vector[1] );
+	}
+}
+
 struct FFrustumPlane
 {
 
@@ -139,15 +326,15 @@ public:
 
 	FTransform Transform( const FTransform& B ) const
 	{
-		auto NewPosition = Position( Vector3DToGLM( B.GetPosition() ) );
+		auto NewPosition = Position( Math::ToGLM( B.GetPosition() ) );
 		Vector3D Position3D = { NewPosition[0], NewPosition[1], NewPosition[2] };
 
-		auto OrientationRadians = glm::radians( Vector3DToGLM( B.GetOrientation() ) );
+		auto OrientationRadians = glm::radians( Math::ToGLM( B.GetOrientation() ) );
 		auto NewOrientation = RotateEuler( OrientationRadians );
 		NewOrientation = glm::degrees( NewOrientation );
 		Vector3D Orientation3D = { NewOrientation[0], NewOrientation[1], NewOrientation[2] };
 
-		auto NewSize = Scale( Vector3DToGLM( B.GetSize() ) );
+		auto NewSize = Scale( Math::ToGLM( B.GetSize() ) );
 		Vector3D Size3D = { NewSize[0], NewSize[1], NewSize[2] };
 
 		return FTransform( Position3D, Orientation3D, Size3D );
@@ -162,7 +349,7 @@ private:
 
 		ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
 		
-		glm::quat Quaternion = glm::quat( glm::radians( Vector3DToGLM( StoredOrientation ) ) );
+		glm::quat Quaternion = glm::quat( glm::radians( Math::ToGLM( StoredOrientation ) ) );
 		RotationMatrix = glm::toMat4( Quaternion );
 
 		TransformationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
@@ -178,120 +365,3 @@ private:
 	Vector3D StoredOrientation;
 	Vector3D StoredSize;
 };
-
-namespace Math
-{
-	static const float Pi = glm::pi<float>();
-	static const float Pi2 = Pi * 2.0f;
-
-	inline glm::vec3 EulerToDirection( const glm::vec3& Euler )
-	{
-		glm::vec3 Direction;
-		Direction[1] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[1] ) );
-		Direction[2] = sin( glm::radians( Euler[0] ) );
-		Direction[0] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[1] ) );
-		Direction = glm::normalize( Direction );
-
-		return Direction;
-	}
-
-	inline float LengthSquared( const glm::vec2& Vector )
-	{
-		return Vector[0] * Vector[0] + Vector[1] * Vector[1];
-	}
-
-	inline float Length( const glm::vec2& Vector )
-	{
-		return sqrtf( LengthSquared( Vector ) );
-	}
-
-	inline float Normalize( glm::vec2& Vector )
-	{
-		const float LengthBiased = 1.f / ( Length( Vector ) + FLT_EPSILON );
-
-		Vector[0] *= LengthBiased;
-		Vector[1] *= LengthBiased;
-
-		return LengthBiased;
-	}
-
-	inline float Normalize( glm::vec2& Vector, float Length )
-	{
-		const float LengthBiased = 1.f / ( Length + FLT_EPSILON );
-
-		Vector[0] *= LengthBiased;
-		Vector[1] *= LengthBiased;
-
-		return LengthBiased;
-	}
-
-	inline float LengthSquared( const glm::vec3& Vector )
-	{
-		return Vector[0] * Vector[0] + Vector[1] * Vector[1] + Vector[2] * Vector[2];
-	}
-
-	inline float Length( const glm::vec3& Vector )
-	{
-		return sqrtf( LengthSquared( Vector ) );
-	}
-
-	inline float Normalize( glm::vec3& Vector )
-	{
-		const float LengthBiased = 1.f / ( Length( Vector ) + FLT_EPSILON );
-
-		Vector[0] *= LengthBiased;
-		Vector[1] *= LengthBiased;
-		Vector[2] *= LengthBiased;
-
-		return LengthBiased;
-	}
-
-	inline float Normalize( glm::vec3& Vector, float Length )
-	{
-		const float LengthBiased = 1.f / ( Length + FLT_EPSILON );
-
-		Vector[0] *= LengthBiased;
-		Vector[1] *= LengthBiased;
-		Vector[2] *= LengthBiased;
-
-		return LengthBiased;
-	}
-
-	inline float Lerp( float A, float B, float Alpha )
-	{
-		return A + Alpha * ( B - A );
-	}
-
-	inline bool PointInBoundingBox( const glm::vec3& Vector, const glm::vec3& Minimum, const glm::vec3& Maximum )
-	{
-		if( Vector[0] > Minimum[0] && Vector[1] > Minimum[1] && Vector[2] > Minimum[2] &&
-			Vector[0] < Maximum[0] && Vector[1] < Maximum[1] && Vector[2] < Maximum[2] )
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	inline bool BoundingBoxIntersection( const glm::vec3& MinimumA, const glm::vec3& MaximumA, const glm::vec3& MinimumB, const glm::vec3& MaximumB )
-	{
-		if( ( MinimumA[0] < MaximumB[0] && MaximumA[0] > MinimumB[0] ) &&
-			( MinimumA[1] < MaximumB[1] && MaximumA[1] > MinimumB[1] ) &&
-			( MinimumA[2] < MaximumB[2] && MaximumA[2] > MinimumB[2] ) )
-		{
-			return true;
-		}
-
-		return false;
-	}
-
-	inline void Seed( uint32_t Value )
-	{
-		std::srand( Value );
-	}
-
-	inline double Random()
-	{
-		return static_cast<double>( std::rand() ) / RAND_MAX;
-	}
-}

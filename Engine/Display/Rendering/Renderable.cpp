@@ -4,6 +4,8 @@
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Profiling/Logging.h>
 
+#include <ThirdParty/glm/gtc/type_ptr.hpp>
+
 CRenderable::CRenderable()
 {
 	Mesh = nullptr;
@@ -70,12 +72,19 @@ void CRenderable::SetTexture( CTexture* Texture, ETextureSlot Slot )
 	}
 }
 
-void CRenderable::Draw( const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride )
+void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride )
 {
 	if( Mesh )
 	{
 		const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
-		Prepare();
+		Prepare( RenderData );
+
+		const glm::mat4 ModelMatrix = RenderData.Transform.GetTransformationMatrix();
+		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
+		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
+
+		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
+		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
 
 		const FVertexBufferData& Data = Mesh->GetVertexBufferData();
 		const bool BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
@@ -93,7 +102,7 @@ FRenderDataInstanced& CRenderable::GetRenderData()
 	return RenderData;
 }
 
-void CRenderable::Prepare()
+void CRenderable::Prepare( FRenderData& RenderData )
 {
 	if( Shader )
 	{

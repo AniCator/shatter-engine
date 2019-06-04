@@ -34,6 +34,8 @@ void CWorld::Tick()
 
 void CWorld::Destroy()
 {
+	Camera = nullptr;
+
 	for( auto Level : Levels )
 	{
 		Level.Destroy();
@@ -52,6 +54,11 @@ CLevel& CWorld::Add()
 void CWorld::SetActiveCamera( CCamera* CameraIn )
 {
 	Camera = CameraIn;
+}
+
+CCamera* CWorld::GetActiveCamera() const
+{
+	return Camera;
 }
 
 static const FCameraSetup DummySetup = FCameraSetup();

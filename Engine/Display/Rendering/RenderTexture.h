@@ -13,12 +13,15 @@
 class CRenderTexture : public CTexture
 {
 public:
+	CRenderTexture();
 	CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight );
 	~CRenderTexture();
 
-	void Initalize();
+	void Initialize();
 	void Push();
 	void Pop();
+
+	bool Ready() const { return Initialized; };
 
 private:
 	GLuint FramebufferHandle;
@@ -30,4 +33,6 @@ private:
 	int Channels;
 
 	unsigned char* ImageData;
+
+	bool Initialized;
 };

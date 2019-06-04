@@ -2,6 +2,10 @@
 #pragma once
 
 #include "Game.h"
+
+#include <Engine/Display/Rendering/Renderer.h>
+#include <Engine/Display/Window.h>
+
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Profiling/Logging.h>
 
@@ -55,6 +59,15 @@ void CGameLayers::Frame()
 void CGameLayers::Tick()
 {
 	Profile( "Game" );
+
+	Vector4D Time;
+	Time.X = static_cast<float>( GetCurrentTime() );
+	Time.Y = static_cast<float>( GetDeltaTime() );
+	Time.Z = static_cast<float>( GetPreviousTime() );
+	Time.W = static_cast<float>( GetTimeScale() );
+
+	CWindow& Window = CWindow::Get();
+	Window.GetRenderer().SetUniformBuffer( "Time", Time );
 
 	for( auto GameLayer : GameLayers )
 	{

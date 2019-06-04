@@ -46,11 +46,13 @@ void CLevel::Tick()
 
 void CLevel::Destroy()
 {
-	for( auto Entity : Entities )
+	World = nullptr;
+
+	for( size_t Index = 0; Index < Entities.size(); Index++ )
 	{
-		Entity->Destroy();
-		delete Entity;
-		Entity = nullptr;
+		Entities[Index]->Destroy();
+		// delete Entities[Index];
+		// Entities[Index] = nullptr;
 	}
 }
 
@@ -277,8 +279,11 @@ void CLevel::Load( const CFile& File )
 										Link.Entity = Spawn( ClassName );
 									}
 
-									Link.Entity->SetLevel(this);
-									EntityObjectLinks.emplace_back( Link );
+									if( Link.Entity )
+									{
+										Link.Entity->SetLevel( this );
+										EntityObjectLinks.emplace_back( Link );
+									}
 								}
 								else if ( LevelPath.length() > 0 )
 								{

@@ -345,10 +345,11 @@ public:
 
 	inline float Normalize()
 	{
-		const float LengthBiased = 1.f / ( Length( *this ) + FLT_EPSILON );
+		const float VectorLength = Length( *this );
+		const float LengthBiased = 1.f / ( VectorLength + FLT_EPSILON );
 		*this *= LengthBiased;
 
-		return LengthBiased;
+		return VectorLength;
 	}
 
 	inline float Normalize( const Vector3D& Vector, const float& Length )
@@ -356,7 +357,7 @@ public:
 		const float LengthBiased = 1.f / ( Length + FLT_EPSILON );
 		*this *= LengthBiased;
 
-		return LengthBiased;
+		return Length;
 	}
 };
 

@@ -5,6 +5,13 @@
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
 
+CRenderTexture::CRenderTexture()
+{
+	Width = -1;
+	Height = -1;
+	Initialized = false;
+}
+
 CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight )
 {
 	this->Name = Name;
@@ -13,6 +20,8 @@ CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int T
 
 	FramebufferHandle = 0;
 	DepthHandle = 0;
+
+	Initialized = false;
 }
 
 CRenderTexture::~CRenderTexture()
@@ -20,8 +29,13 @@ CRenderTexture::~CRenderTexture()
 
 }
 
-void CRenderTexture::Initalize()
+void CRenderTexture::Initialize()
 {
+	if( Width < 0 || Height < 0 )
+	{
+		Log::Event( Log::Warning, "Render texture could not be initialized because it hasn't been configured properly.\n" );
+	}
+
 	glGenFramebuffers( 1, &FramebufferHandle );
 	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
 
@@ -58,10 +72,13 @@ void CRenderTexture::Initalize()
 	
 	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, DepthHandle, 0 );
 
+	Initialized = true;
+
 	const GLenum FramebufferStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
 	if( FramebufferStatus != GL_FRAMEBUFFER_COMPLETE )
 	{
 		Log::Event( Log::Warning, "Failed to create the framebuffer.\n" );
+		Initialized = false;
 	}
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -72,9 +89,6 @@ void CRenderTexture::Push()
 	glViewport( 0, 0, (GLsizei) Width, (GLsizei) Height );
 
 	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
-
-	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
-	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 }
 
 void CRenderTexture::Pop()

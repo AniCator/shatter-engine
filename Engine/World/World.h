@@ -77,6 +77,7 @@ public:
 	}
 
 	void SetActiveCamera(CCamera* Camera);
+	CCamera* GetActiveCamera() const;
 	const FCameraSetup& GetActiveCameraSetup() const;
 
 private:

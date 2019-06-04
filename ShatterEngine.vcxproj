@@ -121,7 +121,6 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <ShowIncludes>false</ShowIncludes>
       <PreprocessorDefinitions>DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -229,12 +228,15 @@
     <ClCompile Include="Engine\Utility\Structures\JSON.cpp" />
     <ClCompile Include="Engine\Utility\Structures\Name.cpp" />
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
+    <ClCompile Include="Engine\World\Entity\CameraEntity\CameraEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Entity.cpp" />
+    <ClCompile Include="Engine\World\Entity\Logic\LogicPointEntity\LogicPointEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\MeshEntity\MeshEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\PointEntity\PointEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp" />
+    <ClCompile Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.cpp" />
     <ClCompile Include="Engine\World\Level\Level.cpp" />
     <ClCompile Include="Engine\World\World.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
@@ -292,12 +294,15 @@
     <ClInclude Include="Engine\Utility\TestResult.h" />
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />
     <ClInclude Include="Engine\Utility\Timer.h" />
+    <ClInclude Include="Engine\World\Entity\CameraEntity\CameraEntity.h" />
     <ClInclude Include="Engine\World\Entity\Entity.h" />
+    <ClInclude Include="Engine\World\Entity\Logic\LogicPointEntity\LogicPointEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.h" />
     <ClInclude Include="Engine\World\Entity\MeshEntity\MeshEntity.h" />
     <ClInclude Include="Engine\World\Entity\PointEntity\PointEntity.h" />
     <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h" />
+    <ClInclude Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.h" />
     <ClInclude Include="Engine\World\Level\Level.h" />
     <ClInclude Include="Engine\World\World.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />

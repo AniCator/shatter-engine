@@ -29,11 +29,10 @@ public:
 	void SetUniformBuffer( const std::string& Name, const Vector4D& Value );
 
 	const CCamera& GetCamera() const;
-	void SetCamera( CCamera& CameraIn );
+	void SetCamera( const CCamera& CameraIn );
 	void SetViewport( int& Width, int& Height );
 
 	Vector3D ScreenPositionToWorld( const Vector2D& ScreenPosition ) const;
-	bool PlaneIntersection( Vector3D& Intersection, const Vector3D& RayOrigin, const Vector3D& RayTarget, const Vector3D& PlaneOrigin, const Vector3D& PlaneNormal ) const;
 
 	bool ForceWireFrame;
 
