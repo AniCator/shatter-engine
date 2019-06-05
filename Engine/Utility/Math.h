@@ -219,6 +219,12 @@ struct FFrustum
 
 struct FBounds
 {
+	FBounds()
+	{
+		Minimum = Vector3D( 0.0f, 0.0f, 0.0f );
+		Maximum = Vector3D( 0.0f, 0.0f, 0.0f );
+	}
+
 	Vector3D Minimum;
 	Vector3D Maximum;
 };
@@ -321,7 +327,7 @@ public:
 
 	glm::vec3 Transform( const glm::vec3& Position ) const
 	{
-		return TransformationMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
+		return TranslationMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
 	}
 
 	FTransform Transform( const FTransform& B ) const
@@ -352,11 +358,12 @@ private:
 		glm::quat Quaternion = glm::quat( glm::radians( Math::ToGLM( StoredOrientation ) ) );
 		RotationMatrix = glm::toMat4( Quaternion );
 
-		TransformationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
+		TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
 
-		TransformationMatrix = TransformationMatrix * RotationMatrix * ScaleMatrix;
+		TransformationMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
 	}
 
+	glm::mat4 TranslationMatrix;
 	glm::mat4 RotationMatrix;
 	glm::mat4 TransformationMatrix;
 	glm::mat4 ScaleMatrix;
