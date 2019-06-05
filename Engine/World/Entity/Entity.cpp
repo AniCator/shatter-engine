@@ -133,10 +133,10 @@ void CEntity::Link( const JSON::Vector& Objects )
 						{
 							FMessage Message;
 							Message.TargetID = Entity->GetID();
-							Message.Inputs.push_back( InputName );
+							Message.Inputs.emplace_back( InputName );
 
 							auto& Messsages = Outputs[OutputName];
-							Messsages.push_back( Message );
+							Messsages.emplace_back( Message );
 						}
 						else
 						{
