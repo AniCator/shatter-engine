@@ -11,8 +11,9 @@ public:
 
 		for( size_t i = 0; i < BufferSize; i++ )
 		{
-			Buffer[i] = 0;
+			Buffer[i] = T();
 		}
+
 	}
 
 	~CRingBuffer()
@@ -20,7 +21,7 @@ public:
 
 	}
 
-	void Insert( int64_t Value )
+	void Insert( T Value )
 	{
 		Buffer[WritePosition] = Value;
 
@@ -28,7 +29,7 @@ public:
 		WritePosition = WritePosition % BufferSize;
 	}
 
-	int64_t Get( size_t Position )
+	T Get( size_t Position )
 	{
 		if( Position < BufferSize )
 		{
