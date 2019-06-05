@@ -2,7 +2,7 @@
 #include "Profiling.h"
 #include "Logging.h"
 
-#include <ThirdParty/imgui-1.52/imgui.h>
+#include <ThirdParty/imgui-1.70/imgui.h>
 
 CProfiler::CProfiler()
 {

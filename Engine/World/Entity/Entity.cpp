@@ -26,6 +26,7 @@ CEntity::CEntity()
 	Parent = nullptr;
 
 	Enabled = false;
+	ShouldDebug = false;
 }
 
 CEntity::~CEntity()
@@ -190,6 +191,19 @@ void CEntity::Track( const CEntity* Entity )
 void CEntity::Unlink( const size_t EntityID )
 {
 	// Find target input and unlink it.
+}
+
+void CEntity::Debug()
+{
+	if( ShouldDebug )
+	{
+		// 
+	}
+}
+
+void CEntity::EnableDebug( const bool Enable )
+{
+	ShouldDebug = Enable;
 }
 
 /*

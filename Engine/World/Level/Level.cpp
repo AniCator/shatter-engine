@@ -41,6 +41,11 @@ void CLevel::Tick()
 	for( auto Entity : Entities )
 	{
 		Entity->Tick();
+
+		if( Entity->IsDebugEnabled() )
+		{
+			Entity->Debug();
+		}
 	}
 }
 

@@ -6,15 +6,17 @@
 #include <ThirdParty/glad/include/glad/glad.h>
 #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
 
+#include <Engine/Configuration/Configuration.h>
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
-#include <Engine/Configuration/Configuration.h>
 
 #include <Engine/Utility/Locator/InputLocator.h>
 
 #if defined( IMGUI_ENABLED )
-#include <ThirdParty/imgui-1.52/imgui.h>
-#include "imgui_impl_glfw_gl3.h"
+#include <ThirdParty/imgui-1.70/imgui.h>
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_opengl3.h"
 #endif
 
 static void DebugCallbackOpenGL( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam )
@@ -158,7 +160,11 @@ void CWindow::Create( const char* Title )
 
 	Log::Event( "Initializing ImGui.\n" );
 #if defined( IMGUI_ENABLED )
-	ImGui_ImplGlfwGL3_Init( WindowHandle, false );
+	ImGui::CreateContext();
+	ImGui::StyleColorsDark();
+
+	ImGui_ImplGlfw_InitForOpenGL( WindowHandle, false );
+	ImGui_ImplOpenGL3_Init( "#version 130" );
 #endif
 
 	Initialized = true;
@@ -170,7 +176,9 @@ void CWindow::Create( const char* Title )
 void CWindow::Terminate()
 {
 #if defined( IMGUI_ENABLED )
-	ImGui_ImplGlfwGL3_Shutdown();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 #endif
 
 	glfwTerminate();
@@ -198,7 +206,9 @@ void CWindow::ProcessInput()
 void CWindow::BeginFrame()
 {
 #if defined( IMGUI_ENABLED )
-	ImGui_ImplGlfwGL3_NewFrame();
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
 #endif
 }
 
@@ -211,6 +221,10 @@ void CWindow::RenderFrame()
 
 #if defined( IMGUI_ENABLED )
 	ImGui::Render();
+
+	UI::Frame();
+
+	ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 #endif
 
 	glfwSwapBuffers( WindowHandle );

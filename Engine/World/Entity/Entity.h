@@ -73,6 +73,10 @@ public:
 	MessageOutput Outputs;
 	MessageInput Inputs;
 
+	virtual void Debug();
+	bool IsDebugEnabled() { return ShouldDebug; };
+	void EnableDebug( const bool Enable );
+
 private:
 	size_t ID;
 	CEntity* Parent;
@@ -82,6 +86,7 @@ private:
 protected:
 	CLevel* Level;
 	bool Enabled;
+	bool ShouldDebug;
 };
 
 class CEntityMap

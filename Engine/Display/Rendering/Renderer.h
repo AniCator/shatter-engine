@@ -33,6 +33,7 @@ public:
 	void SetViewport( int& Width, int& Height );
 
 	Vector3D ScreenPositionToWorld( const Vector2D& ScreenPosition ) const;
+	Vector2D WorldToScreenPosition( const Vector3D& WorldPosition ) const;
 
 	bool ForceWireFrame;
 

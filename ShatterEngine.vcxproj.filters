@@ -125,15 +125,6 @@
     <ClCompile Include="ThirdParty\glad\src\glad.c">
       <Filter>Source Files\ThirdParty\glad</Filter>
     </ClCompile>
-    <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\imgui-1.52\imgui_demo.cpp">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClCompile>
-    <ClCompile Include="ThirdParty\imgui-1.52\imgui_draw.cpp">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClCompile>
     <ClCompile Include="Game\Game.cpp">
       <Filter>Source Files\Engine</Filter>
     </ClCompile>
@@ -151,9 +142,6 @@
     </ClCompile>
     <ClCompile Include="Engine\Profiling\Profiling.cpp">
       <Filter>Source Files\Engine\Profiling</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\Display\imgui_impl_glfw_gl3.cpp">
-      <Filter>Source Files\Engine\Display</Filter>
     </ClCompile>
     <ClCompile Include="Engine\Display\Window.cpp">
       <Filter>Source Files\Engine\Display</Filter>
@@ -266,26 +254,29 @@
     <ClCompile Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\TriggerProximityEntity</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Display\UserInterface.cpp">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\imgui_impl_glfw.cpp">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\imgui_impl_opengl3.cpp">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-1.70\imgui.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-1.70\imgui_demo.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-1.70\imgui_draw.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="ThirdParty\imgui-1.70\imgui_widgets.cpp">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui-1.52\imgui.h">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui-1.52\imgui_internal.h">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui-1.52\stb_rect_pack.h">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui-1.52\stb_textedit.h">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClInclude>
-    <ClInclude Include="ThirdParty\imgui-1.52\stb_truetype.h">
-      <Filter>Source Files\ThirdParty\imgui</Filter>
-    </ClInclude>
     <ClInclude Include="Game\Game.h">
       <Filter>Source Files\Engine</Filter>
     </ClInclude>
@@ -306,9 +297,6 @@
     </ClInclude>
     <ClInclude Include="Engine\Profiling\Profiling.h">
       <Filter>Source Files\Engine\Profiling</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Display\imgui_impl_glfw_gl3.h">
-      <Filter>Source Files\Engine\Display</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Display\Window.h">
       <Filter>Source Files\Engine\Display</Filter>
@@ -468,6 +456,42 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.h">
       <Filter>Source Files\Engine\World\Entity\TriggerProximityEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\UserInterface.h">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\imgui_impl_glfw.h">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\imgui_impl_opengl3.h">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\imgui_internal.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\imstb_rectpack.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\imstb_textedit.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\imstb_truetype.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\stb_rect_pack.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\stb_textedit.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\stb_truetype.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\imgui.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="ThirdParty\imgui-1.70\imconfig.h">
+      <Filter>Source Files\ThirdParty\imgui</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

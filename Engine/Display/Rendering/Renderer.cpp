@@ -14,6 +14,7 @@
 #include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
 #include <Engine/Display/Rendering/RenderPass.h>
+#include <Engine/Display/UserInterface.h>
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
@@ -28,6 +29,8 @@
 
 #include "Renderable.h"
 #include "Camera.h"
+
+static std::stringstream stream;
 
 static const size_t RenderableCapacity = 4096;
 
@@ -112,6 +115,8 @@ void CRenderer::RefreshFrame()
 	}
 
 	DynamicRenderables.clear();
+
+	UI::Refresh();
 }
 
 void CRenderer::QueueRenderable( CRenderable* Renderable )
@@ -151,11 +156,6 @@ void CRenderer::DrawQueuedRenderables()
 		glPolygonMode( GL_FRONT_AND_BACK, GL_FILL );
 		glEnable( GL_CULL_FACE );
 	}
-
-	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
-
-	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
-	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
 
 	auto SortRenderables = [] ( CRenderable* A, CRenderable* B ) {
 		FRenderDataInstanced& RenderDataA = A->GetRenderData();
@@ -269,6 +269,8 @@ void CRenderer::DrawQueuedRenderables()
 
 	int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
+
+	UI::SetCamera( Camera );
 }
 
 void CRenderer::SetUniformBuffer( const std::string& Name, const Vector4D& Value )
@@ -310,6 +312,22 @@ Vector3D CRenderer::ScreenPositionToWorld( const Vector2D& ScreenPosition ) cons
 	glm::vec3 WorldSpacePosition = ViewInverse * ScreenPositionViewSpace;
 
 	return Vector3D( WorldSpacePosition[0], WorldSpacePosition[1], WorldSpacePosition[2] );
+}
+
+Vector2D CRenderer::WorldToScreenPosition( const Vector3D& WorldPosition ) const
+{
+	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
+	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
+
+	glm::vec4 WorldPositionHomogenoeus = glm::vec4( Math::ToGLM( WorldPosition ), 1.0f );
+	glm::vec4 ClipSpacePosition = ProjectionMatrix * ViewMatrix * WorldPositionHomogenoeus;
+	glm::vec3 NormalizedPosition = glm::clamp( glm::vec3( ClipSpacePosition.x, ClipSpacePosition.y, ClipSpacePosition.z ) / ClipSpacePosition.w, -1.0f, 1.0f );
+
+	Vector2D ScreenPosition;
+	ScreenPosition.X = ( NormalizedPosition.x * 0.5f + 0.5f ) * ViewportWidth;
+	ScreenPosition.Y = ( NormalizedPosition.y * -0.5f + 0.5f ) * ViewportHeight;
+
+	return ScreenPosition;
 }
 
 void CRenderer::RefreshShaderHandle( CRenderable* Renderable )

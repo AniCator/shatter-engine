@@ -5,6 +5,8 @@
 #include <Engine/Display/Window.h>
 #include <Engine/Resource/Assets.h>
 
+#include <Engine/Display/UserInterface.h>
+
 static CEntityFactory<CMeshEntity> Factory( "mesh" );
 
 CMeshEntity::CMeshEntity()

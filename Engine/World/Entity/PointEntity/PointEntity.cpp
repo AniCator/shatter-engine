@@ -6,6 +6,8 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/World/World.h>
 
+#include <Engine/Display/UserInterface.h>
+
 CPointEntity::CPointEntity()
 {
 	Transform = FTransform();
@@ -66,4 +68,9 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 	{
 		Transform = Level->GetTransform().Transform( Transform );
 	}
+}
+
+void CPointEntity::Debug()
+{
+	UI::AddCircle( Transform.GetPosition(), 2.0f, UI::Color::White );
 }

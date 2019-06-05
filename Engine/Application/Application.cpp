@@ -11,6 +11,7 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Audio/SimpleSound.h>
 #include <Engine/Display/Window.h>
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Configuration/Configuration.h>
 
 #include <Engine/Display/Rendering/Camera.h>
@@ -25,8 +26,9 @@
 #include <Game/Game.h>
 
 #if defined( IMGUI_ENABLED )
-#include <ThirdParty/imgui-1.52/imgui.h>
-#include <Engine/Display/imgui_impl_glfw_gl3.h>
+#include <ThirdParty/imgui-1.70/imgui.h>
+#include <Engine/Display/imgui_impl_glfw.h>
+#include <Engine/Display/imgui_impl_opengl3.h>
 #endif
 
 CWindow& MainWindow = CWindow::Get();
@@ -83,7 +85,7 @@ void InputRestartGameLayers(CApplication* Application)
 	GameLayersInstance->Shutdown();
 
 #if defined( IMGUI_ENABLED )
-	ImGui_ImplGlfwGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
 #endif
 
 	GameLayersInstance->Initialize();
@@ -783,9 +785,15 @@ void CApplication::ResetImGui()
 		Log::Event( Log::Warning, "Could not find a default resource.\nMake sure you include the default engine items in the build directory.\n" );
 	}
 
-	ImGui_ImplGlfwGL3_NewFrame();
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+
+	UI::Reset();
 
 	GenerateThemes();
+
+	ImGui::Render();
 #endif
 }
 
@@ -938,7 +946,7 @@ void CApplication::Initialize()
 	Log::Event( "%s (Build: %s)\n\n", Name.c_str(), __DATE__ );
 
 #if defined( IMGUI_ENABLED )
-	ImGui_ImplGlfwGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
 #endif
 
 	unsigned char EndianTest[2] = { 1, 0 };
@@ -962,7 +970,8 @@ void CApplication::Initialize()
 	if( MainWindow.Valid() )
 	{
 		MainWindow.Terminate();
-		ImGui_ImplGlfwGL3_Reset();
+		ImGui_ImplGlfw_Reset();
+		ImGui_ImplOpenGL3_Reset();
 
 		// Reload the configuration file if the application is being re-initialized.
 		ConfigurationInstance.Initialize();
@@ -1000,7 +1009,8 @@ void CApplication::Initialize()
 	}
 
 #if defined( IMGUI_ENABLED )
-	ImGui_ImplGlfwGL3_Shutdown();
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
 #endif
 
 	Log::Event( "Binding engine inputs.\n" );

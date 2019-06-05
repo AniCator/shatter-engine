@@ -14,6 +14,8 @@ public:
 	virtual const FTransform& GetTransform() const { return Transform; };
 	virtual void Load( const JSON::Vector& Objects ) override;
 
+	virtual void Debug() override;
+
 protected:
 	FTransform Transform;
 };

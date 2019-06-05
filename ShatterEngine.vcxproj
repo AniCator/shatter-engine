@@ -202,7 +202,8 @@
     <ClCompile Include="Engine\Audio\SimpleSound.cpp" />
     <ClCompile Include="Engine\Audio\Sound.cpp" />
     <ClCompile Include="Engine\Configuration\Configuration.cpp" />
-    <ClCompile Include="Engine\Display\imgui_impl_glfw_gl3.cpp" />
+    <ClCompile Include="Engine\Display\imgui_impl_glfw.cpp" />
+    <ClCompile Include="Engine\Display\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Camera.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Framebuffer.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
@@ -212,6 +213,7 @@
     <ClCompile Include="Engine\Display\Rendering\RenderTexture.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Shader.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Texture.cpp" />
+    <ClCompile Include="Engine\Display\UserInterface.cpp" />
     <ClCompile Include="Engine\Display\Window.cpp" />
     <ClCompile Include="Engine\Input\Input.cpp" />
     <ClCompile Include="Engine\Input\NullInput.cpp" />
@@ -243,16 +245,18 @@
     <ClCompile Include="Game\Game.cpp" />
     <ClCompile Include="Game\ShatterLapse\ShatterLapse.cpp" />
     <ClCompile Include="ThirdParty\glad\src\glad.c" />
-    <ClCompile Include="ThirdParty\imgui-1.52\imgui.cpp" />
-    <ClCompile Include="ThirdParty\imgui-1.52\imgui_demo.cpp" />
-    <ClCompile Include="ThirdParty\imgui-1.52\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\imgui-1.70\imgui.cpp" />
+    <ClCompile Include="ThirdParty\imgui-1.70\imgui_demo.cpp" />
+    <ClCompile Include="ThirdParty\imgui-1.70\imgui_draw.cpp" />
+    <ClCompile Include="ThirdParty\imgui-1.70\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Application\Application.h" />
     <ClInclude Include="Engine\Audio\SimpleSound.h" />
     <ClInclude Include="Engine\Audio\Sound.h" />
     <ClInclude Include="Engine\Configuration\Configuration.h" />
-    <ClInclude Include="Engine\Display\imgui_impl_glfw_gl3.h" />
+    <ClInclude Include="Engine\Display\imgui_impl_glfw.h" />
+    <ClInclude Include="Engine\Display\imgui_impl_opengl3.h" />
     <ClInclude Include="Engine\Display\Rendering\Camera.h" />
     <ClInclude Include="Engine\Display\Rendering\Framebuffer.h" />
     <ClInclude Include="Engine\Display\Rendering\Mesh.h" />
@@ -262,6 +266,7 @@
     <ClInclude Include="Engine\Display\Rendering\RenderTexture.h" />
     <ClInclude Include="Engine\Display\Rendering\Shader.h" />
     <ClInclude Include="Engine\Display\Rendering\Texture.h" />
+    <ClInclude Include="Engine\Display\UserInterface.h" />
     <ClInclude Include="Engine\Display\Window.h" />
     <ClInclude Include="Engine\Event\ActionTarget.h" />
     <ClInclude Include="Engine\Input\Input.h" />
@@ -309,12 +314,15 @@
     <ClInclude Include="Game\Game.h" />
     <ClInclude Include="Game\ShatterLapse\ShatterLapse.h" />
     <ClInclude Include="ThirdParty\angelscript\include\angelscript.h" />
-    <ClInclude Include="ThirdParty\imgui-1.52\imconfig.h" />
-    <ClInclude Include="ThirdParty\imgui-1.52\imgui.h" />
-    <ClInclude Include="ThirdParty\imgui-1.52\imgui_internal.h" />
-    <ClInclude Include="ThirdParty\imgui-1.52\stb_rect_pack.h" />
-    <ClInclude Include="ThirdParty\imgui-1.52\stb_textedit.h" />
-    <ClInclude Include="ThirdParty\imgui-1.52\stb_truetype.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\imconfig.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\imgui.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\imgui_internal.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\imstb_rectpack.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\imstb_textedit.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\imstb_truetype.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\stb_rect_pack.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\stb_textedit.h" />
+    <ClInclude Include="ThirdParty\imgui-1.70\stb_truetype.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini" />
