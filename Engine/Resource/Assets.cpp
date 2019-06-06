@@ -50,11 +50,16 @@ void ParsePayload(FPrimitivePayload* Payload )
 {
 	Payload->Native = false;
 
-	std::stringstream ExportLocation;
-	ExportLocation << "Models/" << Payload->Name << ".lm";
-	std::string ExportPath = ExportLocation.str();
+	CFile File( Payload->Location.c_str() );
+	if( File.Extension() != "lm" )
+	{
+		std::stringstream ExportLocation;
+		ExportLocation << "Models/" << Payload->Name << ".lm";
+		std::string ExportPath = ExportLocation.str();
 
-	CFile File( ExportPath.c_str() );
+		File = CFile( ExportPath.c_str() );
+	}
+
 	if( !File.Exists() )
 	{
 		File = CFile( Payload->Location.c_str() );
@@ -157,11 +162,19 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 	CMesh* Mesh = FindMesh( NameString );
 	const bool ShouldLoad = Mesh == nullptr || ForceLoad;
 
-	std::stringstream ExportLocation;
-	ExportLocation << "Models/" << Name << ".lm";
-	std::string ExportPath = ExportLocation.str();
+	std::string ExportPath;
 
-	CFile File( ExportPath.c_str() );
+	CFile File( FileLocation );
+	if( File.Extension() != "lm" )
+	{
+		std::stringstream ExportLocation;
+		ExportLocation << "Models/" << Name << ".lm";
+		ExportPath = ExportLocation.str();
+
+		File = CFile( ExportPath.c_str() );
+	}
+
+	
 	if( !File.Exists() || ForceLoad )
 	{
 		File = CFile( FileLocation );
