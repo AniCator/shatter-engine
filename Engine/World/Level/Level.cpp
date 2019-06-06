@@ -91,6 +91,7 @@ void CLevel::Load( const CFile& File )
 							bool Shader = false;
 							bool Texture = false;
 							bool Sound = false;
+							bool Stream = false;
 							std::string Name = "";
 							std::vector<std::string> Paths;
 							Paths.reserve( 10 );
@@ -104,6 +105,13 @@ void CLevel::Load( const CFile& File )
 									Shader = Property->Value == "shader";
 									Texture = Property->Value == "texture";
 									Sound = Property->Value == "sound";
+
+									Stream = Property->Value == "music";
+
+									if( !Stream )
+									{
+										Stream = Property->Value == "stream";
+									}
 								}
 								else if( Property->Key == "name" )
 								{
@@ -135,8 +143,6 @@ void CLevel::Load( const CFile& File )
 								{
 									for( const auto& Path : Paths )
 									{
-										// Assets.CreateNamedMesh( Name.c_str(), Path.c_str() );
-										
 										FPrimitivePayload Payload;
 										Payload.Name = Name;
 										Payload.Location = Path;
@@ -147,8 +153,6 @@ void CLevel::Load( const CFile& File )
 								{
 									for( const auto& Path : Paths )
 									{
-										// Assets.CreateNamedShader( Name.c_str(), Path.c_str() );
-
 										FGenericAssetPayload Payload;
 										Payload.Type = EAsset::Shader;
 										Payload.Name = Name;
@@ -160,8 +164,6 @@ void CLevel::Load( const CFile& File )
 								{
 									for( const auto& Path : Paths )
 									{
-										// Assets.CreatedNamedTexture( Name.c_str(), Path.c_str() );
-
 										FGenericAssetPayload Payload;
 										Payload.Type = EAsset::Texture;
 										Payload.Name = Name;
@@ -169,9 +171,9 @@ void CLevel::Load( const CFile& File )
 										GenericAssets.emplace_back( Payload );
 									}
 								}
-								else if( Sound )
+								else if( Sound || Stream )
 								{
-									CSound* NewSound = Assets.CreateNamedSound( Name.c_str() );
+									CSound* NewSound = Stream ? Assets.CreateNamedStream( Name.c_str() ) : Assets.CreateNamedSound( Name.c_str() );
 									if( NewSound )
 									{
 										NewSound->Clear();

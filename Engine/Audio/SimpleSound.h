@@ -14,7 +14,7 @@ union SoundBufferHandle
 	int32_t Handle;
 };
 
-union MusicHandle
+union StreamHandle
 {
 	int32_t Handle;
 };
@@ -37,29 +37,29 @@ class CSimpleSound
 {
 public:
 	static SoundBufferHandle Sound( std::string ResourcePath );
-	static MusicHandle Music( std::string ResourcePath );
+	static StreamHandle Music( std::string ResourcePath );
 
 	static SoundHandle Start( SoundBufferHandle Handle );
-	static void Start( MusicHandle Handle, const float FadeIn = -1.0f );
+	static void Start( StreamHandle Handle, const float FadeIn = -1.0f );
 
 	static void Stop( SoundHandle Handle );
-	static void Stop( MusicHandle Handle );
+	static void Stop( StreamHandle Handle );
 
 	static void StopSounds();
 	static void StopMusic();
 	static void StopAll();
 
 	static void Loop( SoundHandle Handle, const bool Loop );
-	static void Loop( MusicHandle Handle, const bool Loop );
+	static void Loop( StreamHandle Handle, const bool Loop );
 
 	static void Rate( SoundHandle Handle, const float Rate );
-	static void Rate( MusicHandle Handle, const float Rate );
+	static void Rate( StreamHandle Handle, const float Rate );
 
 	static bool Playing( SoundHandle Handle );
-	static bool Playing( MusicHandle Handle );
+	static bool Playing( StreamHandle Handle );
 
 	static void Volume( SoundHandle Handle, const float Volume );
-	static void Volume( MusicHandle Handle, const float Volume );
+	static void Volume( StreamHandle Handle, const float Volume );
 
 	static void Tick();
 

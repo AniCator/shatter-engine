@@ -55,6 +55,9 @@ public:
 	CSound* CreateNamedSound( const char* Name, const char* FileLocation );
 	CSound* CreateNamedSound( const char* Name );
 
+	CSound* CreateNamedStream( const char* Name, const char* FileLocation );
+	CSound* CreateNamedStream( const char* Name );
+
 
 	CMesh* FindMesh( std::string Name );
 	CShader* FindShader( std::string Name );

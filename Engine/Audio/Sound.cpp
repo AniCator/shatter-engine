@@ -4,9 +4,9 @@
 #include <Engine/Audio/SimpleSound.h>
 #include <Engine/Utility/Math.h>
 
-CSound::CSound()
+CSound::CSound( ESoundType::Type TypeIn )
 {
-
+	SoundType = TypeIn;
 }
 
 CSound::~CSound()
@@ -16,7 +16,14 @@ CSound::~CSound()
 
 bool CSound::Load( const char* FileLocation )
 {
-	BufferHandles.push_back( CSimpleSound::Sound( FileLocation ) );
+	if( SoundType == ESoundType::Memory )
+	{
+		BufferHandles.push_back( CSimpleSound::Sound( FileLocation ) );
+	}
+	else
+	{
+		StreamHandles.push_back( CSimpleSound::Music( FileLocation ) );
+	}
 
 	return true;
 }
@@ -27,46 +34,99 @@ void CSound::Clear()
 	Location = 0;
 	BufferHandles.clear();
 	SoundHandles.clear();
+	StreamHandles.clear();
 }
 
 void CSound::Start()
 {
-	SoundHandles.push_back( CSimpleSound::Start( Select() ) );
+	if( SoundType == ESoundType::Memory )
+	{
+		SoundHandles.push_back( CSimpleSound::Start( Select() ) );
+	}
+	else if( StreamHandles.size() > 0 )
+	{
+		CSimpleSound::Start( StreamHandles[0] );
+	}
 }
 
 void CSound::Stop()
 {
-	for( const auto& Handle : SoundHandles )
+	if( SoundType == ESoundType::Memory )
 	{
-		CSimpleSound::Stop( Handle );
+		for( const auto& Handle : SoundHandles )
+		{
+			CSimpleSound::Stop( Handle );
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			CSimpleSound::Stop( Handle );
+		}
 	}
 }
 
 void CSound::Loop( const bool Loop )
 {
-	for( const auto& Handle : SoundHandles )
+	if( SoundType == ESoundType::Memory )
 	{
-		CSimpleSound::Loop( Handle, Loop );
+		for( const auto& Handle : SoundHandles )
+		{
+			CSimpleSound::Loop( Handle, Loop );
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			CSimpleSound::Loop( Handle, Loop );
+		}
 	}
 }
 
 void CSound::Rate( const float Rate )
 {
-	for( const auto& Handle : SoundHandles )
+	if( SoundType == ESoundType::Memory )
 	{
-		CSimpleSound::Rate( Handle, Rate );
+		for( const auto& Handle : SoundHandles )
+		{
+			CSimpleSound::Rate( Handle, Rate );
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			CSimpleSound::Rate( Handle, Rate );
+		}
 	}
 }
 
 bool CSound::Playing()
 {
 	bool IsPlaying = false;
-	for( const auto& Handle : SoundHandles )
+
+	if( SoundType == ESoundType::Memory )
 	{
-		if( CSimpleSound::Playing( Handle ) )
+		for( const auto& Handle : SoundHandles )
 		{
-			IsPlaying = true;
-			break;
+			if( CSimpleSound::Playing( Handle ) )
+			{
+				IsPlaying = true;
+				break;
+			}
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			if( CSimpleSound::Playing( Handle ) )
+			{
+				IsPlaying = true;
+				break;
+			}
 		}
 	}
 
@@ -75,9 +135,19 @@ bool CSound::Playing()
 
 void CSound::Volume( const float Volume )
 {
-	for( const auto& Handle : SoundHandles )
+	if( SoundType == ESoundType::Memory )
 	{
-		CSimpleSound::Volume( Handle, Volume );
+		for( const auto& Handle : SoundHandles )
+		{
+			CSimpleSound::Volume( Handle, Volume );
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			CSimpleSound::Volume( Handle, Volume );
+		}
 	}
 }
 

@@ -13,10 +13,20 @@ namespace ESoundPlayMode
 	};
 }
 
+namespace ESoundType
+{
+	enum Type
+	{
+		Unknown = 0,
+		Memory,
+		Stream
+	};
+}
+
 class CSound
 {
 public:
-	CSound();
+	CSound( ESoundType::Type Type );
 	~CSound();
 
 	bool Load( const char* FileLocation );
@@ -35,7 +45,10 @@ public:
 private:
 	std::vector<SoundBufferHandle> BufferHandles;
 	std::vector<SoundHandle> SoundHandles;
+	std::vector<StreamHandle> StreamHandles;
+
 	ESoundPlayMode::Type PlayMode;
+	ESoundType::Type SoundType;
 
 	SoundBufferHandle Select();
 	uint32_t Location;
