@@ -18,6 +18,8 @@ CWorld::~CWorld()
 
 void CWorld::Construct()
 {
+	Camera = nullptr;
+
 	for( auto Level : Levels )
 	{
 		Level.Construct();
