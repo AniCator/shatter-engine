@@ -30,7 +30,7 @@ void CCameraEntity::Tick()
 
 void CCameraEntity::Destroy()
 {
-
+	Deactivate();
 }
 
 void CCameraEntity::Load( const JSON::Vector& Objects )
@@ -58,14 +58,17 @@ void CCameraEntity::Activate()
 
 void CCameraEntity::Deactivate()
 {
-	Active = false;
-
-	auto World = GetWorld();
-	if( World )
+	if( Active )
 	{
-		if( World->GetActiveCamera() == &Camera )
+		Active = false;
+
+		auto World = GetWorld();
+		if( World )
 		{
-			World->SetActiveCamera( nullptr );
+			if( World->GetActiveCamera() == &Camera )
+			{
+				World->SetActiveCamera( nullptr );
+			}
 		}
 	}
 }
