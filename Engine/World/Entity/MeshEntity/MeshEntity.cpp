@@ -92,15 +92,15 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 	{
 		if( Property->Key == "mesh" )
 		{
-			Mesh = Assets.FindMesh( Property->Value );
+			MeshName = Property->Value;
 		}
 		else if( Property->Key == "shader" )
 		{
-			Shader = Assets.FindShader( Property->Value );
+			ShaderName = Property->Value;
 		}
 		else if( Property->Key == "texture" )
 		{
-			Texture = Assets.FindTexture( Property->Value );
+			TextureName = Property->Value;
 		}
 		else if( Property->Key == "color" )
 		{
@@ -118,5 +118,37 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 	}
 
+	Reload();
+}
+
+void CMeshEntity::Reload()
+{
+	CAssets& Assets = CAssets::Get();
+	CMesh* Mesh = Assets.FindMesh( MeshName );
+	CShader* Shader = Assets.FindShader( ShaderName );
+	CTexture* Texture = Assets.FindTexture( TextureName );
+
 	Spawn( Mesh, Shader, Texture, Transform );
+}
+
+void CMeshEntity::Import( CData& Data )
+{
+	CPointEntity::Import( Data );
+
+	FDataString::Decode( Data, MeshName );
+	FDataString::Decode( Data, ShaderName );
+	FDataString::Decode( Data, TextureName );
+
+	Data >> Color;
+}
+
+void CMeshEntity::Export( CData& Data )
+{
+	CPointEntity::Export( Data );
+
+	FDataString::Encode( Data, MeshName );
+	FDataString::Encode( Data, ShaderName );
+	FDataString::Encode( Data, TextureName );
+
+	Data << Color;
 }

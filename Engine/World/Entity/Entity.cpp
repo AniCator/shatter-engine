@@ -27,6 +27,8 @@ CEntity::CEntity()
 
 	Enabled = false;
 	ShouldDebug = false;
+
+	ClassName = "-";
 }
 
 CEntity::~CEntity()
@@ -94,6 +96,11 @@ void CEntity::Destroy()
 void CEntity::Load( const JSON::Vector & Objects )
 {
 	
+}
+
+void CEntity::Reload()
+{
+
 }
 
 void CEntity::Link( const JSON::Vector& Objects )
@@ -206,14 +213,33 @@ void CEntity::EnableDebug( const bool Enable )
 	ShouldDebug = Enable;
 }
 
-/*
-const std::vector<std::string>& CEntity::GetInputs() const
+void CEntity::Export( CData& Data )
 {
-	return InputNames;
+	FDataString::Encode( Data, ClassName );
+	FDataString::Encode( Data, Name.String() );
 }
 
-const std::vector<std::string>& CEntity::GetOutputs() const
+void CEntity::Import( CData& Data )
 {
-	return OutputNames;
+	// The import of the class name and entity name is handled by the level class.
 }
-*/
+
+CData& operator<<( CData& Data, CEntity* Entity )
+{
+	if( Entity )
+	{
+		Entity->Export( Data );
+	}
+
+	return Data;
+}
+
+CData& operator>>( CData& Data, CEntity* Entity )
+{
+	if( Entity )
+	{
+		Entity->Import( Data );
+	}
+	
+	return Data;
+}

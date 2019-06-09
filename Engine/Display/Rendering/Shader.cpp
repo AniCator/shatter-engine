@@ -7,7 +7,7 @@
 
 CShader::CShader()
 {
-	
+	BlendMode = EBlendMode::Opaque;
 }
 
 CShader::~CShader()
@@ -77,6 +77,11 @@ GLuint CShader::Activate() const
 const FProgramHandles& CShader::GetHandles() const
 {
 	return Handles;
+}
+
+const EBlendMode::Type& CShader::GetBlendMode() const
+{
+	return BlendMode;
 }
 
 bool LogShaderCompilationErrors( GLuint v )
@@ -160,6 +165,24 @@ std::string CShader::Process(const CFile& File)
 					OutputStream << "\n" << IncludeData << "\n";
 				}
 			}
+			else if( Preprocessor == "#blendmode" )
+			{
+				std::string Mode;
+				Stream >> Mode;
+
+				BlendMode = EBlendMode::Opaque;
+
+				if( Mode == "alpha" )
+				{
+					BlendMode = EBlendMode::Alpha;
+				}
+				else if( Mode == "additive" )
+				{
+					BlendMode = EBlendMode::Additive;
+				}
+
+				bParsed = true;
+			}
 		}
 
 		if( !bParsed )
@@ -190,7 +213,7 @@ GLuint CShader::Link()
 	int Attempts = 0;
 	while( !ShaderCompiled )
 	{
-		if( Attempts > 5 && !Debugger )
+		if( Attempts > 0 && !Debugger )
 		{
 			Log::Event( Log::Error, "Failed to compile shader \"%s\".\n", Location.c_str() );
 			Attempts = 0;

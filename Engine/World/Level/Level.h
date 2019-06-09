@@ -5,6 +5,7 @@
 
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/Utility/Data.h>
+#include <Engine/Utility/DataString.h>
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
 
@@ -35,6 +36,7 @@ public:
 		if( Entity )
 		{
 			Entity->Name = Name;
+			Entity->ClassName = Type;
 			Entity->SetID( Entities.size() );
 			Entity->SetLevel( this );
 			Entities.push_back( Entity );
@@ -52,7 +54,7 @@ public:
 		return Spawn( Type, std::to_string( Entities.size() ) );
 	}
 
-	void Load( const CFile& File );
+	void Load( const CFile& File, const bool AssetsOnly = false );
 	const std::vector<CEntity*>& GetEntities() const
 	{ 
 		return Entities;

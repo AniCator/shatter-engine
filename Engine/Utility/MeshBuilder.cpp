@@ -219,6 +219,20 @@ void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
 	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
 }
 
+bool FindVertex( const FVertex& Vertex, std::map<FVertex, uint32_t> IndexMap, uint32_t& OutIndex )
+{
+	auto Iterator = IndexMap.find( Vertex );
+	if( Iterator == IndexMap.end() )
+	{
+		return false;
+	}
+	else
+	{
+		OutIndex = Iterator->second;
+		return true;
+	}
+}
+
 #if defined(USE_TINYOBJ)
 void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 {
@@ -442,34 +456,80 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 		Start = End;
 	}
 
-	FVertex* VertexArray = new FVertex[Vertices.size()];
-	for( size_t Index = 0; Index < Vertices.size(); Index++ )
+	if( VertexIndices.size() == CoordinateIndices.size() && VertexIndices.size() == NormalIndices.size() )
 	{
-		VertexArray[Index].Position = Vertices[Index];
-	}
+		std::vector<FVertex> FatVertices;
+		std::vector<uint32_t> FatIndices;
+		std::map<FVertex, uint32_t> IndexMap;
 
-	const bool HasCoordinateIndices = CoordinateIndices.size() == VertexIndices.size();
-	const bool HasNormalIndices = NormalIndices.size() == VertexIndices.size();
-	glm::uint* IndexArray = new glm::uint[VertexIndices.size()];
-	for( size_t Index = 0; Index < VertexIndices.size(); Index++ )
-	{
-		IndexArray[Index] = VertexIndices[Index];
-
-		if( HasCoordinateIndices )
+		for( size_t Index = 0; Index < VertexIndices.size(); Index++ )
 		{
-			VertexArray[VertexIndices[Index]].TextureCoordinate = Coordinates[CoordinateIndices[Index]];
+			FVertex Vertex;
+			Vertex.Position = Vertices[VertexIndices[Index]];
+			Vertex.Normal = Normals[NormalIndices[Index]];
+			Vertex.TextureCoordinate = Coordinates[CoordinateIndices[Index]];
+
+			uint32_t FatIndex = 0;
+			const bool ExistingVertex = FindVertex( Vertex, IndexMap, FatIndex );
+			if( ExistingVertex )
+			{
+				FatIndices.emplace_back( FatIndex );
+			}
+			else
+			{
+				FatVertices.emplace_back( Vertex );
+				FatIndices.emplace_back( FatVertices.size() - 1 );
+			}
 		}
 
-		if( HasNormalIndices )
+		FVertex* VertexArray = new FVertex[FatVertices.size()];
+		for( size_t Index = 0; Index < FatVertices.size(); Index++ )
 		{
-			VertexArray[VertexIndices[Index]].Normal = Normals[NormalIndices[Index]];
+			VertexArray[Index] = FatVertices[Index];
 		}
-	}
 
-	Primitive.Vertices = VertexArray;
-	Primitive.VertexCount = static_cast<uint32_t>( Vertices.size() );
-	Primitive.Indices = IndexArray;
-	Primitive.IndexCount = static_cast<uint32_t>( VertexIndices.size() );
+		glm::uint* IndexArray = new glm::uint[FatIndices.size()];
+		for( size_t Index = 0; Index < FatIndices.size(); Index++ )
+		{
+			IndexArray[Index] = FatIndices[Index];
+		}
+
+		Primitive.Vertices = VertexArray;
+		Primitive.VertexCount = static_cast<uint32_t>( FatVertices.size() );
+		Primitive.Indices = IndexArray;
+		Primitive.IndexCount = static_cast<uint32_t>( FatIndices.size() );
+	}
+	else
+	{
+		FVertex* VertexArray = new FVertex[Vertices.size()];
+		for( size_t Index = 0; Index < Vertices.size(); Index++ )
+		{
+			VertexArray[Index].Position = Vertices[Index];
+		}
+
+		const bool HasCoordinateIndices = CoordinateIndices.size() == VertexIndices.size();
+		const bool HasNormalIndices = NormalIndices.size() == VertexIndices.size();
+		glm::uint* IndexArray = new glm::uint[VertexIndices.size()];
+		for( size_t Index = 0; Index < VertexIndices.size(); Index++ )
+		{
+			IndexArray[Index] = VertexIndices[Index];
+
+			if( HasCoordinateIndices )
+			{
+				VertexArray[VertexIndices[Index]].TextureCoordinate = Coordinates[CoordinateIndices[Index]];
+			}
+
+			if( HasNormalIndices )
+			{
+				VertexArray[VertexIndices[Index]].Normal = Normals[NormalIndices[Index]];
+			}
+		}
+
+		Primitive.Vertices = VertexArray;
+		Primitive.VertexCount = static_cast<uint32_t>( Vertices.size() );
+		Primitive.Indices = IndexArray;
+		Primitive.IndexCount = static_cast<uint32_t>( VertexIndices.size() );
+	}
 }
 #endif
 

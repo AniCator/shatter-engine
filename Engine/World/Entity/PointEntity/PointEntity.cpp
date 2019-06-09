@@ -16,11 +16,38 @@ CPointEntity::CPointEntity()
 CPointEntity::CPointEntity( const FTransform& Transform ) : CEntity()
 {
 	this->Transform = Transform;
+	ShouldUpdateTransform = true;
 }
 
 CPointEntity::~CPointEntity()
 {
 
+}
+
+const FTransform& CPointEntity::GetTransform()
+{
+	if( ShouldUpdateTransform )
+	{
+		if( Level )
+		{
+			WorldTransform = Level->GetTransform().Transform( Transform );
+		}
+		else
+		{
+			WorldTransform = Transform;
+		}
+
+		if( Parent )
+		{
+			auto Entity = dynamic_cast<CPointEntity*>( Parent );
+			if( Entity )
+			{
+				auto& ParentTransform = Entity->GetTransform();
+			}
+		}
+	}
+
+	return WorldTransform;
 }
 
 void CPointEntity::Load( const JSON::Vector& Objects )
@@ -62,6 +89,8 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 		}
 	}
 
+	ShouldUpdateTransform = true;
+
 	Transform.SetTransform( Position, Orientation, Size );
 
 	if( Level )
@@ -73,4 +102,18 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 void CPointEntity::Debug()
 {
 	UI::AddCircle( Transform.GetPosition(), 2.0f, UI::Color::White );
+}
+
+void CPointEntity::Import( CData& Data )
+{
+	CEntity::Import( Data );
+
+	Data >> Transform;
+}
+
+void CPointEntity::Export( CData& Data )
+{
+	CEntity::Export( Data );
+
+	Data << Transform;
 }

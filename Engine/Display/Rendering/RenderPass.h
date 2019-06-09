@@ -7,6 +7,8 @@
 #include <Engine/Display/Rendering/Camera.h>
 #include <Engine/Display/Rendering/Renderable.h>
 
+#include <Engine/Display/Rendering/Shader.h>
+
 #include <Engine/Utility/Math.h>
 
 class CRenderTexture;
@@ -42,4 +44,6 @@ public:
 	uint32_t Calls;
 
 	bool AlwaysClear;
+
+	EBlendMode::Type BlendMode;
 };

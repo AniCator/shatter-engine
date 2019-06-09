@@ -129,6 +129,12 @@ void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 	DynamicRenderables.push_back( Renderable );
 }
 
+template<typename T>
+bool ExclusiveComparison( const T& A, const T& B )
+{
+	return A < B && !( A > B );
+}
+
 void CRenderer::DrawQueuedRenderables()
 {
 	if( !Framebuffer.Ready() )
@@ -157,15 +163,31 @@ void CRenderer::DrawQueuedRenderables()
 		glEnable( GL_CULL_FACE );
 	}
 
-	auto SortRenderables = [] ( CRenderable* A, CRenderable* B ) {
-		FRenderDataInstanced& RenderDataA = A->GetRenderData();
-		FRenderDataInstanced& RenderDataB = B->GetRenderData();
+	auto SortRenderables = [&] ( CRenderable* A, CRenderable* B ) {
+		auto& RenderDataA = A->GetRenderData();
+		auto& RenderDataB = B->GetRenderData();
 
-		const bool ShaderProgram = RenderDataA.ShaderProgram < RenderDataB.ShaderProgram && !( RenderDataA.ShaderProgram > RenderDataB.ShaderProgram );
-		const bool VertexBufferObject = RenderDataA.VertexBufferObject < RenderDataB.VertexBufferObject && !( RenderDataA.VertexBufferObject > RenderDataB.VertexBufferObject);
-		const bool IndexBufferObject = RenderDataA.IndexBufferObject < RenderDataB.IndexBufferObject && !( RenderDataA.IndexBufferObject > RenderDataB.IndexBufferObject);
+		const bool ShaderProgram = ExclusiveComparison( RenderDataA.ShaderProgram, RenderDataB.ShaderProgram );
+		const bool VertexBufferObject = ExclusiveComparison( RenderDataA.VertexBufferObject, RenderDataB.VertexBufferObject );
+		const bool IndexBufferObject = ExclusiveComparison( RenderDataA.IndexBufferObject, RenderDataB.IndexBufferObject );
+		
+		auto ShaderA = A->GetShader();
+		auto ShaderB = B->GetShader();
+		bool Distance = false;
+		if( ShaderA && ShaderB )
+		{
+			if( ShaderA->GetBlendMode() == EBlendMode::Alpha )
+			{
+				return false;
+			}
 
-		return ShaderProgram && VertexBufferObject && IndexBufferObject;
+			if( ShaderB->GetBlendMode() == EBlendMode::Alpha )
+			{
+				return true;
+			}
+		}
+
+		return ShaderProgram && VertexBufferObject && IndexBufferObject && Distance;
 	};
 
 	std::sort( Renderables.begin(), Renderables.end(), SortRenderables );
@@ -179,6 +201,11 @@ void CRenderer::DrawQueuedRenderables()
 
 	if( MainPass.Target && MainPass.Target->Ready() && SuperSampleBicubicShader && ResolveShader && ImageProcessingShader && CopyShader )
 	{
+		for( auto& Pass : Passes )
+		{
+			Pass.Render();
+		}
+
 		FramebufferRenderable.SetShader( SuperSampleBicubicShader );
 		FramebufferRenderable.SetTexture( MainPass.Target, ETextureSlot::Slot0 );
 
@@ -251,10 +278,11 @@ void CRenderer::DrawQueuedRenderables()
 			DrawCalls += ResolveToPrevious.Render( &FramebufferRenderable, GlobalUniformBuffers );
 		}
 
-		if( BufferPrevious.Ready() )
+		if( BufferPrevious.Ready() && BufferSource && BufferSource->Ready() )
 		{
 			FramebufferRenderable.SetShader( ResolveShader );
 			FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot0 );
+			FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot1 );
 
 			CRenderPass ResolveToViewport( ViewportWidth, ViewportHeight, Camera );
 			DrawCalls += ResolveToViewport.Render( &FramebufferRenderable, GlobalUniformBuffers );

@@ -87,6 +87,6 @@ private:
 	CCamera* Camera;
 
 public:
-	friend CData& operator<<( CData& Data, CWorld& World );
-	friend CData& operator>>( CData& Data, CWorld& World );
+	friend CData& operator<<( CData& Data, CWorld* World );
+	friend CData& operator>>( CData& Data, CWorld* World );
 };

@@ -23,6 +23,10 @@ public:
 	virtual void Destroy() override;
 
 	virtual void Load( const JSON::Vector& Objects ) override;
+	virtual void Reload() override;
+
+	virtual void Import( CData& Data ) override;
+	virtual void Export( CData& Data ) override;
 
 public:
 	CMesh* Mesh;
@@ -31,4 +35,8 @@ public:
 	CRenderable* Renderable;
 
 	glm::vec4 Color;
+
+	std::string MeshName;
+	std::string ShaderName;
+	std::string TextureName;
 };

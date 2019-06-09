@@ -32,6 +32,7 @@ void CLevel::Construct()
 {
 	for( auto Entity : Entities )
 	{
+		// Entity->SetLevel( this );
 		Entity->Construct();
 	}
 }
@@ -61,7 +62,7 @@ void CLevel::Destroy()
 	}
 }
 
-void CLevel::Load( const CFile& File )
+void CLevel::Load( const CFile& File, const bool AssetsOnly )
 {
 	Log::Event( "Parsing level \"%s\".\n", File.Location().c_str() );
 	JSON::Container JSON = JSON::GenerateTree( File );
@@ -275,7 +276,7 @@ void CLevel::Load( const CFile& File )
 
 							if( FoundClass )
 							{
-								if( ClassName != "level" )
+								if( ClassName != "level" && !AssetsOnly )
 								{
 									if( FoundName )
 									{
@@ -318,26 +319,37 @@ void CLevel::Load( const CFile& File )
 									{
 										File.Load();
 
-										auto NewWorld = GetWorld();
-										if (NewWorld)
+										if( AssetsOnly )
 										{
-											CLevel& SubLevel = NewWorld->Add();
-											SubLevel.Transform = FTransform(LevelPosition, LevelOrientation, LevelSize);
-											SubLevel.Transform = GetTransform().Transform( SubLevel.Transform );
-											SubLevel.Load(File);
+											CLevel Dummy;
+											Dummy.Load( File, AssetsOnly );
+										}
+										else
+										{
+											auto NewWorld = GetWorld();
+											if( NewWorld )
+											{
+												CLevel& SubLevel = NewWorld->Add();
+												SubLevel.Transform = FTransform( LevelPosition, LevelOrientation, LevelSize );
+												SubLevel.Transform = GetTransform().Transform( SubLevel.Transform );
+												SubLevel.Load( File );
+											}
 										}
 									}
 								}
 							}
 						}
 
-						// Pass 2: Load and configure entities.
-						for( auto Link : EntityObjectLinks )
+						if( !AssetsOnly )
 						{
-							if( Link.Entity && Link.Object )
+							// Pass 2: Load and configure entities.
+							for( auto Link : EntityObjectLinks )
 							{
-								Link.Entity->Load( Link.Object->Objects );
-								Link.Entity->Link( Link.Object->Objects );
+								if( Link.Entity && Link.Object )
+								{
+									Link.Entity->Load( Link.Object->Objects );
+									Link.Entity->Link( Link.Object->Objects );
+								}
 							}
 						}
 
@@ -417,7 +429,7 @@ CData& operator<<( CData& Data, CLevel& Level )
 
 	for( size_t Index = 0; Index < Count; Index++ )
 	{
-		// Data << *Level.Entities[Index];
+		Data << Level.Entities[Index];
 	}
 
 	return Data;
@@ -437,7 +449,18 @@ CData& operator>> ( CData& Data, CLevel& Level )
 
 		for( size_t Index = 0; Index < Count; Index++ )
 		{
-			// 
+			if( Data.Valid() )
+			{
+				std::string ClassName;
+				FDataString::Decode( Data, ClassName );
+
+				std::string EntityName;
+				FDataString::Decode( Data, EntityName );
+
+				Level.Entities[Index] = Level.Spawn( ClassName, EntityName );
+				Data >> Level.Entities[Index];
+				Level.Entities[Index]->Reload();
+			}
 		}
 	}
 

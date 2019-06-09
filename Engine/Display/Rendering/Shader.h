@@ -12,6 +12,16 @@ enum class EShaderType : uint16_t
 	Fragment = GL_FRAGMENT_SHADER
 };
 
+namespace EBlendMode
+{
+	enum Type
+	{
+		Opaque = 0,
+		Alpha,
+		Additive
+	};
+}
+
 struct FProgramHandles
 {
 	FProgramHandles()
@@ -39,6 +49,7 @@ public:
 
 	GLuint Activate() const;
 	const FProgramHandles& GetHandles() const;
+	const EBlendMode::Type& GetBlendMode() const;
 
 private:
 	std::string Process( const CFile& File );
@@ -47,4 +58,6 @@ private:
 	FProgramHandles Handles;
 
 	std::string Location;
+
+	EBlendMode::Type BlendMode;
 };

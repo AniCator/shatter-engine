@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <unordered_map>
-#include <queue>
 
 #include <Engine/Display/Rendering/RenderPass.h>
 
@@ -50,5 +49,5 @@ private:
 	int ViewportWidth;
 	int ViewportHeight;
 
-	std::queue<CRenderPass> Passes;
+	std::vector<CRenderPass> Passes;
 };

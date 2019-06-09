@@ -230,9 +230,6 @@
     <ClCompile Include="Engine\Audio\Sound.cpp">
       <Filter>Source Files\Engine\Audio</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Utility\Math\Vector.cpp">
-      <Filter>Source Files\Engine\Utility\Math</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\World\Entity\PointEntity\PointEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\PointEntity</Filter>
     </ClCompile>
@@ -492,6 +489,9 @@
     </ClInclude>
     <ClInclude Include="ThirdParty\imgui-1.70\imconfig.h">
       <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\DataString.h">
+      <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

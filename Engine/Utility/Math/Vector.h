@@ -320,19 +320,25 @@ public:
 		);
 	}
 
-	inline float Length()
+	inline float Length() const
 	{
 		return sqrt( Dot( *this ) );
 	}
 
-	inline float Length( const Vector3D& Vector )
+	inline float Length( const Vector3D& Vector ) const
 	{
 		return sqrt( Vector.Dot( Vector ) );
 	}
 
-	inline float Distance( const Vector3D& Vector )
+	inline float Distance( const Vector3D& Vector ) const
 	{
 		return Length( *this - Vector );
+	}
+
+	inline float DistanceSquared( const Vector3D& Vector ) const
+	{
+		const Vector3D Delta = *this - Vector;
+		return Delta.Dot( Delta );
 	}
 
 	inline Vector3D Normalized()

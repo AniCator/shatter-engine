@@ -240,6 +240,8 @@ public:
 		StoredPosition = Vector3D( 0.0f, 0.0f, 0.0f );
 		StoredOrientation = Vector3D( 0.0f, 0.0f, 0.0f );
 		StoredSize = Vector3D( 1.0f, 1.0f, 1.0f );
+
+		Dirty();
 	}
 
 	FTransform( const Vector3D& Position, const Vector3D& Orientation, const Vector3D& Size )
@@ -250,19 +252,19 @@ public:
 	void SetPosition( const Vector3D& Position )
 	{
 		this->StoredPosition = Position;
-		Update();
+		Dirty();
 	}
 
 	void SetOrientation( const Vector3D& Orientation )
 	{
 		this->StoredOrientation = Orientation;
-		Update();
+		Dirty();
 	}
 
 	void SetSize( const Vector3D& Size )
 	{
 		this->StoredSize = Size;
-		Update();
+		Dirty();
 	}
 
 	void SetTransform( const Vector3D& Position, const Vector3D& Orientation, const Vector3D& Size )
@@ -270,23 +272,25 @@ public:
 		this->StoredPosition = Position;
 		this->StoredOrientation = Orientation;
 		this->StoredSize = Size;
-		Update();
+		Dirty();
 	}
 
 	void SetTransform( const Vector3D& Position, const Vector3D& Orientation )
 	{
 		this->StoredPosition = Position;
 		this->StoredOrientation = Orientation;
-		Update();
+		Dirty();
 	}
 
 	glm::mat4& GetRotationMatrix()
 	{
+		Update();
 		return RotationMatrix;
 	}
 
 	glm::mat4& GetTransformationMatrix()
 	{
+		Update();
 		return TransformationMatrix;
 	}
 
@@ -305,33 +309,40 @@ public:
 		return StoredSize;
 	}
 
-	glm::vec3 Position( const glm::vec3& Position ) const
+	glm::vec3 Position( const glm::vec3& Position )
 	{
+		Update();
 		return TransformationMatrix * glm::vec4( Position, 1.0f );
 	}
 
-	glm::vec3 Rotate( const glm::vec3& Position ) const
+	glm::vec3 Rotate( const glm::vec3& Position )
 	{
+		Update();
 		return RotationMatrix * glm::vec4( Position, 1.0f );
 	}
 
-	glm::vec3 RotateEuler( const glm::vec3& EulerRadians ) const
+	glm::vec3 RotateEuler( const glm::vec3& EulerRadians )
 	{
+		Update();
 		return glm::eulerAngles( glm::quat( RotationMatrix ) * glm::quat( EulerRadians ) );
 	}
 
-	glm::vec3 Scale( const glm::vec3& Position ) const
+	glm::vec3 Scale( const glm::vec3& Position )
 	{
+		Update();
 		return ScaleMatrix * glm::vec4( Position, 1.0f );
 	}
 
-	glm::vec3 Transform( const glm::vec3& Position ) const
+	glm::vec3 Transform( const glm::vec3& Position )
 	{
+		Update();
 		return TranslationMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
 	}
 
-	FTransform Transform( const FTransform& B ) const
+	FTransform Transform( const FTransform& B )
 	{
+		Update();
+
 		auto NewPosition = Position( Math::ToGLM( B.GetPosition() ) );
 		Vector3D Position3D = { NewPosition[0], NewPosition[1], NewPosition[2] };
 
@@ -347,20 +358,28 @@ public:
 	}
 
 private:
+	void Dirty()
+	{
+		ShouldUpdate = true;
+	}
+
 	void Update()
 	{
-		static const Vector3D AxisX = Vector3D( 1.0f, 0.0f, 0.0f );
-		static const Vector3D AxisY = Vector3D( 0.0f, 1.0f, 0.0f );
-		static const Vector3D AxisZ = Vector3D( 0.0f, 0.0f, 1.0f );
+		if( ShouldUpdate )
+		{
+			static const Vector3D AxisX = Vector3D( 1.0f, 0.0f, 0.0f );
+			static const Vector3D AxisY = Vector3D( 0.0f, 1.0f, 0.0f );
+			static const Vector3D AxisZ = Vector3D( 0.0f, 0.0f, 1.0f );
 
-		ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
-		
-		glm::quat Quaternion = glm::quat( glm::radians( Math::ToGLM( StoredOrientation ) ) );
-		RotationMatrix = glm::toMat4( Quaternion );
+			ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
 
-		TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
+			glm::quat Quaternion = glm::quat( glm::radians( Math::ToGLM( StoredOrientation ) ) );
+			RotationMatrix = glm::toMat4( Quaternion );
 
-		TransformationMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
+			TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
+
+			TransformationMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
+		}
 	}
 
 	glm::mat4 TranslationMatrix;
@@ -371,4 +390,6 @@ private:
 	Vector3D StoredPosition;
 	Vector3D StoredOrientation;
 	Vector3D StoredSize;
+
+	bool ShouldUpdate;
 };

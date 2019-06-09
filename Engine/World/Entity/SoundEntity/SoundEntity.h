@@ -34,6 +34,9 @@ public:
 	void Play();
 	void Stop();
 
+	virtual void Import( CData& Data ) override;
+	virtual void Export( CData& Data ) override;
+
 public:
 	CSound* Sound;
 
@@ -42,4 +45,8 @@ public:
 	float Volume;
 	bool AutoPlay;
 	bool Loop;
+
+	bool AutoPlayed;
+
+	FName SoundName;
 };

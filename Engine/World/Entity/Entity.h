@@ -7,6 +7,7 @@
 
 #include <Engine/Utility/Structures/JSON.h>
 #include <Engine/Utility/Structures/Name.h>
+#include <Engine/Utility/DataString.h>
 
 class CLevel;
 class CWorld;
@@ -61,6 +62,7 @@ public:
 	virtual void Destroy();
 
 	virtual void Load( const JSON::Vector& Objects );
+	virtual void Reload();
 	void Link( const JSON::Vector& Objects );
 	FName Name;
 
@@ -77,9 +79,12 @@ public:
 	bool IsDebugEnabled() { return ShouldDebug; };
 	void EnableDebug( const bool Enable );
 
+	std::string ClassName;
+
+protected:
+	CEntity* Parent;
 private:
 	size_t ID;
-	CEntity* Parent;
 
 	std::vector<size_t> TrackedEntityIDs;
 
@@ -87,6 +92,13 @@ protected:
 	CLevel* Level;
 	bool Enabled;
 	bool ShouldDebug;
+
+public:
+	virtual void Export( CData& Data );
+	friend CData& operator<<( CData& Data, CEntity* Entity );
+
+	virtual void Import( CData& Data );
+	friend CData& operator>>( CData& Data, CEntity* Entity );
 };
 
 class CEntityMap

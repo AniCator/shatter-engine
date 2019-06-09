@@ -39,7 +39,7 @@ public:
 	}
 
 	template<typename T>
-	void Extract( T& Object ) const
+	bool Extract( T& Object ) const
 	{
 		const char* RawData = Fetch<char>();
 		const size_t FileSize = Size();
@@ -51,7 +51,10 @@ public:
 		if( !Data.Valid() )
 		{
 			Log::Event( Log::Warning, "Couldn't extract data from \"%s\", possible format mismatch.\n", FileLocation.c_str() );
+			return false;
 		}
+
+		return true;
 	}
 
 private:

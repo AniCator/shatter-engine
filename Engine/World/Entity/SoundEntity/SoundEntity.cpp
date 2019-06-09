@@ -17,6 +17,7 @@ CSoundEntity::CSoundEntity()
 	Volume = 100.0f;
 
 	AutoPlay = false;
+	AutoPlayed = false;
 	Loop = false;
 
 	Inputs["Play"] = [this] () {this->Play(); };
@@ -39,16 +40,16 @@ void CSoundEntity::Spawn( FTransform& Transform )
 
 void CSoundEntity::Construct()
 {
-	
+	AutoPlayed = false;
 }
 
 void CSoundEntity::Tick()
 {
 	if( Sound )
 	{
-		if( AutoPlay )
+		if( AutoPlay && !AutoPlayed )
 		{
-			AutoPlay = false;
+			AutoPlayed = true;
 			Sound->Start();
 			Sound->Loop( Loop );
 		}
@@ -101,7 +102,7 @@ void CSoundEntity::Tick()
 
 void CSoundEntity::Destroy()
 {
-	Sound->Stop();
+	Stop();
 }
 
 void CSoundEntity::Load( const JSON::Vector& Objects )
@@ -113,6 +114,7 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 	{
 		if( Property->Key == "sound" )
 		{
+			SoundName = Property->Value;
 			Sound = Assets.FindSound( Property->Value );
 		}
 		else if( Property->Key == "falloff" )
@@ -177,4 +179,33 @@ void CSoundEntity::Stop()
 	{
 		Sound->Stop();
 	}
+}
+
+void CSoundEntity::Import( CData& Data )
+{
+	CPointEntity::Import( Data );
+
+	std::string SoundString;
+	FDataString::Decode( Data, SoundString );
+	SoundName = SoundString;
+
+	Sound = CAssets::Get().FindSound( SoundString );
+
+	Data >> Falloff;
+	Data >> Radius;
+	Data >> Volume;
+	Data >> AutoPlay;
+	Data >> Loop;
+}
+
+void CSoundEntity::Export( CData& Data )
+{
+	CPointEntity::Export( Data );
+
+	FDataString::Encode( Data, SoundName.String() );
+	Data << Falloff;
+	Data << Radius;
+	Data << Volume;
+	Data << AutoPlay;
+	Data << Loop;
 }
