@@ -205,6 +205,11 @@ void CWindow::ProcessInput()
 
 void CWindow::BeginFrame()
 {
+	if( RenderingFrame )
+		return;
+
+	RenderingFrame = true;
+
 #if defined( IMGUI_ENABLED )
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
@@ -214,6 +219,9 @@ void CWindow::BeginFrame()
 
 void CWindow::RenderFrame()
 {
+	if( !RenderingFrame )
+		return;
+
 	Profile( "Render" );
 
 	Renderer.SetViewport( Width, Height );
@@ -228,6 +236,8 @@ void CWindow::RenderFrame()
 #endif
 
 	glfwSwapBuffers( WindowHandle );
+
+	RenderingFrame = false;
 }
 
 bool CWindow::Valid() const

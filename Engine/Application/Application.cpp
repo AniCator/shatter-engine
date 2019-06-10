@@ -785,7 +785,13 @@ void CApplication::ResetImGui()
 		Log::Event( Log::Warning, "Could not find a default resource.\nMake sure you include the default engine items in the build directory.\n" );
 	}
 
-	ImGui_ImplOpenGL3_NewFrame();
+	while( !ImGui::GetIO().Fonts->IsBuilt() )
+	{
+		Log::Event( "Building fonts.\n" );
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplOpenGL3_NewFrame();
+	}
+
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
 
@@ -1013,6 +1019,8 @@ void CApplication::Initialize()
 	ImGui_ImplGlfw_Shutdown();
 #endif
 
+	ResetImGui();
+
 	Log::Event( "Binding engine inputs.\n" );
 
 	GLFWwindow* WindowHandle = MainWindow.Handle();
@@ -1042,6 +1050,4 @@ void CApplication::Initialize()
 	// CAngelEngine::Get().Initialize();
 
 	GameLayersInstance->Initialize();
-
-	ResetImGui();
 }

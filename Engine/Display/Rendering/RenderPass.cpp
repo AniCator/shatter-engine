@@ -24,7 +24,7 @@ CRenderPass::CRenderPass( int Width, int Height, const CCamera& CameraIn, const 
 	BlendMode = EBlendMode::Opaque;
 }
 
-uint32_t CRenderPass::Render( CRenderable* Renderable )
+uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable )
 {
 	Begin();
 
@@ -35,7 +35,7 @@ uint32_t CRenderPass::Render( CRenderable* Renderable )
 	return Calls;
 }
 
-uint32_t CRenderPass::Render( CRenderable* Renderable, const std::unordered_map<std::string, Vector4D>& Uniforms )
+uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable, const std::unordered_map<std::string, Vector4D>& Uniforms )
 {
 	Begin();
 

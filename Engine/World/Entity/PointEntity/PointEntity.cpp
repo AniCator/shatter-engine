@@ -102,6 +102,7 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 void CPointEntity::Debug()
 {
 	UI::AddCircle( Transform.GetPosition(), 2.0f, UI::Color::White );
+	UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, -1.0f ), Name.String().c_str() );
 }
 
 void CPointEntity::Import( CData& Data )
@@ -109,6 +110,9 @@ void CPointEntity::Import( CData& Data )
 	CEntity::Import( Data );
 
 	Data >> Transform;
+	Data >> WorldTransform;
+
+	ShouldUpdateTransform = true;
 }
 
 void CPointEntity::Export( CData& Data )
@@ -116,4 +120,5 @@ void CPointEntity::Export( CData& Data )
 	CEntity::Export( Data );
 
 	Data << Transform;
+	Data << WorldTransform;
 }

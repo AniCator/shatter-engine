@@ -105,10 +105,13 @@ void CRenderer::Initialize()
 
 void CRenderer::RefreshFrame()
 {
-	// Clean up the renderable queue
+	// Clean up render passes.
+	Passes.clear();
+
+	// Clean up the renderable queue.
 	Renderables.clear();
 
-	// Clean up dynamic renderables
+	// Clean up dynamic renderables.
 	for( auto Renderable : DynamicRenderables )
 	{
 		delete Renderable;
@@ -199,13 +202,17 @@ void CRenderer::DrawQueuedRenderables()
 	DrawCalls += MainPass.Render( Renderables, GlobalUniformBuffers );
 	DrawCalls += MainPass.Render( DynamicRenderables, GlobalUniformBuffers );
 
+	for( auto& Pass : Passes )
+	{
+		if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
+		{
+			Pass.Pass->Target = &Framebuffer;
+			Pass.Pass->Render();
+		}
+	}
+
 	if( MainPass.Target && MainPass.Target->Ready() && SuperSampleBicubicShader && ResolveShader && ImageProcessingShader && CopyShader )
 	{
-		for( auto& Pass : Passes )
-		{
-			Pass.Render();
-		}
-
 		FramebufferRenderable.SetShader( SuperSampleBicubicShader );
 		FramebufferRenderable.SetTexture( MainPass.Target, ETextureSlot::Slot0 );
 
@@ -233,7 +240,7 @@ void CRenderer::DrawQueuedRenderables()
 
 		CRenderPass AntiAliasingResolve( ViewportWidth, ViewportHeight, Camera );
 		AntiAliasingResolve.Target = &BufferA;
-		AntiAliasingResolve.Render( &FramebufferRenderable, GlobalUniformBuffers );
+		AntiAliasingResolve.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 
 		FramebufferRenderable.SetShader( ImageProcessingShader );
 
@@ -241,21 +248,27 @@ void CRenderer::DrawQueuedRenderables()
 		CRenderTexture* BufferTarget = nullptr;
 		if( BufferA.Ready() && BufferB.Ready() )
 		{
-			for( size_t Index = 0; Index < 1; Index++ )
+			BufferSource = ( BufferSource == &BufferA ) ? &BufferB : &BufferA;
+			BufferTarget = ( BufferSource == &BufferA ) ? &BufferB : &BufferA;
+
+			FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot0 );
+
+			if( BufferPrevious.Ready() )
 			{
-				BufferSource = ( BufferSource == &BufferA ) ? &BufferB : &BufferA;
-				BufferTarget = ( BufferSource == &BufferA ) ? &BufferB : &BufferA;
+				FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot1 );
+			}
 
-				FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot0 );
+			CRenderPass ResolvePass( ViewportWidth, ViewportHeight, Camera );
+			ResolvePass.Target = BufferTarget;
+			DrawCalls += ResolvePass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 
-				if( BufferPrevious.Ready() )
+			for( auto& Pass : Passes )
+			{
+				if( Pass.Pass && Pass.Location == ERenderPassLocation::PostProcess )
 				{
-					FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot1 );
+					Pass.Pass->Target = BufferTarget;
+					Pass.Pass->Render();
 				}
-
-				CRenderPass ResolvePass( ViewportWidth, ViewportHeight, Camera );
-				ResolvePass.Target = BufferTarget;
-				DrawCalls += ResolvePass.Render( &FramebufferRenderable, GlobalUniformBuffers );
 			}
 		}
 
@@ -275,7 +288,7 @@ void CRenderer::DrawQueuedRenderables()
 
 			CRenderPass ResolveToPrevious( ViewportWidth, ViewportHeight, Camera );
 			ResolveToPrevious.Target = &BufferPrevious;
-			DrawCalls += ResolveToPrevious.Render( &FramebufferRenderable, GlobalUniformBuffers );
+			DrawCalls += ResolveToPrevious.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 		}
 
 		if( BufferPrevious.Ready() && BufferSource && BufferSource->Ready() )
@@ -285,7 +298,15 @@ void CRenderer::DrawQueuedRenderables()
 			FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot1 );
 
 			CRenderPass ResolveToViewport( ViewportWidth, ViewportHeight, Camera );
-			DrawCalls += ResolveToViewport.Render( &FramebufferRenderable, GlobalUniformBuffers );
+			DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+		}
+	}
+
+	for( auto& Pass : Passes )
+	{
+		if( Pass.Pass && Pass.Location == ERenderPassLocation::Standard )
+		{
+			Pass.Pass->Render();
 		}
 	}
 
@@ -356,6 +377,14 @@ Vector2D CRenderer::WorldToScreenPosition( const Vector3D& WorldPosition ) const
 	ScreenPosition.Y = ( NormalizedPosition.y * -0.5f + 0.5f ) * ViewportHeight;
 
 	return ScreenPosition;
+}
+
+void CRenderer::AddRenderPass( CRenderPass* Pass, ERenderPassLocation::Type Location )
+{
+	FRenderPass RenderPass;
+	RenderPass.Location = Location;
+	RenderPass.Pass = Pass;
+	Passes.emplace_back( RenderPass );
 }
 
 void CRenderer::RefreshShaderHandle( CRenderable* Renderable )

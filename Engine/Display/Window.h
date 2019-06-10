@@ -30,6 +30,11 @@ public:
 	inline int GetWidth() { return Width; };
 	inline int GetHeight() { return Height; };
 
+	bool IsRendering() const
+	{
+		return RenderingFrame;
+	}
+
 private:
 	GLFWwindow* WindowHandle;
 	CRenderer Renderer;
@@ -39,6 +44,8 @@ private:
 
 	int Width;
 	int Height;
+
+	bool RenderingFrame;
 
 public:
 	static CWindow& Get()

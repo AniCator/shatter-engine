@@ -18,8 +18,8 @@ class CRenderPass
 public:
 	CRenderPass(int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
 
-	virtual uint32_t Render( CRenderable* Renderable );
-	virtual uint32_t Render( CRenderable* Renderable, const std::unordered_map<std::string, Vector4D>& Uniforms );
+	virtual uint32_t RenderRenderable( CRenderable* Renderable );
+	virtual uint32_t RenderRenderable( CRenderable* Renderable, const std::unordered_map<std::string, Vector4D>& Uniforms );
 	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables );
 	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables, const std::unordered_map<std::string, Vector4D>& Uniforms );
 

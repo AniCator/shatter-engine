@@ -12,6 +12,22 @@ class CMesh;
 class CShader;
 class CRenderable;
 
+namespace ERenderPassLocation
+{
+	enum Type
+	{
+		Standard = 0,
+		Scene,
+		PostProcess
+	};
+}
+
+struct FRenderPass
+{
+	ERenderPassLocation::Type Location;
+	CRenderPass* Pass;
+};
+
 class CRenderer
 {
 public:
@@ -34,6 +50,8 @@ public:
 	Vector3D ScreenPositionToWorld( const Vector2D& ScreenPosition ) const;
 	Vector2D WorldToScreenPosition( const Vector3D& WorldPosition ) const;
 
+	void AddRenderPass( CRenderPass* Pass, ERenderPassLocation::Type Location );
+
 	bool ForceWireFrame;
 
 protected:
@@ -49,5 +67,5 @@ private:
 	int ViewportWidth;
 	int ViewportHeight;
 
-	std::vector<CRenderPass> Passes;
+	std::vector<FRenderPass> Passes;
 };
