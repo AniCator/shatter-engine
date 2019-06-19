@@ -1,7 +1,17 @@
-# Shatter Engine™
+# Shatter Engineâ„¢
 This is a small game engine framework that is used to power some of my personal projects.
 
 ![Lofty Lagoon](aicritters-example.png)
+
+# Current Features
+Here's a short list of things that are currently possible in the engine.
+
+* Basic asset management for models, shaders, textures and audio
+* Import and export of custom engine data such as binary model files
+* Render passes
+* Loading levels from script files
+* Loading sub-levels from level script files
+* Entity messaging
 
 # Installation
 Make sure you create an EngineMacros.props file for your game projects with a User Macro named EnginePath that points at the location of the engine solution file.
