@@ -79,6 +79,6 @@ namespace Log
 		CTimer Timer;
 		static std::vector<FHistory> LogHistory;
 
-		std::mutex LogMutex;
+		mutable std::mutex LogMutex;
 	};
 }

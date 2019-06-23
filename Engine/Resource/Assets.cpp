@@ -100,24 +100,22 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 	{
 		if( Payload.Type == EAsset::Mesh )
 		{
-			if( !FindMesh( Payload.Name ) )
-			{
-				CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
-			}
+			CreateNamedMesh( Payload.Name.c_str(), Payload.Location1.c_str() );
 		}
 		else if( Payload.Type == EAsset::Shader )
 		{
-			if( !FindShader( Payload.Name ) )
+			if( Payload.Location2.length() > 0 )
 			{
-				CreateNamedShader( Payload.Name.c_str(), Payload.Location.c_str() );
+				CreateNamedShader( Payload.Name.c_str(), Payload.Location1.c_str(), Payload.Location2.c_str() );
+			}
+			else
+			{
+				CreateNamedShader( Payload.Name.c_str(), Payload.Location1.c_str() );
 			}
 		}
 		else if( Payload.Type == EAsset::Texture )
 		{
-			if( !FindTexture( Payload.Name ) )
-			{
-				CreatedNamedTexture( Payload.Name.c_str(), Payload.Location.c_str() );
-			}
+			CreateNamedTexture( Payload.Name.c_str(), Payload.Location1.c_str() );
 		}
 		else if( Payload.Type == EAsset::Sound )
 		{
@@ -125,7 +123,7 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 			CSound* NewSound = FindSound( Payload.Name );
 			if( NewSound )
 			{
-				NewSound->Load( Payload.Location.c_str() );
+				NewSound->Load( Payload.Location1.c_str() );
 			}
 		}
 	}
@@ -150,7 +148,7 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 
 	LoadTimer.Stop();
 
-	Log::Event( "Parallel mesh list load time: %ims\n", LoadTimer.GetElapsedTimeMilliseconds() );
+	Log::Event( "Asset list load time: %ims\n", LoadTimer.GetElapsedTimeMilliseconds() );
 }
 
 CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad )
@@ -257,8 +255,6 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 	// Check if the mesh exists
 	if( CMesh* ExistingMesh = FindMesh( NameString ) )
 	{
-		Log::Event( "Found existing mesh named \"%s\"\n", NameString.c_str() );
-
 		return ExistingMesh;
 	}
 
@@ -292,7 +288,6 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation 
 	// Check if the mesh exists
 	if( CShader* ExistingShader = FindShader( NameString ) )
 	{
-		Log::Event( "Found existing shader named \"%s\"\n", NameString.c_str() );
 		return ExistingShader;
 	}
 
@@ -316,20 +311,52 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation 
 	return nullptr;
 }
 
-CTexture* CAssets::CreatedNamedTexture( const char* Name, const char* FileLocation )
+CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocation, const char* FragmentLocation )
 {
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the mesh exists
-	if( CTexture* ExistingTexture = FindTexture( NameString ) )
+	if( CShader * ExistingShader = FindShader( NameString ) )
 	{
-		Log::Event( "Found existing texture named \"%s\"\n", NameString.c_str() );
+		return ExistingShader;
+	}
+
+	CShader* NewShader = new CShader();
+	const bool bSuccessfulCreation = NewShader->Load( VertexLocation, FragmentLocation );
+
+	if( bSuccessfulCreation )
+	{
+		Create( NameString, NewShader );
+
+		CProfiler& Profiler = CProfiler::Get();
+		int64_t Shader = 1;
+		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
+
+		Log::Event( "Created shader \"%s\".\n", NameString.c_str() );
+
+		return NewShader;
+	}
+
+	// This should never happen because we check for existing shaders before creating new ones, but you never know.
+	return nullptr;
+}
+
+CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode )
+{
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the mesh exists
+	if( CTexture* ExistingTexture = Find<CTexture>( NameString, Textures ) )
+	{
 		return ExistingTexture;
 	}
 
 	CTexture* NewTexture = new CTexture( FileLocation );
+	NewTexture->FilteringMode = Mode;
 	const bool bSuccessfulCreation = NewTexture->Load();
 
 	if( bSuccessfulCreation )
@@ -343,6 +370,46 @@ CTexture* CAssets::CreatedNamedTexture( const char* Name, const char* FileLocati
 		Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
 
 		return NewTexture;
+	}
+	else
+	{
+		return FindTexture( "error" );
+	}
+
+	// This should never happen because we check for existing textures before creating new ones, but you never know.
+	return nullptr;
+}
+
+CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode )
+{
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the mesh exists
+	if( CTexture* ExistingTexture = Find<CTexture>( NameString, Textures ) )
+	{
+		return ExistingTexture;
+	}
+
+	CTexture* NewTexture = new CTexture();
+	const bool bSuccessfulCreation = NewTexture->Load( Data, Width, Height, Channels, Mode );
+
+	if( bSuccessfulCreation )
+	{
+		Create( NameString, NewTexture );
+
+		CProfiler& Profiler = CProfiler::Get();
+		int64_t Texture = 1;
+		Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", Texture ), false );
+
+		Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
+
+		return NewTexture;
+	}
+	else
+	{
+		return FindTexture( "error" );
 	}
 
 	// This should never happen because we check for existing textures before creating new ones, but you never know.
@@ -358,7 +425,6 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 	// Check if the mesh exists
 	if( CSound* ExistingSound = FindSound( NameString ) )
 	{
-		Log::Event( "Found existing sound named \"%s\"\n", NameString.c_str() );
 		return ExistingSound;
 	}
 
@@ -391,7 +457,6 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 	// Check if the mesh exists
 	if( CSound* ExistingSound = FindSound( NameString ) )
 	{
-		Log::Event( "Found existing sound named \"%s\"\n", NameString.c_str() );
 		return ExistingSound;
 	}
 
@@ -416,7 +481,6 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 	// Check if the mesh exists
 	if( CSound * ExistingSound = FindSound( NameString ) )
 	{
-		Log::Event( "Found existing stream named \"%s\"\n", NameString.c_str() );
 		return ExistingSound;
 	}
 
@@ -449,7 +513,6 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 	// Check if the mesh exists
 	if( CSound * ExistingSound = FindSound( NameString ) )
 	{
-		Log::Event( "Found existing stream named \"%s\"\n", NameString.c_str() );
 		return ExistingSound;
 	}
 
@@ -477,7 +540,8 @@ CShader* CAssets::FindShader( std::string Name )
 
 CTexture* CAssets::FindTexture( std::string Name )
 {
-	return Find<CTexture>( Name, Textures );
+	auto Texture = Find<CTexture>( Name, Textures );
+	return Texture ? Texture : Find<CTexture>( "error", Textures );
 }
 
 CSound* CAssets::FindSound( std::string Name )

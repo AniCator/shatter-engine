@@ -53,6 +53,8 @@ public:
 		static CWindow StaticInstance;
 		return StaticInstance;
 	}
+
+	static GLFWwindow* ThreadContext( const bool MakeCurrent = true );
 private:
 	CWindow();
 

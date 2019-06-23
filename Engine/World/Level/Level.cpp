@@ -98,6 +98,10 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 							Paths.reserve( 10 );
 							ESoundPlayMode::Type PlayMode = ESoundPlayMode::Sequential;
 
+							// Shader-specific path storage.
+							std::string VertexPath;
+							std::string FragmentPath;
+
 							for( auto Property : Asset->Objects )
 							{
 								if( Property->Key == "type" )
@@ -136,6 +140,14 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 										PlayMode = ESoundPlayMode::Random;
 									}
 								}
+								else if( Property->Key == "vertex" )
+								{
+									VertexPath = Property->Value;
+								}
+								else if( Property->Key == "fragment" )
+								{
+									FragmentPath = Property->Value;
+								}
 							}
 
 							if( Name.length() > 0 && Paths.size() > 0 )
@@ -152,13 +164,25 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 								}
 								else if( Shader )
 								{
-									for( const auto& Path : Paths )
+									if( VertexPath.length() > 0 && FragmentPath.length() > 0 )
 									{
 										FGenericAssetPayload Payload;
 										Payload.Type = EAsset::Shader;
 										Payload.Name = Name;
-										Payload.Location = Path;
+										Payload.Location1 = VertexPath;
+										Payload.Location2 = FragmentPath;
 										GenericAssets.emplace_back( Payload );
+									}
+									else
+									{
+										for( const auto& Path : Paths )
+										{
+											FGenericAssetPayload Payload;
+											Payload.Type = EAsset::Shader;
+											Payload.Name = Name;
+											Payload.Location1 = Path;
+											GenericAssets.emplace_back( Payload );
+										}
 									}
 								}
 								else if( Texture )
@@ -168,7 +192,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 										FGenericAssetPayload Payload;
 										Payload.Type = EAsset::Texture;
 										Payload.Name = Name;
-										Payload.Location = Path;
+										Payload.Location1 = Path;
 										GenericAssets.emplace_back( Payload );
 									}
 								}
@@ -187,7 +211,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 											FGenericAssetPayload Payload;
 											Payload.Type = EAsset::Sound;
 											Payload.Name = Name;
-											Payload.Location = Path;
+											Payload.Location1 = Path;
 											GenericAssets.emplace_back( Payload );
 										}
 									}
@@ -375,7 +399,7 @@ void CLevel::Remove( CEntity* MarkEntity )
 {
 	if( MarkEntity->GetLevel() == this )
 	{
-		const size_t ID = MarkEntity->GetID();
+		const size_t ID = MarkEntity->GetLevelID().ID;
 		if( ID < Entities.size() )
 		{
 			if( Entities[ID] )
@@ -405,6 +429,19 @@ CEntity* CLevel::Find( const size_t ID ) const
 	if( ID < Entities.size() )
 	{
 		return Entities[ID];
+	}
+
+	return nullptr;
+}
+
+CEntity* CLevel::Find( const EntityUID& ID ) const
+{
+	for( auto Entity : Entities )
+	{
+		if( Entity && Entity->GetEntityID().ID == ID.ID )
+		{
+			return Entity;
+		}
 	}
 
 	return nullptr;
@@ -459,7 +496,14 @@ CData& operator>> ( CData& Data, CLevel& Level )
 
 				Level.Entities[Index] = Level.Spawn( ClassName, EntityName );
 				Data >> Level.Entities[Index];
-				Level.Entities[Index]->Reload();
+			}
+		}
+
+		for( auto Entity : Level.Entities )
+		{
+			if( Entity )
+			{
+				Entity->Reload();
 			}
 		}
 	}

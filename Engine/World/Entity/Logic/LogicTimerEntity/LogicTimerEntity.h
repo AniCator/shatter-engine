@@ -20,6 +20,9 @@ public:
 
 	double TriggerTime;
 	int32_t Frequency;
+
+	virtual void Export( CData& Data ) override;
+	virtual void Import( CData& Data ) override;
 private:
 	CTimer Timer;
 

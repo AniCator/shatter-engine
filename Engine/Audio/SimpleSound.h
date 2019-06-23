@@ -26,11 +26,34 @@ namespace sf
 	class Music;
 }
 
+struct FSound
+{
+	FSound()
+	{
+		Sound = nullptr;
+		Volume = 100.0f;
+	}
+
+	sf::Sound* Sound;
+	float Volume;
+};
+
 struct FStream
 {
+	FStream()
+	{
+		Stream = nullptr;
+		FadeDuration = -1.0f;
+		StartTime = -1.0f;
+		FadeIn = false;
+		Volume = 100.0f;
+	}
+
 	sf::Music* Stream;
 	float FadeDuration;
 	float StartTime;
+	bool FadeIn;
+	float Volume;
 };
 
 class CSimpleSound
@@ -43,7 +66,7 @@ public:
 	static void Start( StreamHandle Handle, const float FadeIn = -1.0f );
 
 	static void Stop( SoundHandle Handle );
-	static void Stop( StreamHandle Handle );
+	static void Stop( StreamHandle Handle, const float FadeOut = -1.0f );
 
 	static void StopSounds();
 	static void StopMusic();
@@ -61,12 +84,15 @@ public:
 	static void Volume( SoundHandle Handle, const float Volume );
 	static void Volume( StreamHandle Handle, const float Volume );
 
+	static void Volume( const float GlobalVolume );
+
 	static void Tick();
 
 	static void Shutdown();
 
 private:
-	static std::vector<sf::Sound*> Sounds;
+	static std::vector<FSound> Sounds;
 	static std::vector<sf::SoundBuffer*> SoundBuffers;
 	static std::vector<FStream> Streams;
+	static float GlobalVolume;
 };

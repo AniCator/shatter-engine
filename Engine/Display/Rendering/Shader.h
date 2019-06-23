@@ -43,6 +43,7 @@ public:
 	~CShader();
 
 	bool Load( const char* FileLocation, bool ShouldLink = true );
+	bool Load( const char* VertexLocation, const char* FragmentLocation, bool ShouldLink = true );
 	bool Load( const char* FileLocation, GLuint& HandleIn, EShaderType ShaderType );
 
 	bool Reload();
@@ -57,7 +58,8 @@ private:
 
 	FProgramHandles Handles;
 
-	std::string Location;
+	std::string VertexLocation;
+	std::string FragmentLocation;
 
 	EBlendMode::Type BlendMode;
 };

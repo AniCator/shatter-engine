@@ -3,8 +3,23 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <Engine/Utility/Data.h>
+
+CData& operator<<( CData& Data, CCamera& Camera )
+{
+	Data << Camera.GetCameraSetup();
+	return Data;
+}
+
+CData& operator>>( CData& Data, CCamera& Camera )
+{
+	Data >> Camera.GetCameraSetup();
+	return Data;
+}
+
 CCamera::CCamera()
 {
+	CameraSetup = FCameraSetup();
 	CameraOrientation = { 0.0f, 0.0f, 0.0f };
 }
 

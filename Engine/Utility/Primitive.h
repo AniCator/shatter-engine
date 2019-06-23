@@ -37,9 +37,9 @@ struct FVertex
 	Vector2D TextureCoordinate;
 	Vector3D Normal;
 
-	bool operator<( const FVertex B ) const 
+	bool operator<( const FVertex& B ) const 
 	{
-		return memcmp( ( void*) this, ( void*) & B, sizeof( FVertex ) ) > 0;
+		return memcmp( ( void*) this, ( void*) &B, sizeof( FVertex ) ) > 0;
 	};
 };
 

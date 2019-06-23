@@ -63,6 +63,20 @@ public:
 		return nullptr;
 	}
 
+	CEntity* Find( const EntityUID& ID ) const
+	{
+		for( auto& Level : Levels )
+		{
+			CEntity* Entity = Level.Find( ID );
+			if( Entity )
+			{
+				return Entity;
+			}
+		}
+
+		return nullptr;
+	}
+
 	template<class T>
 	std::vector<T*> Find() const
 	{
@@ -76,7 +90,7 @@ public:
 		return FoundEntities;
 	}
 
-	void SetActiveCamera(CCamera* Camera);
+	void SetActiveCamera( CCamera* Camera, uint32_t Priority = 100 );
 	CCamera* GetActiveCamera() const;
 	const FCameraSetup& GetActiveCameraSetup() const;
 
@@ -85,6 +99,7 @@ private:
 	CLevel* ActiveLevel;
 
 	CCamera* Camera;
+	uint32_t CameraPriority;
 
 public:
 	friend CData& operator<<( CData& Data, CWorld* World );

@@ -493,6 +493,9 @@
     <ClInclude Include="Engine\Utility\DataString.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\TextureEnumerators.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">

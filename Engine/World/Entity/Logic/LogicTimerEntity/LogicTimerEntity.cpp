@@ -87,3 +87,19 @@ void CLogicTimerEntity::Reset()
 {
 	TriggerCount = 0;
 }
+
+void CLogicTimerEntity::Export( CData& Data )
+{
+	Data << TriggerTime;
+	Data << Frequency;
+	Data << TriggerCount;
+	Data << Timer;
+}
+
+void CLogicTimerEntity::Import( CData& Data )
+{
+	Data >> TriggerTime;
+	Data >> Frequency;
+	Data >> TriggerCount;
+	Data >> Timer;
+}

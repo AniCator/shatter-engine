@@ -8,6 +8,48 @@
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
 
+static const GLenum SlotToEnum[static_cast<ETextureSlotType>( ETextureSlot::Maximum )]
+{
+	GL_TEXTURE0,
+	GL_TEXTURE1,
+	GL_TEXTURE2,
+	GL_TEXTURE3,
+	GL_TEXTURE4,
+	GL_TEXTURE5,
+	GL_TEXTURE6,
+	GL_TEXTURE7,
+	GL_TEXTURE8,
+	GL_TEXTURE9,
+	GL_TEXTURE10,
+	GL_TEXTURE11,
+	GL_TEXTURE12,
+	GL_TEXTURE13,
+	GL_TEXTURE14,
+	GL_TEXTURE15,
+	GL_TEXTURE16,
+	GL_TEXTURE17,
+	GL_TEXTURE18,
+	GL_TEXTURE19,
+	GL_TEXTURE20,
+	GL_TEXTURE21,
+	GL_TEXTURE22,
+	GL_TEXTURE23,
+	GL_TEXTURE24,
+	GL_TEXTURE25,
+	GL_TEXTURE26,
+	GL_TEXTURE27,
+	GL_TEXTURE28,
+	GL_TEXTURE29,
+	GL_TEXTURE30,
+	GL_TEXTURE31
+};
+
+static const GLenum FilteringModeToEnum[static_cast<EFilteringModeType>( EFilteringMode::Maximum )]
+{
+	GL_NEAREST,
+	GL_LINEAR
+};
+
 CTexture::CTexture()
 {
 	Location = "";
@@ -18,18 +60,13 @@ CTexture::CTexture()
 	Channels = 0;
 
 	ImageData = nullptr;
+
+	FilteringMode = EFilteringMode::Linear;
 }
 
-CTexture::CTexture( const char* FileLocation )
+CTexture::CTexture( const char* FileLocation ) : CTexture()
 {
 	Location = FileLocation;
-
-	Handle = 0;
-	Width = 0;
-	Height = 0;
-	Channels = 0;
-
-	ImageData = nullptr;
 }
 
 CTexture::~CTexture()
@@ -50,60 +87,12 @@ bool CTexture::Load()
 
 	if( Supported && TextureSource.Load( true ) )
 	{
-		glGenTextures( 1, &Handle );
-		glBindTexture( GL_TEXTURE_2D, Handle );
-
-		// Wrapping parameters
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-
-		// Filtering parameters
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-
 		stbi_set_flip_vertically_on_load( 1 );
 		ImageData = stbi_load_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
 
-		if( ImageData )
+		if( Load( ImageData, Width, Height, Channels, FilteringMode ) )
 		{
-			bool Supported = false;
-
-			const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
-			const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
-			if( PowerOfTwoWidth && PowerOfTwoHeight )
-			{
-				if( Channels == 1 )
-				{
-					glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, Width, Height, 0, GL_RED, GL_UNSIGNED_BYTE, ImageData );
-					Supported = true;
-				}
-				else if( Channels == 2 )
-				{
-					glTexImage2D( GL_TEXTURE_2D, 0, GL_RG, Width, Height, 0, GL_RG, GL_UNSIGNED_BYTE, ImageData );
-					Supported = true;
-				}
-				else if( Channels == 3 )
-				{
-					glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ImageData );
-					Supported = true;
-				}
-				else if( Channels == 4 )
-				{
-					glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, ImageData );
-					Supported = true;
-				}
-			}
-			else
-			{
-				Log::Event( Log::Warning, "Not a power of two texture (\"%s\").\n", Location.c_str() );
-			}
-
-			if( Supported )
-			{
-				glGenerateMipmap( GL_TEXTURE_2D );
-			}
-
-			return Supported;
+			return true;
 		}
 		else
 		{
@@ -118,12 +107,75 @@ bool CTexture::Load()
 	return false;
 }
 
+bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn, const int ChannelsIn, const EFilteringMode ModeIn )
+{
+	bool Supported = false;
+
+	if( !Data || WidthIn < 1 || HeightIn < 1 || ChannelsIn < 1 )
+		return false;
+
+	glGenTextures( 1, &Handle );
+	glBindTexture( GL_TEXTURE_2D, Handle );
+
+	// Wrapping parameters
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+
+	// Filtering parameters
+	FilteringMode = ModeIn;
+	const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilteringModeToEnum[Mode] );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, FilteringModeToEnum[Mode] );
+
+	ImageData = Data;
+	Width = WidthIn;
+	Height = HeightIn;
+	Channels = ChannelsIn;
+
+	const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
+	const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
+	if( PowerOfTwoWidth && PowerOfTwoHeight )
+	{
+		if( Channels == 1 )
+		{
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, Width, Height, 0, GL_RED, GL_UNSIGNED_BYTE, ImageData );
+			Supported = true;
+		}
+		else if( Channels == 2 )
+		{
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RG, Width, Height, 0, GL_RG, GL_UNSIGNED_BYTE, ImageData );
+			Supported = true;
+		}
+		else if( Channels == 3 )
+		{
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ImageData );
+			Supported = true;
+		}
+		else if( Channels == 4 )
+		{
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, ImageData );
+			Supported = true;
+		}
+	}
+	else
+	{
+		Log::Event( Log::Warning, "Not a power of two texture (\"%s\").\n", Location.c_str() );
+	}
+
+	if( Supported )
+	{
+		glGenerateMipmap( GL_TEXTURE_2D );
+	}
+
+	return Supported;
+}
+
 void CTexture::Bind( ETextureSlot Slot )
 {
 	if( Handle )
 	{
 		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
-		glActiveTexture( EnumToSlot[Index] );
+		glActiveTexture( SlotToEnum[Index] );
 		glBindTexture( GL_TEXTURE_2D, Handle );
 	}
 }

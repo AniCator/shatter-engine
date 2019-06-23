@@ -30,6 +30,8 @@ void CWorld::Construct()
 
 void CWorld::Tick()
 {
+	CameraPriority = 0;
+
 	for( auto Level : Levels )
 	{
 		Level.Tick();
@@ -55,9 +57,13 @@ CLevel& CWorld::Add()
 	return Levels[LevelIndex];
 }
 
-void CWorld::SetActiveCamera( CCamera* CameraIn )
+void CWorld::SetActiveCamera( CCamera* CameraIn, uint32_t Priority )
 {
-	Camera = CameraIn;
+	if( CameraIn == nullptr || CameraPriority <= Priority )
+	{
+		Camera = CameraIn;
+		CameraPriority = Priority;
+	}
 }
 
 CCamera* CWorld::GetActiveCamera() const

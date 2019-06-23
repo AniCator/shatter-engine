@@ -23,7 +23,7 @@ public:
 	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables );
 	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables, const std::unordered_map<std::string, Vector4D>& Uniforms );
 
-	virtual uint32_t Render();
+	virtual uint32_t Render( const std::unordered_map<std::string, Vector4D>& Uniforms );
 
 	void Clear();
 

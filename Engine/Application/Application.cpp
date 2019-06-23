@@ -40,7 +40,7 @@ bool ScaleTime = false;
 bool CursorVisible = true;
 bool RestartLayers = false;
 
-double ScaledGameTime = 0.0;
+float ScaledGameTime = 0.0;
 
 void InputScaleTimeEnable()
 {
@@ -421,11 +421,7 @@ void DebugMenu( CApplication* Application )
 
 		if( Application->DebugFunctions() > 0 )
 		{
-			if( ImGui::BeginMenu( "Game" ) )
-			{
-				Application->RenderDebugUI( true );
-				ImGui::EndMenu();
-			}
+			Application->RenderDebugUI( true );
 		}
 
 		if( ImGui::BeginMenu( "Windows" ) )
@@ -480,7 +476,7 @@ void DebugMenu( CApplication* Application )
 				ImVec4( 1.0f,0.0f,0.0f,1.0f ),
 			};
 
-			const std::vector<Log::FHistory>& LogHistory = Log::History();
+			const auto& LogHistory = Log::History();
 			const size_t Count = LogHistory.size();
 			const size_t Entries = LogHistory.size() < 500 ? LogHistory.size() : 500;
 			for( size_t Index = 0; Index < Entries; Index++ )
@@ -634,6 +630,9 @@ void CApplication::Run()
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
 	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps", 60 );
 
+	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
+	CSimpleSound::Volume( GlobalVolume );
+
 	while( !MainWindow.ShouldClose() )
 	{
 		if( RestartLayers )
@@ -642,9 +641,6 @@ void CApplication::Run()
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
 		if( RenderDeltaTime >= MaximumFrameTime || FPSLimit < 1 )
 		{
-			CTimerScope Scope_( "Frametime", false );
-			MainWindow.BeginFrame();
-
 			const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 			if( InputDeltaTime >= MaximumInputTime )
 			{
@@ -652,6 +648,9 @@ void CApplication::Run()
 
 				InputTimer.Start();
 			}
+
+			CTimerScope Scope_( "Frametime", false );
+			MainWindow.BeginFrame();
 
 			const float TimeScale = ScaleTime ? 0.25f : 1.0f;
 
@@ -670,6 +669,21 @@ void CApplication::Run()
 					// Update time
 					GameLayersInstance->Time( ScaledGameTime );
 					GameLayersInstance->SetTimeScale( TimeScaleGlobal );
+
+					if( !Tools )
+					{
+						if( MainWindow.IsCursorEnabled() )
+						{
+							MainWindow.EnableCursor( false );
+						}
+					}
+					else
+					{
+						if( !MainWindow.IsCursorEnabled() )
+						{
+							MainWindow.EnableCursor( true );
+						}
+					}
 
 					// Tick all game layers
 					GameLayersInstance->Tick();

@@ -13,6 +13,9 @@ public:
 	virtual void Destroy() override;
 	virtual void Load( const JSON::Vector& Objects ) override;
 
+	virtual void Export( CData& Data ) override;
+	virtual void Import( CData& Data ) override;
+
 private:
 	bool HasStarted;
 };

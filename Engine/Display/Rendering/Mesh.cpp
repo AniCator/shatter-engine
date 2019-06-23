@@ -55,6 +55,8 @@ void CMesh::Prepare( EDrawMode DrawModeOverride )
 {
 	if( IsValid() )
 	{
+		CreateVertexArrayObject();
+
 		const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
 
 		if( DrawMode != EDrawMode::None )
@@ -111,6 +113,35 @@ const FBounds& CMesh::GetBounds() const
 	return AABB;
 }
 
+bool CMesh::CreateVertexArrayObject()
+{
+	if( VertexArrayObject == 0 )
+	{
+		glGenVertexArrays( 1, &VertexArrayObject );
+		glBindVertexArray( VertexArrayObject );
+
+		glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
+
+		glEnableVertexAttribArray( EVertexAttribute::Position );
+		const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
+		glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
+
+		glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
+		const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
+		glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
+
+		glEnableVertexAttribArray( EVertexAttribute::Normal );
+		const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
+		glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
+
+		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
+
+		return true;
+	}
+
+	return false;
+}
+
 bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 {
 	if( VertexBufferData.VertexBufferObject == 0 )
@@ -124,9 +155,6 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 		GenerateAABB( Primitive );
 
 		const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
-
-		glGenVertexArrays( 1, &VertexArrayObject );
-		glBindVertexArray( VertexArrayObject );
 
 		glGenBuffers( 1, &VertexBufferData.VertexBufferObject );
 		glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
@@ -145,18 +173,6 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 		VertexBufferData.VertexCount = Primitive.VertexCount;
 
 		glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
-
-		glEnableVertexAttribArray( EVertexAttribute::Position );
-		const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
-		glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
-
-		glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-		const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
-		glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
-
-		glEnableVertexAttribArray( EVertexAttribute::Normal );
-		const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
-		glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
 
 		return true;
 	}
@@ -235,6 +251,9 @@ void CMesh::GenerateAABB( const FPrimitive& Primitive )
 			AABB.Maximum[2] = Vertex.Position[2];
 		}
 	}
+
+	Log::Event( "AABB Minimum: %.2f %.2f %.2f\n", AABB.Minimum.X, AABB.Minimum.Y, AABB.Minimum.Z );
+	Log::Event( "AABB Maximum: %.2f %.2f %.2f\n", AABB.Maximum.X, AABB.Maximum.Y, AABB.Maximum.Z );
 }
 
 void CMesh::GenerateNormals( const FPrimitive& Primitive )

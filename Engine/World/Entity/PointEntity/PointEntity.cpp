@@ -107,8 +107,6 @@ void CPointEntity::Debug()
 
 void CPointEntity::Import( CData& Data )
 {
-	CEntity::Import( Data );
-
 	Data >> Transform;
 	Data >> WorldTransform;
 
@@ -117,8 +115,6 @@ void CPointEntity::Import( CData& Data )
 
 void CPointEntity::Export( CData& Data )
 {
-	CEntity::Export( Data );
-
 	Data << Transform;
 	Data << WorldTransform;
 }

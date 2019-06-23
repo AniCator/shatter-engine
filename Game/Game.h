@@ -36,25 +36,25 @@ public:
 	void Tick();
 	void Shutdown();
 
-	void Time( double& Time );
+	void Time( float& Time );
 
-	double GetPreviousTime() const;
-	double GetCurrentTime() const;
-	double GetDeltaTime() const;
+	float GetPreviousTime() const;
+	float GetCurrentTime() const;
+	float GetDeltaTime() const;
 
-	double GetTimeScale() const;
-	void SetTimeScale( double TimeScale );
+	float GetTimeScale() const;
+	void SetTimeScale( float TimeScale );
 
 	std::vector<IGameLayer*> GetGameLayers() const;
 
 private:
 	std::vector<IGameLayer*> GameLayers;
 
-	double PreviousTime;
-	double CurrentTime;
-	double DeltaTime;
+	float PreviousTime;
+	float CurrentTime;
+	float DeltaTime;
 
-	double TimeScale;
+	float TimeScale;
 };
 
 extern CGameLayers* GameLayersInstance;

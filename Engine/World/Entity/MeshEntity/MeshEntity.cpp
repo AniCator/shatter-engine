@@ -79,6 +79,21 @@ void CMeshEntity::Destroy()
 
 }
 
+void CMeshEntity::Debug()
+{
+	CPointEntity::Debug();
+
+	if( Mesh )
+	{
+		auto& AABB = Mesh->GetBounds();
+		
+		auto Minimum = Transform.Position( Math::ToGLM( AABB.Minimum ) );
+		auto Maximum = Transform.Position( Math::ToGLM( AABB.Maximum ) );
+
+		UI::AddAABB( Math::FromGLM( Minimum ), Math::FromGLM( Maximum ) );
+	}
+}
+
 void CMeshEntity::Load( const JSON::Vector& Objects )
 {
 	CPointEntity::Load( Objects );

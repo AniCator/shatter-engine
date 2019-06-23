@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <ThirdParty/glm/glm.hpp>
 
+#include <Engine/Display/Rendering/TextureEnumerators.h>
 #include <Engine/Utility/Primitive.h>
 
 class CMesh;
@@ -35,7 +36,8 @@ struct FGenericAssetPayload
 {
 	EAsset::Type Type;
 	std::string Name;
-	std::string Location;
+	std::string Location1;
+	std::string Location2;
 };
 
 class CAssets
@@ -51,7 +53,9 @@ public:
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation );
-	CTexture* CreatedNamedTexture( const char* Name, const char* FileLocation );
+	CShader* CreateNamedShader( const char* Name, const char* VertexLocation, const char* FragmentLocation );
+	CTexture* CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode = EFilteringMode::Linear );
+	CTexture* CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear );
 	CSound* CreateNamedSound( const char* Name, const char* FileLocation );
 	CSound* CreateNamedSound( const char* Name );
 

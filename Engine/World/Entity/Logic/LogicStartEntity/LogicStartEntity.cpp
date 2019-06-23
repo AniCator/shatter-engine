@@ -31,3 +31,13 @@ void CLogicStartEntity::Load( const JSON::Vector& Objects )
 {
 	
 }
+
+void CLogicStartEntity::Export( CData& Data )
+{
+	Data << HasStarted;
+}
+
+void CLogicStartEntity::Import( CData& Data )
+{
+	Data >> HasStarted;
+}

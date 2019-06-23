@@ -37,7 +37,8 @@ public:
 		{
 			Entity->Name = Name;
 			Entity->ClassName = Type;
-			Entity->SetID( Entities.size() );
+			Entity->SetEntityID( EntityUID::Create() );
+			Entity->SetLevelID( LevelUID( Entities.size() ) );
 			Entity->SetLevel( this );
 			Entities.push_back( Entity );
 		}
@@ -64,6 +65,7 @@ public:
 
 	CEntity* Find( const std::string& Name ) const;
 	CEntity* Find( const size_t ID ) const;
+	CEntity* Find( const EntityUID& ID ) const;
 	
 	template<class T>
 	std::vector<T*> Find() const
@@ -93,7 +95,6 @@ protected:
 
 private:
 	std::vector<CEntity*> Entities;
-
 	CWorld* World;
 
 public:

@@ -17,6 +17,33 @@ namespace JSON
 		Length = End - Start;
 	}
 
+	static const size_t SpecialTokensCount = 7;
+	static const char SpecialTokens[SpecialTokensCount] = {
+		'{', '}',
+		'[', ']',
+		'"', ':', ','
+	};
+
+	void UpdateSpecialToken( char& Special, const char* Token)
+	{
+		for( size_t Index = 0; Index < SpecialTokensCount; Index++ )
+		{
+			if( Token[0] == SpecialTokens[Index] )
+			{
+				Special = Token[0];
+				return;
+			}
+		}
+	}
+
+	void CheckForSyntaxErrors( char& Special, size_t& Line, const char* Token )
+	{
+		if( Special == ',' )
+		{
+			Log::Event( Log::Warning, "Syntax error on line %zu: Too many commas, my friend.\n", Line );
+		}
+	}
+
 	Container GenerateTree( const CFile& File )
 	{
 		Container Container;
@@ -24,6 +51,9 @@ namespace JSON
 		const char* Data = File.Fetch<char>();
 		size_t Count = 0;
 		const size_t Length = File.Size();
+
+		char LastSpecialToken = ' ';
+		size_t Line = 0;
 
 		const char* Token = Data;
 		bool Finished = false;
@@ -63,6 +93,7 @@ namespace JSON
 			}
 			else if( Token[0] == '}' )
 			{
+				CheckForSyntaxErrors( LastSpecialToken, Line, Token );
 				Depth--;
 				Entry = true;
 
@@ -134,6 +165,7 @@ namespace JSON
 			}
 			else if( Token[0] == ']' )
 			{
+				CheckForSyntaxErrors( LastSpecialToken, Line, Token );
 				ArrayDepth--;
 				Entry = true;
 
@@ -142,6 +174,12 @@ namespace JSON
 					Parent = Parent->Parent;
 				}
 			}
+			else if( Token[0] == '\n' )
+			{
+				Line++;
+			}
+
+			UpdateSpecialToken( LastSpecialToken, Token );
 
 			Token++;
 		}

@@ -33,8 +33,8 @@ public:
 
 	void Clear();
 
-	void Start();
-	void Stop();
+	void Start( const float FadeIn = -1.0f );
+	void Stop( const float FadeOut = -1.0f );
 	void Loop( const bool Loop );
 	void Rate( const float Rate );
 	bool Playing();

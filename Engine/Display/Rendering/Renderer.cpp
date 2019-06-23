@@ -67,6 +67,52 @@ CRenderer::~CRenderer()
 	GlobalUniformBuffers.clear();
 }
 
+static const int ErrorSize = 64;
+static const int ErrorChannels = 3;
+
+static unsigned char OddColor[ErrorChannels] = {
+	255,0,255
+};
+
+static unsigned char EvenColor[ErrorChannels] = {
+	0,0,0
+};
+
+unsigned char* GenerateErrorTexture()
+{
+	const size_t ErrorLength = ErrorSize * ErrorSize * ErrorChannels;
+	unsigned char* ErrorData = new unsigned char[ErrorLength];
+
+	bool Odd = false;
+	for( size_t Index = 0; Index < ErrorLength; Index++ )
+	{
+		size_t Offset = Index % ErrorSize;
+		const size_t Channel = ( Index ) % ErrorChannels;
+		if( Channel == 0 )
+		{
+			Odd = !Odd;
+		}
+
+		if( Offset == 0 )
+		{
+			Odd = !Odd;
+		}
+
+		if( Odd )
+		{
+			ErrorData[Index] = OddColor[Channel];
+		}
+		else
+		{
+			ErrorData[Index] = EvenColor[Channel];
+		}
+	}
+
+	return ErrorData;
+}
+
+static unsigned char* ErrorData = GenerateErrorTexture();
+
 void CRenderer::Initialize()
 {
 	CAssets& Assets = CAssets::Get();
@@ -92,13 +138,15 @@ void CRenderer::Initialize()
 
 	Assets.CreateNamedMesh( "pyramid", Pyramid );
 
-	SuperSampleBicubicShader = Assets.CreateNamedShader( "SuperSampleBicubic", "Shaders/SuperSampleBicubic" );
+	Assets.CreateNamedTexture( "error", ErrorData, ErrorSize, ErrorSize, ErrorChannels, EFilteringMode::Nearest );
+
+	SuperSampleBicubicShader = Assets.CreateNamedShader( "SuperSampleBicubic", "Shaders/FullScreenQuad", "Shaders/SuperSampleBicubic" );
 	FramebufferRenderable.SetMesh( SquareMesh );
 	FramebufferRenderable.SetShader( SuperSampleBicubicShader );
 
-	ResolveShader = Assets.CreateNamedShader( "Resolve", "Shaders/Resolve" );
-	CopyShader = Assets.CreateNamedShader( "Copy", "Shaders/Copy" );
-	ImageProcessingShader = Assets.CreateNamedShader( "ImageProcessing", "Shaders/ImageProcessing" );
+	ResolveShader = Assets.CreateNamedShader( "Resolve", "Shaders/FullScreenQuad", "Shaders/Resolve" );
+	CopyShader = Assets.CreateNamedShader( "Copy", "Shaders/FullScreenQuad", "Shaders/Copy" );
+	ImageProcessingShader = Assets.CreateNamedShader( "ImageProcessing", "Shaders/FullScreenQuad", "Shaders/ImageProcessing" );
 
 	GlobalUniformBuffers.clear();
 }
@@ -207,7 +255,7 @@ void CRenderer::DrawQueuedRenderables()
 		if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
 		{
 			Pass.Pass->Target = &Framebuffer;
-			Pass.Pass->Render();
+			Pass.Pass->Render( GlobalUniformBuffers );
 		}
 	}
 
@@ -267,7 +315,7 @@ void CRenderer::DrawQueuedRenderables()
 				if( Pass.Pass && Pass.Location == ERenderPassLocation::PostProcess )
 				{
 					Pass.Pass->Target = BufferTarget;
-					Pass.Pass->Render();
+					Pass.Pass->Render( GlobalUniformBuffers );
 				}
 			}
 		}
@@ -306,7 +354,7 @@ void CRenderer::DrawQueuedRenderables()
 	{
 		if( Pass.Pass && Pass.Location == ERenderPassLocation::Standard )
 		{
-			Pass.Pass->Render();
+			Pass.Pass->Render( GlobalUniformBuffers );
 		}
 	}
 

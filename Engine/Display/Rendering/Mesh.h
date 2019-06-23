@@ -90,6 +90,7 @@ public:
 
 	const FBounds& GetBounds() const;
 private:
+	bool CreateVertexArrayObject();
 	bool CreateVertexBuffer( const FPrimitive& Primitive );
 	bool CreateIndexBuffer( const FPrimitive& Primitive );
 

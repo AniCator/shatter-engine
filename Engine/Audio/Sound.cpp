@@ -37,7 +37,7 @@ void CSound::Clear()
 	StreamHandles.clear();
 }
 
-void CSound::Start()
+void CSound::Start( const float FadeIn )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -45,11 +45,11 @@ void CSound::Start()
 	}
 	else if( StreamHandles.size() > 0 )
 	{
-		CSimpleSound::Start( StreamHandles[0] );
+		CSimpleSound::Start( StreamHandles[0], FadeIn );
 	}
 }
 
-void CSound::Stop()
+void CSound::Stop( const float FadeOut )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -62,7 +62,7 @@ void CSound::Stop()
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			CSimpleSound::Stop( Handle );
+			CSimpleSound::Stop( Handle, FadeOut );
 		}
 	}
 }

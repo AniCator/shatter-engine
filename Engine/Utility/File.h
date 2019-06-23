@@ -57,6 +57,17 @@ public:
 		return true;
 	}
 
+	CData& Extract() const
+	{
+		const char* RawData = Fetch<char>();
+		const size_t FileSize = Size();
+
+		CData Data;
+		Data.Load( RawData, FileSize );
+
+		return Data;
+	}
+
 private:
 	char* Data;
 	size_t FileSize;

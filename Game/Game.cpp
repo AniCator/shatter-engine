@@ -3,6 +3,8 @@
 
 #include "Game.h"
 
+#include <Engine/Audio/SimpleSound.h>
+
 #include <Engine/Display/Rendering/Renderer.h>
 #include <Engine/Display/Window.h>
 
@@ -31,6 +33,8 @@ void CGameLayers::Add( IGameLayer* GameLayer )
 void CGameLayers::Initialize()
 {
 	Log::Event( "Initializing game layers.\n" );
+
+	CSimpleSound::StopMusic();
 
 	PreviousTime = 0.0f;
 	CurrentTime = 0.0f;
@@ -76,10 +80,14 @@ void CGameLayers::Tick()
 			GameLayer->Tick();
 		}
 	}
+
+	CSimpleSound::Tick();
 }
 
 void CGameLayers::Shutdown()
 {
+	CSimpleSound::StopAll();
+
 	for( auto GameLayer : GameLayers )
 	{
 		if( GameLayer )
@@ -89,34 +97,34 @@ void CGameLayers::Shutdown()
 	}
 }
 
-void CGameLayers::Time( double& Time )
+void CGameLayers::Time( float& Time )
 {
 	PreviousTime = CurrentTime;
 	CurrentTime = Time;
 	DeltaTime = CurrentTime - PreviousTime;
 }
 
-double CGameLayers::GetPreviousTime() const
+float CGameLayers::GetPreviousTime() const
 {
 	return PreviousTime;
 }
 
-double CGameLayers::GetCurrentTime() const
+float CGameLayers::GetCurrentTime() const
 {
 	return CurrentTime;
 }
 
-double CGameLayers::GetDeltaTime() const
+float CGameLayers::GetDeltaTime() const
 {
 	return DeltaTime;
 }
 
-double CGameLayers::GetTimeScale() const
+float CGameLayers::GetTimeScale() const
 {
 	return TimeScale;
 }
 
-void CGameLayers::SetTimeScale( double TimeScaleIn )
+void CGameLayers::SetTimeScale( float TimeScaleIn )
 {
 	TimeScale = TimeScaleIn;
 }

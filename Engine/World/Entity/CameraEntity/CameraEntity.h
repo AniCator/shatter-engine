@@ -17,7 +17,11 @@ public:
 	void Activate();
 	void Deactivate();
 
+	virtual void Export( CData& Data ) override;
+	virtual void Import( CData& Data ) override;
+
 protected:
 	CCamera Camera;
+	uint32_t Priority;
 	bool Active;
 };

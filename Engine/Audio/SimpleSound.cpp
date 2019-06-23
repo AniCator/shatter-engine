@@ -6,9 +6,10 @@
 #include <Engine/Profiling/Logging.h>
 #include <Game/Game.h>
 
-std::vector<sf::Sound*> CSimpleSound::Sounds;
+std::vector<FSound> CSimpleSound::Sounds;
 std::vector<sf::SoundBuffer*> CSimpleSound::SoundBuffers;
 std::vector<FStream> CSimpleSound::Streams;
+float CSimpleSound::GlobalVolume = 1.0f;
 
 SoundBufferHandle CSimpleSound::Sound( std::string ResourcePath )
 {
@@ -44,9 +45,11 @@ SoundHandle CSimpleSound::Start( SoundBufferHandle Handle )
 {
 	if( Handle.Handle > -1 )
 	{
-		sf::Sound* NewSound = new sf::Sound( *SoundBuffers[Handle.Handle] );
+		FSound NewSound;
+		NewSound.Sound = new sf::Sound( *SoundBuffers[Handle.Handle] );
 		Sounds.push_back( NewSound );
-		NewSound->play();
+		NewSound.Sound->setVolume( NewSound.Volume * GlobalVolume );
+		NewSound.Sound->play();
 
 		SoundHandle NewHandle;
 		NewHandle.Handle = Sounds.size() - 1;
@@ -67,29 +70,45 @@ void CSimpleSound::Start( StreamHandle Handle, const float FadeIn )
 	{
 		Streams[Handle.Handle].Stream->setVolume( 0.0f );
 	}
+	else
+	{
+		Streams[Handle.Handle].Stream->setVolume( Streams[Handle.Handle].Volume * GlobalVolume );
+	}
 
 	Streams[Handle.Handle].Stream->play();
 	Streams[Handle.Handle].FadeDuration = FadeIn;
+	Streams[Handle.Handle].FadeIn = true;
 	Streams[Handle.Handle].StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 }
 
 void CSimpleSound::Stop( SoundHandle Handle )
 {
 	if( Handle.Handle > -1 )
-		Sounds[Handle.Handle]->stop();
+		Sounds[Handle.Handle].Sound->stop();
 }
 
-void CSimpleSound::Stop( StreamHandle Handle )
+void CSimpleSound::Stop( StreamHandle Handle, const float FadeOut )
 {
 	if( Handle.Handle > -1 )
-		Streams[Handle.Handle].Stream->stop();
+	{
+		if( FadeOut < 0.0f )
+		{
+			Streams[Handle.Handle].Stream->pause();
+		}
+		else
+		{
+			Streams[Handle.Handle].FadeDuration = FadeOut;
+			Streams[Handle.Handle].FadeIn = false;
+			Streams[Handle.Handle].StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
+		}
+	}
 }
 
 void CSimpleSound::StopSounds()
 {
 	for( auto Sound : Sounds )
 	{
-		Sound->stop();
+		Sound.Sound->stop();
 	}
 }
 
@@ -109,7 +128,7 @@ void CSimpleSound::StopAll()
 
 void CSimpleSound::Loop( SoundHandle Handle, const bool Loop )
 {
-	Sounds[Handle.Handle]->setLoop(Loop);
+	Sounds[Handle.Handle].Sound->setLoop(Loop);
 }
 
 void CSimpleSound::Loop( StreamHandle Handle, const bool Loop )
@@ -119,7 +138,7 @@ void CSimpleSound::Loop( StreamHandle Handle, const bool Loop )
 
 void CSimpleSound::Rate( SoundHandle Handle, const float Rate )
 {
-	Sounds[Handle.Handle]->setPitch( Rate );
+	Sounds[Handle.Handle].Sound->setPitch( Rate );
 }
 
 void CSimpleSound::Rate( StreamHandle Handle, const float Rate )
@@ -129,7 +148,7 @@ void CSimpleSound::Rate( StreamHandle Handle, const float Rate )
 
 bool CSimpleSound::Playing( SoundHandle Handle )
 {
-	return Sounds[Handle.Handle]->getStatus() == sf::SoundSource::Status::Playing;
+	return Sounds[Handle.Handle].Sound->getStatus() == sf::SoundSource::Status::Playing;
 }
 
 bool CSimpleSound::Playing( StreamHandle Handle )
@@ -139,12 +158,17 @@ bool CSimpleSound::Playing( StreamHandle Handle )
 
 void CSimpleSound::Volume( SoundHandle Handle, const float Volume )
 {
-	Sounds[Handle.Handle]->setVolume( Volume );
+	Sounds[Handle.Handle].Volume = Volume;
 }
 
 void CSimpleSound::Volume( StreamHandle Handle, const float Volume )
 {
-	Streams[Handle.Handle].Stream->setVolume( Volume );
+	Streams[Handle.Handle].Volume = Volume;
+}
+
+void CSimpleSound::Volume( const float GlobalVolumeIn )
+{
+	GlobalVolume = GlobalVolumeIn * 0.01f;
 }
 
 void CSimpleSound::Tick()
@@ -154,14 +178,41 @@ void CSimpleSound::Tick()
 	{
 		if( Stream.FadeDuration > 0.0f )
 		{
-			const float DeltaTime = CurrentTime - Stream.StartTime;
-			float Alpha = DeltaTime / Stream.FadeDuration;
-			Alpha *= Alpha * Alpha;
-			if( Alpha < 100.0f && Alpha > 0.0f )
+			if( Stream.FadeIn )
 			{
-				Stream.Stream->setVolume( Alpha * 100.0f );
+				const float DeltaTime = CurrentTime - Stream.StartTime;
+				float Alpha = DeltaTime / Stream.FadeDuration;
+				Alpha *= Alpha * Alpha;
+				if( Alpha < 1.0f && Alpha > 0.0f )
+				{
+					Stream.Stream->setVolume( Alpha * Stream.Volume * GlobalVolume );
+				}
+			}
+			else
+			{
+				const float DeltaTime = CurrentTime - Stream.StartTime;
+				float Alpha = DeltaTime / Stream.FadeDuration;
+				// Alpha *= Alpha * Alpha;
+				Alpha = 1.0f - Alpha;
+				if( Alpha < 1.0f && Alpha > 0.0f )
+				{
+					Stream.Stream->setVolume( Alpha * Stream.Volume * GlobalVolume );
+				}
+				else if( Alpha < 0.0f )
+				{
+					Stream.Stream->pause();
+				}
 			}
 		}
+		else
+		{
+			Stream.Stream->setVolume( Stream.Volume * GlobalVolume );
+		}
+	}
+
+	for( auto Sound : Sounds )
+	{
+		Sound.Sound->setVolume( Sound.Volume * GlobalVolume );
 	}
 }
 
@@ -169,7 +220,7 @@ void CSimpleSound::Shutdown()
 {
 	for( auto Sound : Sounds )
 	{
-		delete Sound;
+		delete Sound.Sound;
 	}
 
 	Sounds.clear();

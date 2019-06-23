@@ -31,23 +31,57 @@ namespace EntityIOType
 	};
 }
 
+struct EntityUID
+{
+	size_t ID = 0;
+
+	static EntityUID Create();
+	static EntityUID None();
+};
+
 struct FMessage
 {
-	size_t TargetID;
+	EntityUID TargetID;
+	std::string TargetName;
 	std::vector<std::string> Inputs;
 };
 
 typedef std::map<FName, std::function<void()>> MessageInput;
 typedef std::map<FName, std::vector<FMessage>> MessageOutput;
 
+struct LevelUID
+{
+	LevelUID()
+	{
+		ID = -1;
+	}
+
+	LevelUID( size_t Identifier )
+	{
+		ID = Identifier;
+	}
+
+	int64_t ID = 0;
+};
+
 class CEntity
 {
+private:
+	// Global unique identifier for this entity.
+	EntityUID ID;
+
+	// Identifier relative to the level.
+	LevelUID LevelID;
+
 public:
 	CEntity();
 	virtual ~CEntity();
 
-	void SetID( const size_t EntityID );
-	const size_t GetID() const;
+	void SetEntityID( const EntityUID& EntityID );
+	const EntityUID& GetEntityID() const;
+
+	void SetLevelID( const LevelUID& EntityID );
+	const LevelUID& GetLevelID() const;
 
 	void SetLevel( CLevel* SpawnLevel );
 	CLevel* GetLevel() const;
@@ -70,7 +104,7 @@ public:
 	void Send( const char* Output );
 	void Receive( const char* Input );
 	void Track( const CEntity* Entity );
-	void Unlink( const size_t EntityID );
+	void Unlink( const EntityUID EntityID );
 
 	MessageOutput Outputs;
 	MessageInput Inputs;
@@ -84,8 +118,6 @@ public:
 protected:
 	CEntity* Parent;
 private:
-	size_t ID;
-
 	std::vector<size_t> TrackedEntityIDs;
 
 protected:
@@ -94,10 +126,12 @@ protected:
 	bool ShouldDebug;
 
 public:
-	virtual void Export( CData& Data );
+	// Called to export an entire entity.
+	virtual void Export( CData& Data ) = 0;
 	friend CData& operator<<( CData& Data, CEntity* Entity );
 
-	virtual void Import( CData& Data );
+	// Called to import an entire entity.
+	virtual void Import( CData& Data ) = 0;
 	friend CData& operator>>( CData& Data, CEntity* Entity );
 };
 

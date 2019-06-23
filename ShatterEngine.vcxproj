@@ -265,6 +265,7 @@
     <ClInclude Include="Engine\Display\Rendering\RenderTexture.h" />
     <ClInclude Include="Engine\Display\Rendering\Shader.h" />
     <ClInclude Include="Engine\Display\Rendering\Texture.h" />
+    <ClInclude Include="Engine\Display\Rendering\TextureEnumerators.h" />
     <ClInclude Include="Engine\Display\UserInterface.h" />
     <ClInclude Include="Engine\Display\Window.h" />
     <ClInclude Include="Engine\Event\ActionTarget.h" />

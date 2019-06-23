@@ -17,13 +17,38 @@ CShader::~CShader()
 
 bool CShader::Load( const char* FileLocation, bool ShouldLink )
 {
-	Location = FileLocation;
+	VertexLocation = FileLocation;
+	FragmentLocation = FileLocation;
 
 	std::stringstream VertexPath;
 	std::stringstream FragmentPath;
 
-	VertexPath << FileLocation << ".vs";
-	FragmentPath << FileLocation << ".fs";
+	VertexPath << VertexLocation << ".vs";
+	FragmentPath << FragmentLocation << ".fs";
+
+	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), Handles.VertexShader, EShaderType::Vertex );
+	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), Handles.FragmentShader, EShaderType::Fragment );
+
+	if( LoadedVertexShader && LoadedFragmentShader && ShouldLink )
+	{
+		Link();
+
+		return Handles.Program != 0;
+	}
+
+	return false;
+}
+
+bool CShader::Load( const char* VertexLocationIn, const char* FragmentLocationIn, bool ShouldLink )
+{
+	VertexLocation = VertexLocationIn;
+	FragmentLocation = FragmentLocationIn;
+
+	std::stringstream VertexPath;
+	std::stringstream FragmentPath;
+
+	VertexPath << VertexLocation << ".vs";
+	FragmentPath << FragmentLocation << ".fs";
 
 	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), Handles.VertexShader, EShaderType::Vertex );
 	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), Handles.FragmentShader, EShaderType::Fragment );
@@ -63,8 +88,8 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 
 bool CShader::Reload()
 {
-	Log::Event( "Recompiling \"%s\"...\n", Location.c_str() );
-	return Load( Location.c_str() );
+	Log::Event( "Recompiling \"%s\"...\n", FragmentLocation.c_str() );
+	return Load( VertexLocation.c_str(), FragmentLocation.c_str() );
 }
 
 GLuint CShader::Activate() const
@@ -215,7 +240,7 @@ GLuint CShader::Link()
 	{
 		if( Attempts > 0 && !Debugger )
 		{
-			Log::Event( Log::Error, "Failed to compile shader \"%s\".\n", Location.c_str() );
+			Log::Event( Log::Error, "Failed to compile shader \"%s\".\n", FragmentLocation.c_str() );
 			Attempts = 0;
 			return 0;
 		}
@@ -228,7 +253,7 @@ GLuint CShader::Link()
 
 		if( !ShaderCompiled )
 		{
-			Load( Location.c_str(), false );
+			Load( VertexLocation.c_str(), FragmentLocation.c_str(), false );
 		}
 
 		Attempts++;

@@ -101,7 +101,10 @@ void CWindow::Create( const char* Title )
 		}
 	}
 
-	WindowHandle = glfwCreateWindow( Width, Height, Title, FullScreen ? glfwGetPrimaryMonitor() : nullptr, nullptr );
+	auto Context = ThreadContext( false );
+
+	glfwWindowHint( GLFW_VISIBLE, GL_TRUE );
+	WindowHandle = glfwCreateWindow( Width, Height, Title, FullScreen ? glfwGetPrimaryMonitor() : nullptr, Context );
 
 	int WindowX = -1;
 	int WindowY = -1;
@@ -263,4 +266,21 @@ bool CWindow::IsCursorEnabled() const
 CRenderer& CWindow::GetRenderer()
 {
 	return Renderer;
+}
+
+GLFWwindow* CWindow::ThreadContext( const bool MakeCurrent )
+{
+	static GLFWwindow* Context = nullptr;
+	if( !Context )
+	{
+		glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
+		Context = glfwCreateWindow( 1, 1, "ThreadContext", NULL, NULL );
+	}
+
+	if( Context && MakeCurrent )
+	{
+		glfwMakeContextCurrent( Context );
+	}
+
+	return Context;
 }

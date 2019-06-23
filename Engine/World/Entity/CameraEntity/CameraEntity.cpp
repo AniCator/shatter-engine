@@ -7,6 +7,7 @@ static CEntityFactory<CCameraEntity> Factory( "camera" );
 
 CCameraEntity::CCameraEntity()
 {
+	Priority = 0;
 }
 
 void CCameraEntity::Construct()
@@ -24,7 +25,7 @@ void CCameraEntity::Tick()
 		CameraSetup.CameraPosition = Transform.GetPosition();
 		Camera.SetCameraOrientation( Transform.GetOrientation() );
 
-		World->SetActiveCamera( &Camera );
+		World->SetActiveCamera( &Camera, Priority );
 	}
 }
 
@@ -48,6 +49,10 @@ void CCameraEntity::Load( const JSON::Vector& Objects )
 				CameraSetup.FieldOfView = PropertyFOV;
 			}
 		}
+		else if( Property->Key == "priority" )
+		{
+			Priority = atoi( Property->Value.c_str() );
+		}
 	}
 }
 
@@ -67,8 +72,24 @@ void CCameraEntity::Deactivate()
 		{
 			if( World->GetActiveCamera() == &Camera )
 			{
-				World->SetActiveCamera( nullptr );
+				World->SetActiveCamera( nullptr, Priority );
 			}
 		}
 	}
+}
+
+void CCameraEntity::Export( CData& Data )
+{
+	CPointEntity::Export( Data );
+	Data << Camera;
+	Data << Priority;
+}
+
+void CCameraEntity::Import( CData& Data )
+{
+	CPointEntity::Import( Data );
+	Data >> Camera;
+	Data >> Priority;
+
+	Camera.Update();
 }

@@ -76,7 +76,7 @@ uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, cons
 	return Calls;
 }
 
-uint32_t CRenderPass::Render()
+uint32_t CRenderPass::Render( const std::unordered_map<std::string, Vector4D>& Uniforms )
 {
 	Log::Event( Log::Warning, "CRenderPass doesn't have a Render() implementation.\n" );
 	return 0;

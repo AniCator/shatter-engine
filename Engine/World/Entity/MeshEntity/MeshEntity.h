@@ -22,6 +22,8 @@ public:
 	virtual void Tick() override;
 	virtual void Destroy() override;
 
+	virtual void Debug() override;
+
 	virtual void Load( const JSON::Vector& Objects ) override;
 	virtual void Reload() override;
 

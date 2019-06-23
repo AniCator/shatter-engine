@@ -43,6 +43,12 @@ struct FDataString
 	{
 		Data >> String.Size;
 
+		if( String.Size > 100000 )
+		{
+			Data.Invalidate();
+			return Data;
+		}
+
 		String.Address = new char[String.Size + 1];
 		Data >> String.Address;
 
@@ -58,6 +64,10 @@ struct FDataString
 	{
 		FDataString DataString;
 		Data >> DataString;
-		Object = DataString.Address;
+
+		if( DataString.Address )
+		{
+			Object = DataString.Address;
+		}
 	}
 };

@@ -76,3 +76,21 @@ void CTriggerProximityEntity::Load( const JSON::Vector& Objects )
 		}
 	}
 }
+
+void CTriggerProximityEntity::Export( CData& Data )
+{
+	CPointEntity::Export( Data );
+	Data << Radius;
+	Data << Frequency;
+	Data << Latched;
+	Data << TriggerCount;
+}
+
+void CTriggerProximityEntity::Import( CData& Data )
+{
+	CPointEntity::Import( Data );
+	Data >> Radius;
+	Data >> Frequency;
+	Data >> Latched;
+	Data >> TriggerCount;
+}

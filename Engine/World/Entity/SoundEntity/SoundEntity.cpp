@@ -47,13 +47,6 @@ void CSoundEntity::Tick()
 {
 	if( Sound )
 	{
-		if( AutoPlay && !AutoPlayed )
-		{
-			AutoPlayed = true;
-			Sound->Start();
-			Sound->Loop( Loop );
-		}
-
 		if( Falloff == EFalloff::None )
 		{
 			Sound->Volume( Volume );
@@ -96,6 +89,13 @@ void CSoundEntity::Tick()
 					Sound->Volume( Length * Volume );
 				}
 			}
+		}
+
+		if( AutoPlay && !AutoPlayed )
+		{
+			AutoPlayed = true;
+			Sound->Start();
+			Sound->Loop( Loop );
 		}
 	}
 }

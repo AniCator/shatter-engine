@@ -36,14 +36,24 @@ CEntity::~CEntity()
 	
 }
 
-void CEntity::SetID( const size_t EntityID )
+void CEntity::SetEntityID( const EntityUID& EntityID )
 {
 	ID = EntityID;
 }
 
-const size_t CEntity::GetID() const
+const EntityUID& CEntity::GetEntityID() const
 {
 	return ID;
+}
+
+void CEntity::SetLevelID( const LevelUID& EntityID )
+{
+	LevelID = EntityID;
+}
+
+const LevelUID& CEntity::GetLevelID() const
+{
+	return LevelID;
 }
 
 void CEntity::SetLevel( CLevel* SpawnLevel )
@@ -85,7 +95,7 @@ void CEntity::Destroy()
 			auto Entity = Level->Find( TrackedEntityID );
 			if( Entity )
 			{
-				Entity->Unlink( GetID() );
+				Entity->Unlink( GetEntityID() );
 			}
 		}
 
@@ -100,6 +110,21 @@ void CEntity::Load( const JSON::Vector & Objects )
 
 void CEntity::Reload()
 {
+	for( auto& Output : Outputs )
+	{
+		for( auto& Message : Output.second )
+		{
+			auto Entity = Level->Find( Message.TargetName );
+			if( Entity )
+			{
+				Message.TargetID = Entity->GetEntityID();
+			}
+			else
+			{
+				Log::Event( Log::Warning, "Target entity \"%s\" not found for entity \"%s\".\n", Message.TargetName.c_str(), Name.String().c_str() );
+			}
+		}
+	}
 
 }
 
@@ -139,7 +164,8 @@ void CEntity::Link( const JSON::Vector& Objects )
 						if( Entity )
 						{
 							FMessage Message;
-							Message.TargetID = Entity->GetID();
+							Message.TargetID = Entity->GetEntityID();
+							Message.TargetName = TargetName;
 							Message.Inputs.emplace_back( InputName );
 
 							auto& Messsages = Outputs[OutputName];
@@ -191,11 +217,11 @@ void CEntity::Track( const CEntity* Entity )
 {
 	if( Entity )
 	{
-		TrackedEntityIDs.push_back( Entity->GetID() );
+		TrackedEntityIDs.push_back( Entity->GetEntityID().ID );
 	}
 }
 
-void CEntity::Unlink( const size_t EntityID )
+void CEntity::Unlink( const EntityUID EntityID )
 {
 	// Find target input and unlink it.
 }
@@ -213,21 +239,34 @@ void CEntity::EnableDebug( const bool Enable )
 	ShouldDebug = Enable;
 }
 
-void CEntity::Export( CData& Data )
-{
-	FDataString::Encode( Data, ClassName );
-	FDataString::Encode( Data, Name.String() );
-}
-
-void CEntity::Import( CData& Data )
-{
-	// The import of the class name and entity name is handled by the level class.
-}
-
 CData& operator<<( CData& Data, CEntity* Entity )
 {
 	if( Entity )
 	{
+		FDataString::Encode( Data, Entity->ClassName );
+		FDataString::Encode( Data, Entity->Name.String() );
+
+		const auto OutputCount = Entity->Outputs.size();
+		Data << OutputCount;
+		for( auto& Output : Entity->Outputs )
+		{
+			FDataString::Encode( Data, Output.first.String() );
+
+			const auto MessageCount = Output.second.size();
+			Data << MessageCount;
+			for( auto& Message : Output.second )
+			{
+				FDataString::Encode( Data, Message.TargetName );
+
+				const auto InputCount = Message.Inputs.size();
+				Data << InputCount;
+				for( auto& Input : Message.Inputs )
+				{
+					FDataString::Encode( Data, Input );
+				}
+			}
+		}
+
 		Entity->Export( Data );
 	}
 
@@ -238,8 +277,54 @@ CData& operator>>( CData& Data, CEntity* Entity )
 {
 	if( Entity )
 	{
+		size_t OutputCount;
+		Data >> OutputCount;
+
+		for( size_t OutputIndex = 0; OutputIndex < OutputCount; OutputIndex++ )
+		{
+			std::string OutputName;
+			FDataString::Decode( Data, OutputName );
+			size_t MessageCount;
+			Data >> MessageCount;
+			for( size_t MessageIndex = 0; MessageIndex < MessageCount; MessageIndex++ )
+			{
+				std::string TargetName;
+				FDataString::Decode( Data, TargetName );
+
+				size_t InputCount;
+				Data >> InputCount;
+				for( size_t InputIndex = 0; InputIndex < InputCount; InputIndex++ )
+				{
+					std::string InputName;
+					FDataString::Decode( Data, InputName );
+
+					FMessage Message;
+					Message.TargetID = EntityUID::None();
+					Message.TargetName = TargetName;
+					Message.Inputs.emplace_back( InputName );
+
+					auto& Messsages = Entity->Outputs[OutputName];
+					Messsages.emplace_back( Message );
+				}
+			}
+		}
+
 		Entity->Import( Data );
 	}
 	
 	return Data;
+}
+
+EntityUID EntityUID::Create()
+{
+	static size_t GlobalID = 0;
+	EntityUID ID;
+	ID.ID = ++GlobalID;
+	return ID;
+}
+
+EntityUID EntityUID::None()
+{
+	static EntityUID NoneID;
+	return NoneID;
 }
