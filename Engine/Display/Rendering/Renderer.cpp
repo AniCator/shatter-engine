@@ -9,6 +9,8 @@
 #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
 #include <ThirdParty/glm/glm.hpp>
 
+#include <Engine/Configuration/Configuration.h>
+
 #include <Engine/Display/Rendering/Mesh.h>
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Texture.h>
@@ -49,6 +51,9 @@ static CShader* SuperSampleBicubicShader = nullptr;
 static CShader* ImageProcessingShader = nullptr;
 static CShader* ResolveShader = nullptr;
 static CShader* CopyShader = nullptr;
+
+static bool SkipRenderPasses = false;
+static bool SuperSampling = true;
 
 CRenderer::CRenderer()
 {
@@ -149,6 +154,9 @@ void CRenderer::Initialize()
 	ImageProcessingShader = Assets.CreateNamedShader( "ImageProcessing", "Shaders/FullScreenQuad", "Shaders/ImageProcessing" );
 
 	GlobalUniformBuffers.clear();
+
+	SkipRenderPasses = CConfiguration::Get().GetInteger( "skiprenderpasses", 0 ) > 0;
+	SuperSampling = CConfiguration::Get().GetInteger( "supersampling", 1 ) > 0;
 }
 
 void CRenderer::RefreshFrame()
@@ -188,17 +196,30 @@ bool ExclusiveComparison( const T& A, const T& B )
 
 void CRenderer::DrawQueuedRenderables()
 {
+	int FramebufferWidth = ViewportWidth;
+	int FramebufferHeight = ViewportHeight;
+
+	if( !SkipRenderPasses && SuperSampling )
+	{
+		FramebufferWidth *= 2;
+		FramebufferHeight *= 2;
+	}
+
 	if( !Framebuffer.Ready() )
 	{
 		if( ViewportWidth > -1 && ViewportHeight > -1 )
 		{
-			Framebuffer = CRenderTexture( "Framebuffer", ViewportWidth * 2, ViewportHeight * 2 );
+			Framebuffer = CRenderTexture( "Framebuffer", FramebufferWidth, FramebufferHeight );
 			Framebuffer.Initialize();
 		}
 	}
 
-	CRenderPass MainPass( ViewportWidth * 2, ViewportHeight * 2, Camera, false );
-	MainPass.Target = &Framebuffer;
+	CRenderPass MainPass( FramebufferWidth, FramebufferHeight, Camera, false );
+
+	if( !SkipRenderPasses )
+	{
+		MainPass.Target = &Framebuffer;
+	}
 
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LESS );
@@ -250,103 +271,114 @@ void CRenderer::DrawQueuedRenderables()
 	DrawCalls += MainPass.Render( Renderables, GlobalUniformBuffers );
 	DrawCalls += MainPass.Render( DynamicRenderables, GlobalUniformBuffers );
 
-	for( auto& Pass : Passes )
+	if( !SkipRenderPasses )
 	{
-		if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
+		if( !SuperSampling )
 		{
-			Pass.Pass->Target = &Framebuffer;
-			Pass.Pass->Render( GlobalUniformBuffers );
-		}
-	}
-
-	if( MainPass.Target && MainPass.Target->Ready() && SuperSampleBicubicShader && ResolveShader && ImageProcessingShader && CopyShader )
-	{
-		FramebufferRenderable.SetShader( SuperSampleBicubicShader );
-		FramebufferRenderable.SetTexture( MainPass.Target, ETextureSlot::Slot0 );
-
-		if( BufferPrevious.Ready() )
-		{
-			FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot1 );
+			BufferA = Framebuffer;
 		}
 
-		if( !BufferA.Ready() )
+		for( auto& Pass : Passes )
 		{
-			if( ViewportWidth > -1 && ViewportHeight > -1 )
+			if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
 			{
-				BufferA = CRenderTexture( "BufferA", ViewportWidth, ViewportHeight );
+				Pass.Pass->Target = &Framebuffer;
+				Pass.Pass->Render( GlobalUniformBuffers );
 			}
 		}
 
-		if( !BufferB.Ready() )
+		if( MainPass.Target && MainPass.Target->Ready() && SuperSampleBicubicShader && ResolveShader && ImageProcessingShader && CopyShader )
 		{
-			if( ViewportWidth > -1 && ViewportHeight > -1 )
-			{
-				BufferB = CRenderTexture( "BufferB", ViewportWidth, ViewportHeight );
-				BufferB.Initialize();
-			}
-		}
-
-		CRenderPass AntiAliasingResolve( ViewportWidth, ViewportHeight, Camera );
-		AntiAliasingResolve.Target = &BufferA;
-		AntiAliasingResolve.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
-
-		FramebufferRenderable.SetShader( ImageProcessingShader );
-
-		CRenderTexture* BufferSource = nullptr;
-		CRenderTexture* BufferTarget = nullptr;
-		if( BufferA.Ready() && BufferB.Ready() )
-		{
-			BufferSource = ( BufferSource == &BufferA ) ? &BufferB : &BufferA;
-			BufferTarget = ( BufferSource == &BufferA ) ? &BufferB : &BufferA;
-
-			FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot0 );
+			FramebufferRenderable.SetShader( SuperSampleBicubicShader );
+			FramebufferRenderable.SetTexture( MainPass.Target, ETextureSlot::Slot0 );
 
 			if( BufferPrevious.Ready() )
 			{
 				FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot1 );
 			}
 
-			CRenderPass ResolvePass( ViewportWidth, ViewportHeight, Camera );
-			ResolvePass.Target = BufferTarget;
-			DrawCalls += ResolvePass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
-
-			for( auto& Pass : Passes )
+			if( !BufferA.Ready() )
 			{
-				if( Pass.Pass && Pass.Location == ERenderPassLocation::PostProcess )
+				if( ViewportWidth > -1 && ViewportHeight > -1 )
 				{
-					Pass.Pass->Target = BufferTarget;
-					Pass.Pass->Render( GlobalUniformBuffers );
+					BufferA = CRenderTexture( "BufferA", ViewportWidth, ViewportHeight );
 				}
 			}
-		}
 
-		if( !BufferPrevious.Ready() )
-		{
-			if( ViewportWidth > -1 && ViewportHeight > -1 )
+			if( !BufferB.Ready() )
 			{
-				BufferPrevious = CRenderTexture( "BufferPrevious", ViewportWidth, ViewportHeight );
-				BufferPrevious.Initialize();
+				if( ViewportWidth > -1 && ViewportHeight > -1 )
+				{
+					BufferB = CRenderTexture( "BufferB", ViewportWidth, ViewportHeight );
+					BufferB.Initialize();
+				}
 			}
-		}
 
-		if( BufferPrevious.Ready() && BufferTarget && BufferTarget->Ready() )
-		{
-			FramebufferRenderable.SetShader( CopyShader );
-			FramebufferRenderable.SetTexture( BufferTarget, ETextureSlot::Slot0 );
+			if( SuperSampling )
+			{
+				CRenderPass AntiAliasingResolve( ViewportWidth, ViewportHeight, Camera );
+				AntiAliasingResolve.Target = &BufferA;
+				AntiAliasingResolve.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+			}
 
-			CRenderPass ResolveToPrevious( ViewportWidth, ViewportHeight, Camera );
-			ResolveToPrevious.Target = &BufferPrevious;
-			DrawCalls += ResolveToPrevious.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
-		}
+			FramebufferRenderable.SetShader( ImageProcessingShader );
 
-		if( BufferPrevious.Ready() && BufferSource && BufferSource->Ready() )
-		{
-			FramebufferRenderable.SetShader( ResolveShader );
-			FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot0 );
-			FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot1 );
+			CRenderTexture* BufferSource = nullptr;
+			CRenderTexture* BufferTarget = nullptr;
+			if( BufferA.Ready() && BufferB.Ready() )
+			{
+				BufferSource = ( BufferSource == &BufferA ) ? &BufferB : &BufferA;
+				BufferTarget = ( BufferSource == &BufferA ) ? &BufferB : &BufferA;
 
-			CRenderPass ResolveToViewport( ViewportWidth, ViewportHeight, Camera );
-			DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+				FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot0 );
+
+				if( BufferPrevious.Ready() )
+				{
+					FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot1 );
+				}
+
+				CRenderPass ResolvePass( ViewportWidth, ViewportHeight, Camera );
+				ResolvePass.Target = BufferTarget;
+				DrawCalls += ResolvePass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+
+				for( auto& Pass : Passes )
+				{
+					if( Pass.Pass && Pass.Location == ERenderPassLocation::PostProcess )
+					{
+						Pass.Pass->Target = BufferTarget;
+						Pass.Pass->Render( GlobalUniformBuffers );
+					}
+				}
+			}
+
+			if( !BufferPrevious.Ready() )
+			{
+				if( ViewportWidth > -1 && ViewportHeight > -1 )
+				{
+					BufferPrevious = CRenderTexture( "BufferPrevious", ViewportWidth, ViewportHeight );
+					BufferPrevious.Initialize();
+				}
+			}
+
+			if( BufferPrevious.Ready() && BufferTarget && BufferTarget->Ready() )
+			{
+				FramebufferRenderable.SetShader( CopyShader );
+				FramebufferRenderable.SetTexture( BufferTarget, ETextureSlot::Slot0 );
+
+				CRenderPass ResolveToPrevious( ViewportWidth, ViewportHeight, Camera );
+				ResolveToPrevious.Target = &BufferPrevious;
+				DrawCalls += ResolveToPrevious.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+			}
+
+			if( BufferPrevious.Ready() && BufferSource && BufferSource->Ready() )
+			{
+				FramebufferRenderable.SetShader( ResolveShader );
+				FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot0 );
+				FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot1 );
+
+				CRenderPass ResolveToViewport( ViewportWidth, ViewportHeight, Camera );
+				DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+			}
 		}
 	}
 
