@@ -53,6 +53,7 @@ static CShader* ResolveShader = nullptr;
 static CShader* CopyShader = nullptr;
 
 static bool SkipRenderPasses = false;
+static float SuperSamplingFactor = 2.0f;
 static bool SuperSampling = true;
 
 CRenderer::CRenderer()
@@ -157,6 +158,12 @@ void CRenderer::Initialize()
 
 	SkipRenderPasses = CConfiguration::Get().GetInteger( "skiprenderpasses", 0 ) > 0;
 	SuperSampling = CConfiguration::Get().GetInteger( "supersampling", 1 ) > 0;
+	SuperSamplingFactor = CConfiguration::Get().GetFloat( "supersamplingfactor", 2.0f );
+
+	if( SuperSamplingFactor < 0.1f )
+	{
+		SuperSamplingFactor = 0.1f;
+	}
 }
 
 void CRenderer::RefreshFrame()
@@ -201,8 +208,8 @@ void CRenderer::DrawQueuedRenderables()
 
 	if( !SkipRenderPasses && SuperSampling )
 	{
-		FramebufferWidth *= 2;
-		FramebufferHeight *= 2;
+		FramebufferWidth *= SuperSamplingFactor;
+		FramebufferHeight *= SuperSamplingFactor;
 	}
 
 	if( !Framebuffer.Ready() )
