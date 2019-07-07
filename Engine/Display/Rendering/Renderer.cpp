@@ -195,12 +195,6 @@ void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 	DynamicRenderables.push_back( Renderable );
 }
 
-template<typename T>
-bool ExclusiveComparison( const T& A, const T& B )
-{
-	return A < B && !( A > B );
-}
-
 void CRenderer::DrawQueuedRenderables()
 {
 	int FramebufferWidth = ViewportWidth;
@@ -221,7 +215,7 @@ void CRenderer::DrawQueuedRenderables()
 		}
 	}
 
-	CRenderPass MainPass( FramebufferWidth, FramebufferHeight, Camera, false );
+	CRenderPass MainPass( "MainPass", FramebufferWidth, FramebufferHeight, Camera, false );
 
 	if( !SkipRenderPasses )
 	{
@@ -278,19 +272,23 @@ void CRenderer::DrawQueuedRenderables()
 	DrawCalls += MainPass.Render( Renderables, GlobalUniformBuffers );
 	DrawCalls += MainPass.Render( DynamicRenderables, GlobalUniformBuffers );
 
-	if( !SkipRenderPasses )
+	if( !SkipRenderPasses && DrawCalls > 0 )
 	{
+		Profile( "Post-Process" );
 		if( !SuperSampling )
 		{
 			BufferA = Framebuffer;
 		}
 
-		for( auto& Pass : Passes )
 		{
-			if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
+			Profile( "ERenderPassLocation::Scene" );
+			for( auto& Pass : Passes )
 			{
-				Pass.Pass->Target = &Framebuffer;
-				Pass.Pass->Render( GlobalUniformBuffers );
+				if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
+				{
+					Pass.Pass->Target = &Framebuffer;
+					Pass.Pass->Render( GlobalUniformBuffers );
+				}
 			}
 		}
 
@@ -323,7 +321,7 @@ void CRenderer::DrawQueuedRenderables()
 
 			if( SuperSampling )
 			{
-				CRenderPass AntiAliasingResolve( ViewportWidth, ViewportHeight, Camera );
+				CRenderPass AntiAliasingResolve( "AntiAliasingResolve", ViewportWidth, ViewportHeight, Camera );
 				AntiAliasingResolve.Target = &BufferA;
 				AntiAliasingResolve.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 			}
@@ -344,7 +342,7 @@ void CRenderer::DrawQueuedRenderables()
 					FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot1 );
 				}
 
-				CRenderPass ResolvePass( ViewportWidth, ViewportHeight, Camera );
+				CRenderPass ResolvePass( "ResolvePass", ViewportWidth, ViewportHeight, Camera );
 				ResolvePass.Target = BufferTarget;
 				DrawCalls += ResolvePass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 
@@ -372,7 +370,7 @@ void CRenderer::DrawQueuedRenderables()
 				FramebufferRenderable.SetShader( CopyShader );
 				FramebufferRenderable.SetTexture( BufferTarget, ETextureSlot::Slot0 );
 
-				CRenderPass ResolveToPrevious( ViewportWidth, ViewportHeight, Camera );
+				CRenderPass ResolveToPrevious( "ResolveToPrevious", ViewportWidth, ViewportHeight, Camera );
 				ResolveToPrevious.Target = &BufferPrevious;
 				DrawCalls += ResolveToPrevious.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 			}
@@ -383,17 +381,20 @@ void CRenderer::DrawQueuedRenderables()
 				FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot0 );
 				FramebufferRenderable.SetTexture( BufferSource, ETextureSlot::Slot1 );
 
-				CRenderPass ResolveToViewport( ViewportWidth, ViewportHeight, Camera );
+				CRenderPass ResolveToViewport( "ResolveToViewport", ViewportWidth, ViewportHeight, Camera );
 				DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 			}
 		}
 	}
 
-	for( auto& Pass : Passes )
 	{
-		if( Pass.Pass && Pass.Location == ERenderPassLocation::Standard )
+		Profile( "ERenderPassLocation::Standard" );
+		for( auto& Pass : Passes )
 		{
-			Pass.Pass->Render( GlobalUniformBuffers );
+			if( Pass.Pass && Pass.Location == ERenderPassLocation::Standard )
+			{
+				Pass.Pass->Render( GlobalUniformBuffers );
+			}
 		}
 	}
 

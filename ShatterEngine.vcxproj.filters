@@ -120,6 +120,9 @@
     <Filter Include="Source Files\Engine\World\Entity\TriggerProximityEntity">
       <UniqueIdentifier>{baaf6e28-74fd-4a86-9067-26c7a55708f8}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Physics">
+      <UniqueIdentifier>{e5aabfae-81bb-4537-88cd-68f4e634edf3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -271,6 +274,12 @@
     </ClCompile>
     <ClCompile Include="ThirdParty\imgui-1.70\imgui_widgets.cpp">
       <Filter>Source Files\ThirdParty\imgui</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\Physics.cpp">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\PhysicsComponent.cpp">
+      <Filter>Source Files\Engine\Physics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -495,6 +504,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Display\Rendering\TextureEnumerators.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\Physics.h">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\PhysicsComponent.h">
+      <Filter>Source Files\Engine\Physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

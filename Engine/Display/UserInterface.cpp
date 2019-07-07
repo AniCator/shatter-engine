@@ -195,7 +195,10 @@ namespace UI
 
 	void AddBox( const Vector3D& Center, const Vector3D& Size, Color::Type Color )
 	{
-
+		const Vector3D HalfSize = Size * 0.5f;
+		const Vector3D Minimum = Center - Size;
+		const Vector3D Maximum = Center + Size;
+		AddAABB( Minimum, Maximum, Color );
 	}
 
 	void Reset()

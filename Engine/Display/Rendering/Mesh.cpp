@@ -210,7 +210,7 @@ bool CMesh::CreateIndexBuffer( const FPrimitive& Primitive )
 	}
 	else
 	{
-		Log::Event( Log::Error, "Mesh index buffer has already been created.\n" );
+		Log::Event( Log::Warning, "Mesh index buffer has already been created.\n" );
 
 		return false;
 	}

@@ -50,6 +50,56 @@ static const GLenum FilteringModeToEnum[static_cast<EFilteringModeType>( EFilter
 	GL_LINEAR
 };
 
+static const GLenum ImageFormatToType[static_cast<EImageFormatType>( EImageFormat::Maximum )]
+{
+	GL_UNSIGNED_BYTE,
+
+	GL_UNSIGNED_BYTE,
+	GL_UNSIGNED_BYTE,
+	GL_UNSIGNED_BYTE,
+	GL_UNSIGNED_BYTE,
+
+	GL_UNSIGNED_SHORT,
+	GL_UNSIGNED_SHORT,
+	GL_UNSIGNED_SHORT,
+	GL_UNSIGNED_SHORT,
+
+	GL_UNSIGNED_INT,
+	GL_UNSIGNED_INT,
+	GL_UNSIGNED_INT,
+	GL_UNSIGNED_INT,
+
+	GL_FLOAT,
+	GL_FLOAT,
+	GL_FLOAT,
+	GL_FLOAT
+};
+
+static const GLenum ImageFormatToFormat[static_cast<EImageFormatType>( EImageFormat::Maximum )]
+{
+	GL_RGB,
+
+	GL_RED,
+	GL_RG,
+	GL_RGB,
+	GL_RGBA,
+
+	GL_RED,
+	GL_RG,
+	GL_RGB,
+	GL_RGBA,
+
+	GL_RED,
+	GL_RG,
+	GL_RGB,
+	GL_RGBA,
+
+	GL_RED,
+	GL_RG,
+	GL_RGB,
+	GL_RGBA,
+};
+
 CTexture::CTexture()
 {
 	Location = "";
@@ -59,7 +109,10 @@ CTexture::CTexture()
 	Height = 0;
 	Channels = 0;
 
-	ImageData = nullptr;
+	ImageData8 = nullptr;
+	ImageData16 = nullptr;
+	ImageData32 = nullptr;
+	ImageData32F = nullptr;
 
 	FilteringMode = EFilteringMode::Linear;
 }
@@ -71,13 +124,14 @@ CTexture::CTexture( const char* FileLocation ) : CTexture()
 
 CTexture::~CTexture()
 {
+	auto ImageData = GetImageData();
 	if( ImageData )
 	{
 		stbi_image_free( ImageData );
 	}
 }
 
-bool CTexture::Load()
+bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredFormat )
 {
 	CFile TextureSource( Location.c_str() );
 	const std::string Extension = TextureSource.Extension();
@@ -88,9 +142,23 @@ bool CTexture::Load()
 	if( Supported && TextureSource.Load( true ) )
 	{
 		stbi_set_flip_vertically_on_load( 1 );
-		ImageData = stbi_load_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
 
-		if( Load( ImageData, Width, Height, Channels, FilteringMode ) )
+		if( PreferredFormat > EImageFormat::RGBA16 )
+		{
+			ImageData32F = stbi_loadf_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
+		}
+		else if( PreferredFormat > EImageFormat::RGBA8 )
+		{
+			ImageData16 = stbi_load_16_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
+		}
+		else
+		{
+			ImageData8 = stbi_load_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
+		}
+
+		FilteringMode = Mode;
+
+		if( Load( nullptr, Width, Height, Channels, FilteringMode, PreferredFormat ) )
 		{
 			return true;
 		}
@@ -101,17 +169,24 @@ bool CTexture::Load()
 	}
 	else
 	{
-		Log::Event( Log::Error, "Failed to load texture (\"%s\").\n", Location.c_str() );
+		Log::Event( Log::Warning, "Failed to load texture (\"%s\").\n", Location.c_str() );
 	}
 
 	return false;
 }
 
-bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn, const int ChannelsIn, const EFilteringMode ModeIn )
+bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn, const int ChannelsIn, const EFilteringMode ModeIn, const EImageFormat PreferredFormatIn )
 {
 	bool Supported = false;
 
-	if( !Data || WidthIn < 1 || HeightIn < 1 || ChannelsIn < 1 )
+	const void* Pixels = Data;
+
+	if( !Pixels )
+	{
+		Pixels = GetImageData();
+	}
+
+	if( !Pixels || WidthIn < 1 || HeightIn < 1 || ChannelsIn < 1 )
 		return false;
 
 	glGenTextures( 1, &Handle );
@@ -127,10 +202,13 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilteringModeToEnum[Mode] );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, FilteringModeToEnum[Mode] );
 
-	ImageData = Data;
 	Width = WidthIn;
 	Height = HeightIn;
 	Channels = ChannelsIn;
+
+	const auto ImageFormat = static_cast<EImageFormatType>( PreferredFormatIn );
+	// auto Format = ImageFormatToFormat[ImageFormat];
+	auto Type = ImageFormatToType[ImageFormat];
 
 	const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
 	const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
@@ -138,22 +216,22 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	{
 		if( Channels == 1 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, Width, Height, 0, GL_RED, GL_UNSIGNED_BYTE, ImageData );
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, Width, Height, 0, GL_RED, Type, Pixels );
 			Supported = true;
 		}
 		else if( Channels == 2 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RG, Width, Height, 0, GL_RG, GL_UNSIGNED_BYTE, ImageData );
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RG, Width, Height, 0, GL_RG, Type, Pixels );
 			Supported = true;
 		}
 		else if( Channels == 3 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, GL_UNSIGNED_BYTE, ImageData );
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, Type, Pixels );
 			Supported = true;
 		}
 		else if( Channels == 4 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA, GL_UNSIGNED_BYTE, ImageData );
+			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA, Type, Pixels );
 			Supported = true;
 		}
 	}
@@ -188,4 +266,18 @@ const int CTexture::GetWidth() const
 const int CTexture::GetHeight() const
 {
 	return Height;
+}
+
+void* CTexture::GetImageData() const
+{
+	if( ImageData8 )
+		return ImageData8;
+	else if( ImageData16 )
+		return ImageData16;
+	else if( ImageData32 )
+		return ImageData32;
+	else if( ImageData32F )
+		return ImageData32F;
+
+	return nullptr;
 }

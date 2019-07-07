@@ -93,6 +93,7 @@ public:
 
 	virtual void Construct();
 	virtual void Tick() {};
+	virtual void Frame() {};
 	virtual void Destroy();
 
 	virtual void Load( const JSON::Vector& Objects );

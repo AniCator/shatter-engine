@@ -19,6 +19,7 @@ public:
 	~CLevel();
 
 	void Construct();
+	void Frame();
 	void Tick();
 	void Destroy();
 

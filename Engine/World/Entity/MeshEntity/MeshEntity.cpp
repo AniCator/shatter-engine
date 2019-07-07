@@ -3,7 +3,11 @@
 
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
+#include <Engine/Physics/Physics.h>
+#include <Engine/Physics/PhysicsComponent.h>
+#include <Engine/Profiling/Profiling.h>
 #include <Engine/Resource/Assets.h>
+#include <Engine/World/World.h>
 
 #include <Engine/Display/UserInterface.h>
 
@@ -13,15 +17,19 @@ CMeshEntity::CMeshEntity()
 {
 	Mesh = nullptr;
 	Shader = nullptr;
-	Texture = nullptr;
+	Textures.reserve( 8 );
 	Renderable = nullptr;
+	PhysicsComponent = nullptr;
+	Static = true;
+	Contact = false;
+	Collision = true;
 
 	Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
 }
 
 CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CPointEntity()
 {
-	// Spawn( Mesh, Shader, Texture, Transform );
+	
 }
 
 CMeshEntity::~CMeshEntity()
@@ -33,13 +41,9 @@ void CMeshEntity::Spawn( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTrans
 {
 	this->Mesh = Mesh;
 	this->Shader = Shader;
-	this->Texture = Texture;
+	Textures.clear();
+	Textures.emplace_back( Texture );
 	this->Transform = Transform;
-
-	/*if( !this->Shader )
-	{
-		this->Shader = CAssets::Get().FindShader( "pyramidocean" );
-	}*/
 }
 
 void CMeshEntity::Construct()
@@ -54,14 +58,42 @@ void CMeshEntity::Construct()
 			Renderable->SetShader( Shader );
 		}
 
-		if( Texture )
+		if( Textures.size() > 0 )
 		{
-			Renderable->SetTexture( Texture, ETextureSlot::Slot0 );
+			size_t Index = 0;
+			for( auto Texture : Textures )
+			{
+				if( Texture )
+				{
+					Renderable->SetTexture( Texture, static_cast<ETextureSlot>( Index ) );
+				}
+
+				Index++;
+
+				if( Index >= static_cast<size_t>( ETextureSlot::Maximum ) )
+				{
+					break;
+				}
+			}
 		}
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
 		RenderData.Color = Color;
+
+		auto World = GetWorld();
+		if( World && Collision )
+		{
+			auto Physics = World->GetPhysics();
+			if( Physics )
+			{
+				if( !PhysicsComponent )
+				{
+					PhysicsComponent = new CPhysicsComponent( this );
+					PhysicsComponent->Construct( Physics );
+				}
+			}
+		}
 	}
 }
 
@@ -69,6 +101,15 @@ void CMeshEntity::Tick()
 {
 	if( Renderable )
 	{
+		if( ShouldUpdateTransform )
+		{
+			FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+			RenderData.Transform = Transform;
+			RenderData.Color = Color;
+
+			GetTransform();
+		}
+
 		CRenderer& Renderer = CWindow::Get().GetRenderer();
 		Renderer.QueueRenderable( Renderable );
 	}
@@ -76,7 +117,12 @@ void CMeshEntity::Tick()
 
 void CMeshEntity::Destroy()
 {
-
+	if( PhysicsComponent )
+	{
+		PhysicsComponent->Destroy( GetWorld()->GetPhysics() );
+		delete PhysicsComponent;
+		PhysicsComponent = nullptr;
+	}
 }
 
 void CMeshEntity::Debug()
@@ -90,7 +136,7 @@ void CMeshEntity::Debug()
 		auto Minimum = Transform.Position( Math::ToGLM( AABB.Minimum ) );
 		auto Maximum = Transform.Position( Math::ToGLM( AABB.Maximum ) );
 
-		UI::AddAABB( Math::FromGLM( Minimum ), Math::FromGLM( Maximum ) );
+		UI::AddAABB( Math::FromGLM( Minimum ), Math::FromGLM( Maximum ), Contact ? UI::Color::Red : UI::Color::Blue );
 	}
 }
 
@@ -102,6 +148,8 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 	CMesh* Mesh = nullptr;
 	CShader* Shader = nullptr;
 	CTexture* Texture = nullptr;
+
+	TextureNames.clear();
 
 	for( auto Property : Objects )
 	{
@@ -115,7 +163,17 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "texture" )
 		{
-			TextureName = Property->Value;
+			if( Property->Objects.size() > 0 )
+			{
+				for( auto TextureProperty : Property->Objects )
+				{
+					TextureNames.emplace_back( TextureProperty->Value );
+				}
+			}
+			else
+			{
+				TextureNames.emplace_back( Property->Value );
+			}
 		}
 		else if( Property->Key == "color" )
 		{
@@ -131,6 +189,17 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 				Color = glm::vec4( Components[0], Components[1], Components[2], Components[3] );
 			}
 		}
+		else if( Property->Key == "collision" )
+		{
+			if( Property->Value == "0" )
+			{
+				Collision = false;
+			}
+			else
+			{
+				Collision = true;
+			}
+		}
 	}
 
 	Reload();
@@ -141,9 +210,14 @@ void CMeshEntity::Reload()
 	CAssets& Assets = CAssets::Get();
 	CMesh* Mesh = Assets.FindMesh( MeshName );
 	CShader* Shader = Assets.FindShader( ShaderName );
-	CTexture* Texture = Assets.FindTexture( TextureName );
 
-	Spawn( Mesh, Shader, Texture, Transform );
+	Spawn( Mesh, Shader, nullptr, Transform );
+
+	Textures.clear();
+	for( auto TextureName : TextureNames )
+	{
+		Textures.emplace_back( Assets.FindTexture( TextureName ) );
+	}
 }
 
 void CMeshEntity::Import( CData& Data )
@@ -152,7 +226,14 @@ void CMeshEntity::Import( CData& Data )
 
 	FDataString::Decode( Data, MeshName );
 	FDataString::Decode( Data, ShaderName );
-	FDataString::Decode( Data, TextureName );
+
+	size_t Size = 0;
+	Data >> Size;
+	for( size_t Index = 0; Index < Size; Index++ )
+	{
+		TextureNames.emplace_back();
+		FDataString::Decode( Data, TextureNames.back() );
+	}
 
 	Data >> Color;
 }
@@ -163,7 +244,19 @@ void CMeshEntity::Export( CData& Data )
 
 	FDataString::Encode( Data, MeshName );
 	FDataString::Encode( Data, ShaderName );
-	FDataString::Encode( Data, TextureName );
+	
+	size_t Size = TextureNames.size();
+	Data << Size;
+
+	for( auto TextureName : TextureNames )
+	{
+		FDataString::Encode( Data, TextureName );
+	}
 
 	Data << Color;
+}
+
+bool CMeshEntity::IsStatic() const
+{
+	return Static;
 }

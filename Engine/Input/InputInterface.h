@@ -6,6 +6,7 @@
 #include <Engine/Event/ActionTarget.h>
 #include <Engine/Input/InputMap.h>
 #include <Engine/Utility/Service/Service.h>
+#include <Engine/Utility/Structures/Name.h>
 
 struct GLFWwindow;
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Action, int Modifiers );
@@ -44,6 +45,7 @@ struct FActionBinding
 {
 	FActionBinding()
 	{
+		ActionName = FName( "unknown" );
 		BindingType = EActionBindingType::Keyboard;
 		BindingInput = static_cast<EKeyType>( EKey::Unknown );
 		BindingAction = EAction::Release;
@@ -51,6 +53,7 @@ struct FActionBinding
 		TargetFunc = 0;
 	}
 
+	FName ActionName;
 	EActionBindingType BindingType;
 	EKeyType BindingInput;
 	EAction BindingAction;

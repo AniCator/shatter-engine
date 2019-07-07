@@ -79,6 +79,28 @@ void ParsePayload(FPrimitivePayload* Payload )
 	}
 }
 
+static const std::map<std::string, EImageFormat> ImageFormatFromString = {
+	std::make_pair("r8", EImageFormat::R8),
+	std::make_pair("rg8", EImageFormat::RG8),
+	std::make_pair("rgb8", EImageFormat::RGB8),
+	std::make_pair("rgba8", EImageFormat::RGBA8),
+
+	std::make_pair( "r16", EImageFormat::R16 ),
+	std::make_pair( "rg16", EImageFormat::RG16 ),
+	std::make_pair( "rgb16", EImageFormat::RGB16 ),
+	std::make_pair( "rgba16", EImageFormat::RGBA16 ),
+
+	std::make_pair( "r32", EImageFormat::R32 ),
+	std::make_pair( "rg32", EImageFormat::RG32 ),
+	std::make_pair( "rgb32", EImageFormat::RGB32 ),
+	std::make_pair( "rgba32", EImageFormat::RGBA32 ),
+
+	std::make_pair( "r32f", EImageFormat::R32F ),
+	std::make_pair( "rg32f", EImageFormat::RG32F ),
+	std::make_pair( "rgb32f", EImageFormat::RGB32F ),
+	std::make_pair( "rgba32f", EImageFormat::RGBA32F ),
+};
+
 void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
 {
 	CTimer LoadTimer;
@@ -92,6 +114,7 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 
 		if( !FindMesh( Payload.Name ) )
 		{
+			Log::Event( "Queued mesh \"%s\".\n", Payload.Name.c_str() );
 			Futures.emplace_back( std::async( std::launch::async, ParsePayload, &Payload ) );
 		}
 	}
@@ -100,10 +123,12 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 	{
 		if( Payload.Type == EAsset::Mesh )
 		{
+			Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
 			CreateNamedMesh( Payload.Name.c_str(), Payload.Location1.c_str() );
 		}
 		else if( Payload.Type == EAsset::Shader )
 		{
+			Log::Event( "Loading shader \"%s\".\n", Payload.Name.c_str() );
 			if( Payload.Location2.length() > 0 )
 			{
 				CreateNamedShader( Payload.Name.c_str(), Payload.Location1.c_str(), Payload.Location2.c_str() );
@@ -115,7 +140,24 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 		}
 		else if( Payload.Type == EAsset::Texture )
 		{
-			CreateNamedTexture( Payload.Name.c_str(), Payload.Location1.c_str() );
+			Log::Event( "Loading texture \"%s\".\n", Payload.Name.c_str() );
+
+			EFilteringMode Mode = EFilteringMode::Linear;
+			EImageFormat ImageFormat = EImageFormat::RGB8;
+
+			if( Payload.Location2.size() > 0 )
+			{
+				// Transform given format into lower case string
+				std::transform( Payload.Location2.begin(), Payload.Location2.end(), Payload.Location2.begin(), ::tolower );
+
+				auto Format = ImageFormatFromString.find( Payload.Location2 );
+				if( Format != ImageFormatFromString.end() )
+				{
+					ImageFormat = Format->second;
+				}
+			}
+
+			CreateNamedTexture( Payload.Name.c_str(), Payload.Location1.c_str(), Mode, ImageFormat );
 		}
 		else if( Payload.Type == EAsset::Sound )
 		{
@@ -123,6 +165,7 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 			CSound* NewSound = FindSound( Payload.Name );
 			if( NewSound )
 			{
+				Log::Event( "Loading sound \"%s\".\n", Payload.Name.c_str() );
 				NewSound->Load( Payload.Location1.c_str() );
 			}
 		}
@@ -137,10 +180,12 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 	{
 		if( Payload.Native && Payload.Primitive.Vertices && Payload.Primitive.VertexCount > 0 )
 		{
+			Log::Event( "Loading mesh (2nd pass) \"%s\".\n", Payload.Name.c_str() );
 			CreateNamedMesh( Payload.Name.c_str(), Payload.Primitive );
 		}
 		else if( !Payload.Native )
 		{
+			Log::Event( "Loading non-native mesh \"%s\".\n", Payload.Name.c_str() );
 			// Try to load the mesh synchronously.
 			CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
 		}
@@ -343,7 +388,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 	return nullptr;
 }
 
-CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode )
+CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode, const EImageFormat Format )
 {
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -356,8 +401,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 	}
 
 	CTexture* NewTexture = new CTexture( FileLocation );
-	NewTexture->FilteringMode = Mode;
-	const bool bSuccessfulCreation = NewTexture->Load();
+	const bool bSuccessfulCreation = NewTexture->Load( Mode, Format );
 
 	if( bSuccessfulCreation )
 	{
@@ -380,7 +424,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 	return nullptr;
 }
 
-CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode )
+CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode, const EImageFormat Format )
 {
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -393,7 +437,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 	}
 
 	CTexture* NewTexture = new CTexture();
-	const bool bSuccessfulCreation = NewTexture->Load( Data, Width, Height, Channels, Mode );
+	const bool bSuccessfulCreation = NewTexture->Load( Data, Width, Height, Channels, Mode, Format );
 
 	if( bSuccessfulCreation )
 	{

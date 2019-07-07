@@ -52,4 +52,6 @@ private:
 
 	SoundBufferHandle Select();
 	uint32_t Location;
+
+	bool Loaded;
 };

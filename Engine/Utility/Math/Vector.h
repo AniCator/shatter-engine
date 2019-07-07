@@ -43,7 +43,9 @@ namespace SIMDMath
 class Vector2D
 {
 public:
-	float X, Y;
+	union { float X, R, S; };
+	union { float Y, G, T; };
+
 	Vector2D() = default;
 	Vector2D( float X, float Y )
 	{
@@ -172,7 +174,10 @@ public:
 class Vector3D
 {
 public:
-	float X, Y, Z;
+	union { float X, R, S; };
+	union { float Y, G, T; };
+	union { float Z, B, P; };
+
 	Vector3D() = default;
 	Vector3D( float X, float Y, float Z )
 	{
@@ -343,10 +348,13 @@ public:
 
 	inline Vector3D Normalized()
 	{
-		const float LengthBiased = 1.f / ( Length( *this ) + FLT_EPSILON );
-		*this *= LengthBiased;
+		Vector3D Unit = *this;
+		const float LengthBiased = 1.f / ( Length( Unit ) + FLT_EPSILON );
+		Unit *= LengthBiased;
 
-		return *this;
+		*this = Unit;
+
+		return Unit;
 	}
 
 	inline float Normalize()
@@ -370,7 +378,11 @@ public:
 class Vector4D
 {
 public:
-	float X, Y, Z, W;
+	union { float X, R, S; };
+	union { float Y, G, T; };
+	union { float Z, B, P; };
+	union { float W, A, Q; };
+
 	Vector4D() = default;
 	Vector4D( float X, float Y, float Z, float W )
 	{

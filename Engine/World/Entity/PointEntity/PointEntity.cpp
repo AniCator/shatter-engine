@@ -45,9 +45,22 @@ const FTransform& CPointEntity::GetTransform()
 				auto& ParentTransform = Entity->GetTransform();
 			}
 		}
+
+		ShouldUpdateTransform = false;
 	}
 
 	return WorldTransform;
+}
+
+const FTransform& CPointEntity::GetLocalTransform()
+{
+	return Transform;
+}
+
+void CPointEntity::SetTransform(const FTransform& TransformIn )
+{
+	Transform = TransformIn;
+	ShouldUpdateTransform = true;
 }
 
 void CPointEntity::Load( const JSON::Vector& Objects )

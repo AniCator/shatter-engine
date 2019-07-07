@@ -16,7 +16,7 @@ class CRenderTexture;
 class CRenderPass
 {
 public:
-	CRenderPass(int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
+	CRenderPass(const std::string& Name, int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
 
 	virtual uint32_t RenderRenderable( CRenderable* Renderable );
 	virtual uint32_t RenderRenderable( CRenderable* Renderable, const std::unordered_map<std::string, Vector4D>& Uniforms );
@@ -46,4 +46,7 @@ public:
 	bool AlwaysClear;
 
 	EBlendMode::Type BlendMode;
+
+private:
+	std::string PassName;
 };

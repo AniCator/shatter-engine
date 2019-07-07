@@ -62,7 +62,7 @@ void CGameLayers::Frame()
 
 void CGameLayers::Tick()
 {
-	Profile( "Game" );
+	// Profile( "Game" );
 
 	Vector4D Time;
 	Time.X = static_cast<float>( GetCurrentTime() );

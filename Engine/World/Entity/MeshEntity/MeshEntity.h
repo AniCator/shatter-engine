@@ -8,6 +8,7 @@ class CMesh;
 class CShader;
 class CTexture;
 class CRenderable;
+class CPhysicsComponent;
 
 class CMeshEntity : public CPointEntity
 {
@@ -30,15 +31,24 @@ public:
 	virtual void Import( CData& Data ) override;
 	virtual void Export( CData& Data ) override;
 
+	virtual bool IsStatic() const;
+
 public:
 	CMesh* Mesh;
 	CShader* Shader;
-	CTexture* Texture;
+	std::vector<CTexture*> Textures;
 	CRenderable* Renderable;
 
 	glm::vec4 Color;
 
 	std::string MeshName;
 	std::string ShaderName;
-	std::string TextureName;
+	std::vector<std::string> TextureNames;
+
+	bool Contact;
+
+protected:
+	bool Collision;
+	bool Static;
+	CPhysicsComponent* PhysicsComponent;
 };

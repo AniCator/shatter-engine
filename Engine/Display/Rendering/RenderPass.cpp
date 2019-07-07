@@ -6,7 +6,7 @@
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
-
+#include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Math.h>
 
 #include <ThirdParty/glm/glm.hpp>
@@ -14,7 +14,7 @@
 
 GLuint ShaderProgramHandle = -1;
 
-CRenderPass::CRenderPass( int Width, int Height, const CCamera& CameraIn, const bool AlwaysClearIn )
+CRenderPass::CRenderPass( const std::string& Name, int Width, int Height, const CCamera& CameraIn, const bool AlwaysClearIn )
 {
 	ViewportWidth = Width;
 	ViewportHeight = Height;
@@ -22,10 +22,12 @@ CRenderPass::CRenderPass( int Width, int Height, const CCamera& CameraIn, const 
 	AlwaysClear = AlwaysClearIn;
 	Target = nullptr;
 	BlendMode = EBlendMode::Opaque;
+	PassName = Name;
 }
 
 uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable )
 {
+	Profile( PassName.c_str() );
 	Begin();
 
 	Draw( Renderable );
@@ -37,6 +39,7 @@ uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable )
 
 uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable, const std::unordered_map<std::string, Vector4D>& Uniforms )
 {
+	Profile( PassName.c_str() );
 	Begin();
 
 	Setup( Renderable, Uniforms );
@@ -49,6 +52,7 @@ uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable, const std::unor
 
 uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables )
 {
+	Profile( PassName.c_str() );
 	Begin();
 
 	for( auto Renderable : Renderables )
@@ -63,6 +67,7 @@ uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables )
 
 uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, const std::unordered_map<std::string, Vector4D>& Uniforms )
 {
+	Profile( PassName.c_str() );
 	Begin();
 
 	for( auto Renderable : Renderables )

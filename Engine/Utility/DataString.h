@@ -55,7 +55,7 @@ struct FDataString
 		return Data;
 	}
 
-	static void Encode( CData& Data, std::string& Object )
+	static void Encode( CData& Data, const std::string& Object )
 	{
 		Data << FDataString( Object );
 	}

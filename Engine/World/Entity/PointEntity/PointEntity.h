@@ -12,6 +12,8 @@ public:
 	virtual ~CPointEntity() override;
 
 	virtual const FTransform& GetTransform();
+	virtual const FTransform& GetLocalTransform();
+	virtual void SetTransform(const FTransform& Transform );
 	virtual void Load( const JSON::Vector& Objects ) override;
 
 	virtual void Debug() override;

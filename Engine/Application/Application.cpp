@@ -59,7 +59,7 @@ void InputPauseGameEnable()
 
 void InputPauseGameDisable()
 {
-	PauseGame = false;
+	PauseGame = !PauseGame;
 }
 
 void InputReloadConfiguration()
@@ -70,6 +70,8 @@ void InputReloadConfiguration()
 void InputRestartGameLayers(CApplication* Application)
 {
 	RestartLayers = false;
+
+	MainWindow.RenderFrame();
 
 	if( Application )
 	{
@@ -317,11 +319,7 @@ void SetTheme( const char* Theme )
 	}
 }
 
-#if defined(_DEBUG)
-static bool DisplayLog = true;
-#else
 static bool DisplayLog = false;
-#endif
 static bool ExportDialog = false;
 static size_t PreviousSize = 0;
 void DebugMenu( CApplication* Application )
@@ -600,6 +598,7 @@ CApplication::CApplication()
 	Name = "Unnamed Shatter Engine Application";
 	Tools = false;
 	DefaultExit = true;
+	WaitForInput = false;
 }
 
 CApplication::~CApplication()
@@ -628,7 +627,7 @@ void CApplication::Run()
 
 	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
-	const uint64_t MaximumFrameTime = 1000 / CConfiguration::Get().GetInteger( "fps", 60 );
+	const uint64_t MaximumFrameTime = FPSLimit > 0 ? 1000 / FPSLimit : 999;
 
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
 	CSimpleSound::Volume( GlobalVolume );
@@ -641,6 +640,7 @@ void CApplication::Run()
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
 		if( RenderDeltaTime >= MaximumFrameTime || FPSLimit < 1 )
 		{
+			CTimerScope Scope_( "Frametime", false );
 			const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 			if( InputDeltaTime >= MaximumInputTime )
 			{
@@ -649,7 +649,6 @@ void CApplication::Run()
 				InputTimer.Start();
 			}
 
-			CTimerScope Scope_( "Frametime", false );
 			MainWindow.BeginFrame();
 
 			const float TimeScale = ScaleTime ? 0.25f : 1.0f;
@@ -657,6 +656,21 @@ void CApplication::Run()
 			const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
 			if( GameDeltaTime >= MaximumGameTime )
 			{
+				if( !Tools )
+				{
+					if( MainWindow.IsCursorEnabled() )
+					{
+						MainWindow.EnableCursor( false );
+					}
+				}
+				else
+				{
+					if( !MainWindow.IsCursorEnabled() )
+					{
+						MainWindow.EnableCursor( true );
+					}
+				}
+
 				if( !PauseGame )
 				{
 					CProfiler::Get().Clear();
@@ -669,21 +683,6 @@ void CApplication::Run()
 					// Update time
 					GameLayersInstance->Time( ScaledGameTime );
 					GameLayersInstance->SetTimeScale( TimeScaleGlobal );
-
-					if( !Tools )
-					{
-						if( MainWindow.IsCursorEnabled() )
-						{
-							MainWindow.EnableCursor( false );
-						}
-					}
-					else
-					{
-						if( !MainWindow.IsCursorEnabled() )
-						{
-							MainWindow.EnableCursor( true );
-						}
-					}
 
 					// Tick all game layers
 					GameLayersInstance->Tick();
@@ -735,7 +734,7 @@ void CApplication::InitializeDefaultInputs()
 
 	Input.ClearActionBindings();
 
-	Input.AddActionBinding( EKey::Space, EAction::Press, InputPauseGameEnable );
+	// Input.AddActionBinding( EKey::Space, EAction::Press, InputPauseGameEnable );
 	Input.AddActionBinding( EKey::Space, EAction::Release, InputPauseGameDisable );
 
 	Input.AddActionBinding( EKey::Enter, EAction::Press, InputScaleTimeEnable );
@@ -890,6 +889,10 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 				exit( 1337 );
 			}
 		}
+		else if( strcmp( argv[Index], "-waitforinput" ) == 0 )
+		{
+			WaitForInput = true;
+		}
 	}
 }
 
@@ -1018,7 +1021,7 @@ void CApplication::Initialize()
 		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
 		if( ImGui::Begin( "Loading", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
 		{
-			ImGui::Text( "Loading..." );
+			ImGui::Text( "Starting the Shatter Engine..." );
 			ImGui::End();
 		}
 
@@ -1062,6 +1065,16 @@ void CApplication::Initialize()
 	UnregisterDebugUI();
 
 	// CAngelEngine::Get().Initialize();
+
+	if( WaitForInput )
+	{
+		while( glfwGetKey( WindowHandle, 32 ) != GLFW_PRESS )
+		{
+			glfwPollEvents();
+		}
+
+		WaitForInput = false;
+	}
 
 	GameLayersInstance->Initialize();
 }

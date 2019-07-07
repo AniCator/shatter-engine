@@ -29,7 +29,7 @@ public:
 		WritePosition = WritePosition % BufferSize;
 	}
 
-	T Get( size_t Position )
+	T& Get( size_t Position )
 	{
 		if( Position < BufferSize )
 		{
@@ -41,12 +41,12 @@ public:
 		}
 	}
 
-	size_t Size()
+	size_t Size() const
 	{
 		return BufferSize;
 	}
 
-	size_t Offset( int Bias = 0 )
+	size_t Offset( int Bias = 0 ) const
 	{
 		if( Bias == 0 )
 		{

@@ -9,7 +9,8 @@
 enum class EShaderType : uint16_t
 {
 	Vertex = GL_VERTEX_SHADER,
-	Fragment = GL_FRAGMENT_SHADER
+	Fragment = GL_FRAGMENT_SHADER,
+	Compute = GL_COMPUTE_SHADER
 };
 
 namespace EBlendMode

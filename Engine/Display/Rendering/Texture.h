@@ -16,15 +16,16 @@ public:
 	CTexture( const char* FileLocation );
 	~CTexture();
 
-	bool Load();
-	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear );
+	bool Load( const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
+	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
 	void Bind( ETextureSlot Slot );
 
 	const int GetWidth() const;
 	const int GetHeight() const;
 
-	EFilteringMode FilteringMode;
+	void* GetImageData() const;
 
+	EFilteringMode FilteringMode;
 protected:
 	GLuint Handle;
 	std::string Location;
@@ -33,5 +34,8 @@ protected:
 	int Height;
 	int Channels;
 
-	unsigned char* ImageData;
+	unsigned char* ImageData8;
+	unsigned short* ImageData16;
+	unsigned int* ImageData32;
+	float* ImageData32F;
 };

@@ -37,6 +37,14 @@ void CLevel::Construct()
 	}
 }
 
+void CLevel::Frame()
+{
+	for( auto Entity : Entities )
+	{
+		Entity->Frame();
+	}
+}
+
 void CLevel::Tick()
 {
 	for( auto Entity : Entities )
@@ -99,8 +107,11 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 							ESoundPlayMode::Type PlayMode = ESoundPlayMode::Sequential;
 
 							// Shader-specific path storage.
-							std::string VertexPath;
-							std::string FragmentPath;
+							std::string VertexPath = "";
+							std::string FragmentPath = "";
+
+							// Texture format storage
+							std::string ImageFormat = "";
 
 							for( auto Property : Asset->Objects )
 							{
@@ -148,9 +159,13 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 								{
 									FragmentPath = Property->Value;
 								}
+								else if( Property->Key == "format" )
+								{
+									ImageFormat = Property->Value;
+								}
 							}
 
-							if( Name.length() > 0 && Paths.size() > 0 )
+							if( Name.length() > 0 && ( Paths.size() > 0 || ( VertexPath.size() > 0 && FragmentPath.size() > 0 ) ) )
 							{
 								if( Mesh )
 								{
@@ -193,6 +208,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 										Payload.Type = EAsset::Texture;
 										Payload.Name = Name;
 										Payload.Location1 = Path;
+										Payload.Location2 = ImageFormat;
 										GenericAssets.emplace_back( Payload );
 									}
 								}

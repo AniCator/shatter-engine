@@ -17,7 +17,7 @@ public:
 
 	FName& operator=( const FName& Name );
 	FName& operator=( const std::string& String );
-	std::string String() const;
+	const std::string& String() const;
 
 	bool operator==( const FName& Name ) const;
 	bool operator<( const FName& Name ) const;

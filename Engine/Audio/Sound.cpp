@@ -7,6 +7,7 @@
 CSound::CSound( ESoundType::Type TypeIn )
 {
 	SoundType = TypeIn;
+	Loaded = false;
 }
 
 CSound::~CSound()
@@ -16,16 +17,21 @@ CSound::~CSound()
 
 bool CSound::Load( const char* FileLocation )
 {
-	if( SoundType == ESoundType::Memory )
+	if( true ) // TODO: The loading thing doesn't work yet.
 	{
-		BufferHandles.push_back( CSimpleSound::Sound( FileLocation ) );
-	}
-	else
-	{
-		StreamHandles.push_back( CSimpleSound::Music( FileLocation ) );
+		if( SoundType == ESoundType::Memory )
+		{
+			BufferHandles.push_back( CSimpleSound::Sound( FileLocation ) );
+		}
+		else
+		{
+			StreamHandles.push_back( CSimpleSound::Music( FileLocation ) );
+		}
+
+		Loaded = true;
 	}
 
-	return true;
+	return Loaded;
 }
 
 void CSound::Clear()

@@ -89,3 +89,32 @@ enum class EFilteringMode : uint32_t
 };
 
 typedef std::underlying_type<EFilteringMode>::type EFilteringModeType;
+
+enum class EImageFormat : uint32_t
+{
+	Unknown = 0,
+
+	R8,
+	RG8,
+	RGB8,
+	RGBA8,
+
+	R16,
+	RG16,
+	RGB16,
+	RGBA16,
+
+	R32,
+	RG32,
+	RGB32,
+	RGBA32,
+
+	R32F,
+	RG32F,
+	RGB32F,
+	RGBA32F,
+
+	Maximum
+};
+
+typedef std::underlying_type<EImageFormat>::type EImageFormatType;

@@ -48,7 +48,7 @@ FName::FName()
 	Index = Invalid.Index;
 }
 
-std::string FName::String() const
+const std::string& FName::String() const
 {
 	const auto& NamePool = const_cast<FName*>( this )->Pool();
 	for( auto& Iterator : NamePool )

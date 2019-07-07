@@ -3,6 +3,7 @@
 
 #include <algorithm>
 
+#include <Engine/Physics/Physics.h>
 #include <Engine/World/Entity/Entity.h>
 
 static const char WorldIdentifier[5] = "LLWF"; // Lofty Lagoon World Format
@@ -11,16 +12,31 @@ static const size_t WorldVersion;
 CWorld::CWorld()
 {
 	ActiveLevel = nullptr;
+	Physics = nullptr;
 }
 
 CWorld::~CWorld()
 {
-
+	delete Physics;
+	Physics = nullptr;
 }
 
 void CWorld::Construct()
 {
 	Camera = nullptr;
+
+	if( Physics )
+	{
+		delete Physics;
+		Physics = nullptr;
+	}
+
+	Physics = new CPhysics();
+
+	if( Physics )
+	{
+		Physics->Construct();
+	}
 
 	for( auto Level : Levels )
 	{
@@ -28,9 +44,22 @@ void CWorld::Construct()
 	}
 }
 
+void CWorld::Frame()
+{
+	for( auto Level : Levels )
+	{
+		Level.Frame();
+	}
+}
+
 void CWorld::Tick()
 {
 	CameraPriority = 0;
+
+	if( Physics )
+	{
+		Physics->Tick();
+	}
 
 	for( auto Level : Levels )
 	{
@@ -46,6 +75,8 @@ void CWorld::Destroy()
 	{
 		Level.Destroy();
 	}
+
+	Physics->Destroy();
 }
 
 CLevel& CWorld::Add()
@@ -80,6 +111,11 @@ const FCameraSetup& CWorld::GetActiveCameraSetup() const
 	}
 
 	return DummySetup;
+}
+
+CPhysics* CWorld::GetPhysics()
+{
+	return Physics;
 }
 
 CData& operator<<( CData& Data, CWorld* World )

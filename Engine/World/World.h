@@ -10,6 +10,7 @@
 #include <Engine/Display/Rendering/Camera.h>
 
 class CEntity;
+class CPhysics;
 
 class CWorld
 {
@@ -18,6 +19,7 @@ public:
 	~CWorld();
 
 	void Construct();
+	void Frame();
 	void Tick();
 	void Destroy();
 
@@ -94,12 +96,16 @@ public:
 	CCamera* GetActiveCamera() const;
 	const FCameraSetup& GetActiveCameraSetup() const;
 
+	CPhysics* GetPhysics();
+
 private:
 	std::deque<CLevel> Levels;
 	CLevel* ActiveLevel;
 
 	CCamera* Camera;
 	uint32_t CameraPriority;
+
+	CPhysics* Physics;
 
 public:
 	friend CData& operator<<( CData& Data, CWorld* World );

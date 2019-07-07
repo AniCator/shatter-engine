@@ -43,6 +43,7 @@ private:
 	std::string Name;
 	bool Tools;
 	bool DefaultExit;
+	bool WaitForInput;
 
 	std::vector<DebugUIFunction> DebugUIFunctions;
 };
