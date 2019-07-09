@@ -80,20 +80,20 @@ void ParsePayload(FPrimitivePayload* Payload )
 }
 
 static const std::map<std::string, EImageFormat> ImageFormatFromString = {
-	std::make_pair("r8", EImageFormat::R8),
-	std::make_pair("rg8", EImageFormat::RG8),
-	std::make_pair("rgb8", EImageFormat::RGB8),
-	std::make_pair("rgba8", EImageFormat::RGBA8),
+	std::make_pair( "r8", EImageFormat::R8 ),
+	std::make_pair( "rg8", EImageFormat::RG8 ),
+	std::make_pair( "rgb8", EImageFormat::RGB8 ),
+	std::make_pair( "rgba8", EImageFormat::RGBA8 ),
 
 	std::make_pair( "r16", EImageFormat::R16 ),
 	std::make_pair( "rg16", EImageFormat::RG16 ),
 	std::make_pair( "rgb16", EImageFormat::RGB16 ),
 	std::make_pair( "rgba16", EImageFormat::RGBA16 ),
 
-	std::make_pair( "r32", EImageFormat::R32 ),
-	std::make_pair( "rg32", EImageFormat::RG32 ),
-	std::make_pair( "rgb32", EImageFormat::RGB32 ),
-	std::make_pair( "rgba32", EImageFormat::RGBA32 ),
+	std::make_pair( "r16f", EImageFormat::R16F ),
+	std::make_pair( "rg16f", EImageFormat::RG16F ),
+	std::make_pair( "rgb16f", EImageFormat::RGB16F ),
+	std::make_pair( "rgba16f", EImageFormat::RGBA16F ),
 
 	std::make_pair( "r32f", EImageFormat::R32F ),
 	std::make_pair( "rg32f", EImageFormat::RG32F ),

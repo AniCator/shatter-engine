@@ -61,8 +61,6 @@ public:
 							Vector3D CenterA = ( BoundsA.Maximum + BoundsA.Minimum ) * 0.5f;
 							Vector3D CenterB = ( BoundsB.Maximum + BoundsB.Minimum ) * 0.5f;
 							ComponentA->CorrectiveForce = ( CenterA - CenterB );
-							UI::AddAABB( BoundsA.Minimum, BoundsA.Maximum, UI::Color::Red );
-							UI::AddAABB( BoundsB.Minimum, BoundsB.Maximum, UI::Color::Green );
 						}
 					}
 				}

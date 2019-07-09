@@ -64,10 +64,10 @@ static const GLenum ImageFormatToType[static_cast<EImageFormatType>( EImageForma
 	GL_UNSIGNED_SHORT,
 	GL_UNSIGNED_SHORT,
 
-	GL_UNSIGNED_INT,
-	GL_UNSIGNED_INT,
-	GL_UNSIGNED_INT,
-	GL_UNSIGNED_INT,
+	GL_FLOAT,
+	GL_FLOAT,
+	GL_FLOAT,
+	GL_FLOAT,
 
 	GL_FLOAT,
 	GL_FLOAT,
@@ -98,6 +98,31 @@ static const GLenum ImageFormatToFormat[static_cast<EImageFormatType>( EImageFor
 	GL_RG,
 	GL_RGB,
 	GL_RGBA,
+};
+
+static const GLenum ImageFormatToInternalFormat[static_cast<EImageFormatType>( EImageFormat::Maximum )]
+{
+	GL_RGB8,
+
+	GL_R8,
+	GL_RG8,
+	GL_RGB8,
+	GL_RGBA8,
+
+	GL_R16,
+	GL_RG16,
+	GL_RGB16,
+	GL_RGBA16,
+
+	GL_R16F,
+	GL_RG16F,
+	GL_RGB16F,
+	GL_RGBA16F,
+
+	GL_R32F,
+	GL_RG32F,
+	GL_RGB32F,
+	GL_RGBA32F,
 };
 
 CTexture::CTexture()
@@ -209,6 +234,7 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	const auto ImageFormat = static_cast<EImageFormatType>( PreferredFormatIn );
 	// auto Format = ImageFormatToFormat[ImageFormat];
 	auto Type = ImageFormatToType[ImageFormat];
+	auto InternalFormat = ImageFormatToInternalFormat[ImageFormat];
 
 	const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
 	const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
@@ -216,22 +242,22 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	{
 		if( Channels == 1 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RED, Width, Height, 0, GL_RED, Type, Pixels );
+			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RED, Type, Pixels );
 			Supported = true;
 		}
 		else if( Channels == 2 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RG, Width, Height, 0, GL_RG, Type, Pixels );
+			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RG, Type, Pixels );
 			Supported = true;
 		}
 		else if( Channels == 3 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, Width, Height, 0, GL_RGB, Type, Pixels );
+			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RGB, Type, Pixels );
 			Supported = true;
 		}
 		else if( Channels == 4 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGBA, Width, Height, 0, GL_RGBA, Type, Pixels );
+			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RGBA, Type, Pixels );
 			Supported = true;
 		}
 	}

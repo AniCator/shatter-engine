@@ -104,10 +104,10 @@ enum class EImageFormat : uint32_t
 	RGB16,
 	RGBA16,
 
-	R32,
-	RG32,
-	RGB32,
-	RGBA32,
+	R16F,
+	RG16F,
+	RGB16F,
+	RGBA16F,
 
 	R32F,
 	RG32F,
