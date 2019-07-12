@@ -284,6 +284,16 @@ void CTexture::Bind( ETextureSlot Slot )
 	}
 }
 
+const std::string& CTexture::GetLocation() const
+{
+	return Location;
+}
+
+const GLuint CTexture::GetHandle() const
+{
+	return Handle;
+}
+
 const int CTexture::GetWidth() const
 {
 	return Width;

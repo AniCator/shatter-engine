@@ -10,12 +10,14 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Audio/SimpleSound.h>
+#include <Engine/Audio/Sound.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Configuration/Configuration.h>
 
 #include <Engine/Display/Rendering/Camera.h>
 #include <Engine/Display/Rendering/Renderable.h>
+#include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/Data.h>
@@ -319,6 +321,45 @@ void SetTheme( const char* Theme )
 	}
 }
 
+bool MenuItem( const char* Label, bool* Selected )
+{
+	if( ImGui::MenuItem( Label, "", Selected ) )
+	{
+		*Selected = true;
+
+		return true;
+	}
+
+	return false;
+}
+
+void ShowTexture( CTexture* Texture, bool* Open )
+{
+	if( Texture && *Open )
+	{
+		auto ImageSize = ImVec2( Texture->GetWidth(), Texture->GetHeight() );
+
+		char Title[256];
+		sprintf_s( Title, "Texture %i", Texture->GetHandle() );
+
+		if( ImGui::Begin( Title, Open, ImageSize, -1.0f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse ) )
+		{
+			ImTextureID TextureID = (ImTextureID) (intptr_t) Texture->GetHandle();
+			ImGui::Image( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ) );
+		}
+
+		ImGui::End();
+	}
+}
+
+static std::map<CTexture*, bool> ShownTextures;
+
+static bool ShowAssets = false;
+static bool ShowStrings = false;
+
+static bool ShowTestWindow = false;
+static bool ShowMetricsWindow = false;
+
 static bool DisplayLog = false;
 static bool ExportDialog = false;
 static size_t PreviousSize = 0;
@@ -440,6 +481,18 @@ void DebugMenu( CApplication* Application )
 			{
 				ExportDialog = true;
 			}
+
+			ImGui::Separator();
+
+			if( MenuItem( "Assets", &ShowAssets ) )
+			{
+				ShownTextures.clear();
+			}
+
+			MenuItem( "Strings", &ShowStrings );
+
+			MenuItem( "ImGui Test Window", &ShowTestWindow );
+			MenuItem( "ImGui Metrics Window", &ShowMetricsWindow );
 
 			ImGui::EndMenu();
 		}
@@ -588,6 +641,134 @@ void DebugMenu( CApplication* Application )
 		}
 
 		ImGui::End();
+	}
+
+	if( ShowAssets )
+	{
+		if( ImGui::Begin( "Assets", &ShowAssets, ImVec2( 500.0f, 700.0f ) ) )
+		{
+			ImGui::Columns( 2 );
+
+			ImGui::Separator();
+			ImGui::Text( "Name" ); ImGui::NextColumn();
+			ImGui::Text( "Type" ); ImGui::NextColumn();
+
+			ImGui::Separator();
+			ImGui::Separator();
+
+			auto& Assets = CAssets::Get();
+			auto Meshes = Assets.GetMeshes();
+			for( const auto& Pair : Meshes )
+			{
+				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				ImGui::Text( "Mesh" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+
+			auto Shaders = Assets.GetShaders();
+			for( const auto& Pair : Shaders )
+			{
+				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+					Pair.second->Reload();
+				}
+				ImGui::NextColumn();
+
+				ImGui::Text( "Shader" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+
+			auto Textures = Assets.GetTextures();
+			for( const auto& Pair : Textures )
+			{
+				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+					ShownTextures[Pair.second] = true;
+				}
+				ImGui::NextColumn();
+
+				ImGui::Text( "Texture" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+
+			auto Sounds = Assets.GetSounds();
+			for( const auto& Pair : Sounds )
+			{
+				if( ImGui::Selectable( Pair.first.c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+					if( Pair.second->Playing() )
+					{
+						Pair.second->Stop();
+					}
+					else
+					{
+						Pair.second->Start();
+					}
+				}
+				ImGui::NextColumn();
+
+				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				ImGui::Text( "Sound" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+			ImGui::Columns( 1 );
+		}
+
+		ImGui::End();
+	}
+
+	for( auto& Pair : ShownTextures )
+	{
+		ShowTexture( Pair.first, &Pair.second );
+	}
+
+	if( ShowStrings )
+	{
+		if( ImGui::Begin( "Strings", &ShowStrings, ImVec2( 500.0f, 700.0f ) ) )
+		{
+			ImGui::Columns( 2 );
+
+			ImGui::Separator();
+			ImGui::Text( "String" ); ImGui::NextColumn();
+			ImGui::Text( "Index" ); ImGui::NextColumn();
+
+			ImGui::Separator();
+			ImGui::Separator();
+
+			for( const auto& Pair : FName::Pool() )
+			{
+				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				ImGui::Text( "%i", Pair.second ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+			ImGui::Separator();
+
+			ImGui::Columns( 1 );
+		}
+
+		ImGui::End();
+	}
+
+	if( ShowTestWindow )
+	{
+		ImGui::ShowDemoWindow( &ShowTestWindow );
+	}
+
+	if( ShowMetricsWindow )
+	{
+		ImGui::ShowMetricsWindow( &ShowMetricsWindow );
 	}
 
 	Application->RenderDebugUI( false );

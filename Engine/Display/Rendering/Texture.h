@@ -20,14 +20,16 @@ public:
 	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
 	void Bind( ETextureSlot Slot );
 
+	const std::string& GetLocation() const;
+	const GLuint GetHandle() const;
 	const int GetWidth() const;
 	const int GetHeight() const;
 
 	void* GetImageData() const;
 
 	EFilteringMode FilteringMode;
-protected:
 	GLuint Handle;
+protected:
 	std::string Location;
 
 	int Width;
