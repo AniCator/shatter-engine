@@ -93,7 +93,7 @@ void CSimpleSound::Stop( StreamHandle Handle, const float FadeOut )
 	{
 		if( FadeOut < 0.0f )
 		{
-			Streams[Handle.Handle].Stream->pause();
+			Streams[Handle.Handle].Stream->stop();
 		}
 		else
 		{
@@ -200,7 +200,7 @@ void CSimpleSound::Tick()
 				}
 				else if( Alpha < 0.0f )
 				{
-					Stream.Stream->pause();
+					Stream.Stream->stop();
 				}
 			}
 		}

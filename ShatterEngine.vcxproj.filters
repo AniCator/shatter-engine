@@ -123,6 +123,9 @@
     <Filter Include="Source Files\Engine\Physics">
       <UniqueIdentifier>{e5aabfae-81bb-4537-88cd-68f4e634edf3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Sequencer">
+      <UniqueIdentifier>{8b9f98c7-aaad-46fb-b373-6fbadf11b163}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -280,6 +283,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Physics\PhysicsComponent.cpp">
       <Filter>Source Files\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sequencer\Sequencer.cpp">
+      <Filter>Source Files\Engine\Sequencer</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -510,6 +516,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Physics\PhysicsComponent.h">
       <Filter>Source Files\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sequencer\Sequencer.h">
+      <Filter>Source Files\Engine\Sequencer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

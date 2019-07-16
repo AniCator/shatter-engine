@@ -13,6 +13,7 @@
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Texture.h>
 
+#include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
@@ -44,6 +45,11 @@ void CAssets::Create( const std::string& Name, CTexture* NewTexture )
 void CAssets::Create( const std::string& Name, CSound* NewSound )
 {
 	Sounds.insert_or_assign( Name, NewSound );
+}
+
+void CAssets::Create( const std::string& Name, CSequence* NewSequence )
+{
+	Sequences.insert_or_assign( Name, NewSequence );
 }
 
 void ParsePayload(FPrimitivePayload* Payload )
@@ -99,6 +105,28 @@ static const std::map<std::string, EImageFormat> ImageFormatFromString = {
 	std::make_pair( "rg32f", EImageFormat::RG32F ),
 	std::make_pair( "rgb32f", EImageFormat::RGB32F ),
 	std::make_pair( "rgba32f", EImageFormat::RGBA32F ),
+};
+
+static const std::map<EImageFormat, std::string> StringToImageFormat = {
+	std::make_pair( EImageFormat::R8, "r8" ),
+	std::make_pair( EImageFormat::RG8, "rg8" ),
+	std::make_pair( EImageFormat::RGB8, "rgb8" ),
+	std::make_pair( EImageFormat::RGBA8, "rgba8" ),
+
+	std::make_pair( EImageFormat::R16, "r16" ),
+	std::make_pair( EImageFormat::RG16, "rg16" ),
+	std::make_pair( EImageFormat::RGB16, "rgb16" ),
+	std::make_pair( EImageFormat::RGBA16, "rgba16" ),
+
+	std::make_pair( EImageFormat::R16F, "r16f" ),
+	std::make_pair( EImageFormat::RG16F, "rg16f" ),
+	std::make_pair( EImageFormat::RGB16F, "rgb16f" ),
+	std::make_pair( EImageFormat::RGBA16F, "rgba16f" ),
+
+	std::make_pair( EImageFormat::R32F, "r32f" ),
+	std::make_pair( EImageFormat::RG32F, "rg32f" ),
+	std::make_pair( EImageFormat::RGB32F, "rgb32f" ),
+	std::make_pair( EImageFormat::RGBA32F, "rgba32f" ),
 };
 
 void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
@@ -466,7 +494,7 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	// Check if the mesh exists
+	// Check if the sound exists
 	if( CSound* ExistingSound = FindSound( NameString ) )
 	{
 		return ExistingSound;
@@ -488,7 +516,7 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 		return NewSound;
 	}
 
-	// This should never happen because we check for existing textures before creating new ones, but you never know.
+	// This should never happen because we check for existing sounds before creating new ones, but you never know.
 	return nullptr;
 }
 
@@ -498,7 +526,7 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	// Check if the mesh exists
+	// Check if the sound exists
 	if( CSound* ExistingSound = FindSound( NameString ) )
 	{
 		return ExistingSound;
@@ -522,7 +550,7 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	// Check if the mesh exists
+	// Check if the sound exists
 	if( CSound * ExistingSound = FindSound( NameString ) )
 	{
 		return ExistingSound;
@@ -544,7 +572,7 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 		return NewSound;
 	}
 
-	// This should never happen because we check for existing textures before creating new ones, but you never know.
+	// This should never happen because we check for existing streams before creating new ones, but you never know.
 	return nullptr;
 }
 
@@ -554,7 +582,7 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	// Check if the mesh exists
+	// Check if the sound exists
 	if( CSound * ExistingSound = FindSound( NameString ) )
 	{
 		return ExistingSound;
@@ -572,25 +600,97 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 	return NewSound;
 }
 
-CMesh* CAssets::FindMesh( std::string Name )
+CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocation )
+{
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the sequence exists
+	if( CSequence * ExistingSequence = FindSequence( NameString ) )
+	{
+		return ExistingSequence;
+	}
+
+	CSequence* NewSequence = new CSequence();
+	const bool bSuccessfulCreation = NewSequence->Load( FileLocation );
+
+	if( bSuccessfulCreation )
+	{
+		Create( NameString, NewSequence );
+
+		CProfiler& Profiler = CProfiler::Get();
+		int64_t Sequence = 1;
+		Profiler.AddCounterEntry( FProfileTimeEntry( "Sequences", Sequence ), false );
+
+		Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
+
+		return NewSequence;
+	}
+
+	// This should never happen because we check for existing sequences before creating new ones, but you never know.
+	return nullptr;
+}
+
+CSequence* CAssets::CreateNamedSequence( const char* Name )
+{
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the sequence exists
+	if( CSequence * ExistingSequence = FindSequence( NameString ) )
+	{
+		return ExistingSequence;
+	}
+
+	CSequence* NewSequence = new CSequence();
+	Create( NameString, NewSequence );
+
+	CProfiler& Profiler = CProfiler::Get();
+	int64_t Sequence = 1;
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Sequences", Sequence ), false );
+
+	Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
+
+	return NewSequence;
+}
+
+CMesh* CAssets::FindMesh( const std::string& Name )
 {
 	return Find<CMesh>( Name, Meshes );
 }
 
-CShader* CAssets::FindShader( std::string Name )
+CShader* CAssets::FindShader( const std::string& Name )
 {
 	return Find<CShader>( Name, Shaders );
 }
 
-CTexture* CAssets::FindTexture( std::string Name )
+CTexture* CAssets::FindTexture( const std::string& Name )
 {
 	auto Texture = Find<CTexture>( Name, Textures );
 	return Texture ? Texture : Find<CTexture>( "error", Textures );
 }
 
-CSound* CAssets::FindSound( std::string Name )
+CSound* CAssets::FindSound( const std::string& Name )
 {
 	return Find<CSound>( Name, Sounds );
+}
+
+CSequence* CAssets::FindSequence( const std::string& Name )
+{
+	return Find<CSequence>( Name, Sequences );
+}
+
+const std::string& CAssets::GetReadableImageFormat( EImageFormat Format )
+{
+	auto ImageFormat = StringToImageFormat.find( Format );
+	if( ImageFormat != StringToImageFormat.end() )
+	{
+		return ImageFormat->second;
+	}
+
+	return "unknown";
 }
 
 void CAssets::ReloadShaders()

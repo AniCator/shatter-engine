@@ -98,6 +98,9 @@ public:
 
 	CPhysics* GetPhysics();
 
+	void MakePrimary();
+	static CWorld* GetPrimaryWorld();
+
 private:
 	std::deque<CLevel> Levels;
 	CLevel* ActiveLevel;
@@ -106,6 +109,8 @@ private:
 	uint32_t CameraPriority;
 
 	CPhysics* Physics;
+
+	static CWorld* PrimaryWorld;
 
 public:
 	friend CData& operator<<( CData& Data, CWorld* World );

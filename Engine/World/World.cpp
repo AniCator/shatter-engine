@@ -9,6 +9,8 @@
 static const char WorldIdentifier[5] = "LLWF"; // Lofty Lagoon World Format
 static const size_t WorldVersion;
 
+CWorld* CWorld::PrimaryWorld = nullptr;
+
 CWorld::CWorld()
 {
 	ActiveLevel = nullptr;
@@ -116,6 +118,16 @@ const FCameraSetup& CWorld::GetActiveCameraSetup() const
 CPhysics* CWorld::GetPhysics()
 {
 	return Physics;
+}
+
+void CWorld::MakePrimary()
+{
+	PrimaryWorld = this;
+}
+
+CWorld* CWorld::GetPrimaryWorld()
+{
+	return PrimaryWorld;
 }
 
 CData& operator<<( CData& Data, CWorld* World )

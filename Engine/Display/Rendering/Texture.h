@@ -24,12 +24,14 @@ public:
 	const GLuint GetHandle() const;
 	const int GetWidth() const;
 	const int GetHeight() const;
+	const EImageFormat GetImageFormat() const;
 
 	void* GetImageData() const;
 
 	EFilteringMode FilteringMode;
 	GLuint Handle;
 protected:
+	EImageFormat Format;
 	std::string Location;
 
 	int Width;

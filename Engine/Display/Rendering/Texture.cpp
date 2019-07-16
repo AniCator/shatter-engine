@@ -134,6 +134,8 @@ CTexture::CTexture()
 	Height = 0;
 	Channels = 0;
 
+	Format = EImageFormat::Unknown;
+
 	ImageData8 = nullptr;
 	ImageData16 = nullptr;
 	ImageData32 = nullptr;
@@ -236,6 +238,8 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	auto Type = ImageFormatToType[ImageFormat];
 	auto InternalFormat = ImageFormatToInternalFormat[ImageFormat];
 
+	Format = PreferredFormatIn;
+
 	const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
 	const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
 	if( PowerOfTwoWidth && PowerOfTwoHeight )
@@ -302,6 +306,11 @@ const int CTexture::GetWidth() const
 const int CTexture::GetHeight() const
 {
 	return Height;
+}
+
+const EImageFormat CTexture::GetImageFormat() const
+{
+	return Format;
 }
 
 void* CTexture::GetImageData() const

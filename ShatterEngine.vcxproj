@@ -154,6 +154,7 @@
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -222,6 +223,7 @@
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
     <ClCompile Include="Engine\Resource\Assets.cpp" />
+    <ClCompile Include="Engine\Sequencer\Sequencer.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilder.cpp" />
     <ClCompile Include="Engine\Utility\Presence\Presence.cpp" />
@@ -281,6 +283,7 @@
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
     <ClInclude Include="Engine\Resource\Assets.h" />
+    <ClInclude Include="Engine\Sequencer\Sequencer.h" />
     <ClInclude Include="Engine\Utility\Data.h" />
     <ClInclude Include="Engine\Utility\DataString.h" />
     <ClInclude Include="Engine\Utility\File.h" />

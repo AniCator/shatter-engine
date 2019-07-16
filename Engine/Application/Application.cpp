@@ -19,6 +19,7 @@
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Resource/Assets.h>
+#include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
@@ -333,29 +334,303 @@ bool MenuItem( const char* Label, bool* Selected )
 	return false;
 }
 
-void ShowTexture( CTexture* Texture, bool* Open )
+static CTexture* PreviewTexture = nullptr;
+static float Zoom = 1.0f;
+static float PreviousZoomWheel = -1.0f;
+static ImVec2 Drag = ImVec2();
+void ShowTexture( CTexture* Texture )
 {
-	if( Texture && *Open )
+	if( Texture )
 	{
 		auto ImageSize = ImVec2( Texture->GetWidth(), Texture->GetHeight() );
+		auto ImageRatio = ImageSize.y / ImageSize.x;
 
-		char Title[256];
-		sprintf_s( Title, "Texture %i", Texture->GetHandle() );
+		auto ContentOffset = ImGui::GetContentRegionAvail();
 
-		if( ImGui::Begin( Title, Open, ImageSize, -1.0f, ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoCollapse ) )
+		auto MinimumSize = std::min( std::min( ImageSize.x, ImageSize.y ), std::min( ContentOffset.x, ContentOffset.y ) ) * Zoom;
+
+		ImageSize.x = MinimumSize;
+		ImageSize.y = MinimumSize * ImageRatio;
+
+		ContentOffset.x /= 2;
+		ContentOffset.y /= 2;
+
+		auto HalfSize = ImageSize;
+		HalfSize.x /= 2;
+		HalfSize.y /= 2;
+
+		auto ContentPosition = ContentOffset;
+		ContentPosition.x -= HalfSize.x;
+		ContentPosition.y -= HalfSize.y;
+
+		ContentPosition.x += Drag.x;
+		ContentPosition.y += Drag.y;
+
+		ImGui::SetCursorPos( ContentPosition );
+
+		const auto CursorPosition = ImGui::GetCursorScreenPos();
+
+		ImTextureID TextureID = (ImTextureID) (intptr_t) Texture->GetHandle();
+		ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 0 );
+
+		if( ImGui::IsItemHovered() )
 		{
-			ImTextureID TextureID = (ImTextureID) (intptr_t) Texture->GetHandle();
-			ImGui::Image( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ) );
+			float TextureX = ( ( ImGui::GetMousePos().x - CursorPosition.x ) / ImageSize.x ) * Texture->GetWidth();
+			float TextureY = ( ( ImGui::GetMousePos().y - CursorPosition.y ) / ImageSize.y ) * Texture->GetHeight();
+
+			ImGui::BeginTooltip();
+			ImGui::Text( "X: %i Y: %i", (int) TextureX, (int) TextureY );
+			ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
+			ImGui::Text( "%s", CAssets::Get().GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
+			ImGui::EndTooltip();
+
+			auto Delta = ImGui::GetIO().MouseWheel - PreviousZoomWheel;
+			if( Delta > 0.1f )
+			{
+				Zoom *= 1.2f;
+
+				Drag.x *= 1.2f;
+				Drag.y *= 1.2f;
+			}
+			else if( Delta < -0.1f )
+			{
+				Zoom *= 0.8f;
+
+				Drag.x *= 0.8f;
+				Drag.y *= 0.8f;
+			}
+
+			Zoom = std::max( Zoom, 0.25f );
+		}
+
+		if( ImGui::IsItemActive() )
+		{
+			auto Delta = ImGui::GetMouseDragDelta( 0, 0.0f );
+			Drag.x += Delta.x;
+			Drag.y += Delta.y;
+			ImGui::ResetMouseDragDelta( 0 );
+		}
+
+		ImGui::SetCursorPos( ImVec2( 0, 0 ) );
+
+		ImGui::Text( "Zoom %.2f", Zoom );
+
+		if( ImGui::Button( "0.5x" ) )
+		{
+			Zoom = 0.5f;
+		}
+
+		if( ImGui::Button( "1x" ) )
+		{
+			Zoom = 1.0f;
+		}
+
+		if( ImGui::Button( "2x" ) )
+		{
+			Zoom = 2.0f;
+		}
+
+		if( ImGui::Button( "Center" ) )
+		{
+			Drag = ImVec2();
+		}
+	}
+}
+
+void TextureListUI()
+{
+	ImGui::BeginChild( "Texture Panel", ImVec2( 0, ImGui::GetContentRegionAvail().y * 0.5f ) );
+	const int Columns = std::max( static_cast<int>( ImGui::GetWindowWidth() / 66 ), 1 );
+	ImGui::Columns( Columns );
+
+	auto& Assets = CAssets::Get();
+	auto Textures = Assets.GetTextures();
+	for( const auto& Pair : Textures )
+	{
+		CTexture* Texture = Pair.second;
+		if( Texture )
+		{
+			auto ImageSize = ImVec2( 64, 64 );
+
+			ImTextureID TextureID = ( ImTextureID) ( intptr_t) Texture->GetHandle();
+			if( ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1 ) )
+			{
+				PreviewTexture = Texture;
+				Zoom = 1.0f;
+				Drag = ImVec2();
+			}
+
+			if( ImGui::IsItemHovered() )
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text( "%s", Pair.first.c_str() );
+				ImGui::Text( "%s", Texture->GetLocation().c_str() );
+				ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
+				ImGui::Text( "%s", Assets.GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
+				ImGui::EndTooltip();
+			}
+
+			ImGui::NextColumn();
+		}
+	}
+
+	ImGui::Columns( 1 );
+	ImGui::EndChild();
+
+	ImGui::BeginChild( "Texture Preview", ImVec2( 0, 0 ), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
+	ShowTexture( PreviewTexture );
+	ImGui::EndChild();
+}
+
+static bool ShowAssets = false;
+
+void AssetUI()
+{
+	auto& Assets = CAssets::Get();
+
+	if( ShowAssets )
+	{
+		if( ImGui::Begin( "Assets", &ShowAssets, ImVec2( 1000.0f, 700.0f ) ) )
+		{
+			ImGui::BeginChild( "Asset List", ImVec2( ImGui::GetWindowContentRegionWidth() * 0.33f, ImGui::GetContentRegionAvail().y ) );
+			ImGui::Columns( 2 );
+
+			ImGui::Separator();
+			ImGui::Text( "Name" ); ImGui::NextColumn();
+			ImGui::Text( "Type" ); ImGui::NextColumn();
+
+			ImGui::Separator();
+			ImGui::Separator();
+
+			auto Meshes = Assets.GetMeshes();
+			for( const auto& Pair : Meshes )
+			{
+				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				ImGui::Text( "Mesh" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+
+			auto Shaders = Assets.GetShaders();
+			for( const auto& Pair : Shaders )
+			{
+				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+					Pair.second->Reload();
+				}
+				ImGui::NextColumn();
+
+				ImGui::Text( "Shader" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+
+			auto Textures = Assets.GetTextures();
+			for( const auto& Pair : Textures )
+			{
+				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+					PreviewTexture = Pair.second;
+				}
+				ImGui::NextColumn();
+
+				ImGui::Text( "Texture" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+
+			auto Sounds = Assets.GetSounds();
+			for( const auto& Pair : Sounds )
+			{
+				if( ImGui::Selectable( Pair.first.c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+					if( Pair.second->Playing() )
+					{
+						Pair.second->Stop();
+					}
+					else
+					{
+						Pair.second->Start();
+					}
+				}
+				ImGui::NextColumn();
+
+				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				ImGui::Text( "Sound" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			auto Sequences = Assets.GetSequences();
+			for( const auto& Pair : Sequences )
+			{
+				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+					Pair.second->Draw();
+				}
+				ImGui::NextColumn();
+
+				ImGui::Text( "Sequence" ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+			ImGui::Columns( 1 );
+			ImGui::EndChild();
+
+			ImGui::SameLine();
+			ImGui::BeginChild( "Texture List", ImVec2( ImGui::GetWindowContentRegionWidth() * 0.66f, 0 ) );
+			TextureListUI();
+			ImGui::EndChild();
+		}
+
+		ImGui::End();
+	}
+
+	auto Sequences = Assets.GetSequences();
+	for( const auto& Pair : Sequences )
+	{
+		Pair.second->Frame();
+	}
+}
+
+static bool ShowStrings = false;
+
+void StringUI()
+{
+	if( ShowStrings )
+	{
+		if( ImGui::Begin( "Strings", &ShowStrings, ImVec2( 500.0f, 700.0f ) ) )
+		{
+			ImGui::Columns( 2 );
+
+			ImGui::Separator();
+			ImGui::Text( "String" ); ImGui::NextColumn();
+			ImGui::Text( "Index" ); ImGui::NextColumn();
+
+			ImGui::Separator();
+			ImGui::Separator();
+
+			for( const auto& Pair : FName::Pool() )
+			{
+				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				ImGui::Text( "%i", Pair.second ); ImGui::NextColumn();
+				ImGui::Separator();
+			}
+
+			ImGui::Separator();
+			ImGui::Separator();
+
+			ImGui::Columns( 1 );
 		}
 
 		ImGui::End();
 	}
 }
-
-static std::map<CTexture*, bool> ShownTextures;
-
-static bool ShowAssets = false;
-static bool ShowStrings = false;
 
 static bool ShowTestWindow = false;
 static bool ShowMetricsWindow = false;
@@ -486,7 +761,7 @@ void DebugMenu( CApplication* Application )
 
 			if( MenuItem( "Assets", &ShowAssets ) )
 			{
-				ShownTextures.clear();
+				PreviewTexture = nullptr;
 			}
 
 			MenuItem( "Strings", &ShowStrings );
@@ -643,123 +918,8 @@ void DebugMenu( CApplication* Application )
 		ImGui::End();
 	}
 
-	if( ShowAssets )
-	{
-		if( ImGui::Begin( "Assets", &ShowAssets, ImVec2( 500.0f, 700.0f ) ) )
-		{
-			ImGui::Columns( 2 );
-
-			ImGui::Separator();
-			ImGui::Text( "Name" ); ImGui::NextColumn();
-			ImGui::Text( "Type" ); ImGui::NextColumn();
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			auto& Assets = CAssets::Get();
-			auto Meshes = Assets.GetMeshes();
-			for( const auto& Pair : Meshes )
-			{
-				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				ImGui::Text( "Mesh" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-
-			auto Shaders = Assets.GetShaders();
-			for( const auto& Pair : Shaders )
-			{
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					Pair.second->Reload();
-				}
-				ImGui::NextColumn();
-
-				ImGui::Text( "Shader" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-
-			auto Textures = Assets.GetTextures();
-			for( const auto& Pair : Textures )
-			{
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					ShownTextures[Pair.second] = true;
-				}
-				ImGui::NextColumn();
-
-				ImGui::Text( "Texture" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-
-			auto Sounds = Assets.GetSounds();
-			for( const auto& Pair : Sounds )
-			{
-				if( ImGui::Selectable( Pair.first.c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					if( Pair.second->Playing() )
-					{
-						Pair.second->Stop();
-					}
-					else
-					{
-						Pair.second->Start();
-					}
-				}
-				ImGui::NextColumn();
-
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				ImGui::Text( "Sound" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-			ImGui::Columns( 1 );
-		}
-
-		ImGui::End();
-	}
-
-	for( auto& Pair : ShownTextures )
-	{
-		ShowTexture( Pair.first, &Pair.second );
-	}
-
-	if( ShowStrings )
-	{
-		if( ImGui::Begin( "Strings", &ShowStrings, ImVec2( 500.0f, 700.0f ) ) )
-		{
-			ImGui::Columns( 2 );
-
-			ImGui::Separator();
-			ImGui::Text( "String" ); ImGui::NextColumn();
-			ImGui::Text( "Index" ); ImGui::NextColumn();
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			for( const auto& Pair : FName::Pool() )
-			{
-				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				ImGui::Text( "%i", Pair.second ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			ImGui::Columns( 1 );
-		}
-
-		ImGui::End();
-	}
+	AssetUI();
+	StringUI();
 
 	if( ShowTestWindow )
 	{
@@ -825,6 +985,7 @@ void CApplication::Run()
 			const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 			if( InputDeltaTime >= MaximumInputTime )
 			{
+				PreviousZoomWheel = ImGui::GetIO().MouseWheel;
 				MainWindow.ProcessInput();
 
 				InputTimer.Start();
