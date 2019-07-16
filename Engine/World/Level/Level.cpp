@@ -105,6 +105,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 							std::vector<std::string> Paths;
 							Paths.reserve( 10 );
 							ESoundPlayMode::Type PlayMode = ESoundPlayMode::Sequential;
+							bool ShouldLoop = false;
 
 							// Shader-specific path storage.
 							std::string VertexPath = "";
@@ -149,6 +150,13 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									if( Property->Value == "random" )
 									{
 										PlayMode = ESoundPlayMode::Random;
+									}
+								}
+								else if( Property->Key == "loop" )
+								{
+									if( Property->Value == "1" )
+									{
+										ShouldLoop = true;
 									}
 								}
 								else if( Property->Key == "vertex" )
@@ -219,6 +227,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									{
 										NewSound->Clear();
 										NewSound->SetPlayMode( PlayMode );
+										NewSound->Loop( ShouldLoop );
 
 										for( const auto& Path : Paths )
 										{

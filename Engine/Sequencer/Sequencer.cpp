@@ -5,14 +5,18 @@
 #include <algorithm>
 
 #include <Engine/Audio/Sound.h>
-#include <Game/Game.h>
+#include <Engine/Display/Rendering/Renderable.h>
+#include <Engine/Display/Window.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/File.h>
 #include <Engine/World/World.h>
 
+#include <Game/Game.h>
+
 #include <ThirdParty/imgui-1.70/imgui.h>
 
 static const Timecode Timebase = 96;
+static bool TimelineCamera = true;
 
 enum class ESequenceStatus : uint8_t
 {
@@ -27,6 +31,13 @@ struct FTrackEvent
 	virtual void Execute() = 0;
 	virtual void Reset() = 0;
 	virtual void Context() = 0;
+
+	template<typename T>
+	static T* Create()
+	{
+		T* Event = new T();
+		return Event;
+	}
 
 	virtual const char* GetName() = 0;
 
@@ -45,7 +56,7 @@ struct FEventAudio : FTrackEvent
 		}
 		else
 		{
-			if( Triggered && Marker > ( Start + Length ) )
+			if( Triggered && ( Marker > ( Start + Length ) || ( Marker < Start ) ) )
 			{
 				if( Sound && Sound->Playing() )
 				{
@@ -62,7 +73,7 @@ struct FEventAudio : FTrackEvent
 		if( !Sound )
 			return;
 
-		if( Sound )
+		if( Sound && !Sound->Playing() )
 		{
 			Sound->Volume( Volume );
 			Sound->Start( FadeIn );
@@ -81,14 +92,14 @@ struct FEventAudio : FTrackEvent
 
 	virtual void Context() override
 	{
-		ImGui::Text( "Test audio event" );
+		ImGui::Text( "Audio" );
 		ImGui::Text( "%s", Name.length() > 0 && Sound != nullptr ? Name.c_str() : "no sound selected" );
 		
 		ImGui::Separator();
-		int InputLength = (int) Length / Timebase;
-		if( ImGui::InputInt( "Length", &InputLength ) )
+		int InputLength = (int) Length;
+		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
 		{
-			Length = (Timecode) InputLength * Timebase;
+			Length = (Timecode) InputLength;
 		}
 
 		ImGui::InputFloat( "Volume", &Volume, 1.0f, 10.0f, "%.0f" );
@@ -97,17 +108,22 @@ struct FEventAudio : FTrackEvent
 
 		ImGui::Separator();
 
-		auto& Assets = CAssets::Get();
-		auto& Sounds = Assets.GetSounds();
-		for( auto& Pair : Sounds )
+		if( ImGui::BeginCombo( "##SoundAssets", Name.c_str() ) )
 		{
-			if( ImGui::Selectable( Pair.first.c_str() ) )
+			auto& Assets = CAssets::Get();
+			auto& Sounds = Assets.GetSounds();
+			for( auto& Pair : Sounds )
 			{
-				Name = Pair.first;
-				Sound = Pair.second;
+				if( ImGui::Selectable( Pair.first.c_str() ) )
+				{
+					Name = Pair.first;
+					Sound = Pair.second;
+				}
+
+				ImGui::Separator();
 			}
 
-			ImGui::Separator();
+			ImGui::EndCombo();
 		}
 	}
 
@@ -123,6 +139,210 @@ struct FEventAudio : FTrackEvent
 	float FadeIn = 0.0f;
 	float FadeOut = 0.1f;
 	float Volume = 100.0f;
+};
+
+struct FEventCamera : FTrackEvent
+{
+	virtual void Evaluate( const Timecode& Marker ) override
+	{
+		if( Marker >= Start && Marker < ( Start + Length ) )
+		{
+			Execute();
+		}
+	}
+
+	virtual void Execute() override
+	{
+		auto World = CWorld::GetPrimaryWorld();
+		if( !World )
+			return;
+
+		if( TimelineCamera && World->GetActiveCamera() != &Camera )
+		{
+			World->SetActiveCamera( &Camera );
+		}
+	}
+
+	virtual void Reset() override
+	{
+		auto World = CWorld::GetPrimaryWorld();
+		if( !World )
+			return;
+
+		if( World->GetActiveCamera() == &Camera )
+		{
+			World->SetActiveCamera( nullptr );
+		}
+	}
+
+	virtual void Context() override
+	{
+		ImGui::Text( "Camera" );
+
+		ImGui::Separator();
+		int InputLength = ( int) Length;
+		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
+		{
+			Length = ( Timecode) InputLength;
+		}
+
+		if( ImGui::Button( "View" ) )
+		{
+			auto World = CWorld::GetPrimaryWorld();
+			if( World )
+			{
+				if( World->GetActiveCamera() != &Camera )
+				{
+					World->SetActiveCamera( &Camera );
+				}
+			}
+		}
+
+		if( ImGui::Button( "Update Camera Position to Current" ) )
+		{
+			auto World = CWorld::GetPrimaryWorld();
+			if( World )
+			{
+				auto ActiveCamera = World->GetActiveCamera();
+				if( ActiveCamera != nullptr && ActiveCamera != &Camera )
+				{
+					Camera = *ActiveCamera;
+				}
+			}
+		}
+
+		ImGui::Separator();
+	}
+
+	virtual const char* GetName()
+	{
+		return "Camera";
+	}
+
+	std::string Name = std::string();
+	CCamera Camera;
+};
+
+struct FEventRenderable : FTrackEvent
+{
+	virtual void Evaluate( const Timecode& Marker ) override
+	{
+		if( Marker >= Start && Marker < ( Start + Length ) )
+		{
+			Execute();
+		}
+	}
+
+	virtual void Execute() override
+	{
+		CWindow::Get().GetRenderer().QueueRenderable( &Renderable );
+	}
+
+	virtual void Reset() override
+	{
+		
+	}
+
+	virtual void Context() override
+	{
+		ImGui::Text( "Renderable" );
+
+		ImGui::Separator();
+		int InputLength = ( int) Length;
+		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
+		{
+			Length = ( Timecode) InputLength;
+		}
+
+		ImGui::Separator();
+
+		if( ImGui::BeginCombo( "##MeshAssets", Name.c_str() ) )
+		{
+			auto& Assets = CAssets::Get();
+			auto& Meshes = Assets.GetMeshes();
+			for( auto& Pair : Meshes )
+			{
+				if( ImGui::Selectable( Pair.first.c_str() ) )
+				{
+					Name = Pair.first;
+					Renderable.SetMesh( Pair.second );
+				}
+
+				ImGui::Separator();
+			}
+
+			ImGui::EndCombo();
+		}
+
+		if( ImGui::BeginCombo( "##ShaderAssets", Name.c_str() ) )
+		{
+			auto& Assets = CAssets::Get();
+			auto& Shaders = Assets.GetShaders();
+			for( auto& Pair : Shaders )
+			{
+				if( ImGui::Selectable( Pair.first.c_str() ) )
+				{
+					Renderable.SetShader( Pair.second );
+				}
+
+				ImGui::Separator();
+			}
+
+			ImGui::EndCombo();
+		}
+
+		if( ImGui::BeginCombo( "##TextureAssets", Name.c_str() ) )
+		{
+			auto& Assets = CAssets::Get();
+			auto& Textures = Assets.GetTextures();
+			for( auto& Pair : Textures )
+			{
+				if( ImGui::Selectable( Pair.first.c_str() ) )
+				{
+					Renderable.SetTexture( Pair.second, ETextureSlot::Slot0 );
+				}
+
+				ImGui::Separator();
+			}
+
+			ImGui::EndCombo();
+		}
+
+		auto& RenderData = Renderable.GetRenderData();
+		auto& Transform = RenderData.Transform;
+		auto Position = Transform.GetPosition();
+		if( ImGui::InputFloat3( "##mp", &Position.X, "%.2f" ) ) //
+		{
+			Transform.SetPosition( Position );
+		}
+
+		auto Orientation = Transform.GetOrientation();
+		if( ImGui::InputFloat3( "##mo", &Orientation.X, "%.2f" ) )
+		{
+			Transform.SetOrientation( Orientation );
+		}
+	}
+
+	virtual const char* GetName()
+	{
+		return Name.c_str();
+	}
+
+	std::string Name = std::string();
+	CRenderable Renderable;
+};
+
+template<typename T>
+FTrackEvent* CreateTrack()
+{
+	return FTrackEvent::Create<T>();
+}
+
+static std::map<std::string, std::function<FTrackEvent*()>> EventTypes
+{
+	std::make_pair( "Audio", CreateTrack<FEventAudio> ),
+	std::make_pair( "Camera", CreateTrack<FEventCamera> ),
+	std::make_pair( "Mesh", CreateTrack<FEventRenderable> )
 };
 
 struct FTrack
@@ -204,6 +424,8 @@ public:
 	{
 		if( Status != ESequenceStatus::Paused )
 		{
+			Marker = StartMarker;
+
 			for( auto& Track : Tracks )
 			{
 				Track.Reset();
@@ -216,6 +438,11 @@ public:
 	void Pause()
 	{
 		Status = ESequenceStatus::Paused;
+
+		for( auto& Track : Tracks )
+		{
+			Track.Reset();
+		}
 	}
 
 	void Stop()
@@ -243,12 +470,6 @@ public:
 	{
 		if( Status < ESequenceStatus::Playing )
 			return;
-
-		// Run all the timeline events that are associated with the current marker.
-		for( auto& Track : Tracks )
-		{
-			Track.Evaluate( Marker );
-		}
 
 		// Increment the timeline step.
 		Marker++;
@@ -287,6 +508,12 @@ public:
 
 	void Frame()
 	{
+		// Run all the timeline events that are associated with the current marker.
+		for( auto& Track : Tracks )
+		{
+			Track.Evaluate( Marker );
+		}
+
 		if( DrawTimeline )
 		{
 			if( ImGui::Begin( "Timeline", &DrawTimeline, ImVec2( 1000.0f, 500.0f ) ) )
@@ -323,11 +550,13 @@ public:
 
 				ImGui::SameLine();
 
+				static std::string EventType = ( *EventTypes.find( "Audio" ) ).first;
+
 				if( ImGui::Button( "Create Event" ) )
 				{
 					if( ActiveTrack && Tracks.size() > 0 )
 					{
-						FEventAudio* Event = new FEventAudio();
+						FTrackEvent* Event = EventTypes[EventType]();
 						Event->Start = Marker;
 						Event->Length = SequenceLengthSeconds * Timebase;
 						ActiveTrack->AddEvent( Event );
@@ -349,6 +578,23 @@ public:
 					}
 				}
 
+				ImGui::SameLine();
+
+				if( ImGui::BeginCombo( "##EventTypes", EventType.c_str() ) )
+				{
+					for( auto& Pair : EventTypes )
+					{
+						if( ImGui::Selectable( Pair.first.c_str() ) )
+						{
+							EventType = Pair.first;
+						}
+
+						ImGui::Separator();
+					}
+
+					ImGui::EndCombo();
+				}
+
 				ImGui::Separator();
 
 				int StartLocation = StartMarker / Timebase;
@@ -366,10 +612,27 @@ public:
 				ImGui::Separator();
 				ImGui::Separator();
 
+				static float WidthScale = 1.0f;
+				size_t WidthDelta = static_cast<size_t>( 1000.0f / 30 ) * WidthScale;
+				ImGui::SliderFloat( "Scale", &WidthScale, 0.0f, 10.0f );
+
+				ImGui::SameLine();
+				if( ImGui::Checkbox( "Use Timeline Cameras", &TimelineCamera ) )
+				{
+					if( !TimelineCamera )
+					{
+						auto World = CWorld::GetPrimaryWorld();
+						if( World )
+						{
+							World->SetActiveCamera( nullptr );
+						}
+					}
+				}
+
 				auto CursorOffset = 100.0f;
 				auto CursorPosition = ImGui::GetCursorPos();
 				CursorPosition.x += CursorOffset;
-				size_t WidthDelta = static_cast<size_t>( 1000.0f / 30 );
+
 				size_t Bars = ( ( EndMarker - StartMarker ) / Timebase );
 				for( size_t BarIndex = 0; BarIndex < Bars; BarIndex++ )
 				{
@@ -379,6 +642,37 @@ public:
 
 					ImGui::Text( "%zi", BarIndex );
 				}
+
+				auto BarPosition = ImGui::GetCursorPos();
+				ImGui::SetCursorPos( CursorPosition );
+				auto MouseStartPosition = ImGui::GetCursorScreenPos();
+				
+				if( Bars > 0 && ImGui::InvisibleButton( "MarkerTracker", ImVec2( Bars * WidthDelta, 30.0f ) ) )
+				{
+					auto MousePosition = ImGui::GetMousePos();
+					auto MouseOffset = MousePosition.x - MouseStartPosition.x;
+					if( MouseOffset < 0.0f )
+						MouseOffset = 0.0f;
+
+					Marker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
+				}
+
+				Timecode GhostMarker = 0;
+				if( ImGui::IsItemHovered() )
+				{
+					auto MousePosition = ImGui::GetMousePos();
+					auto MouseOffset = MousePosition.x - MouseStartPosition.x;
+					if( MouseOffset < 0.0f )
+						MouseOffset = 0.0f;
+
+					GhostMarker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
+					if( ImGui::GetIO().MouseDown[0] )
+					{
+						Marker = GhostMarker;
+					}
+				}
+
+				ImGui::SetCursorPos( BarPosition );
 
 				ImGui::Separator();
 
@@ -433,8 +727,8 @@ public:
 						ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0.0f, 0.0f ) );
 
 						char EventName[128];
-						sprintf_s( EventName, "%s (Start: %lli End: %lli Length: %llis)##eb%zi", Event->GetName(), Event->Start, Event->Start + Event->Length, Event->Length / Timebase, GlobalIndex );
-						ImGui::Button( EventName, ImVec2( ( Event->Length / Timebase ) * WidthDelta, 30.0f ) );
+						sprintf_s( EventName, "%s (Length: %llis)##eb%zi", Event->GetName(), Event->Length / Timebase, GlobalIndex );
+						ImGui::Button( EventName, ImVec2( ( static_cast<float>( Event->Length ) / static_cast<float>( Timebase ) )* WidthDelta, 30.0f ) );
 						if( ImGui::IsItemHovered() )
 						{
 							ImGui::SetTooltip( EventName );
@@ -451,7 +745,6 @@ public:
 						if( ImGui::IsItemClicked() )
 						{
 							ActiveTrack = &Track;
-							Event->Execute();
 						}
 
 						ImVec2 Drag = ImVec2();
@@ -463,7 +756,7 @@ public:
 							Drag.y += Delta.y;
 							ImGui::ResetMouseDragDelta( 0 );
 
-							Marker = Event->Start;
+							// Marker = Event->Start;
 						}
 
 						auto NewEventStart = Event->Start + static_cast<Timecode>( Drag.x / WidthDelta * Timebase );
@@ -516,6 +809,12 @@ public:
 					auto LineEnd = MarkerPosition;
 					LineEnd.y += Tracks.size() * VerticalOffset;
 					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_WHITE );
+
+					MarkerPosition = ScreenPosition;
+					MarkerPosition.x += ( static_cast<float>( GhostMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+					LineEnd = MarkerPosition;
+					LineEnd.y += Tracks.size() * VerticalOffset;
+					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 128, 128, 128, 255 ) );
 
 					MarkerPosition = ScreenPosition;
 					MarkerPosition.x += ( StartMarker / Timebase ) * WidthDelta;
@@ -571,7 +870,7 @@ public:
 		static float PreviousTime = 0.0f;
 		auto Time = GameLayersInstance->GetCurrentTime();
 		auto DeltaTime = Time - PreviousTime;
-		size_t Steps = DeltaTime / ( 1.0f / (float) Timebase );
+		size_t Steps = ( DeltaTime / ( 1.0f / (float) Timebase ) ) + 1;
 		for( size_t StepIndex = 0; StepIndex < Steps; StepIndex++ )
 		{
 			Step();
