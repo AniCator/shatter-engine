@@ -241,7 +241,7 @@ void CMesh::GenerateAABB( const FPrimitive& Primitive )
 			AABB.Maximum[0] = Vertex.Position[0];
 		}
 
-		if( Vertex.Position[1] > AABB.Minimum[1] )
+		if( Vertex.Position[1] > AABB.Maximum[1] )
 		{
 			AABB.Maximum[1] = Vertex.Position[1];
 		}
