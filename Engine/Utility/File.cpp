@@ -22,6 +22,8 @@ CFile::CFile( const char* FileLocationIn )
 	{
 		FileExtension = "";
 	}
+
+	Statistics = struct stat();
 }
 
 CFile::~CFile()
@@ -71,6 +73,8 @@ bool CFile::Load( bool InBinary )
 		}
 
 		FileStream.close();
+
+		stat( FileLocation.c_str(), &Statistics );
 
 		return true;
 	}
@@ -142,7 +146,7 @@ bool CFile::Save()
 	return false;
 }
 
-bool CFile::Exists()
+bool CFile::Exists() const
 {
 	return Exists( FileLocation.c_str() );
 }
@@ -158,6 +162,20 @@ bool CFile::Exists( const char* FileLocation )
 	}
 
 	return Exists;
+}
+
+bool CFile::Modified() const
+{
+	struct stat Buffer;
+	stat( FileLocation.c_str(), &Buffer );
+	return Statistics.st_mtime > Buffer.st_mtime;
+}
+
+time_t CFile::ModificationDate() const
+{
+	struct stat Buffer;
+	stat( FileLocation.c_str(), &Buffer );
+	return Buffer.st_mtime;
 }
 
 const char* GetLine( const char*& Start, const char*& End )

@@ -20,15 +20,15 @@ public:
 	template<typename T>
 	const T* Fetch() const { return reinterpret_cast<T*>( Data ); };
 
-	bool Exists();
+	bool Exists() const;
 	static bool Exists( const char* FileLocation );
 
-	const std::string Location() const
+	const std::string& Location() const
 	{
 		return FileLocation;
 	}
 
-	const std::string Extension() const
+	const std::string& Extension() const
 	{
 		return FileExtension;
 	}
@@ -68,12 +68,17 @@ public:
 		return Data;
 	}
 
+	bool Modified() const;
+	time_t ModificationDate() const;
+
 private:
 	char* Data;
 	size_t FileSize;
 	std::string FileLocation;
 	std::string FileExtension;
 	bool Binary;
+
+	struct stat Statistics;
 };
 
 const char* GetLine( const char*& Start, const char*& End );
