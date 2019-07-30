@@ -25,6 +25,7 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/Utility/Script/AngelEngine.h>
+#include <Engine/World/World.h>
 
 #include <Game/Game.h>
 
@@ -39,6 +40,7 @@ CWindow& MainWindow = CWindow::Get();
 CCamera DefaultCamera = CCamera();
 FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
 bool PauseGame = false;
+bool FrameStep = false;
 bool ScaleTime = false;
 bool CursorVisible = true;
 bool RestartLayers = false;
@@ -502,10 +504,45 @@ void AssetUI()
 			ImGui::Separator();
 			ImGui::Separator();
 
+			auto World = CWorld::GetPrimaryWorld();
+			if( World )
+			{
+				auto Levels = World->GetLevels();
+				for( auto& Level : Levels )
+				{
+					if( ImGui::Selectable( Level.GetName().c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+					{
+						Level.Reload();
+					}
+					ImGui::NextColumn();
+					ImGui::Text( "Level" ); ImGui::NextColumn();
+					ImGui::Separator();
+				}
+			}
+
+			ImGui::Separator();
+			ImGui::Separator();
+
 			auto Meshes = Assets.GetMeshes();
 			for( const auto& Pair : Meshes )
 			{
-				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+					auto& Assets = CAssets::Get();
+					if( Pair.second && Assets.FindMesh( Pair.first ) )
+					{
+						CTimer LoadTimer;
+
+						LoadTimer.Start();
+						auto Mesh = Assets.CreateNamedMesh( Pair.first.c_str(), Pair.second->GetLocation().c_str(), true );
+						LoadTimer.Stop();
+
+						const size_t Triangles = Mesh->GetVertexBufferData().IndexCount / 3;
+
+						Log::Event( "Re-import: %ims %i triangles\n", LoadTimer.GetElapsedTimeMilliseconds(), Triangles );
+					}
+				}
+				ImGui::NextColumn();
 				ImGui::Text( "Mesh" ); ImGui::NextColumn();
 				ImGui::Separator();
 			}
@@ -679,6 +716,11 @@ void DebugMenu( CApplication* Application )
 			if( ImGui::MenuItem( "Pause", nullptr, PauseGame ) )
 			{
 				PauseGame = !PauseGame;
+			}
+
+			if( ImGui::MenuItem( "Frame Step", nullptr, FrameStep ) )
+			{
+				FrameStep = true;
 			}
 
 			if( ImGui::MenuItem( "Slow Motion", nullptr, ScaleTime ) )
@@ -1013,7 +1055,7 @@ void CApplication::Run()
 					}
 				}
 
-				if( !PauseGame )
+				if( !PauseGame || FrameStep )
 				{
 					CProfiler::Get().Clear();
 					Renderer.RefreshFrame();
@@ -1032,10 +1074,15 @@ void CApplication::Run()
 					// CAngelEngine::Get().Tick();
 
 					GameTimer.Start();
+
+					if( FrameStep )
+					{
+						FrameStep = false;
+					}
 				}
 			}
 
-			if( PauseGame )
+			if( PauseGame && !FrameStep )
 			{
 				GameTimer.Start();
 			}
