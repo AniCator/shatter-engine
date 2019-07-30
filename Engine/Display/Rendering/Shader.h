@@ -23,6 +23,32 @@ namespace EBlendMode
 	};
 }
 
+namespace EDepthMask
+{
+	enum Type
+	{
+		Ignore = 0,
+		Write,
+		Maximum
+	};
+}
+
+namespace EDepthTest
+{
+	enum Type
+	{
+		Never = 0,
+		Less,
+		Equal,
+		LessEqual,
+		Greater,
+		NotEqual,
+		GreaterEqual,
+		Always,
+		Maximum
+	};
+}
+
 struct FProgramHandles
 {
 	FProgramHandles()
@@ -43,15 +69,18 @@ public:
 	CShader();
 	~CShader();
 
+	bool Load( bool ShouldLink = true );
 	bool Load( const char* FileLocation, bool ShouldLink = true );
 	bool Load( const char* VertexLocation, const char* FragmentLocation, bool ShouldLink = true );
 	bool Load( const char* FileLocation, GLuint& HandleIn, EShaderType ShaderType );
 
 	bool Reload();
 
-	GLuint Activate() const;
+	GLuint Activate();
 	const FProgramHandles& GetHandles() const;
 	const EBlendMode::Type& GetBlendMode() const;
+	const EDepthMask::Type& GetDepthMask() const;
+	const EDepthTest::Type& GetDepthTest() const;
 
 private:
 	std::string Process( const CFile& File );
@@ -63,4 +92,9 @@ private:
 	std::string FragmentLocation;
 
 	EBlendMode::Type BlendMode;
+	EDepthMask::Type DepthMask;
+	EDepthTest::Type DepthTest;
+
+	time_t ModificationTime;
+
 };

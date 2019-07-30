@@ -8,11 +8,31 @@
 CShader::CShader()
 {
 	BlendMode = EBlendMode::Opaque;
+	DepthMask = EDepthMask::Write;
+	DepthTest = EDepthTest::Less;
 }
 
 CShader::~CShader()
 {
 
+}
+
+bool CShader::Load( bool ShouldLink )
+{
+	if( VertexLocation.length() > 0 && FragmentLocation.length() > 0 )
+	{
+		const bool LoadedVertexShader = Load( VertexLocation.c_str(), Handles.VertexShader, EShaderType::Vertex );
+		const bool LoadedFragmentShader = Load( FragmentLocation.c_str(), Handles.FragmentShader, EShaderType::Fragment );
+
+		if( LoadedVertexShader && LoadedFragmentShader && ShouldLink )
+		{
+			Link();
+
+			return Handles.Program != 0;
+		}
+	}
+
+	return false;
 }
 
 bool CShader::Load( const char* FileLocation, bool ShouldLink )
@@ -25,6 +45,9 @@ bool CShader::Load( const char* FileLocation, bool ShouldLink )
 
 	VertexPath << VertexLocation << ".vs";
 	FragmentPath << FragmentLocation << ".fs";
+
+	VertexLocation = VertexPath.str();
+	FragmentLocation = FragmentPath.str();
 
 	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), Handles.VertexShader, EShaderType::Vertex );
 	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), Handles.FragmentShader, EShaderType::Fragment );
@@ -50,6 +73,9 @@ bool CShader::Load( const char* VertexLocationIn, const char* FragmentLocationIn
 	VertexPath << VertexLocation << ".vs";
 	FragmentPath << FragmentLocation << ".fs";
 
+	VertexLocation = VertexPath.str();
+	FragmentLocation = FragmentPath.str();
+
 	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), Handles.VertexShader, EShaderType::Vertex );
 	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), Handles.FragmentShader, EShaderType::Fragment );
 
@@ -67,6 +93,8 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 {
 	CFile ShaderSource( FileLocation );
 	const bool Loaded = ShaderSource.Load();
+
+	ModificationTime = ShaderSource.ModificationDate() > ModificationTime ? ShaderSource.ModificationDate() : ModificationTime;
 
 	if( Loaded )
 	{
@@ -89,11 +117,21 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 bool CShader::Reload()
 {
 	Log::Event( "Recompiling \"%s\"...\n", FragmentLocation.c_str() );
-	return Load( VertexLocation.c_str(), FragmentLocation.c_str() );
+	return Load();
 }
 
-GLuint CShader::Activate() const
+GLuint CShader::Activate()
 {
+#ifdef _DEBUG
+	CFile VertexShader( VertexLocation.c_str() );
+	CFile FragmentShader( FragmentLocation.c_str() );
+
+	if( VertexShader.ModificationDate() > ModificationTime || FragmentShader.ModificationDate() > ModificationTime )
+	{
+		Reload();
+	}
+#endif
+
 	glUseProgram( Handles.Program );
 
 	return Handles.Program;
@@ -107,6 +145,16 @@ const FProgramHandles& CShader::GetHandles() const
 const EBlendMode::Type& CShader::GetBlendMode() const
 {
 	return BlendMode;
+}
+
+const EDepthMask::Type& CShader::GetDepthMask() const
+{
+	return DepthMask;
+}
+
+const EDepthTest::Type& CShader::GetDepthTest() const
+{
+	return DepthTest;
 }
 
 bool LogShaderCompilationErrors( GLuint v )
@@ -208,6 +256,62 @@ std::string CShader::Process(const CFile& File)
 
 				bParsed = true;
 			}
+			else if( Preprocessor == "#depthwrite" )
+			{
+				std::string Mode;
+				Stream >> Mode;
+
+				DepthMask = EDepthMask::Write;
+
+				if( Mode == "0" )
+				{
+					DepthMask = EDepthMask::Ignore;
+				}
+
+				bParsed = true;
+			}
+			else if( Preprocessor == "#depthtest" )
+			{
+				std::string Mode;
+				Stream >> Mode;
+
+				DepthTest = EDepthTest::Less;
+
+				if( Mode == "0" )
+				{
+					DepthTest = EDepthTest::Never;
+				}
+				else if( Mode == "<" )
+				{
+					DepthTest = EDepthTest::Less;
+				}
+				else if( Mode == "<=" )
+				{
+					DepthTest = EDepthTest::LessEqual;
+				}
+				else if( Mode == "==" )
+				{
+					DepthTest = EDepthTest::Equal;
+				}
+				else if( Mode == ">" )
+				{
+					DepthTest = EDepthTest::Greater;
+				}
+				else if( Mode == "!=" )
+				{
+					DepthTest = EDepthTest::NotEqual;
+				}
+				else if( Mode == ">=" )
+				{
+					DepthTest = EDepthTest::GreaterEqual;
+				}
+				else if( Mode == "1" )
+				{
+					DepthTest = EDepthTest::Always;
+				}
+
+				bParsed = true;
+			}
 		}
 
 		if( !bParsed )
@@ -253,7 +357,7 @@ GLuint CShader::Link()
 
 		if( !ShaderCompiled )
 		{
-			Load( VertexLocation.c_str(), FragmentLocation.c_str(), false );
+			Load( false );
 		}
 
 		Attempts++;
