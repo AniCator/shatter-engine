@@ -152,7 +152,11 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 		if( Payload.Type == EAsset::Mesh )
 		{
 			Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
-			CreateNamedMesh( Payload.Name.c_str(), Payload.Location1.c_str() );
+			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Location1.c_str() );
+			if( Mesh )
+			{
+				Mesh->SetLocation( Payload.Location1 );
+			}
 		}
 		else if( Payload.Type == EAsset::Shader )
 		{
@@ -209,13 +213,21 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 		if( Payload.Native && Payload.Primitive.Vertices && Payload.Primitive.VertexCount > 0 )
 		{
 			Log::Event( "Loading mesh (2nd pass) \"%s\".\n", Payload.Name.c_str() );
-			CreateNamedMesh( Payload.Name.c_str(), Payload.Primitive );
+			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Primitive );
+			if( Mesh )
+			{
+				Mesh->SetLocation( Payload.Location );
+			}
 		}
 		else if( !Payload.Native )
 		{
 			Log::Event( "Loading non-native mesh \"%s\".\n", Payload.Name.c_str() );
 			// Try to load the mesh synchronously.
-			CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
+			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
+			if( Mesh )
+			{
+				Mesh->SetLocation( Payload.Location );
+			}
 		}
 	}
 
@@ -287,6 +299,11 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 					Mesh->Destroy();
 					Mesh->Populate(Primitive);
 				}
+			}
+
+			if( Mesh )
+			{
+				Mesh->SetLocation( FileLocation );
 			}
 
 			// Automatically export an LM file if the extension was OBJ.

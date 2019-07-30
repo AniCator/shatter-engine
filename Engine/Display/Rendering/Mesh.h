@@ -89,6 +89,9 @@ public:
 	const FIndexData& GetIndexData() const;
 
 	const FBounds& GetBounds() const;
+
+	const std::string& GetLocation() const;
+	void SetLocation( const std::string& FileLocation );
 private:
 	bool CreateVertexArrayObject();
 	bool CreateVertexBuffer( const FPrimitive& Primitive );
@@ -108,4 +111,6 @@ private:
 	uint32_t HasIndexBuffer : 1;
 
 	FBounds AABB;
+
+	std::string Location;
 };

@@ -4,10 +4,14 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
+static std::string GeneratedMesh = "gen";
+
 CMesh::CMesh( EMeshType InMeshType )
 {
 	MeshType = InMeshType;
 	VertexArrayObject = 0;
+
+	Location = GeneratedMesh;
 }
 
 CMesh::~CMesh()
@@ -111,6 +115,16 @@ const FIndexData& CMesh::GetIndexData() const
 const FBounds& CMesh::GetBounds() const
 {
 	return AABB;
+}
+
+const std::string& CMesh::GetLocation() const
+{
+	return Location;
+}
+
+void CMesh::SetLocation( const std::string& FileLocation )
+{
+	Location = FileLocation;
 }
 
 bool CMesh::CreateVertexArrayObject()
