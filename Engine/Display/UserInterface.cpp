@@ -77,23 +77,19 @@ namespace UI
 
 		if( ScreenPosition.X < 0.0f )
 		{
-			ScreenPosition.X = 0.0f;
 			Front = false;
 		}
 		else if( ScreenPosition.X > Width )
 		{
-			ScreenPosition.X = Width;
 			Front = false;
 		}
 
 		if( ScreenPosition.Y < 0.0f )
 		{
-			ScreenPosition.Y = 0.0f;
 			Front = false;
 		}
 		else if( ScreenPosition.Y > Height )
 		{
-			ScreenPosition.Y = Height;
 			Front = false;
 		}
 
