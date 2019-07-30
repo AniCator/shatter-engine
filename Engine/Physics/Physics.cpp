@@ -29,7 +29,7 @@ public:
 
 	void Unregister( CPhysicsComponent* ComponentIn )
 	{
-		for( auto Component : Components )
+		for( auto& Component : Components )
 		{
 			if( Component == ComponentIn )
 			{
