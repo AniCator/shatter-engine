@@ -81,6 +81,14 @@ void CWorld::Destroy()
 	Physics->Destroy();
 }
 
+void CWorld::Reload()
+{
+	for( auto Level : Levels )
+	{
+		Level.Reload();
+	}
+}
+
 CLevel& CWorld::Add()
 {
 	Levels.push_back( CLevel( this ) );

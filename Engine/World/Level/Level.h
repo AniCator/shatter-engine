@@ -23,6 +23,8 @@ public:
 	void Tick();
 	void Destroy();
 
+	void Reload();
+
 	template<typename T>
 	T* Spawn()
 	{
@@ -86,6 +88,9 @@ public:
 	CWorld* GetWorld();
 	void SetWorld( CWorld* NewWorld );
 
+	const std::string& GetName() const;
+	void SetName( const std::string& Name );
+
 	FTransform GetTransform() const
 	{
 		return Transform;
@@ -97,6 +102,7 @@ protected:
 private:
 	std::vector<CEntity*> Entities;
 	CWorld* World;
+	std::string Name;
 
 public:
 	friend CData& operator<<( CData& Data, CLevel& Level );

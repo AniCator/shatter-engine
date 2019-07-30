@@ -70,10 +70,29 @@ void CLevel::Destroy()
 	}
 }
 
+void CLevel::Reload()
+{
+	/*CWorld* TemporaryWorld = World;
+
+	Destroy();
+	World = TemporaryWorld;
+
+	CFile File = CFile( Name.c_str() );
+	File.Load();
+	Load( File );*/
+
+	for( auto Entity : Entities )
+	{
+		Entity->Reload();
+	}
+}
+
 void CLevel::Load( const CFile& File, const bool AssetsOnly )
 {
 	Log::Event( "Parsing level \"%s\".\n", File.Location().c_str() );
 	JSON::Container JSON = JSON::GenerateTree( File );
+
+	SetName( File.Location() );
 
 	Log::Event( "Processing JSON tree.\n" );
 	CAssets& Assets = CAssets::Get();
@@ -480,6 +499,16 @@ CWorld* CLevel::GetWorld()
 void CLevel::SetWorld( CWorld* NewWorld )
 {
 	World = NewWorld;
+}
+
+const std::string& CLevel::GetName() const
+{
+	return Name;
+}
+
+void CLevel::SetName( const std::string& NameIn )
+{
+	Name = NameIn;
 }
 
 CData& operator<<( CData& Data, CLevel& Level )

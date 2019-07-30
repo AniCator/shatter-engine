@@ -23,6 +23,8 @@ public:
 	void Tick();
 	void Destroy();
 
+	void Reload();
+
 	template<typename T>
 	T* Spawn()
 	{
@@ -35,7 +37,7 @@ public:
 	}
 
 	CLevel& Add();
-	std::deque<CLevel>& GetLevels() { return Levels; };
+	const std::deque<CLevel>& GetLevels() { return Levels; };
 
 	CEntity* Find( const std::string& Name ) const
 	{
