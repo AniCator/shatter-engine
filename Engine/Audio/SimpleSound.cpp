@@ -4,6 +4,7 @@
 #include <ThirdParty/SFML-2.5.1/include/SFML/Audio.hpp>
 
 #include <Engine/Profiling/Logging.h>
+#include <Engine/Profiling/Profiling.h>
 #include <Game/Game.h>
 
 std::vector<FSound> CSimpleSound::Sounds;
@@ -173,6 +174,8 @@ void CSimpleSound::Volume( const float GlobalVolumeIn )
 
 void CSimpleSound::Tick()
 {
+	Profile( "Sound" );
+
 	const float CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 	for( auto Stream : Streams )
 	{
