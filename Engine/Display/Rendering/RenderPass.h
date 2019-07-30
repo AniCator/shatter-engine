@@ -46,7 +46,13 @@ public:
 	bool AlwaysClear;
 
 	EBlendMode::Type BlendMode;
+	EDepthMask::Type DepthMask;
+	EDepthTest::Type DepthTest;
 
 private:
+	void ConfigureBlendMode( CShader* Shader );
+	void ConfigureDepthMask( CShader* Shader );
+	void ConfigureDepthTest( CShader* Shader );
+
 	std::string PassName;
 };

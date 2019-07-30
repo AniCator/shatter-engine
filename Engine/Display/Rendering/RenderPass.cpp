@@ -14,6 +14,18 @@
 
 GLuint ShaderProgramHandle = -1;
 
+static const GLenum DepthTestToEnum[EDepthTest::Maximum]
+{
+	GL_NEVER,
+	GL_LESS,
+	GL_EQUAL,
+	GL_LEQUAL,
+	GL_GREATER,
+	GL_NOTEQUAL,
+	GL_GEQUAL,
+	GL_ALWAYS
+};
+
 CRenderPass::CRenderPass( const std::string& Name, int Width, int Height, const CCamera& CameraIn, const bool AlwaysClearIn )
 {
 	ViewportWidth = Width;
@@ -22,6 +34,8 @@ CRenderPass::CRenderPass( const std::string& Name, int Width, int Height, const 
 	AlwaysClear = AlwaysClearIn;
 	Target = nullptr;
 	BlendMode = EBlendMode::Opaque;
+	DepthMask = EDepthMask::Write;
+	DepthTest = EDepthTest::Less;
 	PassName = Name;
 }
 
@@ -92,6 +106,7 @@ void CRenderPass::Clear()
 	Begin();
 
 	glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+	glClearDepth( 1.0f );
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 
 	End();
@@ -101,6 +116,9 @@ void CRenderPass::Begin()
 {
 	Calls = 0;
 	glViewport( 0, 0, ViewportWidth, ViewportHeight );
+
+	// Reset the render data.
+	PreviousRenderData = FRenderDataInstanced();
 
 	if( Target )
 	{
@@ -118,13 +136,20 @@ void CRenderPass::Begin()
 	if( AlwaysClear )
 	{
 		glClearColor( 0.0f, 0.0f, 0.0f, 1.0f );
+		glClearDepth( 1.0f );
 		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT );
 	}
+
+	glDepthMask( DepthMask == EDepthMask::Write ? GL_TRUE : GL_FALSE );
+	glDepthFunc( DepthTestToEnum[DepthTest] );
 }
 
 void CRenderPass::End()
 {
 	glDisable( GL_BLEND );
+
+	glDepthMask( GL_TRUE );
+	glDepthFunc( GL_LESS );
 
 	if( Target && Target->Ready() )
 	{
@@ -163,26 +188,9 @@ void CRenderPass::Draw( CRenderable* Renderable )
 	CShader* Shader = Renderable->GetShader();
 	if( Shader )
 	{
-		auto NextBlendMode = Shader->GetBlendMode();
-		if( NextBlendMode != BlendMode )
-		{
-			if( NextBlendMode == EBlendMode::Opaque )
-			{
-				glDisable( GL_BLEND );
-			}
-			else if( NextBlendMode == EBlendMode::Alpha )
-			{
-				glEnable( GL_BLEND );
-				glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
-			}
-			else if( NextBlendMode == EBlendMode::Additive )
-			{
-				glEnable( GL_BLEND );
-				glBlendFunc( GL_ONE, GL_ONE );
-			}
-
-			BlendMode = NextBlendMode;
-		}
+		ConfigureBlendMode( Shader );
+		ConfigureDepthMask( Shader );
+		ConfigureDepthTest( Shader );
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 
@@ -214,6 +222,12 @@ void CRenderPass::Draw( CRenderable* Renderable )
 		if( CameraPositionLocation > -1 )
 		{
 			glUniform3fv( CameraPositionLocation, 1, CameraSetup.CameraPosition.Base() );
+		}
+
+		const GLint CameraDirectionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraDirection" );
+		if( CameraDirectionLocation > -1 )
+		{
+			glUniform3fv( CameraDirectionLocation, 1, CameraSetup.CameraDirection.Base() );
 		}
 
 		const GLint ObjectPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectPosition" );
@@ -259,4 +273,49 @@ void CRenderPass::Draw( CRenderable* Renderable )
 void CRenderPass::SetCamera( const CCamera& CameraIn )
 {
 	Camera = CameraIn;
+}
+
+void CRenderPass::ConfigureBlendMode( CShader* Shader )
+{
+	auto NextBlendMode = Shader->GetBlendMode();
+	if( NextBlendMode != BlendMode )
+	{
+		if( NextBlendMode == EBlendMode::Opaque )
+		{
+			glDisable( GL_BLEND );
+		}
+		else if( NextBlendMode == EBlendMode::Alpha )
+		{
+			glEnable( GL_BLEND );
+			glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+		}
+		else if( NextBlendMode == EBlendMode::Additive )
+		{
+			glEnable( GL_BLEND );
+			glBlendFunc( GL_ONE, GL_ONE );
+		}
+
+		BlendMode = NextBlendMode;
+	}
+}
+
+void CRenderPass::ConfigureDepthMask( CShader* Shader )
+{
+	auto NextDepthMask = Shader->GetDepthMask();
+	if( NextDepthMask != DepthMask )
+	{
+		glDepthMask( NextDepthMask == EDepthMask::Write ? GL_TRUE : GL_FALSE );
+		DepthMask = NextDepthMask;
+	}
+}
+
+void CRenderPass::ConfigureDepthTest( CShader* Shader )
+{
+	auto NextDepthTest = Shader->GetDepthTest();
+	if( NextDepthTest != DepthTest )
+	{
+		glDepthFunc( DepthTestToEnum[NextDepthTest] );
+
+		DepthTest = NextDepthTest;
+	}
 }
