@@ -17,6 +17,7 @@ namespace ERenderPassLocation
 	enum Type
 	{
 		Standard = 0,
+		PreScene,
 		Scene,
 		PostProcess
 	};

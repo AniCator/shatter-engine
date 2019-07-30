@@ -200,7 +200,9 @@ void CRenderer::DrawQueuedRenderables()
 	int FramebufferWidth = ViewportWidth;
 	int FramebufferHeight = ViewportHeight;
 
-	if( !SkipRenderPasses && SuperSampling )
+	const bool RenderOnlyMainPass = SkipRenderPasses || ForceWireFrame;
+
+	if( !RenderOnlyMainPass && SuperSampling )
 	{
 		FramebufferWidth *= SuperSamplingFactor;
 		FramebufferHeight *= SuperSamplingFactor;
@@ -217,13 +219,14 @@ void CRenderer::DrawQueuedRenderables()
 
 	CRenderPass MainPass( "MainPass", FramebufferWidth, FramebufferHeight, Camera, false );
 
-	if( !SkipRenderPasses )
+	if( !RenderOnlyMainPass )
 	{
 		MainPass.Target = &Framebuffer;
 	}
 
 	glEnable( GL_DEPTH_TEST );
 	glDepthFunc( GL_LESS );
+	glDepthMask( GL_TRUE );
 
 	if( ForceWireFrame )
 	{
@@ -269,27 +272,51 @@ void CRenderer::DrawQueuedRenderables()
 	MainPass.Clear();
 
 	int64_t DrawCalls = 0;
-	DrawCalls += MainPass.Render( Renderables, GlobalUniformBuffers );
-	DrawCalls += MainPass.Render( DynamicRenderables, GlobalUniformBuffers );
 
-	if( !SkipRenderPasses && DrawCalls > 0 )
+	{
+		Profile( "ERenderPassLocation::PreScene" );
+		for( auto& Pass : Passes )
+		{
+			if( Pass.Pass && Pass.Location == ERenderPassLocation::PreScene )
+			{
+				if( !RenderOnlyMainPass )
+				{
+					Pass.Pass->Target = &Framebuffer;
+				}
+
+				DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
+			}
+		}
+	}
+
+	{
+		Profile( "Main Pass" );
+		DrawCalls += MainPass.Render( Renderables, GlobalUniformBuffers );
+		DrawCalls += MainPass.Render( DynamicRenderables, GlobalUniformBuffers );
+	}
+
+	{
+		Profile( "ERenderPassLocation::Scene" );
+		for( auto& Pass : Passes )
+		{
+			if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
+			{
+				if( !RenderOnlyMainPass )
+				{
+					Pass.Pass->Target = &Framebuffer;
+				}
+
+				DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
+			}
+		}
+	}
+
+	if( !RenderOnlyMainPass && DrawCalls > 0 )
 	{
 		Profile( "Post-Process" );
 		if( !SuperSampling )
 		{
 			BufferA = Framebuffer;
-		}
-
-		{
-			Profile( "ERenderPassLocation::Scene" );
-			for( auto& Pass : Passes )
-			{
-				if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
-				{
-					Pass.Pass->Target = &Framebuffer;
-					Pass.Pass->Render( GlobalUniformBuffers );
-				}
-			}
 		}
 
 		if( MainPass.Target && MainPass.Target->Ready() && SuperSampleBicubicShader && ResolveShader && ImageProcessingShader && CopyShader )
@@ -351,7 +378,7 @@ void CRenderer::DrawQueuedRenderables()
 					if( Pass.Pass && Pass.Location == ERenderPassLocation::PostProcess )
 					{
 						Pass.Pass->Target = BufferTarget;
-						Pass.Pass->Render( GlobalUniformBuffers );
+						DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
 					}
 				}
 			}
@@ -393,7 +420,8 @@ void CRenderer::DrawQueuedRenderables()
 		{
 			if( Pass.Pass && Pass.Location == ERenderPassLocation::Standard )
 			{
-				Pass.Pass->Render( GlobalUniformBuffers );
+				Pass.Pass->Target = nullptr;
+				DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
 			}
 		}
 	}
@@ -477,7 +505,7 @@ void CRenderer::AddRenderPass( CRenderPass* Pass, ERenderPassLocation::Type Loca
 
 void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 {
-	const CShader* Shader = Renderable->GetShader();
+	CShader* Shader = Renderable->GetShader();
 	if( !Shader )
 	{
 		Shader = DefaultShader;
