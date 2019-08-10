@@ -48,6 +48,8 @@ public:
 	bool Contact;
 
 protected:
+	FBounds WorldBounds;
+
 	bool Collision;
 	bool Static;
 	CPhysicsComponent* PhysicsComponent;

@@ -103,15 +103,29 @@ void CMeshEntity::Tick()
 	{
 		if( ShouldUpdateTransform )
 		{
-			FRenderDataInstanced& RenderData = Renderable->GetRenderData();
-			RenderData.Transform = Transform;
-			RenderData.Color = Color;
-
 			GetTransform();
 		}
 
+		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+		RenderData.Transform = Transform;
+		RenderData.Color = Color;
+
 		CRenderer& Renderer = CWindow::Get().GetRenderer();
 		Renderer.QueueRenderable( Renderable );
+	}
+
+	if( Mesh )
+	{
+		auto& AABB = Mesh->GetBounds();
+
+		FTransform MinimumTransform = FTransform( AABB.Minimum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
+		FTransform MaximumTransform = FTransform( AABB.Maximum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
+
+		auto Minimum = Transform.Transform( AABB.Minimum );
+		auto Maximum = Transform.Transform( AABB.Maximum );
+
+		WorldBounds.Minimum = Minimum;
+		WorldBounds.Maximum = Maximum;
 	}
 }
 
@@ -133,10 +147,21 @@ void CMeshEntity::Debug()
 	{
 		auto& AABB = Mesh->GetBounds();
 		
-		auto Minimum = Transform.Position( Math::ToGLM( AABB.Minimum ) );
-		auto Maximum = Transform.Position( Math::ToGLM( AABB.Maximum ) );
+		// auto Minimum = Transform.Transform( Math::ToGLM( AABB.Minimum ) );
+		// auto Maximum = Transform.Transform( Math::ToGLM( AABB.Maximum ) );
 
-		UI::AddAABB( Math::FromGLM( Minimum ), Math::FromGLM( Maximum ), Contact ? UI::Color::Red : UI::Color::Blue );
+		FTransform MinimumTransform = FTransform( AABB.Minimum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
+		FTransform MaximumTransform = FTransform( AABB.Maximum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
+
+		auto Minimum = Transform.Transform( AABB.Minimum );
+		auto Maximum = Transform.Transform( AABB.Maximum );
+
+		UI::AddAABB( Minimum, Maximum, Collision ? ( Contact ? Color::Red : Color::Blue ) : Color::Black );
+
+		if( PhysicsComponent )
+		{
+			// UI::AddLine( Transform.GetPosition(), Transform.GetPosition() + PhysicsComponent->Velocity );
+		}
 	}
 }
 
@@ -200,6 +225,22 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 				Collision = true;
 			}
 		}
+		else if( Property->Key == "static" )
+		{
+			if( Property->Value == "0" )
+			{
+				Static = false;
+			}
+			else
+			{
+				Static = true;
+			}
+		}
+	}
+
+	if( TextureNames.size() == 0 )
+	{
+		TextureNames.emplace_back( "error" );
 	}
 
 	Reload();
@@ -236,6 +277,7 @@ void CMeshEntity::Import( CData& Data )
 	}
 
 	Data >> Color;
+	Data >> Collision;
 }
 
 void CMeshEntity::Export( CData& Data )
@@ -254,6 +296,7 @@ void CMeshEntity::Export( CData& Data )
 	}
 
 	Data << Color;
+	Data << Collision;
 }
 
 bool CMeshEntity::IsStatic() const
