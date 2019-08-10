@@ -32,10 +32,12 @@ struct FSound
 	{
 		Sound = nullptr;
 		Volume = 100.0f;
+		Playing = false;
 	}
 
 	sf::Sound* Sound;
 	float Volume;
+	bool Playing;
 };
 
 struct FStream
@@ -47,6 +49,7 @@ struct FStream
 		StartTime = -1.0f;
 		FadeIn = false;
 		Volume = 100.0f;
+		Playing = false;
 	}
 
 	sf::Music* Stream;
@@ -54,6 +57,7 @@ struct FStream
 	float StartTime;
 	bool FadeIn;
 	float Volume;
+	bool Playing;
 };
 
 class CSimpleSound
