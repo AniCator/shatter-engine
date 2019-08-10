@@ -168,9 +168,6 @@ void CRenderer::Initialize()
 
 void CRenderer::RefreshFrame()
 {
-	// Clean up render passes.
-	Passes.clear();
-
 	// Clean up the renderable queue.
 	Renderables.clear();
 
@@ -436,6 +433,9 @@ void CRenderer::DrawQueuedRenderables()
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
 
 	UI::SetCamera( Camera );
+
+	// Clean up render passes.
+	Passes.clear();
 }
 
 void CRenderer::SetUniformBuffer( const std::string& Name, const Vector4D& Value )
