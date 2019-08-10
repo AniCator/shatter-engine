@@ -160,7 +160,7 @@ void CEntity::Link( const JSON::Vector& Objects )
 
 					if( OutputName.length() > 0 && TargetName.length() > 0 && InputName.length() > 0 )
 					{
-						auto Entity = Level->Find( TargetName );
+						auto Entity = Level->GetWorld()->Find( TargetName );
 						if( Entity )
 						{
 							FMessage Message;
@@ -191,7 +191,7 @@ void CEntity::Send( const char* Output )
 			Log::Event( "Broadcasting output \"%s\".\n", Output );
 			for( auto& Message : Outputs[Output] )
 			{
-				auto Entity = Level->Find( Message.TargetID );
+				auto Entity = Level->GetWorld()->Find( Message.TargetID );
 				if( Entity )
 				{
 					for( const auto& Input : Message.Inputs )
