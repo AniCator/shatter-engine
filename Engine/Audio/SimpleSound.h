@@ -4,6 +4,16 @@
 #include <string>
 #include <vector>
 
+static const int32_t InvalidHandle = -1;
+
+template<typename HandleType>
+HandleType EmptyHandle()
+{
+	HandleType EmptyHandle;
+	EmptyHandle.Handle = -1;
+	return EmptyHandle;
+}
+
 union SoundHandle
 {
 	int32_t Handle;
@@ -63,8 +73,8 @@ struct FStream
 class CSimpleSound
 {
 public:
-	static SoundBufferHandle Sound( std::string ResourcePath );
-	static StreamHandle Music( std::string ResourcePath );
+	static SoundBufferHandle Sound( const std::string& ResourcePath );
+	static StreamHandle Music( const std::string& ResourcePath );
 
 	static SoundHandle Start( SoundBufferHandle Handle );
 	static void Start( StreamHandle Handle, const float FadeIn = -1.0f );

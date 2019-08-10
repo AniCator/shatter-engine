@@ -12,39 +12,50 @@ std::vector<sf::SoundBuffer*> CSimpleSound::SoundBuffers;
 std::vector<FStream> CSimpleSound::Streams;
 float CSimpleSound::GlobalVolume = 1.0f;
 
-SoundBufferHandle CSimpleSound::Sound( std::string ResourcePath )
+SoundBufferHandle CSimpleSound::Sound( const std::string& ResourcePath )
 {
-	Log::Event( "Loading sound \"%s\"\n", ResourcePath.c_str() );
 	sf::SoundBuffer* NewSoundBuffer = new sf::SoundBuffer();
-	NewSoundBuffer->loadFromFile( ResourcePath );
-	// sf::Sound* NewSound = new sf::Sound( *NewSoundBuffer );
+	if( NewSoundBuffer->loadFromFile( ResourcePath ) )
+	{
+		Log::Event( "Loaded sound \"%s\"\n", ResourcePath.c_str() );
+		// sf::Sound* NewSound = new sf::Sound( *NewSoundBuffer );
 
-	SoundBuffers.push_back( NewSoundBuffer );
-	// Sounds.push_back( NewSound );
+		SoundBuffers.push_back( NewSoundBuffer );
+		// Sounds.push_back( NewSound );
 
-	SoundBufferHandle Handle;
-	Handle.Handle = SoundBuffers.size() - 1;
-	return Handle;
+		SoundBufferHandle Handle;
+		Handle.Handle = SoundBuffers.size() - 1;
+		return Handle;
+	}
+
+	Log::Event( Log::Warning, "Failed to load sound \"%s\"\n", ResourcePath.c_str() );
+
+	return EmptyHandle<SoundBufferHandle>();
 }
 
-StreamHandle CSimpleSound::Music( std::string ResourcePath )
+StreamHandle CSimpleSound::Music( const std::string& ResourcePath )
 {
-	Log::Event( "Opening stream \"%s\"\n", ResourcePath.c_str() );
 	sf::Music* NewMusic = new sf::Music();
-	NewMusic->openFromFile( ResourcePath );
+	if( NewMusic->openFromFile( ResourcePath ) )
+	{
+		Log::Event( "Opening stream \"%s\"\n", ResourcePath.c_str() );
+		FStream Stream;
+		Stream.Stream = NewMusic;
+		Streams.push_back( Stream );
 
-	FStream Stream;
-	Stream.Stream = NewMusic;
-	Streams.push_back( Stream );
+		StreamHandle Handle;
+		Handle.Handle = Streams.size() - 1;
+		return Handle;
+	}
 
-	StreamHandle Handle;
-	Handle.Handle = Streams.size() - 1;
-	return Handle;
+	Log::Event( Log::Warning, "Failed to open stream \"%s\"\n", ResourcePath.c_str() );
+
+	return EmptyHandle<StreamHandle>();
 }
 
 SoundHandle CSimpleSound::Start( SoundBufferHandle Handle )
 {
-	if( Handle.Handle > -1 )
+	if( Handle.Handle > InvalidHandle && GlobalVolume != 0.0f )
 	{
 		FSound NewSound;
 		NewSound.Sound = new sf::Sound( *SoundBuffers[Handle.Handle] );
@@ -58,14 +69,15 @@ SoundHandle CSimpleSound::Start( SoundBufferHandle Handle )
 		return NewHandle;
 	}
 
-	SoundHandle EmptyHandle;
-	EmptyHandle.Handle = -1;
-	return EmptyHandle;
+	return EmptyHandle<SoundHandle>();
 }
 
 void CSimpleSound::Start( StreamHandle Handle, const float FadeIn )
 {
-	if( Handle.Handle < 0 )
+	if( GlobalVolume == 0.0f )
+		return;
+
+	if( Handle.Handle == InvalidHandle )
 		return;
 
 	if( FadeIn > 0.0f )
@@ -86,19 +98,22 @@ void CSimpleSound::Start( StreamHandle Handle, const float FadeIn )
 
 void CSimpleSound::Stop( SoundHandle Handle )
 {
-	if( Handle.Handle > -1 )
+	if( Handle.Handle > InvalidHandle)
 	{
-		Sounds[Handle.Handle].Sound->stop();
 		Sounds[Handle.Handle].Playing = false;
 
-		delete Sounds[Handle.Handle].Sound;
-		Sounds[Handle.Handle].Sound = nullptr;
+		if( Sounds[Handle.Handle].Sound )
+		{
+			Sounds[Handle.Handle].Sound->stop();
+			delete Sounds[Handle.Handle].Sound;
+			Sounds[Handle.Handle].Sound = nullptr;
+		}
 	}
 }
 
 void CSimpleSound::Stop( StreamHandle Handle, const float FadeOut )
 {
-	if( Handle.Handle > -1 )
+	if( Handle.Handle > InvalidHandle)
 	{
 		if( FadeOut < 0.0f )
 		{
@@ -163,6 +178,9 @@ void CSimpleSound::Rate( StreamHandle Handle, const float Rate )
 
 bool CSimpleSound::Playing( SoundHandle Handle )
 {
+	if( !Sounds[Handle.Handle].Sound )
+		return false;
+
 	bool Playing = Sounds[Handle.Handle].Sound->getStatus() == sf::SoundSource::Status::Playing;
 	Sounds[Handle.Handle].Playing = Playing;
 

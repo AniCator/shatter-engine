@@ -151,22 +151,22 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 		if( Payload.Type == EAsset::Mesh )
 		{
 			Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
-			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Location1.c_str() );
+			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Locations[0].c_str() );
 			if( Mesh )
 			{
-				Mesh->SetLocation( Payload.Location1 );
+				Mesh->SetLocation( Payload.Locations[0] );
 			}
 		}
 		else if( Payload.Type == EAsset::Shader )
 		{
 			Log::Event( "Loading shader \"%s\".\n", Payload.Name.c_str() );
-			if( Payload.Location2.length() > 0 )
+			if( Payload.Locations.size() > 1 )
 			{
-				CreateNamedShader( Payload.Name.c_str(), Payload.Location1.c_str(), Payload.Location2.c_str() );
+				CreateNamedShader( Payload.Name.c_str(), Payload.Locations[0].c_str(), Payload.Locations[1].c_str() );
 			}
 			else
 			{
-				CreateNamedShader( Payload.Name.c_str(), Payload.Location1.c_str() );
+				CreateNamedShader( Payload.Name.c_str(), Payload.Locations[0].c_str() );
 			}
 		}
 		else if( Payload.Type == EAsset::Texture )
@@ -176,28 +176,26 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 			EFilteringMode Mode = EFilteringMode::Linear;
 			EImageFormat ImageFormat = EImageFormat::RGB8;
 
-			if( Payload.Location2.size() > 0 )
+			if( Payload.Locations.size() > 1 )
 			{
 				// Transform given format into lower case string
-				std::transform( Payload.Location2.begin(), Payload.Location2.end(), Payload.Location2.begin(), ::tolower );
+				std::transform( Payload.Locations[1].begin(), Payload.Locations[1].end(), Payload.Locations[1].begin(), ::tolower );
 
-				auto Format = ImageFormatFromString.find( Payload.Location2 );
+				auto Format = ImageFormatFromString.find( Payload.Locations[1] );
 				if( Format != ImageFormatFromString.end() )
 				{
 					ImageFormat = Format->second;
 				}
 			}
 
-			CreateNamedTexture( Payload.Name.c_str(), Payload.Location1.c_str(), Mode, ImageFormat );
+			CreateNamedTexture( Payload.Name.c_str(), Payload.Locations[0].c_str(), Mode, ImageFormat );
 		}
 		else if( Payload.Type == EAsset::Sound )
 		{
-			// TODO: This will reload sounds right now even if we've already loaded them.
 			CSound* NewSound = FindSound( Payload.Name );
 			if( NewSound )
 			{
-				Log::Event( "Loading sound \"%s\".\n", Payload.Name.c_str() );
-				NewSound->Load( Payload.Location1.c_str() );
+				NewSound->Load( Payload.Locations );
 			}
 		}
 	}

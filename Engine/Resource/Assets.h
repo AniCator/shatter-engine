@@ -38,8 +38,7 @@ struct FGenericAssetPayload
 {
 	EAsset::Type Type;
 	std::string Name;
-	std::string Location1;
-	std::string Location2;
+	std::vector<std::string> Locations;
 };
 
 class CAssets

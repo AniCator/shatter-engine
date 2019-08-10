@@ -17,18 +17,56 @@ CSound::~CSound()
 
 bool CSound::Load( const char* FileLocation )
 {
-	if( true ) // TODO: The loading thing doesn't work yet.
+	if( !Loaded )
 	{
 		if( SoundType == ESoundType::Memory )
 		{
-			BufferHandles.push_back( CSimpleSound::Sound( FileLocation ) );
+			auto Handle = CSimpleSound::Sound( FileLocation );
+			if( Handle.Handle > InvalidHandle )
+			{
+				BufferHandles.emplace_back( Handle );
+				Loaded = true;
+			}
 		}
 		else
 		{
-			StreamHandles.push_back( CSimpleSound::Music( FileLocation ) );
+			auto Handle = CSimpleSound::Music( FileLocation );
+			if( Handle.Handle > InvalidHandle )
+			{
+				StreamHandles.emplace_back( Handle );
+				Loaded = true;
+			}
 		}
+	}
 
-		Loaded = true;
+	return Loaded;
+}
+
+bool CSound::Load( const std::vector<std::string> Locations )
+{
+	if( !Loaded )
+	{
+		for( auto& FileLocation : Locations )
+		{
+			if( SoundType == ESoundType::Memory )
+			{
+				auto Handle = CSimpleSound::Sound( FileLocation );
+				if( Handle.Handle > InvalidHandle )
+				{
+					BufferHandles.emplace_back( Handle );
+					Loaded = true;
+				}
+			}
+			else
+			{
+				auto Handle = CSimpleSound::Music( FileLocation );
+				if( Handle.Handle > InvalidHandle )
+				{
+					StreamHandles.emplace_back( Handle );
+					Loaded = true;
+				}
+			}
+		}
 	}
 
 	return Loaded;
@@ -38,16 +76,20 @@ void CSound::Clear()
 {
 	Stop();
 	Location = 0;
-	BufferHandles.clear();
+	// BufferHandles.clear();
 	SoundHandles.clear();
-	StreamHandles.clear();
+	// StreamHandles.clear();
 }
 
 void CSound::Start( const float FadeIn )
 {
 	if( SoundType == ESoundType::Memory )
 	{
-		SoundHandles.push_back( CSimpleSound::Start( Select() ) );
+		auto Handle = CSimpleSound::Start( Select() );
+		if( Handle.Handle > InvalidHandle )
+		{
+			SoundHandles.emplace_back( Handle );
+		}
 	}
 	else if( StreamHandles.size() > 0 )
 	{
@@ -164,29 +206,30 @@ void CSound::SetPlayMode( ESoundPlayMode::Type NewPlayMode )
 
 SoundBufferHandle CSound::Select()
 {
-	if( PlayMode == ESoundPlayMode::Unknown || PlayMode == ESoundPlayMode::Sequential )
+	if( BufferHandles.size() > 0 )
 	{
-		if( Location >= BufferHandles.size() )
+		if( PlayMode == ESoundPlayMode::Unknown || PlayMode == ESoundPlayMode::Sequential )
 		{
-			Location = 0;
-		}
+			if( Location >= BufferHandles.size() )
+			{
+				Location = 0;
+			}
 
-		return BufferHandles[Location++];
-	}
-	else if( PlayMode == ESoundPlayMode::Random )
-	{
-		uint32_t NewLocation = static_cast<uint32_t>( Math::Random() * BufferHandles.size() );
-		if( NewLocation == Location )
+			return BufferHandles[Location++];
+		}
+		else if( PlayMode == ESoundPlayMode::Random )
 		{
-			NewLocation = ( NewLocation + 1 ) % BufferHandles.size();
-		}
+			uint32_t NewLocation = static_cast<uint32_t>( Math::Random() * BufferHandles.size() );
+			if( NewLocation == Location )
+			{
+				NewLocation = ( NewLocation + 1 ) % BufferHandles.size();
+			}
 
-		Location = NewLocation;
-		return BufferHandles[Location];
+			Location = NewLocation;
+			return BufferHandles[Location];
+		}
 	}
 
-	SoundBufferHandle Invalid;
-	Invalid.Handle = -1;
-	return Invalid;
+	return EmptyHandle<SoundBufferHandle>();
 }
 

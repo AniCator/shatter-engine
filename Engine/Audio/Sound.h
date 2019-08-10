@@ -30,6 +30,7 @@ public:
 	~CSound();
 
 	bool Load( const char* FileLocation );
+	bool Load( const std::vector<std::string> Locations );
 
 	void Clear();
 

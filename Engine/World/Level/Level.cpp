@@ -211,8 +211,8 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 										FGenericAssetPayload Payload;
 										Payload.Type = EAsset::Shader;
 										Payload.Name = Name;
-										Payload.Location1 = VertexPath;
-										Payload.Location2 = FragmentPath;
+										Payload.Locations.emplace_back( VertexPath );
+										Payload.Locations.emplace_back( FragmentPath );
 										GenericAssets.emplace_back( Payload );
 									}
 									else
@@ -222,7 +222,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 											FGenericAssetPayload Payload;
 											Payload.Type = EAsset::Shader;
 											Payload.Name = Name;
-											Payload.Location1 = Path;
+											Payload.Locations.emplace_back( Path );
 											GenericAssets.emplace_back( Payload );
 										}
 									}
@@ -234,8 +234,8 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 										FGenericAssetPayload Payload;
 										Payload.Type = EAsset::Texture;
 										Payload.Name = Name;
-										Payload.Location1 = Path;
-										Payload.Location2 = ImageFormat;
+										Payload.Locations.emplace_back( Path );
+										Payload.Locations.emplace_back( ImageFormat );
 										GenericAssets.emplace_back( Payload );
 									}
 								}
@@ -248,16 +248,16 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 										NewSound->SetPlayMode( PlayMode );
 										NewSound->Loop( ShouldLoop );
 
+										FGenericAssetPayload Payload;
+										Payload.Type = EAsset::Sound;
+										Payload.Name = Name;
+
 										for( const auto& Path : Paths )
 										{
-											// NewSound->Load( Path.c_str() );
-
-											FGenericAssetPayload Payload;
-											Payload.Type = EAsset::Sound;
-											Payload.Name = Name;
-											Payload.Location1 = Path;
-											GenericAssets.emplace_back( Payload );
+											Payload.Locations.emplace_back( Path );
 										}
+
+										GenericAssets.emplace_back( Payload );
 									}
 								}
 								else
