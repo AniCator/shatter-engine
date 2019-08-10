@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Engine/Utility/Math/Vector.h>
+#include <Engine/Utility/Math/Matrix.h>
 
 #include <math.h>
 
@@ -34,6 +35,16 @@ namespace Math
 		Direction = glm::normalize( Direction );
 
 		return Direction;
+	}
+
+	inline Vector3D EulerToDirection( const Vector3D& Euler )
+	{
+		Vector3D Direction;
+		Direction[1] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[2] ) );
+		Direction[2] = sin( glm::radians( Euler[0] ) );
+		Direction[0] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[2] ) );
+
+		return Direction.Normalized();
 	}
 
 	inline float LengthSquared( const glm::vec2& Vector )
@@ -133,8 +144,8 @@ namespace Math
 
 	inline bool PointInBoundingBox( const Vector3D& Vector, const Vector3D& Minimum, const Vector3D& Maximum )
 	{
-		if( Vector[0] > Minimum[0] && Vector[1] > Minimum[1] && Vector[2] > Minimum[2] &&
-			Vector[0] < Maximum[0] && Vector[1] < Maximum[1] && Vector[2] < Maximum[2] )
+		if( Vector.X > Minimum.X && Vector.Y > Minimum.Y && Vector.Z > Minimum.Z &&
+			Vector.X < Maximum.X && Vector.Y < Maximum.Y && Vector.Z < Maximum.Z )
 		{
 			return true;
 		}
@@ -142,11 +153,27 @@ namespace Math
 		return false;
 	}
 
+	inline Vector3D ProjectOnVector( const Vector3D& U, const Vector3D& V )
+	{
+		return V * ( U.Dot( V ) / V.LengthSquared() );
+	}
+
+	inline Vector3D PointOnLine( const Vector3D& Point, const Vector3D& Start, const Vector3D End )
+	{
+		return Start + ProjectOnVector( Point - Start, End - Start );
+	}
+
+	// TODO: Not finished.
+	inline bool LineInBoundingBox( const Vector3D& Start, const Vector3D& End, const Vector3D& Minimum, const Vector3D& Maximum )
+	{
+		return false;
+	}
+
 	inline bool BoundingBoxIntersection( const Vector3D& MinimumA, const Vector3D& MaximumA, const Vector3D& MinimumB, const Vector3D& MaximumB )
 	{
-		if( ( MinimumA[0] < MaximumB[0] && MaximumA[0] > MinimumB[0] ) &&
-			( MinimumA[1] < MaximumB[1] && MaximumA[1] > MinimumB[1] ) &&
-			( MinimumA[2] < MaximumB[2] && MaximumA[2] > MinimumB[2] ) )
+		if( ( MinimumA.X < MaximumB.X && MaximumA.X  > MinimumB.X ) &&
+			( MinimumA.Y  < MaximumB.Y && MaximumA.Y > MinimumB.Y ) &&
+			( MinimumA.Z  < MaximumB.Z && MaximumA.Z  > MinimumB.Z ) )
 		{
 			return true;
 		}
@@ -193,7 +220,7 @@ namespace Math
 
 	inline glm::vec3 ToGLM( const Vector3D& Vector )
 	{
-		return glm::vec3( Vector[0], Vector[1], Vector[2] );
+		return glm::vec3( Vector.X, Vector.Y, Vector.Z );
 	}
 
 	inline Vector2D FromGLM( const glm::vec2& Vector )
@@ -203,7 +230,7 @@ namespace Math
 
 	inline glm::vec2 ToGLM( const Vector2D& Vector )
 	{
-		return glm::vec2( Vector[0], Vector[1] );
+		return glm::vec2( Vector.X, Vector.Y );
 	}
 }
 
@@ -339,6 +366,13 @@ public:
 		return TranslationMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
 	}
 
+	Vector3D Transform( const Vector3D& Position )
+	{
+		Update();
+		glm::vec3 Vector = TranslationMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Math::ToGLM( Position ), 1.0f );
+		return Math::FromGLM( Vector );
+	}
+
 	FTransform Transform( const FTransform& B )
 	{
 		Update();
@@ -367,13 +401,22 @@ private:
 	{
 		if( ShouldUpdate )
 		{
-			static const Vector3D AxisX = Vector3D( 1.0f, 0.0f, 0.0f );
-			static const Vector3D AxisY = Vector3D( 0.0f, 1.0f, 0.0f );
-			static const Vector3D AxisZ = Vector3D( 0.0f, 0.0f, 1.0f );
+			static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
+			static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
+			static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
 
 			ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
 
-			glm::quat Quaternion = glm::quat( glm::radians( Math::ToGLM( StoredOrientation ) ) );
+			Vector3D Radians = StoredOrientation;
+			Radians.X = glm::radians( Radians.X );
+			Radians.Y = glm::radians( Radians.Y );
+			Radians.Z = glm::radians( Radians.Z );
+
+			glm::quat Pitch = glm::angleAxis( Radians.X, AxisX );
+			glm::quat Yaw = glm::angleAxis( Radians.Y, AxisY );
+			glm::quat Roll = glm::angleAxis( Radians.Z, AxisZ );
+
+			glm::quat Quaternion = Yaw * Pitch * Roll;
 			RotationMatrix = glm::toMat4( Quaternion );
 
 			TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
