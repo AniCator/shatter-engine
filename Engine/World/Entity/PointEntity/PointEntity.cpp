@@ -28,7 +28,7 @@ const FTransform& CPointEntity::GetTransform()
 {
 	if( ShouldUpdateTransform )
 	{
-		if( Level )
+		if( Level && false )
 		{
 			WorldTransform = Level->GetTransform().Transform( Transform );
 		}
@@ -114,7 +114,7 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 
 void CPointEntity::Debug()
 {
-	UI::AddCircle( Transform.GetPosition(), 2.0f, UI::Color::White );
+	UI::AddCircle( Transform.GetPosition(), 2.0f, Color::White );
 	UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, -1.0f ), Name.String().c_str() );
 }
 
