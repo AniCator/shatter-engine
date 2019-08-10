@@ -26,16 +26,10 @@ struct FVertex
 		Normal = InNormal;
 	}
 
-	FVertex( const Vector3D& InPosition, const Vector3D& InNormal, const Vector2D& InTextureCoordinate )
-	{
-		Position = InPosition;
-		TextureCoordinate = InTextureCoordinate;
-		Normal = InNormal;
-	}
-
 	Vector3D Position;
 	Vector2D TextureCoordinate;
 	Vector3D Normal;
+	Vector3D Color;
 
 	bool operator<( const FVertex& B ) const 
 	{
@@ -53,6 +47,20 @@ struct FPrimitive
 		IndexCount = 0;
 
 		HasNormals = false;
+	}
+
+	FPrimitive( const FPrimitive& Primitive )
+	{
+		VertexCount = Primitive.VertexCount;
+		IndexCount = Primitive.IndexCount;
+
+		Vertices = new FVertex[Primitive.VertexCount];
+		Indices = new glm::uint[Primitive.IndexCount];
+
+		memcpy( Vertices, Vertices, Primitive.VertexCount * sizeof( FVertex ) );
+		memcpy( Indices, Indices, Primitive.IndexCount * sizeof( glm::uint ) );
+
+		HasNormals = Primitive.HasNormals;
 	}
 
 	~FPrimitive()
