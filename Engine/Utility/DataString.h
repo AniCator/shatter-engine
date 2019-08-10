@@ -65,7 +65,7 @@ struct FDataString
 		FDataString DataString;
 		Data >> DataString;
 
-		if( DataString.Address )
+		if( Data.Valid() && DataString.Address )
 		{
 			Object = DataString.Address;
 		}
