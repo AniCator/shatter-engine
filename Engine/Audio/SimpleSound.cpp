@@ -133,11 +133,14 @@ void CSimpleSound::StopSounds()
 {
 	for( auto Sound : Sounds )
 	{
-		Sound.Sound->stop();
 		Sound.Playing = false;
 
-		delete Sound.Sound;
-		Sound.Sound = nullptr;
+		if( Sound.Sound )
+		{
+			Sound.Sound->stop();
+			delete Sound.Sound;
+			Sound.Sound = nullptr;
+		}
 	}
 }
 
