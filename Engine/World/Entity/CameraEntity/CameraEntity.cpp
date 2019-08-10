@@ -7,7 +7,7 @@ static CEntityFactory<CCameraEntity> Factory( "camera" );
 
 CCameraEntity::CCameraEntity()
 {
-	Priority = 0;
+	Priority = 501;
 }
 
 void CCameraEntity::Construct()
