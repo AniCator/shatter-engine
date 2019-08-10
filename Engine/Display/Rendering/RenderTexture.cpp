@@ -5,14 +5,14 @@
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
 
-CRenderTexture::CRenderTexture()
+CRenderTexture::CRenderTexture() : CTexture()
 {
 	Width = -1;
 	Height = -1;
 	Initialized = false;
 }
 
-CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight )
+CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight ) : CTexture()
 {
 	this->Name = Name;
 	Width = TextureWidth;
