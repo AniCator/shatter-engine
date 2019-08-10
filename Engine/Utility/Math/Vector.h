@@ -236,6 +236,15 @@ public:
 		);
 	};
 
+	inline Vector3D operator/( const Vector3D& Vector ) const
+	{
+		return Vector3D(
+			X / Vector.X,
+			Y / Vector.Y,
+			Z / Vector.Z
+		);
+	};
+
 	inline Vector3D operator+( const float& Scalar ) const
 	{
 		return Vector3D(
@@ -263,6 +272,29 @@ public:
 		);
 	};
 
+	friend inline Vector3D operator*( const float& Scalar, const Vector3D& Vector )
+	{
+		return Vector * Scalar;
+	};
+
+	inline Vector3D operator/( const float& Scalar ) const
+	{
+		return Vector3D(
+			X / Scalar,
+			Y / Scalar,
+			Z / Scalar
+		);
+	};
+
+	friend inline Vector3D operator/( const float& Scalar, const Vector3D& Vector )
+	{
+		return Vector3D(
+			Scalar / Vector.X,
+			Scalar / Vector.Y,
+			Scalar / Vector.Z
+		);
+	};
+
 	inline Vector3D operator+=( const Vector3D& Vector )
 	{
 		X += Vector.X;
@@ -284,6 +316,14 @@ public:
 		X *= Vector.X;
 		Y *= Vector.Y;
 		Z *= Vector.Z;
+		return *this;
+	};
+
+	inline Vector3D operator/=( const Vector3D& Vector )
+	{
+		X /= Vector.X;
+		Y /= Vector.Y;
+		Z /= Vector.Z;
 		return *this;
 	};
 
@@ -311,6 +351,23 @@ public:
 		return *this;
 	};
 
+	inline Vector3D operator/=( const float& Scalar )
+	{
+		X /= Scalar;
+		Y /= Scalar;
+		Z /= Scalar;
+		return *this;
+	};
+
+	friend inline Vector3D operator-( const Vector3D& Vector )
+	{
+		Vector3D Result;
+		Result.X = -Vector.X;
+		Result.Y = -Vector.Y;
+		Result.Z = -Vector.Z;
+		return Result;
+	};
+
 	inline float Dot( const Vector3D& Vector ) const
 	{
 		return X * Vector.X + Y * Vector.Y + Z * Vector.Z;
@@ -330,6 +387,11 @@ public:
 		return sqrt( Dot( *this ) );
 	}
 
+	inline float LengthSquared() const
+	{
+		return Dot( *this );
+	}
+
 	inline float Length( const Vector3D& Vector ) const
 	{
 		return sqrt( Vector.Dot( Vector ) );
@@ -346,13 +408,15 @@ public:
 		return Delta.Dot( Delta );
 	}
 
-	inline Vector3D Normalized()
+	inline Vector3D Normalized() const
 	{
 		Vector3D Unit = *this;
-		const float LengthBiased = 1.f / ( Length( Unit ) + FLT_EPSILON );
-		Unit *= LengthBiased;
 
-		*this = Unit;
+		const float VectorLength = Length( Unit );
+		if( VectorLength > 0.0f )
+		{
+			Unit /= VectorLength;
+		}
 
 		return Unit;
 	}
@@ -360,18 +424,12 @@ public:
 	inline float Normalize()
 	{
 		const float VectorLength = Length( *this );
-		const float LengthBiased = 1.f / ( VectorLength + FLT_EPSILON );
-		*this *= LengthBiased;
+		if( VectorLength > 0.0f )
+		{
+			*this /= VectorLength;
+		}
 
 		return VectorLength;
-	}
-
-	inline float Normalize( const Vector3D& Vector, const float& Length )
-	{
-		const float LengthBiased = 1.f / ( Length + FLT_EPSILON );
-		*this *= LengthBiased;
-
-		return Length;
 	}
 };
 
