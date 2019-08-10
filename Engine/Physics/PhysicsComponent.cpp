@@ -5,12 +5,20 @@
 #include <Engine/Physics/Physics.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
+#include <Engine/Display/UserInterface.h>
+
 #include <Game/Game.h>
+
+static const auto Gravity = Vector3D( 0.0f, 0.0f, 9.81f );
 
 CPhysicsComponent::CPhysicsComponent( CMeshEntity* OwnerIn )
 {
 	Owner = OwnerIn;
 	Static = Owner->IsStatic();
+	Block = true;
+
+	auto Bounds = Owner->Mesh->GetBounds();
+	Mass = (( Bounds.Maximum - Bounds.Minimum ) * Owner->GetTransform().GetSize()).Length() * 45.0f;
 }
 
 CPhysicsComponent::~CPhysicsComponent()
@@ -23,55 +31,118 @@ void CPhysicsComponent::Construct( CPhysics* Physics )
 	CalculateBounds();
 
 	PreviousTransform = Owner->GetTransform();
-	PreviousVelocity = Vector3D( 0.0f, 0.0f, 0.0f );
+	Velocity = Vector3D( 0.0f, 0.0f, 0.0f );
+}
+
+void CPhysicsComponent::Collision( CPhysicsComponent* Component )
+{
+	const float DeltaTime = GameLayersInstance->GetDeltaTime();
+
+	Contact = true;
+	const Vector3D& MinimumA = Bounds.Minimum;
+	const Vector3D& MaximumA = Bounds.Maximum;
+
+	const Vector3D& MinimumB = Component->Bounds.Minimum;
+	const Vector3D& MaximumB = Component->Bounds.Maximum;
+
+	const Vector3D& CenterA = Position;
+	const Vector3D& CenterB = Component->Position;
+
+	Vector3D Delta = ( CenterA - CenterB );
+	Vector3D Overlap = Velocity;
+
+	Vector3D Normal = Vector3D( 0.0f, 0.0f, 0.0f );
+	if( Overlap.X < Overlap.Y && Overlap.X < Overlap.Z )
+	{
+		Normal.X = ( 0.0f < Overlap.X ) - ( Overlap.X < 0.0f );
+	}
+	else if( Overlap.Y < Overlap.X && Overlap.Y < Overlap.Z )
+	{
+		Normal.Y = ( 0.0f < Overlap.Y ) - ( Overlap.Y < 0.0f );
+	}
+	else
+	{
+		Normal.Z = ( 0.0f < Overlap.Z ) - ( Overlap.Z < 0.0f );
+	}
+
+	const Vector3D RelativeVelocity = Component->Velocity - Velocity;
+	float VelocityAlongNormal = RelativeVelocity.Dot( Normal );
+
+	if( VelocityAlongNormal < 0.0f )
+	{
+		const float InverseMassA = Static ? 0.0f : 1.0f / Mass;
+		const float InverseMassB = Component->Static ? 0.0f : 1.0f / Component->Mass;
+
+		const float Restitution = -1.001f;
+		const float Scale = ( Restitution * VelocityAlongNormal ) / ( InverseMassA + InverseMassB );
+		Vector3D Impulse = Normal * Scale;
+
+		Velocity -= InverseMassA * Impulse;
+		Component->Velocity += InverseMassB * Impulse;
+
+		UI::AddLine( Position, Position - Impulse, Color::Red );
+		UI::AddCircle( Position - Impulse, 5.0f, Color::Red );
+	}
+
+	Overlap.X = CenterA.X + CenterB.X - fabs( Delta.X );
+	Overlap.Y = CenterA.Y + CenterB.Y - fabs( Delta.Y );
+	Overlap.Z = CenterA.Z + CenterB.Z - fabs( Delta.Z );
+
+	if( !Static )
+	{
+		auto TransformA = Owner->GetTransform();
+		auto NewPositionA = TransformA.GetPosition();
+		NewPositionA += Normal * VelocityAlongNormal;
+		TransformA.SetPosition( NewPositionA );
+		Owner->SetTransform( TransformA );
+	}
 }
 
 void CPhysicsComponent::Tick()
 {
+	Contacts = 0;
+
 	if( Static )
 		return;
 
 	CalculateBounds();
 
-	Vector3D Velocity = Vector3D( 0.0f, 0.0f, 0.0f );
 	const float DeltaTime = GameLayersInstance->GetDeltaTime();
 
-	if( fabs( CorrectiveForce.X ) > 0.01f ||
-		fabs( CorrectiveForce.Y ) > 0.01f ||
-		fabs( CorrectiveForce.Z ) > 0.01f )
+	auto Transform = Owner->GetTransform();
+	auto NewPosition = Transform.GetPosition();
+
+	Acceleration -= Gravity;
+	Velocity += ( Acceleration * DeltaTime ) / Mass;
+
+	UI::AddLine( Position, Position + Velocity * 10.0f, Color::Green );
+	UI::AddCircle( Position + Velocity * 10.0f, 3.0f, Color::Green );
+	UI::AddLine( Position, Position + Acceleration, Color::Blue );
+	UI::AddCircle( Position + Acceleration, 3.0f, Color::Blue );
+
+	char MassString[32];
+	sprintf_s( MassString, "%.2f kg", Mass );
+	UI::AddText( Position, MassString );
+
+	NewPosition += Velocity;
+
+	if( NewPosition.Z < -0.5f )
 	{
-		Owner->Contact = true;
+		if( Velocity.Z < 0.0f )
+		{
+			Velocity.Z = 0.0f;
+		}
 
-		auto Transform = Owner->GetTransform();
-
-		auto PositionA = Transform.GetPosition();
-		auto PositionB = PreviousTransform.GetPosition();
-		Velocity = PositionB - PositionA;
-
-		Transform.SetPosition( Transform.GetPosition() - PreviousVelocity * 0.05f * DeltaTime );
-		Owner->SetTransform( Transform );
-		CorrectiveForce = Vector3D( 0.0f, 0.0f, 0.0f );
+		NewPosition.Z = -0.5f;
 	}
-	else
-	{
-		Owner->Contact = false;
 
-		auto Transform = Owner->GetTransform();
+	Transform.SetPosition( NewPosition );
 
-		auto PositionA = Transform.GetPosition();
-		auto PositionB = PreviousTransform.GetPosition();
-		Velocity = PositionB - PositionA;
-
-		auto Bounds = Owner->Mesh->GetBounds();
-		auto Difference = Bounds.Maximum - Bounds.Minimum;
-
-		Velocity.Z += Difference.Length() * 0.000981f + PreviousVelocity.Z * DeltaTime;
-		Transform.SetPosition( PositionA - Vector3D( 0.0f, 0.0f, Velocity.Z ) );
-		Owner->SetTransform( Transform );
-	}
+	Owner->SetTransform( Transform );
+	Owner->Contact = Contact;
 
 	PreviousTransform = Owner->GetTransform();
-	PreviousVelocity = Velocity;
+	Acceleration = Vector3D( 0.0f, 0.0f, 0.0f );
 }
 
 void CPhysicsComponent::Destroy( CPhysics* Physics )
@@ -93,6 +164,8 @@ void CPhysicsComponent::CalculateBounds()
 	Bounds.Maximum.X = Temp.Maximum.X > Temp.Minimum.X ? Temp.Maximum.X : Temp.Minimum.X;
 	Bounds.Maximum.Y = Temp.Maximum.Y > Temp.Minimum.Y ? Temp.Maximum.Y : Temp.Minimum.Y;
 	Bounds.Maximum.Z = Temp.Maximum.Z > Temp.Minimum.Z ? Temp.Maximum.Z : Temp.Minimum.Z;
+
+	Position = ( Bounds.Maximum + Bounds.Minimum ) * 0.5f;
 }
 
 FBounds CPhysicsComponent::GetBounds() const

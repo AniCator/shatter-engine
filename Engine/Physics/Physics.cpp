@@ -50,17 +50,17 @@ public:
 		{
 			if( ComponentA && !ComponentA->Static )
 			{
+				ComponentA->Contact = false;
+
 				for( auto ComponentB : Components )
 				{
-					if( ComponentB && ComponentB != ComponentA )
+					if( ComponentB && ComponentB != ComponentA && ComponentB->Block )
 					{
 						FBounds BoundsA = ComponentA->GetBounds();
 						FBounds BoundsB = ComponentB->GetBounds();
 						if( Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
 						{
-							Vector3D CenterA = ( BoundsA.Maximum + BoundsA.Minimum ) * 0.5f;
-							Vector3D CenterB = ( BoundsB.Maximum + BoundsB.Minimum ) * 0.5f;
-							ComponentA->CorrectiveForce = ( CenterA - CenterB );
+							ComponentA->Collision( ComponentB );
 						}
 					}
 				}

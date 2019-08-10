@@ -12,6 +12,7 @@ public:
 	~CPhysicsComponent();
 
 	void Construct( class CPhysics* Physics );
+	void Collision( CPhysicsComponent* Component );
 	void Tick();
 	void Destroy( class CPhysics* Physics );
 
@@ -21,8 +22,13 @@ public:
 	CMeshEntity* Owner;
 
 	bool Static;
-	Vector3D CorrectiveForce;
+	bool Block;
+	bool Contact;
 	FTransform PreviousTransform;
-	Vector3D PreviousVelocity;
 	FBounds Bounds;
+	Vector3D Position;
+	Vector3D Acceleration;
+	Vector3D Velocity;
+	float Mass;
+	size_t Contacts;
 };
