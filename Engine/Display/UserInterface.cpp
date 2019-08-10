@@ -8,6 +8,12 @@
 #include <ThirdParty/imgui-1.70/imgui.h>
 #include <Engine/Display/imgui_impl_opengl3.h>
 
+Color Color::Red = Color( 255, 0, 0 );
+Color Color::Green = Color( 0, 255, 0 );
+Color Color::Blue = Color( 0, 0, 255 );
+Color Color::White = Color( 255, 255, 255 );
+Color Color::Black = Color( 0, 0, 0 );
+
 namespace UI
 {
 	bool Ready = false;
@@ -18,23 +24,73 @@ namespace UI
 	float Width;
 	float Height;
 
-	ImU32 GetColor( Color::Type Color )
+	struct DrawLine
 	{
-		switch( Color )
+		DrawLine( const Vector3D& Start, const Vector3D& End, const Color& Color )
 		{
-			case Color::Red:
-				return IM_COL32( 255, 0, 0, 255 );
-			case Color::Green:
-				return IM_COL32( 0, 255, 0, 255 );
-			case Color::Blue:
-				return IM_COL32( 0, 0, 255, 255 );
-			case Color::White:
-				return IM_COL32( 255, 255, 255, 255 );
-			default:
-				break;
+			this->Start = Start;
+			this->End = End;
+			this->Color = Color;
 		}
 
-		return IM_COL32( 0, 0, 0, 255 );
+		Vector3D Start;
+		Vector3D End;
+		Color Color;
+	};
+
+	std::vector<DrawLine> Lines;
+
+	struct DrawCircle
+	{
+		DrawCircle( const Vector3D& Position, const float& Radius, const Color& Color )
+		{
+			this->Position = Position;
+			this->Radius = Radius;
+			this->Color = Color;
+		}
+
+		Vector3D Position;
+		float Radius;
+		Color Color;
+	};
+
+	std::vector<DrawCircle> Circles;
+
+	struct DrawText
+	{
+		DrawText( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
+		{
+			this->Position = Position;
+			
+			if( End )
+			{
+				Length = End - Start;
+			}
+			else
+			{
+				Length = strlen( Start );
+			}
+
+			this->Text = new char[Length + 1];
+			for( size_t Index = 0; Index < Length; Index++ )
+			{
+				Text[Index] = Start[Index];
+			}
+
+			this->Color = Color;
+		}
+
+		Vector3D Position;
+		char* Text;
+		size_t Length;
+		Color Color;
+	};
+
+	std::vector<DrawText> Texts;
+
+	ImU32 GetColor( Color Color )
+	{
+		return IM_COL32( Color.R, Color.G, Color.B, Color.A );
 	}
 
 	Vector3D ScreenPositionToWorld( const Vector2D& ScreenPosition )
@@ -101,7 +157,7 @@ namespace UI
 		return ScreenPosition;
 	}
 
-	void AddLine( const Vector2D& Start, const Vector2D& End, Color::Type Color )
+	void AddLine( const Vector2D& Start, const Vector2D& End, const Color& Color )
 	{
 		if( DrawList )
 		{
@@ -109,7 +165,7 @@ namespace UI
 		}
 	}
 
-	void AddLine( const Vector3D& Start, const Vector3D& End, Color::Type Color )
+	void AddLineInternal( const Vector3D& Start, const Vector3D& End, const Color& Color )
 	{
 		bool StartIsInFront = false;
 		auto& ScreenStart = WorldToScreenPosition( Start, &StartIsInFront );
@@ -119,11 +175,42 @@ namespace UI
 
 		if( StartIsInFront || EndIsInFront )
 		{
-			AddLine( WorldToScreenPosition( Start ), WorldToScreenPosition( End ), Color );
+			AddLine( ScreenStart, ScreenEnd, Color );
 		}
 	}
 
-	void AddCircle( const Vector2D& Position, float Radius, Color::Type Color )
+	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color )
+	{
+		DrawLine Line( Start, End, Color );
+		Lines.emplace_back( Line );
+	}
+
+	void AddTriangleFilled( const Vector2D& A, const Vector2D& B, const Vector2D& C, const Color& Color )
+	{
+		if( DrawList )
+		{
+			DrawList->AddTriangleFilled( ImVec2( A.X, A.Y ), ImVec2( B.X, B.Y ), ImVec2( C.X, C.Y ), GetColor( Color ) );
+		}
+	}
+
+	void AddTriangleFilled( const Vector3D& A, const Vector3D& B, const Vector3D& C, const Color& Color )
+	{
+		bool IsInFrontA = false;
+		auto& ScreenA = WorldToScreenPosition( A, &IsInFrontA );
+
+		bool IsInFrontB = false;
+		auto& ScreenB = WorldToScreenPosition( B, &IsInFrontB );
+
+		bool IsInFrontC = false;
+		auto& ScreenC = WorldToScreenPosition( C, &IsInFrontC );
+
+		if( IsInFrontA || IsInFrontB || IsInFrontC )
+		{
+			AddTriangleFilled( ScreenA, ScreenB, ScreenC, Color );
+		}
+	}
+
+	void AddCircle( const Vector2D& Position, float Radius, const Color& Color )
 	{
 		if( DrawList )
 		{
@@ -131,7 +218,7 @@ namespace UI
 		}
 	}
 
-	void AddCircle( const Vector3D& Position, float Radius, Color::Type Color )
+	void AddCircleInternal( const Vector3D& Position, float Radius, const Color& Color )
 	{
 		bool IsInFront = false;
 		auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront );
@@ -142,7 +229,13 @@ namespace UI
 		}
 	}
 
-	void AddText( const Vector2D& Position, const char* Start, const char* End, Color::Type Color )
+	void AddCircle( const Vector3D& Position, float Radius, const Color& Color )
+	{
+		DrawCircle Circle( Position, Radius, Color );
+		Circles.emplace_back( Circle );
+	}
+
+	void AddText( const Vector2D& Position, const char* Start, const char* End, const Color& Color )
 	{
 		if( DrawList )
 		{
@@ -150,7 +243,7 @@ namespace UI
 		}
 	}
 
-	void AddText( const Vector3D& Position, const char* Start, const char* End, Color::Type Color )
+	void AddTextInternal( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
 	{
 		bool IsInFront = false;
 		auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront );
@@ -161,7 +254,13 @@ namespace UI
 		}
 	}
 
-	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, Color::Type Color )
+	void AddText( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
+	{
+		DrawText Text( Position, Start, End, Color );
+		Texts.emplace_back( Text );
+	}
+
+	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color )
 	{
 		Vector3D BottomNW = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
 		Vector3D BottomNE = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
@@ -189,7 +288,7 @@ namespace UI
 		AddLine( TopSW, BottomSW, Color );
 	}
 
-	void AddBox( const Vector3D& Center, const Vector3D& Size, Color::Type Color )
+	void AddBox( const Vector3D& Center, const Vector3D& Size, const Color& Color )
 	{
 		const Vector3D HalfSize = Size * 0.5f;
 		const Vector3D Minimum = Center - Size;
@@ -224,6 +323,13 @@ namespace UI
 
 	void Refresh()
 	{
+		Lines.clear();
+		Circles.clear();
+		Texts.clear();
+	}
+
+	void Frame()
+	{
 		if( DrawList )
 		{
 			DrawList->Clear();
@@ -240,10 +346,22 @@ namespace UI
 		{
 			DrawData.CmdListsCount = 0;
 		}
-	}
 
-	void Frame()
-	{
+		for( const auto& Line : Lines )
+		{
+			AddLineInternal( Line.Start, Line.End, Line.Color );
+		}
+
+		for( const auto& Circle : Circles )
+		{
+			AddCircleInternal( Circle.Position, Circle.Radius, Circle.Color );
+		}
+
+		for( const auto& Text : Texts )
+		{
+			AddTextInternal( Text.Position, Text.Text, Text.Text + Text.Length, Text.Color );
+		}
+
 		if( DrawList->CmdBuffer.size() == 0 )
 		{
 			DrawList->AddDrawCmd();
