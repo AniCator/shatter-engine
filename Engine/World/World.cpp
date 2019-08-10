@@ -58,14 +58,14 @@ void CWorld::Tick()
 {
 	CameraPriority = 0;
 
-	if( Physics )
-	{
-		Physics->Tick();
-	}
-
 	for( auto Level : Levels )
 	{
 		Level.Tick();
+	}
+
+	if( Physics )
+	{
+		Physics->Tick();
 	}
 }
 
