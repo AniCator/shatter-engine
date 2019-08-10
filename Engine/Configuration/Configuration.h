@@ -40,7 +40,7 @@ public:
 
 private:
 	std::regex ConfigureFilter( const char* KeyName );
-	std::string GetValue( const char* KeyName );
+	const std::string& GetValue( const char* KeyName );
 
 	std::vector<std::string> FilePaths;
 	std::map<std::string, std::string> StoredSettings;

@@ -188,7 +188,7 @@ std::regex CConfiguration::ConfigureFilter( const char* KeyName )
 	return FilterSettings;
 }
 
-std::string CConfiguration::GetValue( const char* KeyName )
+const std::string& CConfiguration::GetValue( const char* KeyName )
 {
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
 	{
