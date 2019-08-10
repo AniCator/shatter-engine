@@ -44,13 +44,15 @@ bool CMesh::IsValid()
 
 bool CMesh::Populate( const FPrimitive& Primitive )
 {
-	bool bCreatedVertexBuffer = CreateVertexBuffer( Primitive );
+	this->Primitive = Primitive;
+
+	bool bCreatedVertexBuffer = CreateVertexBuffer();
 	if( bCreatedVertexBuffer )
 	{
-		CreateIndexBuffer( Primitive );
+		CreateIndexBuffer();
 	}
 
-	GenerateNormals( Primitive );
+	GenerateNormals();
 
 	return bCreatedVertexBuffer;
 }
@@ -156,7 +158,7 @@ bool CMesh::CreateVertexArrayObject()
 	return false;
 }
 
-bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
+bool CMesh::CreateVertexBuffer()
 {
 	if( VertexBufferData.VertexBufferObject == 0 )
 	{
@@ -166,7 +168,7 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 			return false;
 		}
 
-		GenerateAABB( Primitive );
+		GenerateAABB();
 
 		const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
 
@@ -198,7 +200,7 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 	}
 }
 
-bool CMesh::CreateIndexBuffer( const FPrimitive& Primitive )
+bool CMesh::CreateIndexBuffer()
 {
 	if( VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject == 0 && Primitive.IndexCount > 0 )
 	{
@@ -230,11 +232,18 @@ bool CMesh::CreateIndexBuffer( const FPrimitive& Primitive )
 	}
 }
 
-void CMesh::GenerateAABB( const FPrimitive& Primitive )
+void CMesh::GenerateAABB()
 {
 	for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 	{
 		const FVertex& Vertex = Primitive.Vertices[VertexIndex];
+
+		if( VertexIndex == 0 )
+		{
+			AABB.Minimum = Vertex.Position;
+			AABB.Maximum = Vertex.Position;
+		}
+
 		if( Vertex.Position[0] < AABB.Minimum[0] )
 		{
 			AABB.Minimum[0] = Vertex.Position[0];
@@ -270,7 +279,7 @@ void CMesh::GenerateAABB( const FPrimitive& Primitive )
 	Log::Event( "AABB Maximum: %.2f %.2f %.2f\n", AABB.Maximum.X, AABB.Maximum.Y, AABB.Maximum.Z );
 }
 
-void CMesh::GenerateNormals( const FPrimitive& Primitive )
+void CMesh::GenerateNormals()
 {
 	const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
 

@@ -94,11 +94,11 @@ public:
 	void SetLocation( const std::string& FileLocation );
 private:
 	bool CreateVertexArrayObject();
-	bool CreateVertexBuffer( const FPrimitive& Primitive );
-	bool CreateIndexBuffer( const FPrimitive& Primitive );
+	bool CreateVertexBuffer();
+	bool CreateIndexBuffer();
 
-	void GenerateAABB( const FPrimitive& Primitive );
-	void GenerateNormals( const FPrimitive& Primitive );
+	void GenerateAABB();
+	void GenerateNormals();
 
 	FVertexBufferData VertexBufferData;
 	FVertexData VertexData;
@@ -111,6 +111,7 @@ private:
 	uint32_t HasIndexBuffer : 1;
 
 	FBounds AABB;
+	FPrimitive Primitive;
 
 	std::string Location;
 };
