@@ -520,6 +520,9 @@
     <ClInclude Include="Engine\Sequencer\Sequencer.h">
       <Filter>Source Files\Engine\Sequencer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Utility\Math\Matrix.h">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">

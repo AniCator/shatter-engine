@@ -290,6 +290,7 @@
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />
     <ClInclude Include="Engine\Utility\Math.h" />
+    <ClInclude Include="Engine\Utility\Math\Matrix.h" />
     <ClInclude Include="Engine\Utility\Math\Vector.h" />
     <ClInclude Include="Engine\Utility\MeshBuilder.h" />
     <ClInclude Include="Engine\Utility\Presence\Precense.h" />
