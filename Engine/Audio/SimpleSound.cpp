@@ -18,10 +18,7 @@ SoundBufferHandle CSimpleSound::Sound( const std::string& ResourcePath )
 	if( NewSoundBuffer->loadFromFile( ResourcePath ) )
 	{
 		Log::Event( "Loaded sound \"%s\"\n", ResourcePath.c_str() );
-		// sf::Sound* NewSound = new sf::Sound( *NewSoundBuffer );
-
 		SoundBuffers.push_back( NewSoundBuffer );
-		// Sounds.push_back( NewSound );
 
 		SoundBufferHandle Handle;
 		Handle.Handle = SoundBuffers.size() - 1;
@@ -131,7 +128,7 @@ void CSimpleSound::Stop( StreamHandle Handle, const float FadeOut )
 
 void CSimpleSound::StopSounds()
 {
-	for( auto Sound : Sounds )
+	for( auto& Sound : Sounds )
 	{
 		Sound.Playing = false;
 
@@ -146,7 +143,7 @@ void CSimpleSound::StopSounds()
 
 void CSimpleSound::StopMusic()
 {
-	for( auto Stream : Streams )
+	for( auto& Stream : Streams )
 	{
 		Stream.Stream->stop();
 		Stream.Playing = false;
@@ -227,7 +224,7 @@ void CSimpleSound::Tick()
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Stream Buffers", Streams.size() ), true );
 
 	const float CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
-	for( auto Stream : Streams )
+	for( auto& Stream : Streams )
 	{
 		if( Stream.Stream && Stream.Playing )
 		{
@@ -271,7 +268,7 @@ void CSimpleSound::Tick()
 
 	size_t ActiveSounds = 0;
 
-	for( auto Sound : Sounds )
+	for( auto& Sound : Sounds )
 	{
 		if( Sound.Sound && Sound.Playing )
 		{
@@ -297,17 +294,7 @@ void CSimpleSound::Tick()
 
 void CSimpleSound::Shutdown()
 {
-	for( auto Sound : Sounds )
-	{
-		delete Sound.Sound;
-	}
-
+	StopAll();
 	Sounds.clear();
-
-	for( auto Stream : Streams )
-	{
-		delete Stream.Stream;
-	}
-
 	Streams.clear();
 }
