@@ -47,6 +47,9 @@ void CGameLayers::Initialize()
 			GameLayer->Initialize();
 		}
 	}
+
+	// Tick once.
+	CSimpleSound::Tick();
 }
 
 void CGameLayers::Frame()
