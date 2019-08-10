@@ -80,7 +80,6 @@ void ParsePayload(FPrimitivePayload* Payload )
 		{
 			File.Load( true );
 			MeshBuilder::LM( Payload->Primitive, File );
-			Payload->Native = true;
 		}
 	}
 }
