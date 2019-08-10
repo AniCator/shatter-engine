@@ -65,6 +65,11 @@ public:
 		CData Data;
 		Data.Load( RawData, FileSize );
 
+		if( !Data.Valid() )
+		{
+			Log::Event( Log::Warning, "Couldn't extract data from \"%s\", possible format mismatch.\n", FileLocation.c_str() );
+		}
+
 		return Data;
 	}
 
