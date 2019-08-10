@@ -34,6 +34,8 @@ public:
 	void Play();
 	void Stop();
 
+	void UpdateSound();
+
 	virtual void Import( CData& Data ) override;
 	virtual void Export( CData& Data ) override;
 
