@@ -39,18 +39,24 @@ public:
 	template<typename T>
 	void operator>>( T& Object )
 	{
+		if( Invalid )
+			return;
+
 		static_assert( !std::is_pointer<T>::value, "Pointers can not be deserialized." );
 		const size_t Size = sizeof( T );
 		Data.read( reinterpret_cast<char*>( &Object ), Size );
 
 		if( !Data.good() )
 		{
-			Log::Event( Log::Error, "Could not read data.\n" );
+			Invalidate();
 		}
 	}
 
 	void operator>>( char* Object )
 	{
+		if( Invalid )
+			return;
+
 		do
 		{
 			Data.read( Object, sizeof( char ) );
@@ -59,7 +65,7 @@ public:
 
 		if( !Data.good() )
 		{
-			Log::Event( Log::Error, "Could not read data.\n" );
+			Invalidate();
 		}
 	}
 
