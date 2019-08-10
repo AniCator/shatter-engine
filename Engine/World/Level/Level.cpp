@@ -290,6 +290,16 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 						std::vector<EntityObjectLink> EntityObjectLinks;
 						EntityObjectLinks.reserve( Object->Objects.size() );
 
+						struct LevelStruct
+						{
+							std::string Path = "";
+							Vector3D Position = { 0,0,0 };
+							Vector3D Orientation = { 0,0,0 };
+							Vector3D Size = { 1,1,1 };
+						};
+
+						std::vector<LevelStruct> SubLevels;
+
 						// Pass 1: Determine type and spawn relevant entities.
 						for( auto EntityObject : Object->Objects )
 						{
@@ -385,25 +395,36 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									CFile File( LevelPath.c_str() );
 									if( File.Exists() )
 									{
-										File.Load();
-
-										if( AssetsOnly )
-										{
-											CLevel Dummy;
-											Dummy.Load( File, AssetsOnly );
-										}
-										else
-										{
-											auto NewWorld = GetWorld();
-											if( NewWorld )
-											{
-												CLevel& SubLevel = NewWorld->Add();
-												SubLevel.Transform = FTransform( LevelPosition, LevelOrientation, LevelSize );
-												SubLevel.Transform = GetTransform().Transform( SubLevel.Transform );
-												SubLevel.Load( File );
-											}
-										}
+										LevelStruct Level;
+										Level.Path = LevelPath;
+										Level.Position = LevelPosition;
+										Level.Orientation = LevelOrientation;
+										Level.Size = LevelSize;
+										SubLevels.emplace_back( Level );
 									}
+								}
+							}
+						}
+
+						for( auto& Level : SubLevels )
+						{
+							CFile File( Level.Path.c_str() );
+							File.Load();
+
+							if( AssetsOnly )
+							{
+								CLevel Dummy;
+								Dummy.Load( File, AssetsOnly );
+							}
+							else
+							{
+								auto World = GetWorld();
+								if( World )
+								{
+									CLevel& SubLevel = World->Add();
+									SubLevel.Transform = FTransform( Level.Position, Level.Orientation, Level.Size );
+									SubLevel.Transform = GetTransform().Transform( SubLevel.Transform );
+									SubLevel.Load( File );
 								}
 							}
 						}
