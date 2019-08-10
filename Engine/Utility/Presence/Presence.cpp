@@ -12,6 +12,7 @@ namespace Presence
 	std::string State = "";
 	std::string Details = "";
 	std::string LargeImageKey = "";
+	uint32_t Priority = 0;
 
 	void Initialize( std::string ApplicationID )
 	{
@@ -29,6 +30,8 @@ namespace Presence
 
 	void Tick()
 	{
+		Priority = 0;
+
 #if defined(DiscordPresence)
 		if( Initialized )
 		{
@@ -42,11 +45,15 @@ namespace Presence
 #endif
 	}
 
-	void Update( const char* NewState, const char* NewDetails, const char* NewLargeImageKey )
+	void Update( const char* NewState, const char* NewDetails, const char* NewLargeImageKey, uint32_t NewPriority )
 	{
-		State = NewState;
-		Details = NewDetails;
-		LargeImageKey = NewLargeImageKey;
+		if( Priority <= NewPriority )
+		{
+			State = NewState;
+			Details = NewDetails;
+			LargeImageKey = NewLargeImageKey;
+			Priority = NewPriority;
+		}
 	}
 
 	void Shutdown()
