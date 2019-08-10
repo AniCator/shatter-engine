@@ -1035,7 +1035,7 @@ void CApplication::Run()
 
 			MainWindow.BeginFrame();
 
-			const float TimeScale = ScaleTime ? 0.25f : 1.0f;
+			const float TimeScale = ScaleTime ? 0.01f : 1.0f;
 
 			const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
 			if( GameDeltaTime >= MaximumGameTime )
@@ -1070,8 +1070,6 @@ void CApplication::Run()
 
 					// Tick all game layers
 					GameLayersInstance->Tick();
-
-					// CAngelEngine::Get().Tick();
 
 					GameTimer.Start();
 
@@ -1158,6 +1156,10 @@ void CApplication::InitializeDefaultInputs()
 		Profiler.SetEnabled( !Profiler.IsEnabled() );
 	} );
 
+	Input.AddActionBinding( EKey::O, EAction::Release, [] {
+		FrameStep = true;
+		} );
+
 	Input.AddActionBinding( EKey::NumpadSubtract, EAction::Release, [this] {
 		Tools = !Tools;
 	} );
@@ -1232,8 +1234,29 @@ void CApplication::RedirectLogToConsole()
 
 void CApplication::ProcessCommandLine( int argc, char ** argv )
 {
+	CommandLine.clear();
+
 	for( int Index = 0; Index < argc; Index++ )
 	{
+		bool Command = false;
+		if( argv[Index][0] == '-' )
+		{
+			Command = true;
+		}
+
+		if( Command )
+		{
+			const size_t NextIndex = Index + 1;
+			if( NextIndex < argc && argv[NextIndex][0] != '-' )
+			{
+				CommandLine.insert_or_assign( argv[Index], argv[NextIndex] );
+			}
+			else
+			{
+				CommandLine.insert_or_assign( argv[Index], "" );
+			}
+		}
+
 		if( strcmp( argv[Index], "-tools" ) == 0 )
 		{
 			EnableTools( true );
@@ -1326,6 +1349,17 @@ void CApplication::UnregisterDebugUI()
 const glm::size_t CApplication::DebugFunctions() const
 {
 	return DebugUIFunctions.size();
+}
+
+bool CApplication::HasCommand( const std::string& Command )
+{
+	auto Result = CommandLine.find( Command );
+	return Result != CommandLine.end();
+}
+
+const std::string& CApplication::GetCommand( const std::string& Command )
+{
+	return CommandLine[Command];
 }
 
 #if defined(_WIN32)

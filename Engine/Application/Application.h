@@ -2,7 +2,7 @@
 #pragma once
 
 #include <functional>
-
+#include <map>
 #include <Engine/Utility/Service/ServiceRegistry.h>
 
 typedef std::function<void(bool)> DebugUIFunction;
@@ -37,6 +37,9 @@ public:
 	void UnregisterDebugUI();
 	const size_t DebugFunctions() const;
 
+	bool HasCommand( const std::string& Command );
+	const std::string& GetCommand( const std::string& Command );
+
 	CServiceRegistry ServiceRegistry;
 
 private:
@@ -46,4 +49,5 @@ private:
 	bool WaitForInput;
 
 	std::vector<DebugUIFunction> DebugUIFunctions;
+	std::map<std::string, std::string> CommandLine;
 };
