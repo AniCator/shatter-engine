@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include <deque>
 
 static const int32_t InvalidHandle = -1;
 
@@ -40,12 +41,12 @@ struct FSound
 {
 	FSound()
 	{
-		Sound = nullptr;
+		Voice = nullptr;
 		Volume = 100.0f;
 		Playing = false;
 	}
 
-	sf::Sound* Sound;
+	sf::Sound* Voice;
 	float Volume;
 	bool Playing;
 };
@@ -68,6 +69,23 @@ struct FStream
 	bool FadeIn;
 	float Volume;
 	bool Playing;
+};
+
+static const size_t MaximumVoices = 256;
+struct FVoice
+{
+	FVoice()
+	{
+		Voice = nullptr;
+		User = nullptr;
+		Priority = 0;
+		StartTime = 0.0f;
+	}
+
+	sf::Sound* Voice;
+	FSound* User;
+	uint32_t Priority;
+	float StartTime;
 };
 
 class CSimpleSound
@@ -105,7 +123,10 @@ public:
 	static void Shutdown();
 
 private:
-	static std::vector<FSound> Sounds;
+	static FVoice* GetVoice();
+	static FVoice Voices[MaximumVoices];
+
+	static std::deque<FSound> Sounds;
 	static std::vector<sf::SoundBuffer*> SoundBuffers;
 	static std::vector<FStream> Streams;
 	static float GlobalVolume;

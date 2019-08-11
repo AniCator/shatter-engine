@@ -7,7 +7,8 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Game/Game.h>
 
-std::vector<FSound> CSimpleSound::Sounds;
+FVoice CSimpleSound::Voices[MaximumVoices];
+std::deque<FSound> CSimpleSound::Sounds;
 std::vector<sf::SoundBuffer*> CSimpleSound::SoundBuffers;
 std::vector<FStream> CSimpleSound::Streams;
 float CSimpleSound::GlobalVolume = 1.0f;
@@ -54,15 +55,22 @@ SoundHandle CSimpleSound::Start( SoundBufferHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle && GlobalVolume != 0.0f )
 	{
+		FVoice* Voice = GetVoice();
+		Voice->Voice = new sf::Sound( *SoundBuffers[Handle.Handle] );
+
 		FSound NewSound;
-		NewSound.Sound = new sf::Sound( *SoundBuffers[Handle.Handle] );
+		NewSound.Voice = Voice->Voice;
+		NewSound.Voice->setVolume( NewSound.Volume * GlobalVolume );
+		NewSound.Voice->play();
 		NewSound.Playing = true;
+
 		Sounds.push_back( NewSound );
-		NewSound.Sound->setVolume( NewSound.Volume * GlobalVolume );
-		NewSound.Sound->play();
 
 		SoundHandle NewHandle;
 		NewHandle.Handle = Sounds.size() - 1;
+
+		Voice->User = &Sounds[NewHandle.Handle];
+
 		return NewHandle;
 	}
 
@@ -99,11 +107,9 @@ void CSimpleSound::Stop( SoundHandle Handle )
 	{
 		Sounds[Handle.Handle].Playing = false;
 
-		if( Sounds[Handle.Handle].Sound )
+		if( Sounds[Handle.Handle].Voice )
 		{
-			Sounds[Handle.Handle].Sound->stop();
-			delete Sounds[Handle.Handle].Sound;
-			Sounds[Handle.Handle].Sound = nullptr;
+			Sounds[Handle.Handle].Voice->stop();
 		}
 	}
 }
@@ -132,12 +138,19 @@ void CSimpleSound::StopSounds()
 	{
 		Sound.Playing = false;
 
-		if( Sound.Sound )
+		if( Sound.Voice )
 		{
-			Sound.Sound->stop();
-			delete Sound.Sound;
-			Sound.Sound = nullptr;
+			Sound.Voice->stop();
 		}
+	}
+
+	for( size_t Index = 0; Index < MaximumVoices; Index++ )
+	{
+		FVoice& Voice = Voices[Index];
+		Voice.User = nullptr;
+		Voice.Voice = nullptr;
+		Voice.StartTime = 0.0f;
+		Voice.Priority = 0;
 	}
 }
 
@@ -158,7 +171,7 @@ void CSimpleSound::StopAll()
 
 void CSimpleSound::Loop( SoundHandle Handle, const bool Loop )
 {
-	Sounds[Handle.Handle].Sound->setLoop(Loop);
+	Sounds[Handle.Handle].Voice->setLoop(Loop);
 }
 
 void CSimpleSound::Loop( StreamHandle Handle, const bool Loop )
@@ -168,7 +181,7 @@ void CSimpleSound::Loop( StreamHandle Handle, const bool Loop )
 
 void CSimpleSound::Rate( SoundHandle Handle, const float Rate )
 {
-	Sounds[Handle.Handle].Sound->setPitch( Rate );
+	Sounds[Handle.Handle].Voice->setPitch( Rate );
 }
 
 void CSimpleSound::Rate( StreamHandle Handle, const float Rate )
@@ -178,17 +191,11 @@ void CSimpleSound::Rate( StreamHandle Handle, const float Rate )
 
 bool CSimpleSound::Playing( SoundHandle Handle )
 {
-	if( !Sounds[Handle.Handle].Sound )
+	if( !Sounds[Handle.Handle].Voice )
 		return false;
 
-	bool Playing = Sounds[Handle.Handle].Sound->getStatus() == sf::SoundSource::Status::Playing;
+	bool Playing = Sounds[Handle.Handle].Voice->getStatus() == sf::SoundSource::Status::Playing;
 	Sounds[Handle.Handle].Playing = Playing;
-
-	if( !Playing )
-	{
-		delete Sounds[Handle.Handle].Sound;
-		Sounds[Handle.Handle].Sound = nullptr;
-	}
 
 	return Playing;
 }
@@ -270,22 +277,19 @@ void CSimpleSound::Tick()
 
 	for( auto& Sound : Sounds )
 	{
-		if( Sound.Sound && Sound.Playing )
+		if( Sound.Voice && Sound.Playing )
 		{
 			ActiveSounds++;
 
 			if( ActiveSounds > 200 )
 			{
-				Sound.Sound->stop();
+				Sound.Voice->stop();
 				Sound.Playing = false;
-
-				delete Sound.Sound;
-				Sound.Sound = nullptr;
 				continue;
 			}
 
-			Sound.Playing = Sound.Sound->getStatus() == sf::SoundSource::Status::Playing;
-			Sound.Sound->setVolume( Sound.Volume * GlobalVolume );
+			Sound.Playing = Sound.Voice->getStatus() == sf::SoundSource::Status::Playing;
+			Sound.Voice->setVolume( Sound.Volume * GlobalVolume );
 		}
 	}
 
@@ -297,4 +301,50 @@ void CSimpleSound::Shutdown()
 	StopAll();
 	Sounds.clear();
 	Streams.clear();
+}
+
+FVoice* CSimpleSound::GetVoice()
+{
+	FVoice* Voice = nullptr;
+
+	for( size_t Index = 0; Index < MaximumVoices; Index++ )
+	{
+		if( !Voices[Index].Voice )
+		{
+			Voice = &Voices[Index];
+			break;
+		}
+
+		if( Voices[Index].Voice->getStatus() != sf::SoundSource::Status::Playing )
+		{
+			Voice = &Voices[Index];
+			break;
+		}
+
+		if( Voice )
+		{
+			if( Voices[Index].StartTime < Voice->StartTime )
+			{
+				Voice = &Voices[Index];
+			}
+		}
+	}
+
+	if( Voice->Voice )
+	{
+		Voice->Voice->stop();
+		delete  Voice->Voice;
+		Voice->Voice = nullptr;
+	}
+
+	if( Voice->User )
+	{
+		Voice->User->Voice = nullptr;
+		Voice->User = nullptr;
+	}
+
+	const float CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
+	Voice->StartTime = CurrentTime;
+
+	return Voice;
 }
