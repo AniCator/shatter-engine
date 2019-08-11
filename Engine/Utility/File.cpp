@@ -270,6 +270,16 @@ double ParseDouble( const char* p )
 	return s * acc;
 }
 
+void ExtractFloat( const char* Start, float& Out )
+{
+	size_t OutTokenCount = 0;
+	auto TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 1 );
+	if( OutTokenCount == 1 )
+	{
+		Out = TokenDistance[0];
+	}
+}
+
 std::vector<std::string> ExtractTokens( const char* Start, char Delimiter, const size_t ExpectedTokens /*= 3 */ )
 {
 	std::vector<std::string> Tokens;

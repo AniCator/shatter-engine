@@ -89,6 +89,7 @@ private:
 const char* GetLine( const char*& Start, const char*& End );
 std::istream& GetLineStream( std::istream& is, std::string& t );
 double ParseDouble( const char* p );
+void ExtractFloat( const char* Start, float& Out );
 std::vector<std::string> ExtractTokens( const char* Start, char Delimiter, const size_t ExpectedTokens = 3 );
 float* ExtractTokensFloat( const char* Start, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens = 3 );
 int* ExtractTokensInteger( const char* Start, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens = 3 );
