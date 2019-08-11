@@ -15,12 +15,15 @@ CSoundEntity::CSoundEntity()
 	Falloff = EFalloff::None;
 	Radius = 0.0f;
 	Volume = 100.0f;
+	FadeIn = -1.0f;
+	FadeOut = -1.0f;
 
 	AutoPlay = false;
 	AutoPlayed = false;
 	Loop = false;
 
-	Inputs["Play"] = [this] () {this->Play(); };
+	Inputs["Play"] = [&] () { Play(); };
+	Inputs["Stop"] = [&] () { Stop(); };
 }
 
 CSoundEntity::CSoundEntity( FTransform& Transform ) : CPointEntity()
@@ -79,21 +82,19 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "radius" )
 		{
-			size_t OutTokenCount = 0;
-			auto TokenDistance = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 1 );
-			if( OutTokenCount == 1 )
-			{
-				Radius = TokenDistance[0];
-			}
+			ExtractFloat( Property->Value.c_str(), Radius );
 		}
 		else if( Property->Key == "volume" )
 		{
-			size_t OutTokenCount = 0;
-			auto TokenDistance = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 1 );
-			if( OutTokenCount == 1 )
-			{
-				Volume = TokenDistance[0];
-			}
+			ExtractFloat( Property->Value.c_str(), Volume );
+		}
+		else if( Property->Key == "fadein" )
+		{
+			ExtractFloat( Property->Value.c_str(), FadeIn );
+		}
+		else if( Property->Key == "fadeout" )
+		{
+			ExtractFloat( Property->Value.c_str(), FadeOut );
 		}
 		else if( Property->Key == "autoplay" )
 		{
@@ -118,7 +119,7 @@ void CSoundEntity::Play()
 {
 	if( Sound )
 	{
-		Sound->Start();
+		Sound->Start( FadeIn );
 	}
 }
 
@@ -126,7 +127,7 @@ void CSoundEntity::Stop()
 {
 	if( Sound )
 	{
-		Sound->Stop();
+		Sound->Stop( FadeOut );
 	}
 }
 
@@ -137,7 +138,7 @@ void CSoundEntity::UpdateSound()
 		if( AutoPlay && !AutoPlayed )
 		{
 			AutoPlayed = true;
-			Sound->Start();
+			Sound->Start( FadeIn );
 			Sound->Loop( Loop );
 		}
 

@@ -45,6 +45,8 @@ public:
 	EFalloff::Type Falloff;
 	float Radius;
 	float Volume;
+	float FadeIn;
+	float FadeOut;
 	bool AutoPlay;
 	bool Loop;
 
