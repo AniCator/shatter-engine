@@ -3,6 +3,7 @@
 
 #include <algorithm>
 
+#include <Engine/Audio/SimpleSound.h>
 #include <Engine/Physics/Physics.h>
 #include <Engine/World/Entity/Entity.h>
 
@@ -79,6 +80,8 @@ void CWorld::Destroy()
 	}
 
 	Physics->Destroy();
+
+	CSimpleSound::StopSounds();
 }
 
 void CWorld::Reload()
