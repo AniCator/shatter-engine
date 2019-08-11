@@ -1,8 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <ThirdParty/glm/glm.hpp>
-
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/Math.h>
 
@@ -58,7 +56,7 @@ struct FPrimitive
 		Indices = new glm::uint[Primitive.IndexCount];
 
 		memcpy( Vertices, Vertices, Primitive.VertexCount * sizeof( FVertex ) );
-		memcpy( Indices, Indices, Primitive.IndexCount * sizeof( glm::uint ) );
+		memcpy( Indices, Indices, Primitive.IndexCount * sizeof( uint32_t ) );
 
 		HasNormals = Primitive.HasNormals;
 	}
@@ -78,7 +76,7 @@ struct FPrimitive
 
 	FVertex* Vertices;
 	uint32_t VertexCount;
-	glm::uint* Indices;
+	uint32_t* Indices;
 	uint32_t IndexCount;
 
 	bool HasNormals;
