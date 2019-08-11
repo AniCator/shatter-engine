@@ -11,6 +11,8 @@
 
 static const auto Gravity = Vector3D( 0.0f, 0.0f, 9.81f );
 
+#define DrawDebugLines 0
+
 CPhysicsComponent::CPhysicsComponent( CMeshEntity* OwnerIn )
 {
 	Owner = OwnerIn;
@@ -80,13 +82,27 @@ void CPhysicsComponent::Collision( CPhysicsComponent* Component )
 		Velocity -= InverseMassA * Impulse;
 		Component->Velocity += InverseMassB * Impulse;
 
-		UI::AddLine( Position, Position - Impulse, Color::Red );
-		UI::AddCircle( Position - Impulse, 5.0f, Color::Red );
+#if DrawDebugLines == 1
+		const auto ImpulseEnd = Position - Impulse;
+		UI::AddLine( Position, ImpulseEnd, Color::Red );
+		UI::AddCircle( ImpulseEnd, 5.0f, Color::Red );
+
+		Overlap.X = CenterA.X + CenterB.X - fabs( Delta.X );
+		Overlap.Y = CenterA.Y + CenterB.Y - fabs( Delta.Y );
+		Overlap.Z = CenterA.Z + CenterB.Z - fabs( Delta.Z );
+
+		const auto DeltaEnd = Position - Overlap;
+		UI::AddLine( Position, DeltaEnd, Color( 255, 0, 255 ) );
+		UI::AddCircle( DeltaEnd, 5.0f, Color( 255, 0, 255 ) );
+
+		UI::AddAABB( MinimumA, MaximumA, Color::Red );
+		UI::AddAABB( MinimumB, MaximumB, Color::Blue );
+#endif
 	}
 
-	Overlap.X = CenterA.X + CenterB.X - fabs( Delta.X );
-	Overlap.Y = CenterA.Y + CenterB.Y - fabs( Delta.Y );
-	Overlap.Z = CenterA.Z + CenterB.Z - fabs( Delta.Z );
+	// Overlap.X = CenterA.X + CenterB.X - fabs( Delta.X );
+	// Overlap.Y = CenterA.Y + CenterB.Y - fabs( Delta.Y );
+	// Overlap.Z = CenterA.Z + CenterB.Z - fabs( Delta.Z );
 
 	if( !Static )
 	{
@@ -115,6 +131,7 @@ void CPhysicsComponent::Tick()
 	Acceleration -= Gravity;
 	Velocity += ( Acceleration * DeltaTime ) / Mass;
 
+#if DrawDebugLines == 1
 	UI::AddLine( Position, Position + Velocity * 10.0f, Color::Green );
 	UI::AddCircle( Position + Velocity * 10.0f, 3.0f, Color::Green );
 	UI::AddLine( Position, Position + Acceleration, Color::Blue );
@@ -123,17 +140,18 @@ void CPhysicsComponent::Tick()
 	char MassString[32];
 	sprintf_s( MassString, "%.2f kg", Mass );
 	UI::AddText( Position, MassString );
+#endif
 
 	NewPosition += Velocity;
 
-	if( NewPosition.Z < -0.5f )
+	if( NewPosition.Z < -15.0f )
 	{
 		if( Velocity.Z < 0.0f )
 		{
 			Velocity.Z = 0.0f;
 		}
 
-		NewPosition.Z = -0.5f;
+		NewPosition.Z = -15.0f;
 	}
 
 	Transform.SetPosition( NewPosition );
