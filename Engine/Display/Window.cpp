@@ -47,8 +47,8 @@ void CWindow::Create( const char* Title )
 
 	const bool EnableBorder = !config.IsEnabled( "noborder", false );
 
-	Width = config.GetInteger( "width", 1280 );
-	Height = config.GetInteger( "height", 720 );
+	Width = config.GetInteger( "width", -1 );
+	Height = config.GetInteger( "height", -1 );
 
 	// Make sure GLFW is terminated before initializing it in case the application is being re-initialized.
 	glfwTerminate();
@@ -102,6 +102,19 @@ void CWindow::Create( const char* Title )
 	}
 
 	auto Context = ThreadContext( false );
+
+	if( Width == -1 && Height == -1 )
+	{
+		auto VideoMode = glfwGetVideoMode( Monitor );
+		if( VideoMode )
+		{
+			Width = VideoMode->width;
+			Height = VideoMode->height;
+
+			config.Store( "width", Width );
+			config.Store( "height", Height );
+		}
+	}
 
 	glfwWindowHint( GLFW_VISIBLE, GL_TRUE );
 	WindowHandle = glfwCreateWindow( Width, Height, Title, FullScreen ? glfwGetPrimaryMonitor() : nullptr, Context );
