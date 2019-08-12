@@ -60,7 +60,7 @@ int CConfiguration::GetInteger( const char* KeyName, const int Default )
 		return Default;
 	}
 
-	return atoi( StoredSettings[KeyName].c_str() );
+	return atoi( GetValue( KeyName ).c_str() );
 }
 
 double CConfiguration::GetDouble( const char* KeyName, const double Default )
@@ -72,7 +72,7 @@ double CConfiguration::GetDouble( const char* KeyName, const double Default )
 		return Default;
 	}
 
-	return atof( StoredSettings[KeyName].c_str() );
+	return atof( GetValue( KeyName ).c_str() );
 }
 
 float CConfiguration::GetFloat( const char* KeyName, const float Default )
