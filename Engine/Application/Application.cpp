@@ -1122,7 +1122,7 @@ void CApplication::InitializeDefaultInputs()
 	Input.ClearActionBindings();
 
 	// Input.AddActionBinding( EKey::Space, EAction::Press, InputPauseGameEnable );
-	Input.AddActionBinding( EKey::Space, EAction::Release, InputPauseGameDisable );
+	// Input.AddActionBinding( EKey::Space, EAction::Release, InputPauseGameDisable );
 
 	Input.AddActionBinding( EKey::Enter, EAction::Press, InputScaleTimeEnable );
 	Input.AddActionBinding( EKey::Enter, EAction::Release, InputScaleTimeDisable );
