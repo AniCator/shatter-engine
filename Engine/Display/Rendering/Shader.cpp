@@ -4,6 +4,7 @@
 
 #include <sstream>
 
+#define AutoReload 0
 
 CShader::CShader()
 {
@@ -122,7 +123,7 @@ bool CShader::Reload()
 
 GLuint CShader::Activate()
 {
-#ifdef _DEBUG
+#if AutoReload == 1
 	CFile VertexShader( VertexLocation.c_str() );
 	CFile FragmentShader( FragmentLocation.c_str() );
 
