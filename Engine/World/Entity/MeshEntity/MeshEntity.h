@@ -32,6 +32,7 @@ public:
 	virtual void Export( CData& Data ) override;
 
 	virtual bool IsStatic() const;
+	virtual bool IsStationary() const;
 
 public:
 	CMesh* Mesh;
@@ -52,5 +53,6 @@ protected:
 
 	bool Collision;
 	bool Static;
+	bool Stationary;
 	CPhysicsComponent* PhysicsComponent;
 };

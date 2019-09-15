@@ -5,6 +5,10 @@
 #include <Windows.h>
 #include <fcntl.h>
 #include <io.h>
+
+#include <dbghelp.h>
+#include <shellapi.h>
+#include <shlobj.h>
 #endif
 
 #include <Engine/Profiling/Logging.h>
@@ -507,7 +511,7 @@ void AssetUI()
 			auto World = CWorld::GetPrimaryWorld();
 			if( World )
 			{
-				auto Levels = World->GetLevels();
+				auto& Levels = World->GetLevels();
 				for( auto& Level : Levels )
 				{
 					if( ImGui::Selectable( Level.GetName().c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
@@ -730,12 +734,32 @@ void DebugMenu( CApplication* Application )
 
 			ImGui::Separator();
 
-			if( ImGui::MenuItem( "Re-initialize Application", "" ) )
-			{
-				Application->Initialize();
+			//if( ImGui::MenuItem( "Re-initialize Application", "" ) )
+			//{
+			//	Application->Initialize();
 
-				// Has to return when executed because imgui will be reset.
-				return;
+			//	// Has to return when executed because imgui will be reset.
+			//	return;
+			//}
+
+			if( ImGui::MenuItem( "800x600", "" ) )
+			{
+				MainWindow.Resize( ViewDimensions( 800, 600 ) );
+			}
+
+			if( ImGui::MenuItem( "1280x720", "" ) )
+			{
+				MainWindow.Resize( ViewDimensions( 1280, 720 ) );
+			}
+
+			if( ImGui::MenuItem( "1920x1080", "" ) )
+			{
+				MainWindow.Resize( ViewDimensions( 1920, 1080 ) );
+			}
+
+			if( ImGui::MenuItem( "2560x1440", "" ) )
+			{
+				MainWindow.Resize( ViewDimensions( 2560, 1440 ) );
 			}
 
 			if( ImGui::MenuItem( "Reload Configuration", "H" ) )
@@ -1121,9 +1145,6 @@ void CApplication::InitializeDefaultInputs()
 
 	Input.ClearActionBindings();
 
-	// Input.AddActionBinding( EKey::Space, EAction::Press, InputPauseGameEnable );
-	// Input.AddActionBinding( EKey::Space, EAction::Release, InputPauseGameDisable );
-
 	Input.AddActionBinding( EKey::Enter, EAction::Press, InputScaleTimeEnable );
 	Input.AddActionBinding( EKey::Enter, EAction::Release, InputScaleTimeDisable );
 
@@ -1151,13 +1172,12 @@ void CApplication::InitializeDefaultInputs()
 		DisplayLog = !DisplayLog;
 	} );
 
-	Input.AddActionBinding( EKey::P, EAction::Release, [] {
-		CProfiler& Profiler = CProfiler::Get();
-		Profiler.SetEnabled( !Profiler.IsEnabled() );
-	} );
-
-	Input.AddActionBinding( EKey::O, EAction::Release, [] {
+	Input.AddActionBinding( EKey::F5, EAction::Release, [] {
 		FrameStep = true;
+		} );
+
+	Input.AddActionBinding( EKey::F6, EAction::Release, [] {
+		PauseGame = !PauseGame;
 		} );
 
 	Input.AddActionBinding( EKey::NumpadSubtract, EAction::Release, [this] {
@@ -1363,18 +1383,34 @@ const std::string& CApplication::GetCommand( const std::string& Command )
 }
 
 #if defined(_WIN32)
-#include "Windows.h"
+#pragma comment(lib, "dbghelp.lib")
+
+int GenerateDump( EXCEPTION_POINTERS* pExceptionPointers )
+{
+	HANDLE DumpFile = CreateFile( "CrashDump.mdmp", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0 );
+
+	MINIDUMP_EXCEPTION_INFORMATION ExceptionInformation;
+	ExceptionInformation.ThreadId = GetCurrentThreadId();
+	ExceptionInformation.ExceptionPointers = pExceptionPointers;
+	ExceptionInformation.ClientPointers = TRUE;
+
+	MiniDumpWriteDump( GetCurrentProcess(), GetCurrentProcessId(), DumpFile, MiniDumpWithDataSegs, &ExceptionInformation, NULL, NULL );
+
+	return EXCEPTION_EXECUTE_HANDLER;
+}
 
 LONG WINAPI ExceptionHandler( EXCEPTION_POINTERS* ExceptionInfo )
 {
+	GenerateDump( ExceptionInfo );
+
 	const std::vector<Log::FHistory>& LogHistory = Log::History();
 	if( LogHistory.size() > 0 )
 	{
-		Log::Event( Log::Fatal, "An exception has occured. Guess I'll die.\n\nLast log message:\n%s\n", LogHistory[LogHistory.size() - 1].Message.c_str() );
+		Log::Event( Log::Fatal, "An exception has occured. Generating CrashDump.mdmp...\n\nLast known log entry:\n%s\n", LogHistory[LogHistory.size() - 1].Message.c_str() );
 	}
 	else
 	{
-		Log::Event( Log::Fatal, "An exception has occured. Guess I'll die.\n" );
+		Log::Event( Log::Fatal, "An exception has occured. Generating CrashDump.mdmp...\n" );
 	}
 
 	return EXCEPTION_CONTINUE_SEARCH;
@@ -1399,7 +1435,7 @@ void CApplication::Initialize()
 	short CastShort;
 
 	CastShort = *reinterpret_cast<short*>( EndianTest );
-	if( CastShort == 0 )
+	if( CastShort != 0 )
 	{
 		Log::Event( "Byte order: Little endian.\n" );
 	}

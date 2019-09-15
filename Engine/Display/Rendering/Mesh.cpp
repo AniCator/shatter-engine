@@ -54,6 +54,9 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 
 	GenerateNormals();
 
+	// Destroy the primitive, it's in the vertex data now.
+	this->Primitive = FPrimitive();
+
 	return bCreatedVertexBuffer;
 }
 
@@ -150,6 +153,10 @@ bool CMesh::CreateVertexArrayObject()
 		const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
 		glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
 
+		glEnableVertexAttribArray( EVertexAttribute::Color );
+		const void* ColorPointer = reinterpret_cast<void*>( offsetof( FVertex, Color ) );
+		glVertexAttribPointer( EVertexAttribute::Color, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), ColorPointer );
+
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
 
 		return true;
@@ -184,6 +191,7 @@ bool CMesh::CreateVertexBuffer()
 		{
 			VertexData.Vertices[Index].Position = Primitive.Vertices[Index].Position;
 			VertexData.Vertices[Index].TextureCoordinate = Primitive.Vertices[Index].TextureCoordinate;
+			VertexData.Vertices[Index].Color = Primitive.Vertices[Index].Color;
 		}
 
 		VertexBufferData.VertexCount = Primitive.VertexCount;
@@ -292,27 +300,37 @@ void CMesh::GenerateNormals()
 			VertexData.Vertices[VertexIndex].Normal = Vector3D( 0.0f, 0.0f, 1.0f );
 		}
 
-		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex += 3 )
+		if( !Primitive.HasNormals )
 		{
-			if( ( Primitive.VertexCount - VertexIndex ) > 2 )
+			for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex += 3 )
 			{
-				const Vector3D U = Primitive.Vertices[VertexIndex + 1].Position - Primitive.Vertices[VertexIndex].Position;
-				const Vector3D V = Primitive.Vertices[VertexIndex + 2].Position - Primitive.Vertices[VertexIndex].Position;
-				const Vector3D Normal = U.Cross( V );
-				VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex + 1].Normal = VertexData.Vertices[VertexIndex + 2].Normal = Normal;
+				if( ( Primitive.VertexCount - VertexIndex ) > 2 )
+				{
+					const Vector3D U = Primitive.Vertices[VertexIndex + 1].Position - Primitive.Vertices[VertexIndex].Position;
+					const Vector3D V = Primitive.Vertices[VertexIndex + 2].Position - Primitive.Vertices[VertexIndex].Position;
+					const Vector3D Normal = U.Cross( V );
+					VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex + 1].Normal = VertexData.Vertices[VertexIndex + 2].Normal = Normal;
+				}
 			}
 		}
 
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 		{
-			VertexData.Vertices[VertexIndex].Normal.Normalize();
+			if( Primitive.HasNormals )
+			{
+				VertexData.Vertices[VertexIndex].Normal = Primitive.Vertices[VertexIndex].Normal.Normalized();
+			}
+			else
+			{
+				VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex].Normal.Normalized();
+			}
 		}
 	}
 	else
 	{
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 		{
-			VertexData.Vertices[VertexIndex].Normal = Vector3D( 0.0f, 0.0f, 0.0f );
+			VertexData.Vertices[VertexIndex].Normal = Vector3D( 0.0f, 0.0f, 1.0f );
 		}
 
 		if( !Primitive.HasNormals )

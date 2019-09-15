@@ -21,6 +21,8 @@ struct FRenderData
 	glm::vec4 Color;
 
 	EDrawMode DrawMode = None;
+
+	bool ShouldRender;
 };
 
 struct FRenderDataInstanced : public FRenderData

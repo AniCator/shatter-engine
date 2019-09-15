@@ -30,7 +30,14 @@ CCamera::~CCamera()
 
 void CCamera::Update()
 {
-	ProjectionMatrix = glm::perspective( glm::radians( CameraSetup.FieldOfView ), CameraSetup.AspectRatio, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
+	if( !CameraSetup.Orthographic )
+	{
+		ProjectionMatrix = glm::perspective( glm::radians( CameraSetup.FieldOfView ), CameraSetup.AspectRatio, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
+	}
+	else
+	{
+		ProjectionMatrix = glm::ortho( -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
+	}
 
 	glm::vec3 CameraPosition = Vector3DToInitializerList( CameraSetup.CameraPosition );
 
@@ -48,7 +55,16 @@ void CCamera::Update()
 
 void CCamera::SetFieldOfView( const float& FieldOfView )
 {
+	CameraSetup.Orthographic = false;
 	CameraSetup.FieldOfView = FieldOfView;
+
+	Update();
+}
+
+void CCamera::SetOrthographicScale( const float& OrthographicScale )
+{
+	CameraSetup.Orthographic = true;
+	CameraSetup.OrthographicScale = OrthographicScale;
 
 	Update();
 }

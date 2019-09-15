@@ -2,6 +2,7 @@
 #pragma once
 
 #include <stdint.h>
+#include <Engine/Utility/Data.h>
 
 typedef uint64_t Timecode;
 
@@ -32,6 +33,10 @@ public:
 	// TODO: Move this elsewhere.
 	void Frame();
 	void Draw();
+
+public:
+	friend CData& operator<<( CData& Data, CSequence& Sequence );
+	friend CData& operator>>( CData& Data, CSequence& Sequence );
 
 private:
 	class CTimeline* Timeline;

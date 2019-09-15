@@ -14,25 +14,21 @@ class CRenderTexture : public CTexture
 {
 public:
 	CRenderTexture();
-	CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight );
+	CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight, const bool DepthOnly = false );
 	~CRenderTexture();
 
 	void Initialize();
 	void Push();
 	void Pop();
 
+	void Invalidate() { Initialized = false; };
 	bool Ready() const { return Initialized; };
 
+	FName Name;
 private:
 	GLuint FramebufferHandle;
 	GLuint DepthHandle;
-	FName Name;
 
-	int Width;
-	int Height;
-	int Channels;
-
-	unsigned char* ImageData;
-
+	bool DepthOnly;
 	bool Initialized;
 };

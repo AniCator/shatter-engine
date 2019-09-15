@@ -47,8 +47,8 @@ void CWindow::Create( const char* Title )
 
 	const bool EnableBorder = !config.IsEnabled( "noborder", false );
 
-	Width = config.GetInteger( "width", -1 );
-	Height = config.GetInteger( "height", -1 );
+	CurrentDimensions.Width = config.GetInteger( "width", -1 );
+	CurrentDimensions.Height = config.GetInteger( "height", -1 );
 
 	// Make sure GLFW is terminated before initializing it in case the application is being re-initialized.
 	glfwTerminate();
@@ -78,7 +78,6 @@ void CWindow::Create( const char* Title )
 	}
 
 	const bool FullScreen = EnableBorder && config.IsEnabled( "fullscreen", false );
-	const int TargetMonitor = config.GetInteger( "monitor", -1 );
 
 	if( FullScreen )
 	{
@@ -89,35 +88,13 @@ void CWindow::Create( const char* Title )
 		glfwWindowHint( GLFW_REFRESH_RATE, VideoMode->refreshRate );
 	}
 
-	GLFWmonitor* Monitor = glfwGetPrimaryMonitor();
-	if( TargetMonitor > -1 )
-	{
-		int MonitorCount;
-		GLFWmonitor** Monitors = glfwGetMonitors( &MonitorCount );
-
-		if( TargetMonitor < MonitorCount )
-		{
-			Monitor = Monitors[TargetMonitor];
-		}
-	}
-
 	auto Context = ThreadContext( false );
 
-	if( Width == -1 && Height == -1 )
-	{
-		auto VideoMode = glfwGetVideoMode( Monitor );
-		if( VideoMode )
-		{
-			Width = VideoMode->width;
-			Height = VideoMode->height;
-
-			config.Store( "width", Width );
-			config.Store( "height", Height );
-		}
-	}
+	GLFWmonitor* Monitor = GetTargetMonitor();
+	CurrentDimensions = GetMonitorDimensions( Monitor );
 
 	glfwWindowHint( GLFW_VISIBLE, GL_TRUE );
-	WindowHandle = glfwCreateWindow( Width, Height, Title, FullScreen ? glfwGetPrimaryMonitor() : nullptr, Context );
+	WindowHandle = glfwCreateWindow( CurrentDimensions.Width, CurrentDimensions.Height, Title, FullScreen ? Monitor : nullptr, Context );
 
 	int WindowX = -1;
 	int WindowY = -1;
@@ -189,6 +166,32 @@ void CWindow::Create( const char* Title )
 	Renderer.Initialize();
 }
 
+void CWindow::Resize( const ViewDimensions& Dimensions )
+{
+	ViewDimensions NewDimensions;
+	if( Dimensions.Width > -1 && Dimensions.Height > -1 )
+	{
+		NewDimensions = Dimensions;
+	}
+	else
+	{
+		auto Monitor = GetTargetMonitor();
+		NewDimensions = GetMonitorDimensions( Monitor );
+	}
+
+	if( CurrentDimensions.Width != NewDimensions.Width && CurrentDimensions.Height != NewDimensions.Height )
+	{
+		CurrentDimensions = NewDimensions;
+		glfwSetWindowSize( WindowHandle, CurrentDimensions.Width, CurrentDimensions.Height );
+
+		auto& Configuration = CConfiguration::Get();
+		Configuration.Store( "width", CurrentDimensions.Width );
+		Configuration.Store( "height", CurrentDimensions.Height );
+
+		Renderer.DestroyBuffers();
+	}
+}
+
 void CWindow::Terminate()
 {
 #if defined( IMGUI_ENABLED )
@@ -207,9 +210,16 @@ GLFWwindow* CWindow::Handle() const
 
 void CWindow::ProcessInput()
 {
+	Profile( "Input" );
+
 	glfwPollEvents();
 
-	glfwSetInputMode( WindowHandle, GLFW_CURSOR, ShowCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED );
+	static bool PreviousCursorState = false;
+	if( PreviousCursorState != ShowCursor )
+	{
+		glfwSetInputMode( WindowHandle, GLFW_CURSOR, ShowCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED );
+		PreviousCursorState = ShowCursor;
+	}
 
 	CInputLocator::Get().Tick();
 }
@@ -235,7 +245,7 @@ void CWindow::RenderFrame()
 
 	Profile( "Render" );
 
-	Renderer.SetViewport( Width, Height );
+	Renderer.SetViewport( CurrentDimensions.Width, CurrentDimensions.Height );
 	Renderer.DrawQueuedRenderables();
 
 #if defined( IMGUI_ENABLED )
@@ -274,6 +284,49 @@ bool CWindow::IsCursorEnabled() const
 CRenderer& CWindow::GetRenderer()
 {
 	return Renderer;
+}
+
+GLFWmonitor* CWindow::GetTargetMonitor()
+{
+	const int TargetMonitor = CConfiguration::Get().GetInteger( "monitor", -1 );
+
+	GLFWmonitor* Monitor = glfwGetPrimaryMonitor();
+	if( TargetMonitor > -1 )
+	{
+		int MonitorCount;
+		GLFWmonitor** Monitors = glfwGetMonitors( &MonitorCount );
+
+		if( TargetMonitor < MonitorCount )
+		{
+			Monitor = Monitors[TargetMonitor];
+		}
+	}
+
+	return Monitor;
+}
+
+ViewDimensions CWindow::GetMonitorDimensions( GLFWmonitor* Monitor )
+{
+	auto& Configuration = CConfiguration::Get();
+
+	ViewDimensions Dimensions;
+	Dimensions.Width = Configuration.GetInteger( "width", -1 );
+	Dimensions.Height = Configuration.GetInteger( "height", -1 );
+
+	if( Dimensions.Width == -1 && Dimensions.Height == -1 )
+	{
+		auto VideoMode = glfwGetVideoMode( Monitor );
+		if( VideoMode )
+		{
+			Dimensions.Width = VideoMode->width;
+			Dimensions.Height = VideoMode->height;
+
+			Configuration.Store( "width", Dimensions.Width );
+			Configuration.Store( "height", Dimensions.Height );
+		}
+	}
+
+	return Dimensions;
 }
 
 GLFWwindow* CWindow::ThreadContext( const bool MakeCurrent )

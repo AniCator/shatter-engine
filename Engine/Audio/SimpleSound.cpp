@@ -171,6 +171,9 @@ void CSimpleSound::StopAll()
 
 void CSimpleSound::Loop( SoundHandle Handle, const bool Loop )
 {
+	if( !Sounds[Handle.Handle].Voice )
+		return;
+
 	Sounds[Handle.Handle].Voice->setLoop(Loop);
 }
 
@@ -181,6 +184,9 @@ void CSimpleSound::Loop( StreamHandle Handle, const bool Loop )
 
 void CSimpleSound::Rate( SoundHandle Handle, const float Rate )
 {
+	if( !Sounds[Handle.Handle].Voice )
+		return;
+
 	Sounds[Handle.Handle].Voice->setPitch( Rate );
 }
 

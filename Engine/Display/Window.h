@@ -5,12 +5,29 @@
 
 #define IMGUI_ENABLED
 
-struct GLFWwindow;
+struct ViewDimensions
+{
+	ViewDimensions()
+	{
+		Width = -1;
+		Height = -1;
+	}
+
+	ViewDimensions( int Width, int Height )
+	{
+		this->Width = Width;
+		this->Height = Height;
+	}
+
+	int Width;
+	int Height;
+};
 
 class CWindow
 {
 public:
 	void Create( const char* Title );
+	void Resize( const ViewDimensions& Dimensions = ViewDimensions() );
 	void Terminate();
 	GLFWwindow* Handle() const;
 
@@ -27,8 +44,8 @@ public:
 
 	CRenderer& GetRenderer();
 
-	inline int GetWidth() { return Width; };
-	inline int GetHeight() { return Height; };
+	inline int GetWidth() const { return CurrentDimensions.Width; };
+	inline int GetHeight() const { return CurrentDimensions.Height; };
 
 	bool IsRendering() const
 	{
@@ -36,14 +53,16 @@ public:
 	}
 
 private:
-	GLFWwindow* WindowHandle;
+	struct GLFWmonitor* GetTargetMonitor();
+	ViewDimensions GetMonitorDimensions( struct GLFWmonitor* Monitor );
+
+	struct GLFWwindow* WindowHandle;
 	CRenderer Renderer;
 
 	bool Initialized;
 	bool ShowCursor;
 
-	int Width;
-	int Height;
+	ViewDimensions CurrentDimensions;
 
 	bool RenderingFrame;
 
@@ -54,7 +73,7 @@ public:
 		return StaticInstance;
 	}
 
-	static GLFWwindow* ThreadContext( const bool MakeCurrent = true );
+	static struct GLFWwindow* ThreadContext( const bool MakeCurrent = true );
 private:
 	CWindow();
 

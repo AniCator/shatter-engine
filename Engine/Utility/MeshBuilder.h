@@ -3,6 +3,7 @@
 
 #include <ThirdParty/glm/glm.hpp>
 #include <vector>
+#include <map>
 
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
@@ -28,6 +29,7 @@ public:
 	static void Dragon( FPrimitive& Primitive, const float Radius );
 	static void Buddha( FPrimitive& Primitive, const float Radius );
 
+	static void ASSIMP( FPrimitive& Primitive, const CFile& File );
 	static void OBJ( FPrimitive& Primitive, const CFile& File );
 	static void LM( FPrimitive& Primitive, const CFile& File );
 
@@ -35,4 +37,6 @@ public:
 
 private:
 	static void Soup( FPrimitive& Primitive, std::vector<Vector3D> Vertices );
+
+	static bool FindVertex( const FVertex& Vertex, const std::map<FVertex, uint32_t>& IndexMap, uint32_t& OutIndex );
 };

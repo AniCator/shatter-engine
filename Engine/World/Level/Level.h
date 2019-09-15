@@ -28,9 +28,17 @@ public:
 	template<typename T>
 	T* Spawn()
 	{
-		Entities.push_back( new T() );
+		CEntity* Entity = new T();
+		if( Entity )
+		{
+			Entity->Name = Name;
+			Entity->SetEntityID( EntityUID::Create() );
+			Entity->SetLevelID( LevelUID( Entities.size() ) );
+			Entity->SetLevel( this );
+			Entities.push_back( Entity );
+		}
 
-		return dynamic_cast<T*>(Entities.back());
+		return dynamic_cast<T*>( Entity );
 	}
 
 	CEntity* Spawn( const std::string& Type, const std::string& Name )
@@ -95,8 +103,6 @@ public:
 	{
 		return Transform;
 	}
-
-protected:
 	FTransform Transform;
 
 private:

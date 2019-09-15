@@ -8,7 +8,9 @@ struct FCameraSetup
 {
 	FCameraSetup()
 	{
+		Orthographic = false;
 		FieldOfView = 60.0f;
+		OrthographicScale = 10.0f;
 		AspectRatio = 1280.0f / 720.0f;
 		NearPlaneDistance = 1.0f;
 		FarPlaneDistance = 100000.0f;
@@ -19,7 +21,10 @@ struct FCameraSetup
 		CameraUpVector = { 0.0f, 0.0f, 1.0f };
 	};
 
+	bool Orthographic;
 	float FieldOfView;
+	float OrthographicScale;
+
 	float AspectRatio;
 	float NearPlaneDistance;
 	float FarPlaneDistance;
@@ -38,6 +43,7 @@ public:
 	void Update();
 
 	void SetFieldOfView( const float& FieldOfView );
+	void SetOrthographicScale( const float& OrthographicScale );
 	void SetAspectRatio( const float& AspectRatio);
 	void SetNearPlaneDistance( const float& NearPlaneDistance );
 	void SetFarPlaneDistance( const float& FarPlaneDistance );

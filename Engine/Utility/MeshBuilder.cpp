@@ -1,9 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "MeshBuilder.h"
 
-#include <map>
-#include <sstream>
-
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Display/Rendering/Mesh.h>
@@ -213,7 +210,7 @@ void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
 	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
 }
 
-bool FindVertex( const FVertex& Vertex, std::map<FVertex, uint32_t> IndexMap, uint32_t& OutIndex )
+bool MeshBuilder::FindVertex( const FVertex& Vertex, const std::map<FVertex, uint32_t>& IndexMap, uint32_t& OutIndex )
 {
 	auto Iterator = IndexMap.find( Vertex );
 	if( Iterator == IndexMap.end() )
@@ -366,6 +363,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 			Vertex.Position = Vertices[VertexIndices[Index]];
 			Vertex.Normal = Normals[NormalIndices[Index]];
 			Vertex.TextureCoordinate = Coordinates[CoordinateIndices[Index]];
+			Vertex.Color = Vector3D( 1.0f, 1.0f, 1.0f );
 
 			uint32_t FatIndex = 0;
 			const bool ExistingVertex = FindVertex( Vertex, IndexMap, FatIndex );

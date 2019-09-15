@@ -126,6 +126,12 @@
     <Filter Include="Source Files\Engine\Sequencer">
       <UniqueIdentifier>{8b9f98c7-aaad-46fb-b373-6fbadf11b163}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\Move">
+      <UniqueIdentifier>{6b95605b-350c-4e25-936c-69e7e3e67ab4}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Display\Rendering\Pass">
+      <UniqueIdentifier>{eb9635e9-1e4c-49bf-9a2c-0a2c3a8b32b4}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -286,6 +292,27 @@
     </ClCompile>
     <ClCompile Include="Engine\Sequencer\Sequencer.cpp">
       <Filter>Source Files\Engine\Sequencer</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\MeshBuilderASSIMP.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\Move\MoveLinear.cpp">
+      <Filter>Source Files\Engine\World\Entity\Move</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\TextureEnumeratorsGL.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Pass\BloomPass.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Pass\CopyPass.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Pass\DownsamplePass.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Pass\ShadowPass.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -522,6 +549,27 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Math\Matrix.h">
       <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\Move\MoveLinear.h">
+      <Filter>Source Files\Engine\World\Entity\Move</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\TextureEnumeratorsGL.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Pass\BloomPass.h">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Pass\CopyPass.h">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Pass\DownsamplePass.h">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Pass\ShadowPass.h">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Uniform.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

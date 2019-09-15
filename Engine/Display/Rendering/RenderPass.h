@@ -8,6 +8,7 @@
 #include <Engine/Display/Rendering/Renderable.h>
 
 #include <Engine/Display/Rendering/Shader.h>
+#include <Engine/Display/Rendering/Uniform.h>
 
 #include <Engine/Utility/Math.h>
 
@@ -19,24 +20,29 @@ public:
 	CRenderPass(const std::string& Name, int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
 
 	virtual uint32_t RenderRenderable( CRenderable* Renderable );
-	virtual uint32_t RenderRenderable( CRenderable* Renderable, const std::unordered_map<std::string, Vector4D>& Uniforms );
+	virtual uint32_t RenderRenderable( CRenderable* Renderable, const UniformMap& Uniforms );
 	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables );
-	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables, const std::unordered_map<std::string, Vector4D>& Uniforms );
+	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables, const UniformMap& Uniforms );
 
-	virtual uint32_t Render( const std::unordered_map<std::string, Vector4D>& Uniforms );
+	virtual uint32_t Render( const UniformMap& Uniforms );
 
-	void Clear();
+	void ClearTarget();
+	virtual void Clear();
 
-	void Begin();
-	void End();
+	virtual void Begin();
+	virtual void End();
 
-	void Setup( CRenderable* Renderable, const std::unordered_map<std::string, Vector4D>& Uniforms );
-	void Draw( CRenderable* Renderable );
+	virtual void Setup( CRenderable* Renderable, const UniformMap& Uniforms );
+	virtual void Draw( CRenderable* Renderable );
 	void SetCamera( const CCamera& Camera );
+	void SetPreviousCamera( const CCamera& Camera );
+
+	static void FrustumCull( CCamera& Camera, const std::vector<CRenderable*> Renderables );
 
 	CRenderTexture* Target;
 	CCamera Camera;
 	FRenderDataInstanced PreviousRenderData;
+	CCamera PreviousCamera;
 
 	int ViewportWidth;
 	int ViewportHeight;
@@ -44,15 +50,19 @@ public:
 	uint32_t Calls;
 
 	bool AlwaysClear;
+	bool SendQueuedRenderables;
 
 	EBlendMode::Type BlendMode;
 	EDepthMask::Type DepthMask;
 	EDepthTest::Type DepthTest;
 
-private:
+protected:
+	std::string PassName;
+
 	void ConfigureBlendMode( CShader* Shader );
 	void ConfigureDepthMask( CShader* Shader );
 	void ConfigureDepthTest( CShader* Shader );
-
-	std::string PassName;
 };
+
+uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms );
+uint32_t DownsampleTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms );

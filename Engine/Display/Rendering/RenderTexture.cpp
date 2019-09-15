@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "RenderTexture.h"
 
+#include <Engine/Display/Rendering/TextureEnumeratorsGL.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
@@ -10,9 +11,11 @@ CRenderTexture::CRenderTexture() : CTexture()
 	Width = -1;
 	Height = -1;
 	Initialized = false;
+
+	FilteringMode = EFilteringMode::Nearest;
 }
 
-CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight ) : CTexture()
+CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight, const bool DepthOnly ) : CTexture()
 {
 	this->Name = Name;
 	Width = TextureWidth;
@@ -21,12 +24,18 @@ CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int T
 	FramebufferHandle = 0;
 	DepthHandle = 0;
 
+	this->DepthOnly = DepthOnly;
 	Initialized = false;
 }
 
 CRenderTexture::~CRenderTexture()
 {
+	glDeleteFramebuffers( 1, &FramebufferHandle );
 
+	if( !DepthOnly )
+	{
+		glDeleteTextures( 1, &DepthHandle );
+	}
 }
 
 void CRenderTexture::Initialize()
@@ -36,26 +45,31 @@ void CRenderTexture::Initialize()
 		Log::Event( Log::Warning, "Render texture could not be initialized because it hasn't been configured properly.\n" );
 	}
 
-	glGenFramebuffers( 1, &FramebufferHandle );
-	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
+	
+		glGenFramebuffers( 1, &FramebufferHandle );
+		glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
 
-	glGenTextures( 1, &Handle );
-	glBindTexture( GL_TEXTURE_2D, Handle );
+	if( !DepthOnly )
+	{
+		glGenTextures( 1, &Handle );
+		glBindTexture( GL_TEXTURE_2D, Handle );
 
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB16F, Width, Height, 0, GL_RGB, GL_FLOAT, 0 );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB16F, Width, Height, 0, GL_RGB, GL_FLOAT, 0 );
 
-	// Wrapping parameters
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
+		// Wrapping parameters
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
-	// Filtering parameters
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		// Filtering parameters
+		const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GetFilteringMode( Mode ) );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
 
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Handle, 0 );
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Handle, 0 );
 
-	GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
-	glDrawBuffers( 1, DrawBuffers );
+		GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+		glDrawBuffers( 1, DrawBuffers );
+	}
 
 	glGenTextures( 1, &DepthHandle );
 	glBindTexture( GL_TEXTURE_2D, DepthHandle );
@@ -66,11 +80,29 @@ void CRenderTexture::Initialize()
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
-	// Filtering parameters
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	if( DepthOnly )
+	{
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GEQUAL );
+	}
+	else
+	{
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+	}
 	
 	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, DepthHandle, 0 );
+
+	if( DepthOnly )
+	{
+		glDrawBuffer( GL_NONE );
+		glReadBuffer( GL_NONE );
+
+		Handle = DepthHandle;
+	}
 
 	Initialized = true;
 
@@ -86,6 +118,10 @@ void CRenderTexture::Initialize()
 
 void CRenderTexture::Push()
 {
+#if defined(_DEBUG)
+	// const auto& Texture = Name.String();
+	// glPushDebugGroup( GL_DEBUG_SOURCE_APPLICATION, 0, Texture.length(), Texture.c_str() );
+#endif
 	glViewport( 0, 0, (GLsizei) Width, (GLsizei) Height );
 
 	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
@@ -94,4 +130,8 @@ void CRenderTexture::Push()
 void CRenderTexture::Pop()
 {
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+
+#if defined(_DEBUG)
+	// glPopDebugGroup();
+#endif
 }

@@ -11,6 +11,8 @@ CRenderable::CRenderable()
 	Mesh = nullptr;
 	Shader = nullptr;
 	memset( Textures, 0, 32 * sizeof( CTexture* ) );
+
+	RenderData.ShouldRender = true;
 }
 
 CRenderable::~CRenderable()
@@ -74,7 +76,7 @@ void CRenderable::SetTexture( CTexture* Texture, ETextureSlot Slot )
 
 void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride )
 {
-	if( Mesh )
+	if( Mesh && RenderData.ShouldRender )
 	{
 		const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
 		Prepare( RenderData );
@@ -116,8 +118,13 @@ void CRenderable::Prepare( FRenderData& RenderData )
 				CTexture* Texture = Textures[Index];
 				if( Texture )
 				{
-					glUniform1i( glGetUniformLocation( Handles.Program, TextureSlotName[Index] ), Index );
 					Texture->Bind( Slot );
+				}
+
+				const auto Location = glGetUniformLocation( Handles.Program, TextureSlotName[Index] );
+				if( Location > -1 )
+				{
+					glUniform1i( Location, Index );
 				}
 
 				Slot = static_cast<ETextureSlot>( Index + 1 );

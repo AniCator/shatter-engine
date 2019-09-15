@@ -8,7 +8,7 @@
 #include <Engine/World/World.h>
 #include <Engine/Utility/Structures/JSON.h>
 
-static const size_t LevelVersion = 0;
+static const size_t LevelVersion = 1;
 
 CLevel::CLevel()
 {
@@ -32,6 +32,9 @@ void CLevel::Construct()
 {
 	for( auto Entity : Entities )
 	{
+		if( !Entity )
+			continue;
+
 		// Entity->SetLevel( this );
 		Entity->Construct();
 	}
@@ -41,6 +44,9 @@ void CLevel::Frame()
 {
 	for( auto Entity : Entities )
 	{
+		if( !Entity )
+			continue;
+
 		Entity->Frame();
 	}
 }
@@ -49,6 +55,9 @@ void CLevel::Tick()
 {
 	for( auto Entity : Entities )
 	{
+		if( !Entity )
+			continue;
+
 		Entity->Tick();
 
 		if( Entity->IsDebugEnabled() )
@@ -64,6 +73,9 @@ void CLevel::Destroy()
 
 	for( size_t Index = 0; Index < Entities.size(); Index++ )
 	{
+		if( !Entities[Index] )
+			continue;
+
 		Entities[Index]->Destroy();
 		// delete Entities[Index];
 		// Entities[Index] = nullptr;
@@ -72,19 +84,21 @@ void CLevel::Destroy()
 
 void CLevel::Reload()
 {
-	/*CWorld* TemporaryWorld = World;
+	for( size_t Index = 0; Index < Entities.size(); Index++ )
+	{
+		if( !Entities[Index] )
+			continue;
 
-	Destroy();
-	World = TemporaryWorld;
+		Entities[Index]->Destroy();
+	}
+
+	Entities.clear();
 
 	CFile File = CFile( Name.c_str() );
 	File.Load();
-	Load( File );*/
+	Load( File, false );
 
-	for( auto Entity : Entities )
-	{
-		Entity->Reload();
-	}
+	Construct();
 }
 
 void CLevel::Load( const CFile& File, const bool AssetsOnly )
@@ -462,6 +476,9 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 void CLevel::Remove( CEntity* MarkEntity )
 {
+	if( !MarkEntity )
+		return;
+
 	if( MarkEntity->GetLevel() == this )
 	{
 		const size_t ID = MarkEntity->GetLevelID().ID;
@@ -536,13 +553,10 @@ CData& operator<<( CData& Data, CLevel& Level )
 {
 	Data << LevelVersion;
 
-	const size_t Count = Level.Entities.size();
-	Data << Count;
+	Data << Level.Transform;
 
-	for( size_t Index = 0; Index < Count; Index++ )
-	{
-		Data << Level.Entities[Index];
-	}
+	FDataString::Encode( Data, Level.Name );
+	FDataVector::Encode( Data, Level.Entities );
 
 	return Data;
 }
@@ -554,6 +568,10 @@ CData& operator>> ( CData& Data, CLevel& Level )
 
 	if( Version >= LevelVersion )
 	{
+		Data >> Level.Transform;
+
+		FDataString::Decode( Data, Level.Name );
+
 		size_t Count;
 		Data >> Count;
 

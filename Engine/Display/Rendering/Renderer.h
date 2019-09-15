@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include <Engine/Display/Rendering/RenderPass.h>
+#include <Engine/Display/Rendering/Uniform.h>
 
 #include "Camera.h"
 
@@ -36,6 +37,7 @@ public:
 	~CRenderer();
 
 	void Initialize();
+	void DestroyBuffers();
 	void RefreshFrame();
 
 	void QueueRenderable( CRenderable* Renderable );
@@ -43,6 +45,8 @@ public:
 	void DrawQueuedRenderables();
 
 	void SetUniformBuffer( const std::string& Name, const Vector4D& Value );
+	void SetUniformBuffer( const std::string& Name, const Vector3D& Value );
+	void SetUniformBuffer( const std::string& Name, const glm::mat4& Value );
 
 	const CCamera& GetCamera() const;
 	void SetCamera( const CCamera& CameraIn );
@@ -61,7 +65,7 @@ protected:
 private:
 	std::vector<CRenderable*> Renderables;
 	std::vector<CRenderable*> DynamicRenderables;
-	std::unordered_map<std::string, Vector4D> GlobalUniformBuffers;
+	UniformMap GlobalUniformBuffers;
 
 	CCamera Camera;
 	

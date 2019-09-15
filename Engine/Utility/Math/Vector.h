@@ -470,6 +470,7 @@ public:
 		this->X = Vector.X;
 		this->Y = Vector.Y;
 		this->Z = Vector.Z;
+		this->W = Vector.W;
 		return *this;
 	}
 

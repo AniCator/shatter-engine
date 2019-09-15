@@ -81,6 +81,10 @@ void ParsePayload(FPrimitivePayload* Payload )
 			File.Load( true );
 			MeshBuilder::LM( Payload->Primitive, File );
 		}
+		else if( Extension != "obj" )
+		{
+			MeshBuilder::ASSIMP( Payload->Primitive, File );
+		}
 	}
 }
 
@@ -267,7 +271,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 
 		if( ShouldLoad )
 		{
-			if( Extension == "obj" )
+			if( Extension == "obj" && false )
 			{
 				File.Load();
 				MeshBuilder::OBJ( Primitive, File );
@@ -279,7 +283,12 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			}
 			else
 			{
-				Log::Event( Log::Warning, "Unknown mesh extension \"%s\".\n", Extension.c_str() );
+				MeshBuilder::ASSIMP( Primitive, File );
+
+				if( Primitive.VertexCount == 0 )
+				{
+					Log::Event( Log::Warning, "Unknown mesh extension \"%s\".\n", Extension.c_str() );
+				}
 			}
 		}
 
@@ -304,7 +313,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			}
 
 			// Automatically export an LM file if the extension was OBJ.
-			if( ( ForceLoad || ExportOBJToLM ) && Mesh && Extension == "obj" )
+			if( ( ForceLoad || ExportOBJToLM ) && Mesh && Extension != "lm" )
 			{
 				Log::Event( "Exporting Lofty Model mesh \"%s\".", Name );
 

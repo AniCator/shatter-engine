@@ -52,6 +52,8 @@ public:
 			{
 				ComponentA->Contact = false;
 
+				ComponentA->PreCollision();
+
 				for( auto ComponentB : Components )
 				{
 					if( ComponentB && ComponentB != ComponentA && ComponentB->Block )

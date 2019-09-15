@@ -71,3 +71,34 @@ struct FDataString
 		}
 	}
 };
+
+struct FDataVector
+{
+	template<typename T>
+	static void Encode( CData& Data, std::vector<T>& Vector )
+	{
+		const size_t Count = Vector.size();
+		Data << Count;
+
+		for( size_t Index = 0; Index < Count; Index++ )
+		{
+			Data << Vector[Index];
+		}
+	}
+
+	template<typename T>
+	static void Decode( CData& Data, std::vector<T>& Vector )
+	{
+		size_t ItemCount;
+		Data >> ItemCount;
+
+		Vector.reserve( ItemCount );
+		for( size_t Index = 0; Index < ItemCount; Index++ )
+		{
+			typedef std::remove_pointer<T>::type U;
+			U Item = U();
+			Data >> Item;
+			Vector.emplace_back( Item );
+		}
+	}
+};

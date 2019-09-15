@@ -94,7 +94,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ProfileBuild;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -120,7 +120,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
@@ -148,13 +148,14 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>false</ShowIncludes>
-      <PreprocessorDefinitions>DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -178,7 +179,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\angelscript\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ProfileBuild;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
@@ -208,12 +209,17 @@
     <ClCompile Include="Engine\Display\Rendering\Camera.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Framebuffer.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Pass\BloomPass.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Pass\CopyPass.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Pass\DownsamplePass.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Pass\ShadowPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Renderable.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Renderer.cpp" />
     <ClCompile Include="Engine\Display\Rendering\RenderPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\RenderTexture.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Shader.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Texture.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\TextureEnumeratorsGL.cpp" />
     <ClCompile Include="Engine\Display\UserInterface.cpp" />
     <ClCompile Include="Engine\Display\Window.cpp" />
     <ClCompile Include="Engine\Input\Input.cpp" />
@@ -226,6 +232,7 @@
     <ClCompile Include="Engine\Sequencer\Sequencer.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilder.cpp" />
+    <ClCompile Include="Engine\Utility\MeshBuilderASSIMP.cpp" />
     <ClCompile Include="Engine\Utility\Presence\Presence.cpp" />
     <ClCompile Include="Engine\Utility\Script\AngelEngine.cpp" />
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp" />
@@ -239,6 +246,7 @@
     <ClCompile Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\MeshEntity\MeshEntity.cpp" />
+    <ClCompile Include="Engine\World\Entity\Move\MoveLinear.cpp" />
     <ClCompile Include="Engine\World\Entity\PointEntity\PointEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.cpp" />
@@ -263,6 +271,10 @@
     <ClInclude Include="Engine\Display\Rendering\Camera.h" />
     <ClInclude Include="Engine\Display\Rendering\Framebuffer.h" />
     <ClInclude Include="Engine\Display\Rendering\Mesh.h" />
+    <ClInclude Include="Engine\Display\Rendering\Pass\BloomPass.h" />
+    <ClInclude Include="Engine\Display\Rendering\Pass\CopyPass.h" />
+    <ClInclude Include="Engine\Display\Rendering\Pass\DownsamplePass.h" />
+    <ClInclude Include="Engine\Display\Rendering\Pass\ShadowPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Renderable.h" />
     <ClInclude Include="Engine\Display\Rendering\Renderer.h" />
     <ClInclude Include="Engine\Display\Rendering\RenderPass.h" />
@@ -270,6 +282,8 @@
     <ClInclude Include="Engine\Display\Rendering\Shader.h" />
     <ClInclude Include="Engine\Display\Rendering\Texture.h" />
     <ClInclude Include="Engine\Display\Rendering\TextureEnumerators.h" />
+    <ClInclude Include="Engine\Display\Rendering\TextureEnumeratorsGL.h" />
+    <ClInclude Include="Engine\Display\Rendering\Uniform.h" />
     <ClInclude Include="Engine\Display\UserInterface.h" />
     <ClInclude Include="Engine\Display\Window.h" />
     <ClInclude Include="Engine\Event\ActionTarget.h" />
@@ -314,6 +328,7 @@
     <ClInclude Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.h" />
     <ClInclude Include="Engine\World\Entity\MeshEntity\MeshEntity.h" />
+    <ClInclude Include="Engine\World\Entity\Move\MoveLinear.h" />
     <ClInclude Include="Engine\World\Entity\PointEntity\PointEntity.h" />
     <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h" />
     <ClInclude Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.h" />

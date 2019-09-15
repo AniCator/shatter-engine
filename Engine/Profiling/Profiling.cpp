@@ -6,6 +6,9 @@
 
 #include <ThirdParty/imgui-1.70/imgui.h>
 
+size_t CounterGap = 0;
+size_t CounterGapFrame = 0;
+
 CProfiler::CProfiler()
 {
 #ifdef ProfileBuild
@@ -161,7 +164,9 @@ void CProfiler::PlotPerformance()
 			Average /= AverageWindow;
 
 			bool Microsecond = false;
-			int64_t Time = TimeEntry.Time / 1000000;
+			bool Nanosecond = false;
+			int64_t Time;
+				Time = TimeEntry.Time / 1000000;
 			if( Time == 0 )
 			{
 				Time = TimeEntry.Time / 100000;
@@ -169,9 +174,12 @@ void CProfiler::PlotPerformance()
 			}
 
 			if( Time == 0 )
-				continue;
+			{
+				Time = TimeEntry.Time / 1000;
+				Nanosecond = true;
+			}
 
-			sprintf_s( TimeEntryName, "%s (%lli%s)", TimeEntry.Name.String().c_str(), Time, Microsecond ? "us" : "ms" );
+			sprintf_s( TimeEntryName, "%s (%lli%s)", TimeEntry.Name.String().c_str(), Time, Nanosecond ? "ns" : ( Microsecond ? "us" : "ms" ) );
 			const float BarTime = TimeEntry.Time / 1000000 / BarWindow;
 			const float BarAverage = Average / 1000000 / BarWindow;
 			const float BarPeak = Peak / 1000000 / BarWindow;
@@ -199,6 +207,9 @@ void CProfiler::PlotPerformance()
 
 void CProfiler::Display()
 {
+	if( !Enabled )
+		return;
+
 	ImGui::SetNextWindowPos( ImVec2( 0.0f, 25.0f ), ImGuiCond_Always );
 	ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
 	if( ImGui::Begin( "Profiler", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
@@ -279,11 +290,33 @@ void CProfiler::Display()
 					ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
 				}
 
+				if( TimeCounters.size() > CounterGap )
+				{
+					CounterGap = TimeCounters.size();
+				}
+
+				size_t CounterDelta = CounterGap - TimeCounters.size();
+				for( size_t CounterIndex = 0; CounterIndex < CounterDelta; CounterIndex++ )
+				{
+					ImGui::Text( "" );
+				}
+
 				for( auto& TimeCounter : TimeCountersFrame )
 				{
 					const char* TimeCounterName = TimeCounter.first.String().c_str();
 					const uint64_t& TimeCounterValue = TimeCounter.second;
 					ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+				}
+
+				if( TimeCountersFrame.size() > CounterGapFrame )
+				{
+					CounterGapFrame = TimeCountersFrame.size();
+				}
+
+				size_t CounterFrameDelta = CounterGapFrame - TimeCountersFrame.size();
+				for( size_t CounterIndex = 0; CounterIndex < CounterFrameDelta; CounterIndex++ )
+				{
+					ImGui::Text( "" );
 				}
 			}
 

@@ -30,14 +30,12 @@ public:
 	{
 		if( ActiveLevel )
 			return ActiveLevel->Spawn<T>();
-		else
-			DebugBreak();
 
 		return nullptr;
 	}
 
 	CLevel& Add();
-	const std::deque<CLevel>& GetLevels() { return Levels; };
+	std::deque<CLevel>& GetLevels() { return Levels; };
 
 	CEntity* Find( const std::string& Name ) const
 	{

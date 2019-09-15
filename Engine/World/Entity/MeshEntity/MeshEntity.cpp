@@ -21,10 +21,12 @@ CMeshEntity::CMeshEntity()
 	Renderable = nullptr;
 	PhysicsComponent = nullptr;
 	Static = true;
+	Stationary = true;
 	Contact = false;
 	Collision = true;
 
-	Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
+	// Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
+	Color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
 }
 
 CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CPointEntity()
@@ -89,7 +91,7 @@ void CMeshEntity::Construct()
 			{
 				if( !PhysicsComponent )
 				{
-					PhysicsComponent = new CPhysicsComponent( this );
+					PhysicsComponent = new CPhysicsComponent( this, Mesh->GetBounds(), Static, Stationary );
 					PhysicsComponent->Construct( Physics );
 				}
 			}
@@ -99,6 +101,23 @@ void CMeshEntity::Construct()
 
 void CMeshEntity::Tick()
 {
+	if( ShouldUpdateTransform )
+	{
+		if( Mesh )
+		{
+			auto& AABB = Mesh->GetBounds();
+
+			FTransform MinimumTransform = FTransform( AABB.Minimum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
+			FTransform MaximumTransform = FTransform( AABB.Maximum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
+
+			auto Minimum = Transform.Transform( AABB.Minimum );
+			auto Maximum = Transform.Transform( AABB.Maximum );
+
+			WorldBounds.Minimum = Minimum;
+			WorldBounds.Maximum = Maximum;
+		}
+	}
+
 	if( Renderable )
 	{
 		if( ShouldUpdateTransform )
@@ -113,20 +132,6 @@ void CMeshEntity::Tick()
 		CRenderer& Renderer = CWindow::Get().GetRenderer();
 		Renderer.QueueRenderable( Renderable );
 	}
-
-	if( Mesh )
-	{
-		auto& AABB = Mesh->GetBounds();
-
-		FTransform MinimumTransform = FTransform( AABB.Minimum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
-		FTransform MaximumTransform = FTransform( AABB.Maximum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
-
-		auto Minimum = Transform.Transform( AABB.Minimum );
-		auto Maximum = Transform.Transform( AABB.Maximum );
-
-		WorldBounds.Minimum = Minimum;
-		WorldBounds.Maximum = Maximum;
-	}
 }
 
 void CMeshEntity::Destroy()
@@ -137,6 +142,8 @@ void CMeshEntity::Destroy()
 		delete PhysicsComponent;
 		PhysicsComponent = nullptr;
 	}
+
+	CPointEntity::Destroy();
 }
 
 void CMeshEntity::Debug()
@@ -302,4 +309,9 @@ void CMeshEntity::Export( CData& Data )
 bool CMeshEntity::IsStatic() const
 {
 	return Static;
+}
+
+bool CMeshEntity::IsStationary() const
+{
+	return Stationary;
 }

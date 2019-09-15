@@ -8,10 +8,8 @@
 
 static CEntityFactory<CSoundEntity> Factory( "sound" );
 
-CSoundEntity::CSoundEntity()
+CSoundEntity::CSoundEntity() : CPointEntity()
 {
-	Transform = FTransform();
-
 	Falloff = EFalloff::None;
 	Radius = 0.0f;
 	Volume = 100.0f;

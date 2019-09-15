@@ -9,6 +9,7 @@
 #include <Engine/Display/Window.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/File.h>
+#include <Engine/Utility/DataString.h>
 #include <Engine/World/World.h>
 
 #include <Game/Game.h>
@@ -40,9 +41,25 @@ struct FTrackEvent
 	}
 
 	virtual const char* GetName() = 0;
+	virtual const char* GetType() = 0;
 
 	Timecode Start = 0;
 	Timecode Length = 0;
+
+	virtual void Export( CData& Data );
+	virtual void Import( CData& Data );
+
+	friend CData& operator<<( CData& Data, FTrackEvent* Track )
+	{
+		Track->Export( Data );
+		return Data;
+	}
+
+	friend CData& operator>>( CData& Data, FTrackEvent* Track )
+	{
+		Track->Import( Data );
+		return Data;
+	}
 };
 
 struct FEventAudio : FTrackEvent
@@ -132,6 +149,11 @@ struct FEventAudio : FTrackEvent
 		return Name.c_str();
 	}
 
+	virtual const char* GetType()
+	{
+		return "Audio";
+	}
+
 	bool Triggered = false;
 	std::string Name = std::string();
 	CSound* Sound = nullptr;
@@ -139,6 +161,30 @@ struct FEventAudio : FTrackEvent
 	float FadeIn = 0.0f;
 	float FadeOut = 0.1f;
 	float Volume = 100.0f;
+
+	virtual void Export( CData& Data )
+	{
+		FTrackEvent::Export( Data );
+
+		FDataString::Encode( Data, Name );
+		Data << Triggered;
+		Data << FadeIn;
+		Data << FadeOut;
+		Data << Volume;
+	}
+
+	virtual void Import( CData& Data )
+	{
+		FTrackEvent::Import( Data );
+
+		FDataString::Decode( Data, Name );
+		Data >> Triggered;
+		Data >> FadeIn;
+		Data >> FadeOut;
+		Data >> Volume;
+
+		Sound = CAssets::Get().FindSound( Name );
+	}
 };
 
 struct FEventCamera : FTrackEvent
@@ -159,7 +205,7 @@ struct FEventCamera : FTrackEvent
 
 		if( TimelineCamera && World->GetActiveCamera() != &Camera )
 		{
-			World->SetActiveCamera( &Camera );
+			World->SetActiveCamera( &Camera, 1000 );
 		}
 	}
 
@@ -169,7 +215,7 @@ struct FEventCamera : FTrackEvent
 		if( !World )
 			return;
 
-		if( World->GetActiveCamera() == &Camera )
+		// if( World->GetActiveCamera() == &Camera )
 		{
 			World->SetActiveCamera( nullptr );
 		}
@@ -193,7 +239,7 @@ struct FEventCamera : FTrackEvent
 			{
 				if( World->GetActiveCamera() != &Camera )
 				{
-					World->SetActiveCamera( &Camera );
+					World->SetActiveCamera( &Camera, 1000 );
 				}
 			}
 		}
@@ -219,8 +265,29 @@ struct FEventCamera : FTrackEvent
 		return "Camera";
 	}
 
+	virtual const char* GetType()
+	{
+		return "Camera";
+	}
+
 	std::string Name = std::string();
 	CCamera Camera;
+
+	virtual void Export( CData& Data )
+	{
+		FTrackEvent::Export( Data );
+
+		FDataString::Encode( Data, Name );
+		Data << Camera;
+	}
+
+	virtual void Import( CData& Data )
+	{
+		FTrackEvent::Import( Data );
+
+		FDataString::Decode( Data, Name );
+		Data >> Camera;
+	}
 };
 
 struct FEventRenderable : FTrackEvent
@@ -328,8 +395,27 @@ struct FEventRenderable : FTrackEvent
 		return Name.c_str();
 	}
 
+	virtual const char* GetType()
+	{
+		return "Mesh";
+	}
+
 	std::string Name = std::string();
 	CRenderable Renderable;
+
+	virtual void Export( CData& Data )
+	{
+		FTrackEvent::Export( Data );
+
+		FDataString::Encode( Data, Name );
+	}
+
+	virtual void Import( CData& Data )
+	{
+		FTrackEvent::Import( Data );
+
+		FDataString::Decode( Data, Name );
+	}
 };
 
 template<typename T>
@@ -344,6 +430,22 @@ static std::map<std::string, std::function<FTrackEvent*()>> EventTypes
 	std::make_pair( "Camera", CreateTrack<FEventCamera> ),
 	std::make_pair( "Mesh", CreateTrack<FEventRenderable> )
 };
+
+void FTrackEvent::Export( CData& Data )
+{
+	FDataString::Encode( Data, GetType() );
+	Data << Start;
+	Data << Length;
+}
+
+void FTrackEvent::Import( CData& Data )
+{
+	std::string Type;
+	FDataString::Decode( Data, Type );
+	*this = *EventTypes[Type]();
+	Data >> Start;
+	Data >> Length;
+}
 
 struct FTrack
 {
@@ -378,6 +480,26 @@ struct FTrack
 	Timecode Length;
 
 	std::vector<FTrackEvent*> Events;
+
+	friend CData& operator<<( CData& Data, FTrack& Track )
+	{
+		Data << Track.Start;
+		Data << Track.Length;
+
+		FDataVector::Encode( Data, Track.Events );
+
+		return Data;
+	}
+
+	friend CData& operator>>( CData& Data, FTrack& Track )
+	{
+		Data >> Track.Start;
+		Data >> Track.Length;
+
+		// FDataVector::Decode( Data, Track.Events );
+
+		return Data;
+	}
 };
 
 class CTimeline
@@ -403,7 +525,8 @@ public:
 		CFile File( Location.c_str() );
 		if( File.Exists() )
 		{
-			File.Load();
+			File.Load( true );
+			File.Extract( *this );
 
 			return true;
 		}
@@ -538,6 +661,18 @@ public:
 				if( ImGui::Button( "Stop" ) )
 				{
 					Stop();
+				}
+
+				ImGui::SameLine();
+
+				if( ImGui::Button( "Save" ) )
+				{
+					CData Data;
+					Data << *this;
+
+					CFile File( Location.c_str() );
+					File.Load( Data );
+					File.Save();
 				}
 
 				ImGui::SameLine();
@@ -893,6 +1028,36 @@ public:
 		Tracks.emplace_back( Track );
 	}
 
+	friend CData& operator<<( CData& Data, CTimeline& Timeline )
+	{
+		FDataString::Encode( Data, Timeline.Location );
+		Data << Timeline.Marker;
+
+		Data << Timeline.StartMarker;
+		Data << Timeline.EndMarker;
+
+		Data << Timeline.Status;
+
+		FDataVector::Encode( Data, Timeline.Tracks );
+
+		return Data;
+	}
+
+	friend CData& operator>>( CData& Data, CTimeline& Timeline )
+	{
+		FDataString::Decode( Data, Timeline.Location );
+		Data >> Timeline.Marker;
+
+		Data >> Timeline.StartMarker;
+		Data >> Timeline.EndMarker;
+
+		Data >> Timeline.Status;
+
+		FDataVector::Decode( Data, Timeline.Tracks );
+
+		return Data;
+	}
+
 private:
 	bool DrawTimeline;
 
@@ -926,10 +1091,10 @@ bool CSequence::Load( const char* FileLocation )
 {
 	if( Timeline )
 	{
-		return Timeline->Load( FileLocation );
+		Timeline->Load( FileLocation );
 	}
 
-	return false;
+	return true;
 }
 
 void CSequence::Save( const char* FileLocation )
@@ -1054,4 +1219,16 @@ void CSequence::Draw()
 	{
 		Timeline->Draw();
 	}
+}
+
+CData& operator<<( CData& Data, CSequence& Sequence )
+{
+	Data << *Sequence.Timeline;
+	return Data;
+}
+
+CData& operator>>( CData& Data, CSequence& Sequence )
+{
+	Data >> *Sequence.Timeline;
+	return Data;
 }

@@ -30,7 +30,7 @@ inline void BreakDebugger()
 
 namespace Log
 {
-	static const int MaximumLogMessageLength = 8192;
+	static const int MaximumLogMessageLength = 8192 * 2;
 	static const int PrintThreshold = 10;
 	static std::atomic<int> PrintCount = 0;
 

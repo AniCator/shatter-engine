@@ -1,10 +1,11 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <math.h>
+#include <algorithm>
+
 #include <Engine/Utility/Math/Vector.h>
 #include <Engine/Utility/Math/Matrix.h>
-
-#include <math.h>
 
 #include <ThirdParty/glm/glm.hpp>
 #include <ThirdParty/glm/gtc/matrix_transform.hpp>
@@ -109,6 +110,18 @@ namespace Math
 		return LengthBiased;
 	}
 
+	template<typename T>
+	inline T Max(const T& A, const T& B)
+	{
+		return std::max( A, B );
+	}
+
+	template<typename T>
+	inline T Min( const T& A, const T& B )
+	{
+		return std::min( A, B );
+	}
+
 	inline float Lerp( float A, float B, const float Alpha )
 	{
 		return A + Alpha * ( B - A );
@@ -117,6 +130,17 @@ namespace Math
 	inline Vector3D Lerp( const Vector3D& A, const Vector3D& B, const float Alpha )
 	{
 		return A + Vector3D( Alpha, Alpha, Alpha ) * ( B - A );
+	}
+
+	inline bool Equal( const Vector3D& A, const Vector3D& B, const float Tolerance = 0.001f )
+	{
+		Vector3D Difference = A - B;
+		Difference.X = fabs( Difference.X );
+		Difference.Y = fabs( Difference.Y );
+		Difference.Z = fabs( Difference.Z );
+		return Difference.X < Tolerance &&
+			Difference.Y < Tolerance &&
+			Difference.Z < Tolerance;
 	}
 
 	inline bool PointInBoundingBox( const glm::vec3& Vector, const glm::vec3& Minimum, const glm::vec3& Maximum )
@@ -213,6 +237,16 @@ namespace Math
 		return ( Maximum - Minimum ) * static_cast<int32_t>( std::rand() ) / static_cast<int32_t>( RAND_MAX ) + Minimum;
 	}
 
+	inline Vector4D FromGLM( const glm::vec4& Vector )
+	{
+		return Vector4D( Vector[0], Vector[1], Vector[2], Vector[3] );
+	}
+
+	inline glm::vec4 ToGLM( const Vector4D& Vector )
+	{
+		return glm::vec4( Vector.X, Vector.Y, Vector.Z, Vector.W );
+	}
+
 	inline Vector3D FromGLM( const glm::vec3& Vector )
 	{
 		return Vector3D( Vector[0], Vector[1], Vector[2] );
@@ -250,6 +284,12 @@ struct FBounds
 	{
 		Minimum = Vector3D( 0.0f, 0.0f, 0.0f );
 		Maximum = Vector3D( 0.0f, 0.0f, 0.0f );
+	}
+
+	FBounds( const Vector3D& Minimum, const Vector3D& Maximum )
+	{
+		this->Minimum = Minimum;
+		this->Maximum = Maximum;
 	}
 
 	Vector3D Minimum;

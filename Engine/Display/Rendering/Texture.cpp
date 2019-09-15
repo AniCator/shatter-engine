@@ -4,126 +4,10 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include <ThirdParty/stb/stb_image.h>
 
+#include <Engine/Display/Rendering/TextureEnumeratorsGL.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
-
-static const GLenum SlotToEnum[static_cast<ETextureSlotType>( ETextureSlot::Maximum )]
-{
-	GL_TEXTURE0,
-	GL_TEXTURE1,
-	GL_TEXTURE2,
-	GL_TEXTURE3,
-	GL_TEXTURE4,
-	GL_TEXTURE5,
-	GL_TEXTURE6,
-	GL_TEXTURE7,
-	GL_TEXTURE8,
-	GL_TEXTURE9,
-	GL_TEXTURE10,
-	GL_TEXTURE11,
-	GL_TEXTURE12,
-	GL_TEXTURE13,
-	GL_TEXTURE14,
-	GL_TEXTURE15,
-	GL_TEXTURE16,
-	GL_TEXTURE17,
-	GL_TEXTURE18,
-	GL_TEXTURE19,
-	GL_TEXTURE20,
-	GL_TEXTURE21,
-	GL_TEXTURE22,
-	GL_TEXTURE23,
-	GL_TEXTURE24,
-	GL_TEXTURE25,
-	GL_TEXTURE26,
-	GL_TEXTURE27,
-	GL_TEXTURE28,
-	GL_TEXTURE29,
-	GL_TEXTURE30,
-	GL_TEXTURE31
-};
-
-static const GLenum FilteringModeToEnum[static_cast<EFilteringModeType>( EFilteringMode::Maximum )]
-{
-	GL_NEAREST,
-	GL_LINEAR
-};
-
-static const GLenum ImageFormatToType[static_cast<EImageFormatType>( EImageFormat::Maximum )]
-{
-	GL_UNSIGNED_BYTE,
-
-	GL_UNSIGNED_BYTE,
-	GL_UNSIGNED_BYTE,
-	GL_UNSIGNED_BYTE,
-	GL_UNSIGNED_BYTE,
-
-	GL_UNSIGNED_SHORT,
-	GL_UNSIGNED_SHORT,
-	GL_UNSIGNED_SHORT,
-	GL_UNSIGNED_SHORT,
-
-	GL_FLOAT,
-	GL_FLOAT,
-	GL_FLOAT,
-	GL_FLOAT,
-
-	GL_FLOAT,
-	GL_FLOAT,
-	GL_FLOAT,
-	GL_FLOAT
-};
-
-static const GLenum ImageFormatToFormat[static_cast<EImageFormatType>( EImageFormat::Maximum )]
-{
-	GL_RGB,
-
-	GL_RED,
-	GL_RG,
-	GL_RGB,
-	GL_RGBA,
-
-	GL_RED,
-	GL_RG,
-	GL_RGB,
-	GL_RGBA,
-
-	GL_RED,
-	GL_RG,
-	GL_RGB,
-	GL_RGBA,
-
-	GL_RED,
-	GL_RG,
-	GL_RGB,
-	GL_RGBA,
-};
-
-static const GLenum ImageFormatToInternalFormat[static_cast<EImageFormatType>( EImageFormat::Maximum )]
-{
-	GL_RGB8,
-
-	GL_R8,
-	GL_RG8,
-	GL_RGB8,
-	GL_RGBA8,
-
-	GL_R16,
-	GL_RG16,
-	GL_RGB16,
-	GL_RGBA16,
-
-	GL_R16F,
-	GL_RG16F,
-	GL_RGB16F,
-	GL_RGBA16F,
-
-	GL_R32F,
-	GL_RG32F,
-	GL_RGB32F,
-	GL_RGBA32F,
-};
 
 CTexture::CTexture()
 {
@@ -156,6 +40,8 @@ CTexture::~CTexture()
 	{
 		stbi_image_free( ImageData );
 	}
+
+	glDeleteTextures( 1, &Handle );
 }
 
 bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredFormat )
@@ -226,8 +112,8 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	// Filtering parameters
 	FilteringMode = ModeIn;
 	const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, FilteringModeToEnum[Mode] );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, FilteringModeToEnum[Mode] );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GetFilteringMipMapMode( Mode ) );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
 
 	Width = WidthIn;
 	Height = HeightIn;
@@ -235,8 +121,8 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 
 	const auto ImageFormat = static_cast<EImageFormatType>( PreferredFormatIn );
 	// auto Format = ImageFormatToFormat[ImageFormat];
-	auto Type = ImageFormatToType[ImageFormat];
-	auto InternalFormat = ImageFormatToInternalFormat[ImageFormat];
+	auto Type = GetImageFormatType( ImageFormat );
+	auto InternalFormat = ::GetImageFormat( ImageFormat );
 
 	Format = PreferredFormatIn;
 
@@ -283,7 +169,7 @@ void CTexture::Bind( ETextureSlot Slot )
 	if( Handle )
 	{
 		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
-		glActiveTexture( SlotToEnum[Index] );
+		glActiveTexture( GetTextureSlot( Index ) );
 		glBindTexture( GL_TEXTURE_2D, Handle );
 	}
 }

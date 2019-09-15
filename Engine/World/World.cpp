@@ -4,6 +4,7 @@
 #include <algorithm>
 
 #include <Engine/Audio/SimpleSound.h>
+#include <Engine/Configuration/Configuration.h>
 #include <Engine/Physics/Physics.h>
 #include <Engine/World/Entity/Entity.h>
 
@@ -62,6 +63,15 @@ void CWorld::Tick()
 	for( auto Level : Levels )
 	{
 		Level.Tick();
+	}
+
+	if( Camera )
+	{
+		auto& Configuration = CConfiguration::Get();
+		auto& Setup = Camera->GetCameraSetup();
+		auto Width = Configuration.GetInteger( "width" );
+		auto Height = Configuration.GetInteger( "height" );
+		Setup.AspectRatio = static_cast<float>( Width ) / static_cast<float>( Height );
 	}
 
 	if( Physics )

@@ -88,6 +88,40 @@ namespace UI
 
 	std::vector<DrawText> Texts;
 
+	struct DrawTextScreen
+	{
+		DrawTextScreen( const Vector2D& Position, const char* Start, const char* End, const Color& Color, const float Size )
+		{
+			this->Position = Position;
+
+			if( End )
+			{
+				Length = End - Start;
+			}
+			else
+			{
+				Length = strlen( Start );
+			}
+
+			this->Text = new char[Length + 1];
+			for( size_t Index = 0; Index < Length; Index++ )
+			{
+				Text[Index] = Start[Index];
+			}
+
+			this->Color = Color;
+			this->Size = Size;
+		}
+
+		Vector2D Position;
+		char* Text;
+		size_t Length;
+		Color Color;
+		float Size;
+	};
+
+	std::vector<DrawTextScreen> TextsScreen;
+
 	ImU32 GetColor( Color Color )
 	{
 		return IM_COL32( Color.R, Color.G, Color.B, Color.A );
@@ -235,12 +269,23 @@ namespace UI
 		Circles.emplace_back( Circle );
 	}
 
-	void AddText( const Vector2D& Position, const char* Start, const char* End, const Color& Color )
+	void AddText2D( const Vector2D& Position, const char* Start, const char* End, const Color& Color, const float Size )
 	{
 		if( DrawList )
 		{
-			DrawList->AddText( ImVec2( Position.X, Position.Y ), GetColor( Color ), Start, End );
+			DrawList->AddText( ImGui::GetIO().FontDefault, Size, ImVec2( Position.X, Position.Y ), GetColor( Color ), Start, End );
 		}
+	}
+
+	void AddTextInternal( const Vector2D& Position, const char* Start, const char* End, const Color& Color, const float Size )
+	{
+		AddText2D( Position, Start, End, Color, Size );
+	}
+
+	void AddText( const Vector2D& Position, const char* Start, const char* End, const Color& Color, const float Size )
+	{
+		DrawTextScreen Text( Position, Start, End, Color, Size );
+		TextsScreen.emplace_back( Text );
 	}
 
 	void AddTextInternal( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
@@ -250,7 +295,7 @@ namespace UI
 
 		if( IsInFront )
 		{
-			AddText( ScreenPosition, Start, End );
+			AddText2D( ScreenPosition, Start, End, Color, 16.0f );
 		}
 	}
 
@@ -326,6 +371,7 @@ namespace UI
 		Lines.clear();
 		Circles.clear();
 		Texts.clear();
+		TextsScreen.clear();
 	}
 
 	void Frame()
@@ -360,6 +406,11 @@ namespace UI
 		for( const auto& Text : Texts )
 		{
 			AddTextInternal( Text.Position, Text.Text, Text.Text + Text.Length, Text.Color );
+		}
+
+		for( const auto& Text : TextsScreen )
+		{
+			AddTextInternal( Text.Position, Text.Text, Text.Text + Text.Length, Text.Color, Text.Size );
 		}
 
 		if( DrawList->CmdBuffer.size() == 0 )
