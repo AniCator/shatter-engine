@@ -76,6 +76,7 @@ namespace JSON
 
 					if( Depth > 1 )
 					{
+						Object* StackParent = Current;
 						Object Object;
 						Container.Objects.push_back( Object );
 
@@ -84,6 +85,11 @@ namespace JSON
 						if( Parent )
 						{
 							Current->Parent = Parent;
+							Current->Parent->Objects.push_back( Current );
+						}
+						else if( StackParent )
+						{
+							Current->Parent = StackParent;
 							Current->Parent->Objects.push_back( Current );
 						}
 
