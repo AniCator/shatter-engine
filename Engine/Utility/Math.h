@@ -22,6 +22,24 @@ static const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
 static const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
 static const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };
 
+struct FBounds
+{
+	FBounds()
+	{
+		Minimum = Vector3D( 0.0f, 0.0f, 0.0f );
+		Maximum = Vector3D( 0.0f, 0.0f, 0.0f );
+	}
+
+	FBounds( const Vector3D& Minimum, const Vector3D& Maximum )
+	{
+		this->Minimum = Minimum;
+		this->Maximum = Maximum;
+	}
+
+	Vector3D Minimum;
+	Vector3D Maximum;
+};
+
 namespace Math
 {
 	static const float Pi = glm::pi<float>();
@@ -141,6 +159,63 @@ namespace Math
 		return Difference.X < Tolerance &&
 			Difference.Y < Tolerance &&
 			Difference.Z < Tolerance;
+	}
+
+	inline float VectorMax( const float& A, const float& B, const float& C )
+	{
+		return Max( Max( A, C ), B );
+	}
+
+	inline float VectorMin( const float& A, const float& B, const float& C )
+	{
+		return Min( Min( A, C ), B );
+	}
+
+	inline FBounds AABB(const Vector3D* Positions, uint32_t Count)
+	{
+		FBounds AABB;
+		for( uint32_t VertexIndex = 0; VertexIndex < Count; VertexIndex++ )
+		{
+			const Vector3D& Position = Positions[VertexIndex];
+
+			if( VertexIndex == 0 )
+			{
+				AABB.Minimum = Position;
+				AABB.Maximum = Position;
+			}
+
+			if( Position[0] < AABB.Minimum[0] )
+			{
+				AABB.Minimum[0] = Position[0];
+			}
+
+			if( Position[1] < AABB.Minimum[1] )
+			{
+				AABB.Minimum[1] = Position[1];
+			}
+
+			if( Position[2] < AABB.Minimum[2] )
+			{
+				AABB.Minimum[2] = Position[2];
+			}
+
+			if( Position[0] > AABB.Maximum[0] )
+			{
+				AABB.Maximum[0] = Position[0];
+			}
+
+			if( Position[1] > AABB.Maximum[1] )
+			{
+				AABB.Maximum[1] = Position[1];
+			}
+
+			if( Position[2] > AABB.Maximum[2] )
+			{
+				AABB.Maximum[2] = Position[2];
+			}
+		}
+
+		return AABB;
 	}
 
 	inline bool PointInBoundingBox( const glm::vec3& Vector, const glm::vec3& Minimum, const glm::vec3& Maximum )
@@ -276,24 +351,6 @@ struct FFrustumPlane
 struct FFrustum
 {
 	FFrustumPlane Planes[6];
-};
-
-struct FBounds
-{
-	FBounds()
-	{
-		Minimum = Vector3D( 0.0f, 0.0f, 0.0f );
-		Maximum = Vector3D( 0.0f, 0.0f, 0.0f );
-	}
-
-	FBounds( const Vector3D& Minimum, const Vector3D& Maximum )
-	{
-		this->Minimum = Minimum;
-		this->Maximum = Maximum;
-	}
-
-	Vector3D Minimum;
-	Vector3D Maximum;
 };
 
 struct FTransform

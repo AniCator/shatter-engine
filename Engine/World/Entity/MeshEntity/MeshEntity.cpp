@@ -107,14 +107,29 @@ void CMeshEntity::Tick()
 		{
 			auto& AABB = Mesh->GetBounds();
 
-			FTransform MinimumTransform = FTransform( AABB.Minimum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
-			FTransform MaximumTransform = FTransform( AABB.Maximum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
+			const auto& Minimum = AABB.Minimum;
+			const auto& Maximum = AABB.Maximum;
 
-			auto Minimum = Transform.Transform( AABB.Minimum );
-			auto Maximum = Transform.Transform( AABB.Maximum );
+			Vector3D Positions[8];
+			Positions[0] = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
+			Positions[1] = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
+			Positions[2] = Vector3D( Maximum.X, Minimum.Y, Minimum.Z );
+			Positions[3] = Vector3D( Minimum.X, Minimum.Y, Minimum.Z );
 
-			WorldBounds.Minimum = Minimum;
-			WorldBounds.Maximum = Maximum;
+			Positions[4] = Vector3D( Minimum.X, Maximum.Y, Maximum.Z );
+			Positions[5] = Vector3D( Maximum.X, Maximum.Y, Maximum.Z );
+			Positions[6] = Vector3D( Maximum.X, Minimum.Y, Maximum.Z );
+			Positions[7] = Vector3D( Minimum.X, Minimum.Y, Maximum.Z );
+
+			for( size_t PositionIndex = 0; PositionIndex < 8; PositionIndex++ )
+			{
+				Positions[PositionIndex] = Transform.Transform( Positions[PositionIndex] );
+			}
+
+			FBounds TransformedAABB = Math::AABB( Positions, 8 );
+
+			WorldBounds.Minimum = TransformedAABB.Minimum;
+			WorldBounds.Maximum = TransformedAABB.Maximum;
 		}
 	}
 
@@ -152,18 +167,7 @@ void CMeshEntity::Debug()
 
 	if( Mesh )
 	{
-		auto& AABB = Mesh->GetBounds();
-		
-		// auto Minimum = Transform.Transform( Math::ToGLM( AABB.Minimum ) );
-		// auto Maximum = Transform.Transform( Math::ToGLM( AABB.Maximum ) );
-
-		FTransform MinimumTransform = FTransform( AABB.Minimum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
-		FTransform MaximumTransform = FTransform( AABB.Maximum, Vector3D( 0.0f, 0.0f, 0.0f ), Vector3D( 1.0f, 1.0f, 1.0f ) );
-
-		auto Minimum = Transform.Transform( AABB.Minimum );
-		auto Maximum = Transform.Transform( AABB.Maximum );
-
-		UI::AddAABB( Minimum, Maximum, Collision ? ( Contact ? Color::Red : Color::Blue ) : Color::Black );
+		UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, Collision ? ( Contact ? Color::Red : Color::Blue ) : Color::Black );
 
 		if( PhysicsComponent )
 		{

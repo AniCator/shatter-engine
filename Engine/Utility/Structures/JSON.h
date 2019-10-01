@@ -5,6 +5,7 @@
 #include <vector>
 #include <deque>
 #include <string>
+#include <algorithm>
 
 #include <Engine/Utility/File.h>
 
@@ -26,6 +27,17 @@ namespace JSON
 		std::string Value;
 		Object* Parent;
 		Vector Objects;
+
+		Object* operator[](const std::string& Search)
+		{
+			auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] (Object* Item) -> bool
+				{
+					return Item->Key == Search;
+				}
+			);
+
+			return *Result;
+		}
 	};
 
 	struct Container

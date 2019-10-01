@@ -81,6 +81,25 @@ void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRend
 		const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
 		Prepare( RenderData );
 
+		const GLint ObjectPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectPosition" );
+		if( ObjectPositionLocation > -1 )
+		{
+			glUniform3fv( ObjectPositionLocation, 1, RenderData.Transform.GetPosition().Base() );
+		}
+
+		auto& AABB = Mesh->GetBounds();
+		const GLint ObjectBoundsMinimumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMinimum" );
+		if( ObjectBoundsMinimumLocation > -1 )
+		{
+			glUniform3fv( ObjectBoundsMinimumLocation, 1, AABB.Minimum.Base() );
+		}
+
+		const GLint ObjectBoundsMaximumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMaximum" );
+		if( ObjectBoundsMaximumLocation > -1 )
+		{
+			glUniform3fv( ObjectBoundsMaximumLocation, 1, AABB.Maximum.Base() );
+		}
+
 		const glm::mat4 ModelMatrix = RenderData.Transform.GetTransformationMatrix();
 		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
 		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );

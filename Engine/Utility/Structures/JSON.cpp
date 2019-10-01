@@ -3,6 +3,8 @@
 
 #include <Engine/Profiling/Logging.h>
 
+#include <algorithm>
+
 namespace JSON
 {
 	void PopString( const char*& Token, const char*& Start, const char*& End, size_t& Length )

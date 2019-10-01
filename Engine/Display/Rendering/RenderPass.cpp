@@ -304,29 +304,6 @@ void CRenderPass::Draw( CRenderable* Renderable )
 		ConfigureDepthMask( Shader );
 		ConfigureDepthTest( Shader );
 
-		const GLint ObjectPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectPosition" );
-		if( ObjectPositionLocation > -1 )
-		{
-			glUniform3fv( ObjectPositionLocation, 1, RenderData.Transform.GetPosition().Base() );
-		}
-
-		CMesh* Mesh = Renderable->GetMesh();
-		if( Mesh )
-		{
-			auto& AABB = Mesh->GetBounds();
-			const GLint ObjectBoundsMinimumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMinimum" );
-			if( ObjectBoundsMinimumLocation > -1 )
-			{
-				glUniform3fv( ObjectBoundsMinimumLocation, 1, AABB.Minimum.Base() );
-			}
-
-			const GLint ObjectBoundsMaximumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMaximum" );
-			if( ObjectBoundsMaximumLocation > -1 )
-			{
-				glUniform3fv( ObjectBoundsMaximumLocation, 1, AABB.Maximum.Base() );
-			}
-		}
-
 		Renderable->Draw( RenderData, PreviousRenderData );
 		PreviousRenderData = RenderData;
 

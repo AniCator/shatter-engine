@@ -48,21 +48,24 @@ public:
 	{
 		for( auto ComponentA : Components )
 		{
-			if( ComponentA && !ComponentA->Static )
+			if( ComponentA )
 			{
-				ComponentA->Contact = false;
-
-				ComponentA->PreCollision();
-
-				for( auto ComponentB : Components )
+				if( !ComponentA->Static )
 				{
-					if( ComponentB && ComponentB != ComponentA && ComponentB->Block )
+					ComponentA->Contact = false;
+
+					ComponentA->PreCollision();
+
+					for( auto ComponentB : Components )
 					{
-						FBounds BoundsA = ComponentA->GetBounds();
-						FBounds BoundsB = ComponentB->GetBounds();
-						if( Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
+						if( ComponentB && ComponentB != ComponentA && ComponentB->Block )
 						{
-							ComponentA->Collision( ComponentB );
+							FBounds BoundsA = ComponentA->GetBounds();
+							FBounds BoundsB = ComponentB->GetBounds();
+							if( Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
+							{
+								ComponentA->Collision( ComponentB );
+							}
 						}
 					}
 				}

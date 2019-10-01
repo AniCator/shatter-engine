@@ -1,9 +1,32 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <vector>
 #include <Engine/Utility/Math.h>
 
 class CMeshEntity;
+
+struct TriangleTree
+{
+	TriangleTree()
+	{
+		Upper = nullptr;
+		Lower = nullptr;
+	}
+
+	~TriangleTree()
+	{
+		delete Upper;
+		delete Lower;
+	}
+
+	FBounds Bounds;
+
+	TriangleTree* Upper;
+	TriangleTree* Lower;
+
+	std::vector<Vector3D> Vertices;
+};
 
 class CPhysicsComponent
 {
@@ -34,7 +57,10 @@ public:
 	Vector3D Velocity;
 	Vector3D Normal;
 	float Mass;
+	float InverseMass;
 	size_t Contacts;
+
+	TriangleTree* Tree;
 };
 
 template<typename TriggerType>
@@ -51,12 +77,18 @@ public:
 
 	};
 
-	virtual void Collision( CPhysicsComponent* Component )
+	virtual void Collision( CPhysicsComponent* Component ) override
 	{
 		auto Collider = dynamic_cast<TriggerType*>( Component->Owner );
 		if( Collider )
 		{
 			CPhysicsComponent::Collision( Component );
+			if( Contacts > 0 )
+			{
+				Entity = Collider;
+			}
 		}
 	}
+
+	TriggerType* Entity;
 };
