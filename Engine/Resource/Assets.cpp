@@ -713,7 +713,8 @@ const std::string& CAssets::GetReadableImageFormat( EImageFormat Format )
 		return ImageFormat->second;
 	}
 
-	return "unknown";
+	const static std::string Unknown = "unknown";
+	return Unknown;
 }
 
 void CAssets::ReloadShaders()
