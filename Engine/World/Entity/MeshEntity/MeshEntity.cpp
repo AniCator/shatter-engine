@@ -171,7 +171,7 @@ void CMeshEntity::Debug()
 
 		if( PhysicsComponent )
 		{
-			// UI::AddLine( Transform.GetPosition(), Transform.GetPosition() + PhysicsComponent->Velocity );
+			PhysicsComponent->Debug();
 		}
 	}
 }
