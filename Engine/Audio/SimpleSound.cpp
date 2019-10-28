@@ -232,9 +232,9 @@ void CSimpleSound::Tick()
 {
 	Profile( "Sound" );
 
-	CProfiler& Profiler = CProfiler::Get();
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Sound Buffers", Sounds.size() ), true );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Stream Buffers", Streams.size() ), true );
+	// CProfiler& Profiler = CProfiler::Get();
+	// Profiler.AddCounterEntry( FProfileTimeEntry( "Sound Buffers", Sounds.size() ), true );
+	// Profiler.AddCounterEntry( FProfileTimeEntry( "Stream Buffers", Streams.size() ), true );
 
 	const float CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 	for( auto& Stream : Streams )
@@ -299,7 +299,7 @@ void CSimpleSound::Tick()
 		}
 	}
 
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Active Sound Buffers", ActiveSounds ), true );
+	// Profiler.AddCounterEntry( FProfileTimeEntry( "Active Sound Buffers", ActiveSounds ), true );
 }
 
 void CSimpleSound::Shutdown()
