@@ -58,7 +58,7 @@ public:
 
 					for( auto ComponentB : Components )
 					{
-						if( ComponentB && ComponentB != ComponentA && ComponentB->Block )
+						if( ComponentB && ComponentB != ComponentA && ComponentB->Owner != ComponentA->Owner && ComponentB->Block )
 						{
 							FBounds BoundsA = ComponentA->GetBounds();
 							FBounds BoundsB = ComponentB->GetBounds();

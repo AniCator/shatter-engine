@@ -43,6 +43,8 @@ public:
 	virtual void CalculateBounds();
 	FBounds GetBounds() const;
 
+	void Debug();
+
 	CMeshEntity* Owner;
 
 	bool Static;
@@ -55,6 +57,7 @@ public:
 	Vector3D DeltaPosition;
 	Vector3D Acceleration;
 	Vector3D Velocity;
+	Vector3D Depenetration;
 	Vector3D Normal;
 	float Mass;
 	float InverseMass;
