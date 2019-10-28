@@ -245,13 +245,17 @@ void CWindow::RenderFrame()
 
 	Profile( "Render" );
 
+#if defined(IMGUI_ENABLED)
+	UI::Frame();
+#endif
+
 	Renderer.SetViewport( CurrentDimensions.Width, CurrentDimensions.Height );
 	Renderer.DrawQueuedRenderables();
 
 #if defined( IMGUI_ENABLED )
 	ImGui::Render();
 
-	UI::Frame();
+	UI::Render();
 
 	ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 #endif

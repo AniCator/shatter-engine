@@ -78,6 +78,7 @@ namespace UI
 
 	void Refresh();
 	void Frame();
+	void Render();
 
 	void SetCamera( const CCamera& Camera );
 }

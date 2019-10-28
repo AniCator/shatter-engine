@@ -4,6 +4,12 @@
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Camera.h>
+#include <Engine/Display/Rendering/RenderPass.h>
+#include <Engine/Display/Rendering/Renderer.h>
+#include <Engine/Display/Rendering/RenderTexture.h>
+#include <Engine/Profiling/Profiling.h>
+#include <Engine/Resource/Assets.h>
+#include <Engine/World/World.h>
 
 #include <ThirdParty/imgui-1.70/imgui.h>
 #include <Engine/Display/imgui_impl_opengl3.h>
@@ -191,6 +197,104 @@ namespace UI
 		return ScreenPosition;
 	}
 
+	// Liang-Barsky function by Daniel White @ http://www.skytopia.com/project/articles/compsci/clipping.html
+	// This function inputs 8 numbers, and outputs 4 new numbers (plus a boolean value to say whether the clipped line is drawn at all).
+	//
+	template<typename T> bool LiangBarsky( T edgeLeft, T edgeRight, T edgeBottom, T edgeTop,   // Define the x/y clipping values for the border.
+		T x0src, T y0src, T x1src, T y1src,                 // Define the start and end points of the line.
+		T& x0clip, T& y0clip, T& x1clip, T& y1clip )         // The output values, so declare these outside.
+	{
+
+		T t0 = 0.0; T t1 = 1.0;
+		T xdelta = x1src - x0src;
+		T ydelta = y1src - y0src;
+		T p, q, r;
+
+		for( int edge = 0; edge < 4; edge++ ) {   // Traverse through left, right, bottom, top edges.
+			if( edge == 0 ) { p = -xdelta;    q = -( edgeLeft - x0src ); }
+			if( edge == 1 ) { p = xdelta;     q = ( edgeRight - x0src ); }
+			if( edge == 2 ) { p = -ydelta;    q = -( edgeBottom - y0src ); }
+			if( edge == 3 ) { p = ydelta;     q = ( edgeTop - y0src ); }
+			r = q / p;
+			if( p == 0 && q < 0 ) return false;   // Don't draw line at all. (parallel line outside)
+
+			if( p < 0 ) {
+				if( r > t1 ) return false;         // Don't draw line at all.
+				else if( r > t0 ) t0 = r;            // Line is clipped!
+			}
+			else if( p > 0 ) {
+				if( r < t0 ) return false;      // Don't draw line at all.
+				else if( r < t1 ) t1 = r;         // Line is clipped!
+			}
+		}
+
+		x0clip = x0src + t0 * xdelta;
+		y0clip = y0src + t0 * ydelta;
+		x1clip = x0src + t1 * xdelta;
+		y1clip = y0src + t1 * ydelta;
+
+		return true;        // (clipped) line is drawn
+	}
+
+	Vector2D WorldLineToScreenPosition( const Vector3D& WorldPositionA, const Vector3D& WorldPositionB, bool* IsInFront )
+	{
+		const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
+		const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
+
+		glm::vec4 WorldPositionHomogenoeusA = glm::vec4( Math::ToGLM( WorldPositionA ), 1.0f );
+		glm::vec4 ClipSpacePositionA = ProjectionMatrix * ViewMatrix * WorldPositionHomogenoeusA;
+		glm::vec3 NormalizedPositionA = glm::vec3( ClipSpacePositionA.x, -ClipSpacePositionA.y, ClipSpacePositionA.z ) / ClipSpacePositionA.w;
+
+		glm::vec4 WorldPositionHomogenoeusB = glm::vec4( Math::ToGLM( WorldPositionB ), 1.0f );
+		glm::vec4 ClipSpacePositionB = ProjectionMatrix * ViewMatrix * WorldPositionHomogenoeusB;
+		glm::vec3 NormalizedPositionB = glm::vec3( ClipSpacePositionB.x, -ClipSpacePositionB.y, ClipSpacePositionB.z ) / ClipSpacePositionB.w;
+
+		bool Front = ClipSpacePositionB.w > 0.0f;
+		const float Bias = Front ? 1.0f : -1.0f;
+
+		Vector2D ScreenPositionA;
+		ScreenPositionA.X = ( NormalizedPositionA.x * 0.5f + 0.5f ) * Width;
+		ScreenPositionA.Y = ( NormalizedPositionA.y * 0.5f + 0.5f ) * Height;
+
+		Vector2D ScreenPositionB;
+		ScreenPositionB.X = ( NormalizedPositionB.x * 0.5f + 0.5f ) * Width;
+		ScreenPositionB.Y = ( NormalizedPositionB.y * 0.5f + 0.5f ) * Height;
+
+		Vector2D DrawPositionA, DrawPositionB;
+
+		const bool Valid = LiangBarsky( 0.0f, Width, 0.0f, Height, ScreenPositionA.X, ScreenPositionA.Y, ScreenPositionB.X, ScreenPositionB.Y, DrawPositionA.X, DrawPositionA.Y, DrawPositionB.X, DrawPositionB.Y );
+
+		if( ScreenPositionB.X < 0.0f )
+		{
+			Front = false;
+		}
+		else if( ScreenPositionB.X > Width )
+		{
+			Front = false;
+		}
+
+		if( ScreenPositionB.Y < 0.0f )
+		{
+			Front = false;
+		}
+		else if( ScreenPositionB.Y > Height )
+		{
+			Front = false;
+		}
+
+		if( IsInFront )
+		{
+			*IsInFront = Front && Valid;
+		}
+
+		if( Valid )
+		{
+			return DrawPositionB;
+		}
+
+		return ScreenPositionB;
+	}
+
 	void AddLine( const Vector2D& Start, const Vector2D& End, const Color& Color )
 	{
 		if( DrawList )
@@ -207,9 +311,12 @@ namespace UI
 		bool EndIsInFront = false;
 		auto& ScreenEnd = WorldToScreenPosition( End, &EndIsInFront );
 
-		if( StartIsInFront || EndIsInFront )
+		Vector2D DrawPositionA, DrawPositionB;
+		const bool Valid = LiangBarsky( 0.0f, Width, 0.0f, Height, ScreenStart.X, ScreenStart.Y, ScreenEnd.X, ScreenEnd.Y, DrawPositionA.X, DrawPositionA.Y, DrawPositionB.X, DrawPositionB.Y );
+
+		if( ( StartIsInFront || EndIsInFront ) && Valid )
 		{
-			AddLine( ScreenStart, ScreenEnd, Color );
+			AddLine( DrawPositionA, DrawPositionB, Color );
 		}
 	}
 
@@ -356,6 +463,11 @@ namespace UI
 		if( !DrawList )
 		{
 			DrawList = new ImDrawList( ImGui::GetDrawListSharedData() );
+
+			if( DrawList->CmdBuffer.size() == 0 )
+			{
+				DrawList->AddDrawCmd();
+			}
 		}
 
 		DrawData.DisplayPos.x = 0.0f;
@@ -373,6 +485,165 @@ namespace UI
 		Texts.clear();
 		TextsScreen.clear();
 	}
+
+	class CLinePass : public CRenderPass
+	{
+	public:
+		CLinePass( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true ) : CRenderPass( "Lines", Width, Height, Camera, AlwaysClear )
+		{
+			auto& Assets = CAssets::Get();
+			LineShader = Assets.CreateNamedShader( "Line", "Shaders/Line" );
+			Capacity = 0;
+			RenderLines = nullptr;
+		}
+
+		~CLinePass()
+		{
+			if( RenderLines )
+				delete RenderLines;
+		}
+
+		virtual void Clear() override
+		{
+
+		}
+
+		virtual void Draw( CRenderable* Renderable ) override
+		{
+
+		}
+
+		struct RenderLine
+		{
+			Vector4D Position;
+			Vector4D Color;
+		};
+
+		uint32_t RenderBatch( const size_t StartIndex, const size_t EndIndex )
+		{
+			GLuint VertexArrayObject = 0;
+			GLuint VertexBufferObject = 0;
+
+			const size_t Points = EndIndex - StartIndex;
+			const size_t PayloadSize = Points * sizeof( RenderLine );
+
+			glGenBuffers( 1, &VertexBufferObject );
+			glBindBuffer( GL_ARRAY_BUFFER, VertexBufferObject );
+			glBufferData( GL_ARRAY_BUFFER, PayloadSize, 0, GL_DYNAMIC_DRAW );
+
+			glBufferSubData( GL_ARRAY_BUFFER, 0, PayloadSize, &RenderLines[StartIndex] );
+
+			glGenVertexArrays( 1, &VertexArrayObject );
+			glBindVertexArray( VertexArrayObject );
+
+			glBindBuffer( GL_ARRAY_BUFFER, VertexBufferObject );
+
+			glEnableVertexAttribArray( 0 );
+			const void* PositionPointer = reinterpret_cast<void*>( offsetof( RenderLine, Position ) );
+			glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof( RenderLine ), PositionPointer );
+
+			glEnableVertexAttribArray( 1 );
+			const void* ColorPointer = reinterpret_cast<void*>( offsetof( RenderLine, Color ) );
+			glVertexAttribPointer( 1, 4, GL_FLOAT, GL_FALSE, sizeof( RenderLine ), ColorPointer );
+
+			glBindVertexArray( VertexArrayObject );
+			// glBindBuffer( GL_ARRAY_BUFFER, VertexBufferObject );
+			glDrawArrays( GL_LINES, 0, Points );
+			Calls++;
+
+			glDeleteVertexArrays( 1, &VertexArrayObject );
+			VertexArrayObject = 0;
+
+			glDeleteBuffers( 1, &VertexBufferObject );
+			VertexBufferObject = 0;
+
+			return Calls;
+		}
+
+		virtual uint32_t Render( const UniformMap& Uniforms ) override
+		{
+			if( !LineShader )
+				return Calls;
+
+			const size_t LineCount = Lines.size();
+			const size_t Points = LineCount * 2;
+
+			if( LineCount == 0 )
+				return Calls;
+
+			if( Points > Capacity )
+			{
+				if( RenderLines )
+					delete RenderLines;
+
+				RenderLines = new RenderLine[Points];
+				Capacity = Points;
+			}
+
+			memset( RenderLines, 0, Points * sizeof( RenderLine ) );
+
+			for( size_t Index = 0; Index < LineCount; )
+			{
+				auto& ByteColor = Lines[Index].Color;
+				Vector4D Color;
+				Color.R = static_cast<float>( ByteColor.R ) / 255.0f;
+				Color.G = static_cast<float>( ByteColor.G ) / 255.0f;
+				Color.B = static_cast<float>( ByteColor.B ) / 255.0f;
+				Color.A = static_cast<float>( ByteColor.A ) / 255.0f;
+
+				auto& Start = Lines[Index].Start;
+				RenderLines[Index].Position = Vector4D( Start.X, Start.Y, Start.Z, 1.0f );
+				RenderLines[Index].Color = Vector4D( Color.X, Color.Y, Color.Z, Color.W );
+
+				auto& End = Lines[Index].End;
+				RenderLines[Index + 1].Position = Vector4D( End.X, End.Y, End.Z, 1.0f );
+				RenderLines[Index + 1].Color = Vector4D( Color.X, Color.Y, Color.Z, Color.W );
+
+				Index += 2;
+			}
+
+			Begin();
+
+			LineShader->Activate();
+
+			ConfigureBlendMode( LineShader );
+			ConfigureDepthMask( LineShader );
+			ConfigureDepthTest( LineShader );
+
+			const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
+			const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
+			auto ProjectionView = ProjectionMatrix * ViewMatrix;
+
+			const GLint ProjectionViewMatrixLocation = glGetUniformLocation( LineShader->GetHandles().Program, "ProjectionView" );
+			if( ProjectionViewMatrixLocation > -1 )
+			{
+				glUniformMatrix4fv( ProjectionViewMatrixLocation, 1, GL_FALSE, &ProjectionView[0][0] );
+			}
+
+			glDisable( GL_CULL_FACE );
+
+			// Render batches
+			size_t StartIndex = 0;
+			size_t EndIndex = StartIndex + Math::Min( Points - StartIndex, size_t( 65536 ) );
+			while( StartIndex != EndIndex )
+			{
+				Calls += RenderBatch( StartIndex, EndIndex );
+				StartIndex = EndIndex;
+				EndIndex = StartIndex + Math::Min( Points - StartIndex, size_t( 65536 ) );
+			}
+
+			CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Debug Lines", static_cast<int64_t>( Lines.size() ) ), true );
+			CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Debug Line Batches", static_cast<int64_t>( EndIndex / size_t( 65536 ) ) ), true );
+
+			End();
+
+			return Calls;
+		}
+
+		CShader* LineShader;
+		size_t Capacity;
+		RenderLine* RenderLines;
+	};
 
 	void Frame()
 	{
@@ -393,9 +664,20 @@ namespace UI
 			DrawData.CmdListsCount = 0;
 		}
 
-		for( const auto& Line : Lines )
+		/*for( const auto& Line : Lines )
 		{
 			AddLineInternal( Line.Start, Line.End, Line.Color );
+		}*/
+
+		auto World = CWorld::GetPrimaryWorld();
+		if( World && World->GetActiveCamera() )
+		{
+			auto ActiveCamera = World->GetActiveCamera();
+			auto& Window = CWindow::Get();
+			static CLinePass LinePass( Window.GetWidth(), Window.GetHeight(), *ActiveCamera );
+			LinePass.SetCamera( *ActiveCamera );
+
+			Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Scene );
 		}
 
 		for( const auto& Circle : Circles )
@@ -416,8 +698,11 @@ namespace UI
 		if( DrawList->CmdBuffer.size() == 0 )
 		{
 			DrawList->AddDrawCmd();
-		}
+		}	
+	}
 
+	void Render()
+	{
 		ImGui_ImplOpenGL3_RenderDrawData( &DrawData );
 	}
 
