@@ -1,50 +1,14 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <ThirdParty/glm/glm.hpp>
-
-/*
-namespace SIMDMath
-{
-	typedef __m128 vec3;
-	typedef __m128 vec4;
-
-	inline vec3 ToVec3( glm::vec3 vec )
-	{
-		return _mm_setr_ps( vec.x, vec.y, vec.z, 0.0f );
-	}
-
-	inline vec4 ToVec4( glm::vec4 vec )
-	{
-		return _mm_setr_ps( vec.x, vec.y, vec.z, vec.w );
-	}
-
-	inline vec3 Subtract( vec3 p, vec3 v )
-	{
-		return _mm_sub_ps( p, v );
-	}
-
-	inline float Length( vec3 v )
-	{
-		return _mm_cvtss_f32( _mm_sqrt_ss( _mm_dp_ps( v, v, 0x71 ) ) );
-	}
-
-	inline float Distance( vec3 p, vec3 v )
-	{
-		return Length( Subtract( p, v ) );
-	}
-
-	inline vec3 Dot( vec3 v, vec3 w )
-	{
-		return _mm_dp_ps( v, w, 0x71 );
-	}
-}*/
-
 class Vector2D
 {
 public:
-	union { float X, R, S; };
-	union { float Y, G, T; };
+	union {
+		struct { float X, Y; };
+		struct { float R, G; };
+		struct { float S, T; };
+	};
 
 	Vector2D() = default;
 	Vector2D( float X, float Y )
@@ -174,9 +138,11 @@ public:
 class Vector3D
 {
 public:
-	union { float X, R, S; };
-	union { float Y, G, T; };
-	union { float Z, B, P; };
+	union { 
+		struct { float X, Y, Z; };
+		struct { float R, G, B; };
+		struct { float S, T, P; };
+	};
 
 	Vector3D() = default;
 	Vector3D( float X, float Y, float Z )
@@ -436,10 +402,11 @@ public:
 class Vector4D
 {
 public:
-	union { float X, R, S; };
-	union { float Y, G, T; };
-	union { float Z, B, P; };
-	union { float W, A, Q; };
+	union {
+		struct { float X, Y, Z, W; };
+		struct { float R, G, B, A; };
+		struct { float S, T, P, Q; };
+	};
 
 	Vector4D() = default;
 	Vector4D( float X, float Y, float Z, float W )
@@ -633,102 +600,100 @@ public:
 	}
 };
 
-class SIMDVector4D
+namespace Intrinsic
 {
-public:
-	SIMDVector4D() = default;
-
-	SIMDVector4D( const Vector3D& Vector )
+	class Vector4D
 	{
-		AssignVector( Vector );
-	}
+	public:
+		Vector4D() = default;
+		Vector4D( float X, float Y, float Z, float W )
+		{
+			StoredVector = _mm_setr_ps( X, Y, Z, W );
+		}
 
-	SIMDVector4D( const glm::vec4& Vector )
-	{
-		AssignVector( Vector );
-	}
+		Vector4D( const ::Vector4D& Vector )
+		{
+			StoredVector = _mm_setr_ps( Vector.X, Vector.Y, Vector.Z, Vector.W );
+		}
 
-	inline void AssignVector( const Vector3D& Vector )
-	{
-		StoredVector = _mm_setr_ps( Vector.X, Vector.Y, Vector.Z, 0.0f );
-	}
+		inline void operator=( const ::Vector4D& Vector )
+		{
+			StoredVector = _mm_setr_ps( Vector.X, Vector.Y, Vector.Z, Vector.W );
+		};
 
-	inline void AssignVector( const glm::vec4& Vector )
-	{
-		StoredVector = _mm_setr_ps( Vector.x, Vector.y, Vector.z, Vector.w );
-	}
+		inline ::Vector4D ToVector4D() const
+		{
+			::Vector4D Vector;
+			_mm_storeu_ps( &Vector.X, StoredVector );
+			return Vector;
+		}
 
-	inline void operator=( const Vector3D& Vector )
-	{
-		AssignVector( Vector );
+		inline ::Vector3D ToVector3D() const
+		{
+			::Vector4D Vector4 = ToVector4D();
+			::Vector3D Vector = ::Vector3D( Vector4.X, Vector4.Y, Vector4.Z );
+			return Vector;
+		}
+
+		inline float Dot( const __m128& Vector )
+		{
+			return _mm_cvtss_f32( _mm_dp_ps( StoredVector, Vector, 0x71 ) );
+		}
+
+		inline float Length()
+		{
+			return Length( StoredVector );
+		}
+
+		inline float LengthSquared()
+		{
+			return Dot( StoredVector );
+		}
+
+		inline float Distance( const __m128& Vector )
+		{
+			return Length( Subtract( StoredVector, Vector ) );
+		}
+
+		inline __m128 operator+=( const __m128& Vector )
+		{
+			StoredVector = Add( StoredVector, Vector );
+			return StoredVector;
+		};
+
+		inline __m128 operator-=( const __m128& Vector )
+		{
+			StoredVector = Subtract( StoredVector, Vector );
+			return StoredVector;
+		};
+
+		inline __m128 operator*=( const __m128& Vector )
+		{
+			StoredVector = Multiply( StoredVector, Vector );
+			return StoredVector;
+		};
+
+		static inline __m128 Add( const __m128& A, const __m128& B )
+		{
+			return _mm_add_ps( A, B );
+		}
+
+		static inline __m128 Subtract( const __m128& A, const __m128& B )
+		{
+			return _mm_sub_ps( A, B );
+		}
+
+		static inline __m128 Multiply( const __m128& A, const __m128& B )
+		{
+			return _mm_mul_ps( A, B );
+		}
+
+		static inline float Length( const __m128& Vector )
+		{
+			return _mm_cvtss_f32( _mm_sqrt_ss( _mm_dp_ps( Vector, Vector, 0x71 ) ) );
+		}
+
+	private:
+		__m128 StoredVector;
 	};
-
-	inline void operator=( const glm::vec4& Vector )
-	{
-		AssignVector( Vector );
-	};
-
-	inline glm::vec4 ToVec4() const
-	{
-		float RawVector[4];
-		_mm_storeu_ps( RawVector, StoredVector );
-		return glm::vec4( RawVector[0], RawVector[1], RawVector[2], RawVector[3] );
-	}
-
-	inline float Length()
-	{
-		return Length( StoredVector );
-	}
-
-	inline __m128 Dot( const __m128& Vector )
-	{
-		return _mm_dp_ps( StoredVector, Vector, 0x71 );
-	}
-
-	inline float Distance( const __m128& Vector )
-	{
-		return Length( Subtract( StoredVector, Vector ) );
-	}
-
-	inline __m128 operator+=( const __m128& Vector )
-	{
-		StoredVector = Add( StoredVector, Vector );
-		return StoredVector;
-	};
-
-	inline __m128 operator-=( const __m128& Vector )
-	{
-		StoredVector = Subtract( StoredVector, Vector );
-		return StoredVector;
-	};
-
-	inline __m128 operator*=( const __m128& Vector )
-	{
-		StoredVector = Multiply( StoredVector, Vector );
-		return StoredVector;
-	};
-
-	// Static functions
-	static inline __m128 Add( const __m128& A, const __m128& B )
-	{
-		return _mm_add_ps( A, B );
-	}
-
-	static inline __m128 Subtract( const __m128& A, const __m128& B )
-	{
-		return _mm_sub_ps( A, B );
-	}
-
-	static inline __m128 Multiply( const __m128& A, const __m128& B )
-	{
-		return _mm_mul_ps( A, B );
-	}
-
-	static inline float Length( const __m128& Vector )
-	{
-		return _mm_cvtss_f32( _mm_sqrt_ss( _mm_dp_ps( Vector, Vector, 0x71 ) ) );
-	}
-
-private:
-	__m128 StoredVector;
-};
+}
