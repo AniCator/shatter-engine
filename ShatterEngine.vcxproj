@@ -234,6 +234,7 @@
     <ClCompile Include="Engine\Utility\MeshBuilder.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilderASSIMP.cpp" />
     <ClCompile Include="Engine\Utility\Presence\Presence.cpp" />
+    <ClCompile Include="Engine\Utility\Property.cpp" />
     <ClCompile Include="Engine\Utility\Script\AngelEngine.cpp" />
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp" />
     <ClCompile Include="Engine\Utility\StringPool.cpp" />
@@ -309,6 +310,7 @@
     <ClInclude Include="Engine\Utility\MeshBuilder.h" />
     <ClInclude Include="Engine\Utility\Presence\Precense.h" />
     <ClInclude Include="Engine\Utility\Primitive.h" />
+    <ClInclude Include="Engine\Utility\Property.h" />
     <ClInclude Include="Engine\Utility\RingBuffer.h" />
     <ClInclude Include="Engine\Utility\Script\AngelEngine.h" />
     <ClInclude Include="Engine\Utility\Service\Service.h" />

@@ -314,6 +314,9 @@
     <ClCompile Include="Engine\Display\Rendering\Pass\ShadowPass.cpp">
       <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\Property.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -570,6 +573,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Display\Rendering\Uniform.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Property.h">
+      <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
