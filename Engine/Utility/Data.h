@@ -36,6 +36,24 @@ public:
 		}
 	}
 
+	void operator<<( CData& Object )
+	{
+		const size_t Size = Object.Size();
+		Data.write( reinterpret_cast<const char*>( &Size ), sizeof( size_t ) );
+
+		if( !Data.good() )
+		{
+			Log::Event( Log::Error, "Could not write CData size.\n" );
+		}
+
+		Data.write( Object.Data.str().c_str(), Object.Size() );
+
+		if( !Data.good() )
+		{
+			Log::Event( Log::Error, "Could not write CData data.\n" );
+		}
+	}
+
 	template<typename T>
 	void operator>>( T& Object )
 	{
@@ -69,9 +87,28 @@ public:
 		}
 	}
 
+	void operator>>( CData& Object )
+	{
+		if( Invalid )
+			return;
+
+		size_t Size = 0;
+		Data.read( reinterpret_cast<char*>( &Size ), sizeof( size_t ) );
+
+		char* Stream = new char[Size];
+		Data.read( Stream, Size );
+		Object.Data.write( Stream, Size );
+
+		if( !Data.good() )
+		{
+			Object.Invalidate();
+			Invalidate();
+		}
+	}
+
 	void Store( char* Buffer, const size_t Size )
 	{
-		Data.seekg( std::ios::beg );
+		ResetCursor();
 		Data.read( Buffer, Size );
 	}
 
@@ -85,6 +122,11 @@ public:
 	void ResetCursor()
 	{
 		Data.seekg( std::ios::beg );
+	}
+
+	void Jump( const int Offset )
+	{
+		Data.seekg( Offset, std::ios::cur );
 	}
 
 	const size_t Size()

@@ -7,6 +7,7 @@
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Physics/Physics.h>
 #include <Engine/World/Entity/Entity.h>
+#include <Engine/Utility/Chunk.h>
 
 static const char WorldIdentifier[5] = "LLWF"; // Lofty Lagoon World Format
 static const size_t WorldVersion;
@@ -153,8 +154,9 @@ CWorld* CWorld::GetPrimaryWorld()
 
 CData& operator<<( CData& Data, CWorld* World )
 {
-	Data << WorldIdentifier;
-	Data << WorldVersion;
+	Chunk Chunk( "WORLD" );
+	Chunk.Data << WorldIdentifier;
+	Chunk.Data << WorldVersion;
 
 	std::string Timestamp( __TIME__ );
 	Timestamp.erase( std::remove_if( Timestamp.begin(), Timestamp.end(),
@@ -164,26 +166,31 @@ CData& operator<<( CData& Data, CWorld* World )
 		Timestamp.end() );
 
 	const int StampInteger = std::stoi( Timestamp );
-	Data << StampInteger;
+	Chunk.Data << StampInteger;
 
 	const size_t Count = World->Levels.size();
-	Data << Count;
+	Chunk.Data << Count;
 
 	for( size_t Index = 0; Index < Count; Index++ )
 	{
-		Data << World->Levels[Index];
+		Chunk.Data << World->Levels[Index];
 	}
+
+	Data << Chunk;
 
 	return Data;
 }
 
 CData& operator>>( CData& Data, CWorld* World )
 {
+	Chunk Chunk( "WORLD" );
+	Data >> Chunk;
+
 	char Identifier[5];
-	Data >> Identifier;
+	Chunk.Data >> Identifier;
 
 	size_t Version;
-	Data >> Version;
+	Chunk.Data >> Version;
 
 	std::string Timestamp( __TIME__ );
 	Timestamp.erase( std::remove_if( Timestamp.begin(), Timestamp.end(),
@@ -194,17 +201,17 @@ CData& operator>>( CData& Data, CWorld* World )
 
 	const int StampInteger = std::stoi( Timestamp );
 	int ExtractedStamp;
-	Data >> ExtractedStamp;
+	Chunk.Data >> ExtractedStamp;
 
 	if( strcmp( Identifier, WorldIdentifier ) == 0 && Version >= WorldVersion && StampInteger == ExtractedStamp )
 	{
 		size_t Count;
-		Data >> Count;
+		Chunk.Data >> Count;
 
 		for( size_t Index = 0; Index < Count; Index++ )
 		{
 			CLevel Level( World );
-			Data >> Level;
+			Chunk.Data >> Level;
 			World->Levels.push_back( Level );
 		}
 

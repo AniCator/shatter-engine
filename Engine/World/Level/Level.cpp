@@ -6,6 +6,7 @@
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 #include <Engine/World/World.h>
+#include <Engine/Utility/Chunk.h>
 #include <Engine/Utility/Structures/JSON.h>
 
 static const size_t LevelVersion = 1;
@@ -551,44 +552,50 @@ void CLevel::SetName( const std::string& NameIn )
 
 CData& operator<<( CData& Data, CLevel& Level )
 {
-	Data << LevelVersion;
+	Chunk Chunk("LEVEL");
+	Chunk.Data << LevelVersion;
 
-	Data << Level.Transform;
+	Chunk.Data << Level.Transform;
 
-	FDataString::Encode( Data, Level.Name );
-	FDataVector::Encode( Data, Level.Entities );
+	FDataString::Encode( Chunk.Data, Level.Name );
+	FDataVector::Encode( Chunk.Data, Level.Entities );
+
+	Data << Chunk;
 
 	return Data;
 }
 
 CData& operator>> ( CData& Data, CLevel& Level )
 {
+	Chunk Chunk( "LEVEL" );
+	Data >> Chunk;
+
 	size_t Version;
-	Data >> Version;
+	Chunk.Data >> Version;
 
 	if( Version >= LevelVersion )
 	{
-		Data >> Level.Transform;
+		Chunk.Data >> Level.Transform;
 
-		FDataString::Decode( Data, Level.Name );
+		FDataString::Decode( Chunk.Data, Level.Name );
 
 		size_t Count;
-		Data >> Count;
+		Chunk.Data >> Count;
 
 		Level.Entities.reserve( Count );
 
 		for( size_t Index = 0; Index < Count; Index++ )
 		{
-			if( Data.Valid() )
+			if( Chunk.Data.Valid() )
 			{
 				std::string ClassName;
-				FDataString::Decode( Data, ClassName );
+				FDataString::Decode( Chunk.Data, ClassName );
 
 				std::string EntityName;
-				FDataString::Decode( Data, EntityName );
+				FDataString::Decode( Chunk.Data, EntityName );
 
 				Level.Entities[Index] = Level.Spawn( ClassName, EntityName );
-				Data >> Level.Entities[Index];
+				Chunk.Data >> Level.Entities[Index];
 			}
 		}
 

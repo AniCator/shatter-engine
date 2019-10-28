@@ -299,6 +299,7 @@
     <ClInclude Include="Engine\Profiling\Profiling.h" />
     <ClInclude Include="Engine\Resource\Assets.h" />
     <ClInclude Include="Engine\Sequencer\Sequencer.h" />
+    <ClInclude Include="Engine\Utility\Chunk.h" />
     <ClInclude Include="Engine\Utility\Data.h" />
     <ClInclude Include="Engine\Utility\DataString.h" />
     <ClInclude Include="Engine\Utility\File.h" />
