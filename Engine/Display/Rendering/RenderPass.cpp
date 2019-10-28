@@ -12,6 +12,7 @@
 
 #include <Engine/Display/Rendering/Pass/CopyPass.h>
 #include <Engine/Display/Rendering/Pass/DownsamplePass.h>
+#include <Engine/Display/UserInterface.h>
 
 #include <ThirdParty/glm/glm.hpp>
 #include <ThirdParty/glm/gtc/type_ptr.hpp>
@@ -368,89 +369,94 @@ void CRenderPass::ConfigureDepthTest( CShader* Shader )
 
 void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*> Renderables )
 {
-	return;
-
 	const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
 	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
 	const glm::mat4 FrustumMatrix = ProjectionMatrix * ViewMatrix;
 
-	Vector4D Planes[6];
-
-	// Left clipping plane
-	Planes[0].X = FrustumMatrix[0][3] + FrustumMatrix[0][0];
-	Planes[0].Y = FrustumMatrix[1][3] + FrustumMatrix[1][0];
-	Planes[0].Z = FrustumMatrix[2][3] + FrustumMatrix[2][0];
-	Planes[0].W = FrustumMatrix[3][3] + FrustumMatrix[3][0];
-
-	// Right clipping plane
-	Planes[1].X = FrustumMatrix[0][3] - FrustumMatrix[0][0];
-	Planes[1].Y = FrustumMatrix[1][3] - FrustumMatrix[1][0];
-	Planes[1].Z = FrustumMatrix[2][3] - FrustumMatrix[2][0];
-	Planes[1].W = FrustumMatrix[3][3] - FrustumMatrix[3][0];
-
-	// Top clipping plane
-	Planes[2].X = FrustumMatrix[0][3] - FrustumMatrix[0][1];
-	Planes[2].Y = FrustumMatrix[1][3] - FrustumMatrix[1][1];
-	Planes[2].Z = FrustumMatrix[2][3] - FrustumMatrix[2][1];
-	Planes[2].W = FrustumMatrix[3][3] - FrustumMatrix[3][1];
-
-	// Bottom clipping plane
-	Planes[3].X = FrustumMatrix[0][3] + FrustumMatrix[0][1];
-	Planes[3].Y = FrustumMatrix[1][3] + FrustumMatrix[1][1];
-	Planes[3].Z = FrustumMatrix[2][3] + FrustumMatrix[2][1];
-	Planes[3].W = FrustumMatrix[3][3] + FrustumMatrix[3][1];
-
-	// Near clipping plane
-	Planes[4].X = FrustumMatrix[0][3] + FrustumMatrix[0][2];
-	Planes[4].Y = FrustumMatrix[1][3] + FrustumMatrix[1][2];
-	Planes[4].Z = FrustumMatrix[2][3] + FrustumMatrix[2][2];
-	Planes[4].W = FrustumMatrix[3][3] + FrustumMatrix[3][2];
-
-	// Far clipping plane
-	Planes[5].X = FrustumMatrix[0][3] - FrustumMatrix[0][2];
-	Planes[5].Y = FrustumMatrix[1][3] - FrustumMatrix[1][2];
-	Planes[5].Z = FrustumMatrix[2][3] - FrustumMatrix[2][2];
-	Planes[5].W = FrustumMatrix[3][3] - FrustumMatrix[3][2];
-
-	for( size_t Index = 0; Index < 6; Index++ )
-	{
-		Planes[Index].Normalize();
-	}
+	const static glm::vec3 ScreenSpaceMinimum = glm::vec3( -1.0f, -1.0f, -1.0f );
+	const static glm::vec3 ScreenSpaceMaximum = glm::vec3( 1.0f, 1.0f, 1.0f );
 
 	for( auto& Renderable : Renderables )
 	{
 		Renderable->GetRenderData().ShouldRender = true;
 
-		Vector3D Position3D = Renderable->GetRenderData().Transform.GetPosition();
+		const FBounds& Bounds = Renderable->GetMesh()->GetBounds();
+		const auto& Point = FrustumMatrix * glm::vec4( Math::ToGLM( Renderable->GetRenderData().Transform.GetPosition() ), 1.0f );
 
-		// Temporary distance culling.
-		const float MaximumDistance = 25.0f;
-		const float MaximumDistanceSquared = MaximumDistance * MaximumDistance;
-		if( CameraSetup.CameraPosition.DistanceSquared( Position3D ) > MaximumDistanceSquared )
+		if( Math::PointInBoundingBox( Point, ScreenSpaceMinimum, ScreenSpaceMaximum ) )
 		{
 			Renderable->GetRenderData().ShouldRender = false;
-			continue;
-		}
-
-		Vector4D Position;
-		Position.X = Position3D.X;
-		Position.Y = Position3D.Y;
-		Position.Z = Position3D.Z;
-		Position.W = 1.0f;
-
-		Position = Math::FromGLM( FrustumMatrix * Math::ToGLM( Position ) );
-		auto& Bounds = Renderable->GetMesh()->GetBounds();
-		const float Radius = Bounds.Minimum.Distance( Bounds.Maximum ) * 0.5f;
-
-		for( size_t Index = 0; Index < 6; Index++ )
-		{
-			if( Position3D.Dot( Vector3D( Planes[Index].X, Planes[Index].Y, Planes[Index].Z ) ) + Planes[Index].W + Radius <= 0.0f )
-			{
-				Renderable->GetRenderData().ShouldRender = false;
-			}
 		}
 	}
+
+	//Vector4D Planes[6];
+
+	//// Left clipping plane
+	//Planes[0].X = FrustumMatrix[0][3] + FrustumMatrix[0][0];
+	//Planes[0].Y = FrustumMatrix[1][3] + FrustumMatrix[1][0];
+	//Planes[0].Z = FrustumMatrix[2][3] + FrustumMatrix[2][0];
+	//Planes[0].W = FrustumMatrix[3][3] + FrustumMatrix[3][0];
+
+	//// Right clipping plane
+	//Planes[1].X = FrustumMatrix[0][3] - FrustumMatrix[0][0];
+	//Planes[1].Y = FrustumMatrix[1][3] - FrustumMatrix[1][0];
+	//Planes[1].Z = FrustumMatrix[2][3] - FrustumMatrix[2][0];
+	//Planes[1].W = FrustumMatrix[3][3] - FrustumMatrix[3][0];
+
+	//// Top clipping plane
+	//Planes[2].X = FrustumMatrix[0][3] - FrustumMatrix[0][1];
+	//Planes[2].Y = FrustumMatrix[1][3] - FrustumMatrix[1][1];
+	//Planes[2].Z = FrustumMatrix[2][3] - FrustumMatrix[2][1];
+	//Planes[2].W = FrustumMatrix[3][3] - FrustumMatrix[3][1];
+
+	//// Bottom clipping plane
+	//Planes[3].X = FrustumMatrix[0][3] + FrustumMatrix[0][1];
+	//Planes[3].Y = FrustumMatrix[1][3] + FrustumMatrix[1][1];
+	//Planes[3].Z = FrustumMatrix[2][3] + FrustumMatrix[2][1];
+	//Planes[3].W = FrustumMatrix[3][3] + FrustumMatrix[3][1];
+
+	//// Near clipping plane
+	//Planes[4].X = FrustumMatrix[0][3] + FrustumMatrix[0][2];
+	//Planes[4].Y = FrustumMatrix[1][3] + FrustumMatrix[1][2];
+	//Planes[4].Z = FrustumMatrix[2][3] + FrustumMatrix[2][2];
+	//Planes[4].W = FrustumMatrix[3][3] + FrustumMatrix[3][2];
+
+	//// Far clipping plane
+	//Planes[5].X = FrustumMatrix[0][3] - FrustumMatrix[0][2];
+	//Planes[5].Y = FrustumMatrix[1][3] - FrustumMatrix[1][2];
+	//Planes[5].Z = FrustumMatrix[2][3] - FrustumMatrix[2][2];
+	//Planes[5].W = FrustumMatrix[3][3] - FrustumMatrix[3][2];
+
+	//for( size_t Index = 0; Index < 6; Index++ )
+	//{
+	//	Planes[Index].Normalize();
+	//}
+
+	//for( auto& Renderable : Renderables )
+	//{
+	//	Renderable->GetRenderData().ShouldRender = true;
+
+	//	Vector3D Position3D = Renderable->GetRenderData().Transform.GetPosition();
+
+	//	Vector4D Position;
+	//	Position.X = Position3D.X;
+	//	Position.Y = Position3D.Y;
+	//	Position.Z = Position3D.Z;
+	//	Position.W = 1.0f;
+
+	//	Position = Math::FromGLM( FrustumMatrix * Math::ToGLM( Position ) );
+	//	auto& Bounds = Renderable->GetMesh()->GetBounds();
+	//	const float Radius = Bounds.Minimum.Distance( Bounds.Maximum ) * 0.5f;
+
+	//	for( size_t Index = 0; Index < 6; Index++ )
+	//	{
+	//		if( Position3D.Dot( Vector3D( Planes[Index].X, Planes[Index].Y, Planes[Index].Z ) ) + Planes[Index].W + Radius <= 0.0f )
+	//		{
+	//			Renderable->GetRenderData().ShouldRender = false;
+	//		}
+	//	}
+	//}
 }
 
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )
