@@ -363,20 +363,6 @@ void CPhysicsComponent::Collision( CPhysicsComponent* Component )
 		if( Component->Owner && Component->Tree )
 		{
 			Response = CollisionResponseTreeAABB( Component->Tree, WorldBounds, Component->PreviousTransform );
-
-			/*auto World = Component->Owner->GetWorld();
-			if( World )
-			{
-				auto Camera = World->GetActiveCamera();
-				if( Camera )
-				{
-					auto Position = Camera->GetCameraPosition();
-					FBounds CameraBounds;
-					CameraBounds.Maximum = Position + Vector3D( 1.0, 1.0, 1.0 );
-					CameraBounds.Minimum = Position - Vector3D( 1.0, 1.0, 1.0 );
-					CollisionResponseTreeAABB( Component->Tree, CameraBounds, Component->PreviousTransform );
-				}
-			}*/
 		}
 		else
 		{
@@ -418,17 +404,7 @@ void CPhysicsComponent::Collision( CPhysicsComponent* Component )
 		UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, Color::Blue );
 
 		Vector3D ProjectionPosition = Response.Normal * Response.Distance;
-		// UI::AddLine( Transform.GetPosition(), Transform.GetPosition() - ProjectionPosition, Color( 0, 255, 255 ) );
 		UI::AddLine( Transform.GetPosition(), Transform.GetPosition() - Depenetration, Color( 0, 0, 255 ) );
-
-		// FBounds WorldBoundsProjected = WorldBounds;
-		// WorldBoundsProjected.Minimum -= ProjectionPosition;
-		// WorldBoundsProjected.Maximum -= ProjectionPosition;
-		// WorldBounds = WorldBoundsProjected;
-		// Transform.SetPosition( Transform.GetPosition() - ProjectionPosition );
-
-		// Owner->SetTransform( Transform );
-		// Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
 	}
 
 #if DrawDebugLines == 1
