@@ -552,7 +552,7 @@ void CLevel::SetName( const std::string& NameIn )
 
 CData& operator<<( CData& Data, CLevel& Level )
 {
-	Chunk Chunk("LEVEL");
+	Chunk Chunk( "LEVEL" );
 	Chunk.Data << LevelVersion;
 
 	Chunk.Data << Level.Transform;
