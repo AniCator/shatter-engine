@@ -4,22 +4,22 @@
 #include "Data.h"
 #include <string>
 
-struct FDataString
+struct DataString
 {
-	FDataString()
+	DataString()
 	{
 		Size = 0;
 		Address = nullptr;
 	}
 
-	FDataString( const std::string& String )
+	DataString( const std::string& String )
 	{
 		Size = String.size();
 		Address = new char[Size + 1];
 		strcpy_s( Address, ( Size + 1 ) * sizeof( char ), String.c_str() );
 	}
 
-	~FDataString()
+	~DataString()
 	{
 		if( Address )
 		{
@@ -31,7 +31,7 @@ struct FDataString
 	size_t Size;
 	char* Address;
 
-	friend CData& operator<<( CData& Data, FDataString& String )
+	friend CData& operator<<( CData& Data, DataString& String )
 	{
 		Data << String.Size;
 		Data << static_cast<const char*>( String.Address );
@@ -39,7 +39,7 @@ struct FDataString
 		return Data;
 	}
 
-	friend CData& operator>>( CData& Data, FDataString& String )
+	friend CData& operator>>( CData& Data, DataString& String )
 	{
 		Data >> String.Size;
 
@@ -57,12 +57,12 @@ struct FDataString
 
 	static void Encode( CData& Data, const std::string& Object )
 	{
-		Data << FDataString( Object );
+		Data << DataString( Object );
 	}
 
 	static void Decode( CData& Data, std::string& Object )
 	{
-		FDataString DataString;
+		DataString DataString;
 		Data >> DataString;
 
 		if( Data.Valid() && DataString.Address )

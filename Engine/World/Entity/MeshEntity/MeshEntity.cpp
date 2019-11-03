@@ -276,15 +276,15 @@ void CMeshEntity::Import( CData& Data )
 {
 	CPointEntity::Import( Data );
 
-	FDataString::Decode( Data, MeshName );
-	FDataString::Decode( Data, ShaderName );
+	DataString::Decode( Data, MeshName );
+	DataString::Decode( Data, ShaderName );
 
 	size_t Size = 0;
 	Data >> Size;
 	for( size_t Index = 0; Index < Size; Index++ )
 	{
 		TextureNames.emplace_back();
-		FDataString::Decode( Data, TextureNames.back() );
+		DataString::Decode( Data, TextureNames.back() );
 	}
 
 	Data >> Color;
@@ -295,15 +295,15 @@ void CMeshEntity::Export( CData& Data )
 {
 	CPointEntity::Export( Data );
 
-	FDataString::Encode( Data, MeshName );
-	FDataString::Encode( Data, ShaderName );
+	DataString::Encode( Data, MeshName );
+	DataString::Encode( Data, ShaderName );
 	
 	size_t Size = TextureNames.size();
 	Data << Size;
 
 	for( auto TextureName : TextureNames )
 	{
-		FDataString::Encode( Data, TextureName );
+		DataString::Encode( Data, TextureName );
 	}
 
 	Data << Color;

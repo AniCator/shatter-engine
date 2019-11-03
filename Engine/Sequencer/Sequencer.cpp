@@ -166,7 +166,7 @@ struct FEventAudio : FTrackEvent
 	{
 		FTrackEvent::Export( Data );
 
-		FDataString::Encode( Data, Name );
+		DataString::Encode( Data, Name );
 		Data << Triggered;
 		Data << FadeIn;
 		Data << FadeOut;
@@ -177,7 +177,7 @@ struct FEventAudio : FTrackEvent
 	{
 		FTrackEvent::Import( Data );
 
-		FDataString::Decode( Data, Name );
+		DataString::Decode( Data, Name );
 		Data >> Triggered;
 		Data >> FadeIn;
 		Data >> FadeOut;
@@ -277,7 +277,7 @@ struct FEventCamera : FTrackEvent
 	{
 		FTrackEvent::Export( Data );
 
-		FDataString::Encode( Data, Name );
+		DataString::Encode( Data, Name );
 		Data << Camera;
 	}
 
@@ -285,7 +285,7 @@ struct FEventCamera : FTrackEvent
 	{
 		FTrackEvent::Import( Data );
 
-		FDataString::Decode( Data, Name );
+		DataString::Decode( Data, Name );
 		Data >> Camera;
 	}
 };
@@ -407,14 +407,14 @@ struct FEventRenderable : FTrackEvent
 	{
 		FTrackEvent::Export( Data );
 
-		FDataString::Encode( Data, Name );
+		DataString::Encode( Data, Name );
 	}
 
 	virtual void Import( CData& Data )
 	{
 		FTrackEvent::Import( Data );
 
-		FDataString::Decode( Data, Name );
+		DataString::Decode( Data, Name );
 	}
 };
 
@@ -433,7 +433,7 @@ static std::map<std::string, std::function<FTrackEvent*()>> EventTypes
 
 void FTrackEvent::Export( CData& Data )
 {
-	FDataString::Encode( Data, GetType() );
+	DataString::Encode( Data, GetType() );
 	Data << Start;
 	Data << Length;
 }
@@ -441,7 +441,7 @@ void FTrackEvent::Export( CData& Data )
 void FTrackEvent::Import( CData& Data )
 {
 	std::string Type;
-	FDataString::Decode( Data, Type );
+	DataString::Decode( Data, Type );
 	*this = *EventTypes[Type]();
 	Data >> Start;
 	Data >> Length;
@@ -1030,7 +1030,7 @@ public:
 
 	friend CData& operator<<( CData& Data, CTimeline& Timeline )
 	{
-		FDataString::Encode( Data, Timeline.Location );
+		DataString::Encode( Data, Timeline.Location );
 		Data << Timeline.Marker;
 
 		Data << Timeline.StartMarker;
@@ -1045,7 +1045,7 @@ public:
 
 	friend CData& operator>>( CData& Data, CTimeline& Timeline )
 	{
-		FDataString::Decode( Data, Timeline.Location );
+		DataString::Decode( Data, Timeline.Location );
 		Data >> Timeline.Marker;
 
 		Data >> Timeline.StartMarker;

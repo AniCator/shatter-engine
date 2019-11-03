@@ -243,26 +243,26 @@ CData& operator<<( CData& Data, CEntity* Entity )
 {
 	if( Entity )
 	{
-		FDataString::Encode( Data, Entity->ClassName );
-		FDataString::Encode( Data, Entity->Name.String() );
+		DataString::Encode( Data, Entity->ClassName );
+		DataString::Encode( Data, Entity->Name.String() );
 
 		const auto OutputCount = Entity->Outputs.size();
 		Data << OutputCount;
 		for( auto& Output : Entity->Outputs )
 		{
-			FDataString::Encode( Data, Output.first.String() );
+			DataString::Encode( Data, Output.first.String() );
 
 			const auto MessageCount = Output.second.size();
 			Data << MessageCount;
 			for( auto& Message : Output.second )
 			{
-				FDataString::Encode( Data, Message.TargetName );
+				DataString::Encode( Data, Message.TargetName );
 
 				const auto InputCount = Message.Inputs.size();
 				Data << InputCount;
 				for( auto& Input : Message.Inputs )
 				{
-					FDataString::Encode( Data, Input );
+					DataString::Encode( Data, Input );
 				}
 			}
 		}
@@ -283,20 +283,20 @@ CData& operator>>( CData& Data, CEntity* Entity )
 		for( size_t OutputIndex = 0; OutputIndex < OutputCount; OutputIndex++ )
 		{
 			std::string OutputName;
-			FDataString::Decode( Data, OutputName );
+			DataString::Decode( Data, OutputName );
 			size_t MessageCount;
 			Data >> MessageCount;
 			for( size_t MessageIndex = 0; MessageIndex < MessageCount; MessageIndex++ )
 			{
 				std::string TargetName;
-				FDataString::Decode( Data, TargetName );
+				DataString::Decode( Data, TargetName );
 
 				size_t InputCount;
 				Data >> InputCount;
 				for( size_t InputIndex = 0; InputIndex < InputCount; InputIndex++ )
 				{
 					std::string InputName;
-					FDataString::Decode( Data, InputName );
+					DataString::Decode( Data, InputName );
 
 					FMessage Message;
 					Message.TargetID = EntityUID::None();

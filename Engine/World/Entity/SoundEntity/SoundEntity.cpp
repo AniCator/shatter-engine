@@ -199,7 +199,7 @@ void CSoundEntity::Import( CData& Data )
 	CPointEntity::Import( Data );
 
 	std::string SoundString;
-	FDataString::Decode( Data, SoundString );
+	DataString::Decode( Data, SoundString );
 	SoundName = SoundString;
 
 	Sound = CAssets::Get().FindSound( SoundString );
@@ -215,7 +215,7 @@ void CSoundEntity::Export( CData& Data )
 {
 	CPointEntity::Export( Data );
 
-	FDataString::Encode( Data, SoundName.String() );
+	DataString::Encode( Data, SoundName.String() );
 	Data << Falloff;
 	Data << Radius;
 	Data << Volume;

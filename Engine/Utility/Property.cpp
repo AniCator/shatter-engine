@@ -136,7 +136,7 @@ CData& operator<<( CData& Data, Property& Value )
 	Data << Value.Type;
 	if( Value.Type == PropertyType::String )
 	{
-		FDataString::Encode( Data, Value.String );
+		DataString::Encode( Data, Value.String );
 	}
 	else if( Value.Type == PropertyType::U32 )
 	{
@@ -175,7 +175,7 @@ CData& operator>>( CData& Data, Property& Value )
 	Data >> Value.Type;
 	if( Value.Type == PropertyType::String )
 	{
-		FDataString::Decode( Data, Value.String );
+		DataString::Decode( Data, Value.String );
 	}
 	else if( Value.Type == PropertyType::U32 )
 	{

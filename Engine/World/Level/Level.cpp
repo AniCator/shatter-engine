@@ -557,7 +557,7 @@ CData& operator<<( CData& Data, CLevel& Level )
 
 	Chunk.Data << Level.Transform;
 
-	FDataString::Encode( Chunk.Data, Level.Name );
+	DataString::Encode( Chunk.Data, Level.Name );
 	FDataVector::Encode( Chunk.Data, Level.Entities );
 
 	Data << Chunk;
@@ -577,7 +577,7 @@ CData& operator>> ( CData& Data, CLevel& Level )
 	{
 		Chunk.Data >> Level.Transform;
 
-		FDataString::Decode( Chunk.Data, Level.Name );
+		DataString::Decode( Chunk.Data, Level.Name );
 
 		size_t Count;
 		Chunk.Data >> Count;
@@ -589,10 +589,10 @@ CData& operator>> ( CData& Data, CLevel& Level )
 			if( Chunk.Data.Valid() )
 			{
 				std::string ClassName;
-				FDataString::Decode( Chunk.Data, ClassName );
+				DataString::Decode( Chunk.Data, ClassName );
 
 				std::string EntityName;
-				FDataString::Decode( Chunk.Data, EntityName );
+				DataString::Decode( Chunk.Data, EntityName );
 
 				Level.Entities[Index] = Level.Spawn( ClassName, EntityName );
 				Chunk.Data >> Level.Entities[Index];
