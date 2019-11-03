@@ -558,7 +558,7 @@ CData& operator<<( CData& Data, CLevel& Level )
 	Chunk.Data << Level.Transform;
 
 	DataString::Encode( Chunk.Data, Level.Name );
-	FDataVector::Encode( Chunk.Data, Level.Entities );
+	DataVector::Encode( Chunk.Data, Level.Entities );
 
 	Data << Chunk;
 

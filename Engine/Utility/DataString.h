@@ -72,7 +72,7 @@ struct DataString
 	}
 };
 
-struct FDataVector
+struct DataVector
 {
 	template<typename T>
 	static void Encode( CData& Data, std::vector<T>& Vector )

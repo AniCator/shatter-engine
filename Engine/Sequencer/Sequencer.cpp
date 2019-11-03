@@ -486,7 +486,7 @@ struct FTrack
 		Data << Track.Start;
 		Data << Track.Length;
 
-		FDataVector::Encode( Data, Track.Events );
+		DataVector::Encode( Data, Track.Events );
 
 		return Data;
 	}
@@ -496,7 +496,7 @@ struct FTrack
 		Data >> Track.Start;
 		Data >> Track.Length;
 
-		// FDataVector::Decode( Data, Track.Events );
+		// DataVector::Decode( Data, Track.Events );
 
 		return Data;
 	}
@@ -1038,7 +1038,7 @@ public:
 
 		Data << Timeline.Status;
 
-		FDataVector::Encode( Data, Timeline.Tracks );
+		DataVector::Encode( Data, Timeline.Tracks );
 
 		return Data;
 	}
@@ -1053,7 +1053,7 @@ public:
 
 		Data >> Timeline.Status;
 
-		FDataVector::Decode( Data, Timeline.Tracks );
+		DataVector::Decode( Data, Timeline.Tracks );
 
 		return Data;
 	}
