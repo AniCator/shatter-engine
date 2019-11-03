@@ -230,6 +230,7 @@
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
     <ClCompile Include="Engine\Resource\Assets.cpp" />
     <ClCompile Include="Engine\Sequencer\Sequencer.cpp" />
+    <ClCompile Include="Engine\Utility\Chunk.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilder.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilderASSIMP.cpp" />

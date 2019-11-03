@@ -317,6 +317,9 @@
     <ClCompile Include="Engine\Utility\Property.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\Chunk.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
