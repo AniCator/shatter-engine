@@ -582,6 +582,7 @@ namespace UI
 
 			memset( RenderLines, 0, Points * sizeof( RenderLine ) );
 
+			int RenderIndex = 0;
 			for( size_t Index = 0; Index < LineCount; )
 			{
 				auto& ByteColor = Lines[Index].Color;
@@ -592,14 +593,15 @@ namespace UI
 				Color.A = static_cast<float>( ByteColor.A ) / 255.0f;
 
 				auto& Start = Lines[Index].Start;
-				RenderLines[Index].Position = Vector4D( Start.X, Start.Y, Start.Z, 1.0f );
-				RenderLines[Index].Color = Vector4D( Color.X, Color.Y, Color.Z, Color.W );
+				RenderLines[RenderIndex].Position = Vector4D( Start.X, Start.Y, Start.Z, 1.0f );
+				RenderLines[RenderIndex].Color = Vector4D( Color.X, Color.Y, Color.Z, Color.W );
 
 				auto& End = Lines[Index].End;
-				RenderLines[Index + 1].Position = Vector4D( End.X, End.Y, End.Z, 1.0f );
-				RenderLines[Index + 1].Color = Vector4D( Color.X, Color.Y, Color.Z, Color.W );
+				RenderLines[RenderIndex + 1].Position = Vector4D( End.X, End.Y, End.Z, 1.0f );
+				RenderLines[RenderIndex + 1].Color = Vector4D( Color.X, Color.Y, Color.Z, Color.W );
 
-				Index += 2;
+				Index += 1;
+				RenderIndex += 2;
 			}
 
 			Begin();
@@ -623,17 +625,18 @@ namespace UI
 			glDisable( GL_CULL_FACE );
 
 			// Render batches
+			const static size_t BatchSize = 65536;
 			size_t StartIndex = 0;
-			size_t EndIndex = StartIndex + Math::Min( Points - StartIndex, size_t( 65536 ) );
+			size_t EndIndex = StartIndex + Math::Min( Points - StartIndex, BatchSize );
 			while( StartIndex != EndIndex )
 			{
 				Calls += RenderBatch( StartIndex, EndIndex );
 				StartIndex = EndIndex;
-				EndIndex = StartIndex + Math::Min( Points - StartIndex, size_t( 65536 ) );
+				EndIndex = StartIndex + Math::Min( Points - StartIndex, BatchSize );
 			}
 
 			CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Debug Lines", static_cast<int64_t>( Lines.size() ) ), true );
-			CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Debug Line Batches", static_cast<int64_t>( EndIndex / size_t( 65536 ) ) ), true );
+			CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Debug Line Batches", static_cast<int64_t>( EndIndex / BatchSize ) ), true );
 
 			End();
 
