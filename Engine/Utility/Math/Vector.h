@@ -577,7 +577,7 @@ public:
 
 	inline Vector4D Normalized()
 	{
-		const float LengthBiased = 1.f / ( Length( *this ) + FLT_EPSILON );
+		const float LengthBiased = 1.f / ( Length() + FLT_EPSILON );
 		*this *= LengthBiased;
 
 		return *this;
@@ -585,7 +585,7 @@ public:
 
 	inline float Normalize()
 	{
-		const float LengthBiased = 1.f / ( Length( *this ) + FLT_EPSILON );
+		const float LengthBiased = 1.f / ( Length() + FLT_EPSILON );
 		*this *= LengthBiased;
 
 		return LengthBiased;
