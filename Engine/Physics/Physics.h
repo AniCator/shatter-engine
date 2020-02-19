@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-class CPhysicsComponent;
+class CBody;
 class CPhysicsScene;
 class Vector3D;
 
@@ -15,10 +15,10 @@ public:
 	void Tick();
 	void Destroy();
 
-	void Register( CPhysicsComponent* Component );
-	void Unregister( CPhysicsComponent* Component );
+	void Register( CBody* Component );
+	void Unregister( CBody* Component );
 
-	CPhysicsComponent* Cast( const Vector3D& Start, const Vector3D& End );
+	CBody* Cast( const Vector3D& Start, const Vector3D& End );
 private:
 	CPhysicsScene* Scene;
 };

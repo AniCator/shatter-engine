@@ -8,7 +8,7 @@ class CMesh;
 class CShader;
 class CTexture;
 class CRenderable;
-class CPhysicsComponent;
+class CBody;
 
 class CMeshEntity : public CPointEntity
 {
@@ -54,5 +54,5 @@ protected:
 	bool Collision;
 	bool Static;
 	bool Stationary;
-	CPhysicsComponent* PhysicsComponent;
+	CBody* PhysicsComponent;
 };

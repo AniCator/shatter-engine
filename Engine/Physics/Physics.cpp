@@ -22,12 +22,12 @@ public:
 
 	}
 
-	void Register( CPhysicsComponent* Component )
+	void Register( CBody* Component )
 	{
 		Components.emplace_back( Component );
 	}
 
-	void Unregister( CPhysicsComponent* ComponentIn )
+	void Unregister( CBody* ComponentIn )
 	{
 		for( auto& Component : Components )
 		{
@@ -75,7 +75,7 @@ public:
 		}
 	}
 
-	CPhysicsComponent* Cast( const Vector3D& Start, const Vector3D& End )
+	CBody* Cast( const Vector3D& Start, const Vector3D& End )
 	{
 		for( auto ComponentA : Components )
 		{
@@ -87,7 +87,7 @@ public:
 	}
 
 private:
-	std::vector<CPhysicsComponent*> Components;
+	std::vector<CBody*> Components;
 };
 
 CPhysics::CPhysics()
@@ -117,17 +117,17 @@ void CPhysics::Destroy()
 	Scene->Destroy();
 }
 
-void CPhysics::Register( CPhysicsComponent* Component )
+void CPhysics::Register( CBody* Component )
 {
 	Scene->Register( Component );
 }
 
-void CPhysics::Unregister( CPhysicsComponent* Component )
+void CPhysics::Unregister( CBody* Component )
 {
 	Scene->Unregister( Component );
 }
 
-CPhysicsComponent* CPhysics::Cast( const Vector3D& Start, const Vector3D& End )
+CBody* CPhysics::Cast( const Vector3D& Start, const Vector3D& End )
 {
 	return Scene->Cast( Start, End );
 }

@@ -91,7 +91,7 @@ void CMeshEntity::Construct()
 			{
 				if( !PhysicsComponent )
 				{
-					PhysicsComponent = new CPhysicsComponent( this, Mesh->GetBounds(), Static, Stationary );
+					PhysicsComponent = new CBody( this, Mesh->GetBounds(), Static, Stationary );
 					PhysicsComponent->Construct( Physics );
 				}
 			}

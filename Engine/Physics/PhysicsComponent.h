@@ -28,15 +28,15 @@ struct TriangleTree
 	std::vector<Vector3D> Vertices;
 };
 
-class CPhysicsComponent
+class CBody
 {
 public:
-	CPhysicsComponent( CMeshEntity* Owner, const FBounds& LocalBounds, const bool Static, const bool Stationary );
-	~CPhysicsComponent();
+	CBody( CMeshEntity* Owner, const FBounds& LocalBounds, const bool Static, const bool Stationary );
+	~CBody();
 
 	void Construct( class CPhysics* Physics );
 	void PreCollision();
-	virtual void Collision( CPhysicsComponent* Component );
+	virtual void Collision( CBody* Body );
 	void Tick();
 	void Destroy( class CPhysics* Physics );
 
@@ -67,25 +67,25 @@ public:
 };
 
 template<typename TriggerType>
-class CTriggerComponent : public CPhysicsComponent
+class CTriggerBody : public CBody
 {
 public:
-	CTriggerComponent( CMeshEntity* Owner, const FBounds& Bounds ) : CPhysicsComponent( Owner, Bounds, false, true )
+	CTriggerBody( CMeshEntity* Owner, const FBounds& Bounds ) : CBody( Owner, Bounds, false, true )
 	{
 		Block = false;
 	}
 
-	~CTriggerComponent()
+	~CTriggerBody()
 	{
 
 	};
 
-	virtual void Collision( CPhysicsComponent* Component ) override
+	virtual void Collision( CBody* Body ) override
 	{
-		auto Collider = dynamic_cast<TriggerType*>( Component->Owner );
+		auto Collider = dynamic_cast<TriggerType*>( Body->Owner );
 		if( Collider )
 		{
-			CPhysicsComponent::Collision( Component );
+			CBody::Collision( Body );
 			if( Contacts > 0 )
 			{
 				Entity = Collider;
