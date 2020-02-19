@@ -3,44 +3,69 @@
 
 #include <Engine/Utility/DataString.h>
 
+Property::Property()
+{
+	Type = PropertyType::Unknown;
+}
+
 Property::Property( const std::string& Value )
 {
 	String = Value;
+	Type = PropertyType::String;
+}
+
+Property::Property( const uint64_t& Value )
+{
+	Unsigned64 = Value;
+	Type = PropertyType::U64;
 }
 
 Property::Property( const uint32_t& Value )
 {
 	Unsigned32 = Value;
+	Type = PropertyType::U32;
 }
 
 Property::Property( const uint16_t& Value )
 {
 	Unsigned16 = Value;
+	Type = PropertyType::U16;
 }
 
 Property::Property( const uint8_t& Value )
 {
 	Unsigned8 = Value;
+	Type = PropertyType::U8;
+}
+
+Property::Property( const int64_t& Value )
+{
+	Signed64 = Value;
+	Type = PropertyType::I64;
 }
 
 Property::Property( const int32_t& Value )
 {
 	Signed32 = Value;
+	Type = PropertyType::I32;
 }
 
 Property::Property( const int16_t& Value )
 {
 	Signed16 = Value;
+	Type = PropertyType::I16;
 }
 
 Property::Property( const int8_t& Value )
 {
 	Signed8 = Value;
+	Type = PropertyType::I8;
 }
 
 Property::Property( const bool& Value )
 {
 	Boolean = Value;
+	Type = PropertyType::Boolean;
 }
 
 const static std::string Empty = "";
@@ -52,6 +77,17 @@ const std::string& Property::GetString() const
 	}
 
 	return Empty;
+}
+
+const static uint64_t EmptyU64 = 0;
+const uint64_t& Property::GetU64() const
+{
+	if( Type == PropertyType::U64 )
+	{
+		return Unsigned64;
+	}
+
+	return EmptyU64;
 }
 
 const static uint32_t EmptyU32 = 0;
@@ -85,6 +121,17 @@ const uint8_t& Property::GetU8() const
 	}
 
 	return EmptyU8;
+}
+
+const static int64_t EmptyI64 = 0;
+const int64_t& Property::GetI64() const
+{
+	if( Type == PropertyType::I64 )
+	{
+		return Signed64;
+	}
+
+	return EmptyI64;
 }
 
 const static int32_t EmptyI32 = 0;
@@ -138,6 +185,10 @@ CData& operator<<( CData& Data, Property& Value )
 	{
 		DataString::Encode( Data, Value.String );
 	}
+	else if( Value.Type == PropertyType::U64 )
+	{
+		Data << Value.Unsigned64;
+	}
 	else if( Value.Type == PropertyType::U32 )
 	{
 		Data << Value.Unsigned32;
@@ -149,6 +200,10 @@ CData& operator<<( CData& Data, Property& Value )
 	else if( Value.Type == PropertyType::U8 )
 	{
 		Data << Value.Unsigned8;
+	}
+	else if( Value.Type == PropertyType::I64 )
+	{
+		Data << Value.Signed64;
 	}
 	else if( Value.Type == PropertyType::I32 )
 	{
@@ -177,6 +232,10 @@ CData& operator>>( CData& Data, Property& Value )
 	{
 		DataString::Decode( Data, Value.String );
 	}
+	else if( Value.Type == PropertyType::U64 )
+	{
+		Data >> Value.Unsigned32;
+	}
 	else if( Value.Type == PropertyType::U32 )
 	{
 		Data >> Value.Unsigned32;
@@ -188,6 +247,10 @@ CData& operator>>( CData& Data, Property& Value )
 	else if( Value.Type == PropertyType::U8 )
 	{
 		Data >> Value.Unsigned8;
+	}
+	else if( Value.Type == PropertyType::I64 )
+	{
+		Data >> Value.Signed32;
 	}
 	else if( Value.Type == PropertyType::I32 )
 	{

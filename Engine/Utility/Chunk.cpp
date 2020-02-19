@@ -3,8 +3,9 @@
 
 #include "Chunk.h"
 
-#include <Engine/Utility/DataString.h>
 #include <Engine/Profiling/Logging.h>
+#include <Engine/Utility/DataString.h>
+#include <Engine/Utility/Property.h>
 
 Chunk::Chunk( const char( &Name )[6] )
 {
@@ -14,7 +15,7 @@ Chunk::Chunk( const char( &Name )[6] )
 CData& operator<<( CData& Data, Chunk& Value )
 {
 	DataString::Encode( Data, Value.Identifier );
-	size_t Size = Value.Data.Size();
+	Property Size( static_cast<uint32_t>( Value.Data.Size() ) );
 	Data << Size;
 	Data << Value.Data;
 
@@ -27,11 +28,11 @@ CData& operator>>( CData& Data, Chunk& Value )
 	DataString::Decode( Data, String );
 	if( Value.Identifier == String )
 	{
-		size_t Size;
+		Property Size;
 		Data >> Size;
 		Data >> Value.Data;
 
-		if( Value.Data.Size() != Size )
+		if( Value.Data.Size() != Size.GetU32() )
 		{
 			Log::Event( Log::Error, "Chunk size doesn't match! \"%i\" vs \"%i\"\n", Value.Data.Size(), Size );
 			Value.Data = CData();

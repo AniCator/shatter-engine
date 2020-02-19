@@ -16,7 +16,7 @@ public:
 	void operator<<( T& Object )
 	{
 		static_assert( !std::is_pointer<T>::value, "Pointers can not be serialized." );
-		const size_t Size = sizeof( T );
+		const uint32_t Size = sizeof( T );
 		Data.write( reinterpret_cast<const char*>( &Object ), Size );
 
 		if( !Data.good() )
@@ -27,8 +27,14 @@ public:
 
 	void operator<<( const char* Object )
 	{
-		const size_t Size = strlen( Object ) * sizeof( char );
+		const uint32_t Size = strlen( Object ) * sizeof( char );
 		Data.write( Object, Size + 1 );
+
+		static const uint32_t MaximumSize = 1073741824;
+		if( Size > MaximumSize )
+		{
+			Log::Event( Log::Warning, "Stored object is rather large.\n" );
+		}
 
 		if( !Data.good() )
 		{
@@ -38,8 +44,14 @@ public:
 
 	void operator<<( CData& Object )
 	{
-		const size_t Size = Object.Size();
-		Data.write( reinterpret_cast<const char*>( &Size ), sizeof( size_t ) );
+		const uint32_t Size = Object.Size();
+		Data.write( reinterpret_cast<const char*>( &Size ), sizeof( uint32_t ) );
+
+		static const uint32_t MaximumSize = 1073741824;
+		if( Size > MaximumSize )
+		{
+			Log::Event( Log::Warning, "Stored object is rather large.\n" );
+		}
 
 		if( !Data.good() )
 		{
@@ -61,7 +73,7 @@ public:
 			return;
 
 		static_assert( !std::is_pointer<T>::value, "Pointers can not be deserialized." );
-		const size_t Size = sizeof( T );
+		const uint32_t Size = sizeof( T );
 		Data.read( reinterpret_cast<char*>( &Object ), Size );
 
 		if( !Data.good() )
@@ -92,8 +104,16 @@ public:
 		if( Invalid )
 			return;
 
-		size_t Size = 0;
-		Data.read( reinterpret_cast<char*>( &Size ), sizeof( size_t ) );
+		uint32_t Size = 0;
+		Data.read( reinterpret_cast<char*>( &Size ), sizeof( uint32_t ) );
+		// Data >> Size;
+
+		// Warn when the size is rather large.
+		static const uint32_t MaximumSize = 1073741824;
+		if( Size > MaximumSize )
+		{
+			Log::Event( Log::Warning, "Extracted object is rather large.\n" );
+		}
 
 		char* Stream = new char[Size];
 		Data.read( Stream, Size );
