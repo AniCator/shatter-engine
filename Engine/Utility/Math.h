@@ -361,6 +361,7 @@ public:
 		TransformationMatrix = IdentityMatrix;
 		RotationMatrix = IdentityMatrix;
 		ScaleMatrix = IdentityMatrix;
+		TransformationMatrixInverse = IdentityMatrix;
 		StoredPosition = Vector3D( 0.0f, 0.0f, 0.0f );
 		StoredOrientation = Vector3D( 0.0f, 0.0f, 0.0f );
 		StoredSize = Vector3D( 1.0f, 1.0f, 1.0f );
@@ -416,6 +417,12 @@ public:
 	{
 		Update();
 		return TransformationMatrix;
+	}
+
+	glm::mat4& GetTransformationMatrixInverse()
+	{
+		Update();
+		return TransformationMatrixInverse;
 	}
 
 	const Vector3D& GetPosition() const
@@ -519,12 +526,14 @@ private:
 			TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
 
 			TransformationMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
+			TransformationMatrixInverse = glm::inverse( TransformationMatrix );
 		}
 	}
 
 	glm::mat4 TranslationMatrix;
 	glm::mat4 RotationMatrix;
 	glm::mat4 TransformationMatrix;
+	glm::mat4 TransformationMatrixInverse;
 	glm::mat4 ScaleMatrix;
 
 	Vector3D StoredPosition;
