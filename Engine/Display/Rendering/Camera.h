@@ -32,6 +32,8 @@ struct FCameraSetup
 	Vector3D CameraDirection;
 	Vector3D CameraRightVector;
 	Vector3D CameraUpVector;
+
+	static FCameraSetup Mix( const FCameraSetup& A, const FCameraSetup& B, const float& Alpha );
 };
 
 class CCamera
@@ -41,6 +43,7 @@ public:
 	~CCamera();
 
 	void Update();
+	void DrawFrustum();
 
 	void SetFieldOfView( const float& FieldOfView );
 	void SetOrthographicScale( const float& OrthographicScale );

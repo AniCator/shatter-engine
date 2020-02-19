@@ -3,6 +3,7 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Utility/Data.h>
 
 CData& operator<<( CData& Data, CCamera& Camera )
@@ -15,6 +16,11 @@ CData& operator>>( CData& Data, CCamera& Camera )
 {
 	Data >> Camera.GetCameraSetup();
 	return Data;
+}
+
+FCameraSetup FCameraSetup::Mix( const FCameraSetup& A, const FCameraSetup& B, const float& Alpha )
+{
+	return A;
 }
 
 CCamera::CCamera()
@@ -51,6 +57,68 @@ void CCamera::Update()
 	);
 
 	ProjectionViewInverseMatrix = glm::inverse( ProjectionMatrix * ViewMatrix );
+}
+
+void CCamera::DrawFrustum()
+{
+	Vector2D NearOffset;
+	Vector2D FarOffset;
+
+	float Scale;
+	if( !CameraSetup.Orthographic )
+	{
+		Scale = tan( glm::radians( CameraSetup.FieldOfView ) * 0.5f );
+
+		NearOffset.Y = Scale * CameraSetup.NearPlaneDistance;
+		NearOffset.X = NearOffset.Y * CameraSetup.AspectRatio;
+
+		FarOffset.Y = Scale * CameraSetup.FarPlaneDistance;
+		FarOffset.X = FarOffset.Y * CameraSetup.AspectRatio;
+	}
+	else
+	{
+		Scale = CameraSetup.OrthographicScale * 0.5f;
+
+		NearOffset.Y = Scale * CameraSetup.NearPlaneDistance;
+		NearOffset.X = NearOffset.Y;
+
+		FarOffset.Y = Scale * CameraSetup.FarPlaneDistance;
+		FarOffset.X = FarOffset.Y;
+	}
+
+	Vector3D NearCenter = CameraSetup.CameraPosition + CameraSetup.CameraDirection * CameraSetup.NearPlaneDistance;
+	Vector3D FarCenter = CameraSetup.CameraPosition + CameraSetup.CameraDirection * CameraSetup.FarPlaneDistance;
+
+	Vector3D CornerTopRightNear = NearCenter + CameraSetup.CameraUpVector * NearOffset.Y - CameraSetup.CameraRightVector * NearOffset.X;
+	Vector3D CornerTopRightFar = FarCenter + CameraSetup.CameraUpVector * FarOffset.Y - CameraSetup.CameraRightVector * FarOffset.X;
+	UI::AddLine( CornerTopRightNear, CornerTopRightFar, Color::Red );
+
+	Vector3D CornerBottomLeftNear = NearCenter - CameraSetup.CameraUpVector * NearOffset.Y + CameraSetup.CameraRightVector * NearOffset.X;
+	Vector3D CornerBottomLeftFar = FarCenter - CameraSetup.CameraUpVector * FarOffset.Y + CameraSetup.CameraRightVector * FarOffset.X;
+	UI::AddLine( CornerBottomLeftNear, CornerBottomLeftFar, Color::Green );
+
+	Vector3D CornerTopLeftNear = NearCenter + CameraSetup.CameraUpVector * NearOffset.Y + CameraSetup.CameraRightVector * NearOffset.X;
+	Vector3D CornerTopLeftFar = FarCenter + CameraSetup.CameraUpVector * FarOffset.Y + CameraSetup.CameraRightVector * FarOffset.X;
+	UI::AddLine( CornerTopLeftNear, CornerTopLeftFar, Color::Blue );
+
+	Vector3D CornerBottomRightNear = NearCenter - CameraSetup.CameraUpVector * NearOffset.Y - CameraSetup.CameraRightVector * NearOffset.X;
+	Vector3D CornerBottomRightFar = FarCenter - CameraSetup.CameraUpVector * FarOffset.Y - CameraSetup.CameraRightVector * FarOffset.X;
+	UI::AddLine( CornerBottomRightNear, CornerBottomRightFar, Color( 255, 255, 0 ) );
+
+	const Color FrustumBorderColor = Color( 128, 128, 128 );
+	UI::AddLine( CornerTopLeftNear, CornerTopRightNear, FrustumBorderColor );
+	UI::AddLine( CornerBottomLeftNear, CornerBottomRightNear, FrustumBorderColor );
+
+	UI::AddLine( CornerTopLeftNear, CornerBottomLeftNear, FrustumBorderColor );
+	UI::AddLine( CornerTopRightNear, CornerBottomRightNear, FrustumBorderColor );
+
+	UI::AddLine( CornerTopLeftFar, CornerTopRightFar, FrustumBorderColor );
+	UI::AddLine( CornerBottomLeftFar, CornerBottomRightFar, FrustumBorderColor );
+
+	UI::AddLine( CornerTopLeftFar, CornerBottomLeftFar, FrustumBorderColor );
+	UI::AddLine( CornerTopRightFar, CornerBottomRightFar, FrustumBorderColor );
+
+	UI::AddLine( CameraSetup.CameraPosition, CameraSetup.CameraPosition + CameraSetup.CameraDirection * CameraSetup.NearPlaneDistance, Color::White );
 }
 
 void CCamera::SetFieldOfView( const float& FieldOfView )
