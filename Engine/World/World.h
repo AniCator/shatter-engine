@@ -36,6 +36,7 @@ public:
 
 	CLevel& Add();
 	std::deque<CLevel>& GetLevels() { return Levels; };
+	CLevel* GetActiveLevel() { return ActiveLevel; };
 
 	CEntity* Find( const std::string& Name ) const
 	{

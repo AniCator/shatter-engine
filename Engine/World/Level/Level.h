@@ -105,10 +105,17 @@ public:
 	}
 	FTransform Transform;
 
+	bool IsTemporary() const
+	{
+		return Temporary;
+	}
+
 private:
 	std::vector<CEntity*> Entities;
 	CWorld* World;
 	std::string Name;
+
+	bool Temporary;
 
 public:
 	friend CData& operator<<( CData& Data, CLevel& Level );

@@ -227,6 +227,11 @@ CData& operator>>( CData& Data, CWorld* World )
 				Entity->SetLevel( &Level );
 			}
 		}
+
+		if( World->ActiveLevel->IsTemporary() )
+		{
+			World->ActiveLevel->Reload();
+		}
 	}
 	else
 	{

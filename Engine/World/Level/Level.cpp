@@ -8,12 +8,14 @@
 #include <Engine/World/World.h>
 #include <Engine/Utility/Chunk.h>
 #include <Engine/Utility/Structures/JSON.h>
+#include <Engine/Utility/Math.h>
 
-static const size_t LevelVersion = 1;
+static const uint32_t LevelVersion = 1;
 
 CLevel::CLevel()
 {
 	World = nullptr;
+	Temporary = false;
 }
 
 CLevel::CLevel( CWorld* NewWorld )
@@ -120,6 +122,11 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 		{
 			if( Object )
 			{
+				if( Object->Key == "save" && Object->Value == "0" )
+				{
+					Temporary = true;
+				}
+
 				if( Pass == 0 )
 				{
 					if( Object->Key == "assets" )
@@ -558,6 +565,23 @@ CData& operator<<( CData& Data, CLevel& Level )
 	Chunk.Data << Level.Transform;
 
 	DataString::Encode( Chunk.Data, Level.Name );
+
+	uint8_t Temporary = 0;
+	if( Level.Temporary )
+	{
+		Temporary = 1;
+		Chunk.Data << Temporary;
+		Chunk.Data << "NullLevel";
+		Data << Chunk;
+
+		return Data;
+	}
+	else
+	{
+		Temporary = 0;
+		Chunk.Data << Temporary;
+	}
+
 	DataVector::Encode( Chunk.Data, Level.Entities );
 
 	Data << Chunk;
@@ -570,7 +594,7 @@ CData& operator>> ( CData& Data, CLevel& Level )
 	Chunk Chunk( "LEVEL" );
 	Data >> Chunk;
 
-	size_t Version;
+	uint32_t Version;
 	Chunk.Data >> Version;
 
 	if( Version >= LevelVersion )
@@ -579,8 +603,19 @@ CData& operator>> ( CData& Data, CLevel& Level )
 
 		DataString::Decode( Chunk.Data, Level.Name );
 
-		size_t Count;
+		uint8_t Temporary = 0;
+		Chunk.Data >> Temporary;
+
+		if( Temporary == 1 )
+		{
+			Level.Temporary = true;
+			return Data;
+		}
+
+		uint32_t Count;
 		Chunk.Data >> Count;
+
+		Count = Math::Min( uint32_t( 32768 ), Count );
 
 		Level.Entities.reserve( Count );
 
