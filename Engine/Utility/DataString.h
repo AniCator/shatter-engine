@@ -28,7 +28,7 @@ struct DataString
 		}
 	}
 
-	size_t Size;
+	uint32_t Size;
 	char* Address;
 
 	friend CData& operator<<( CData& Data, DataString& String )
@@ -77,10 +77,10 @@ struct DataVector
 	template<typename T>
 	static void Encode( CData& Data, std::vector<T>& Vector )
 	{
-		const size_t Count = Vector.size();
+		const uint32_t Count = Vector.size();
 		Data << Count;
 
-		for( size_t Index = 0; Index < Count; Index++ )
+		for( uint32_t Index = 0; Index < Count; Index++ )
 		{
 			Data << Vector[Index];
 		}
@@ -89,11 +89,11 @@ struct DataVector
 	template<typename T>
 	static void Decode( CData& Data, std::vector<T>& Vector )
 	{
-		size_t ItemCount;
+		uint32_t ItemCount;
 		Data >> ItemCount;
 
 		Vector.reserve( ItemCount );
-		for( size_t Index = 0; Index < ItemCount; Index++ )
+		for( uint32_t Index = 0; Index < ItemCount; Index++ )
 		{
 			typedef std::remove_pointer<T>::type U;
 			U Item = U();
