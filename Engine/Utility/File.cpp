@@ -15,6 +15,7 @@ CFile::CFile( const char* FileLocationIn )
 	const size_t ExtensionIndex = FileExtension.rfind( '.' );
 	if( ExtensionIndex != std::string::npos )
 	{
+		FileLocationStripped = FileExtension.substr( 0, ExtensionIndex );
 		FileExtension = FileExtension.substr( ExtensionIndex + 1 );
 		std::transform( FileExtension.begin(), FileExtension.end(), FileExtension.begin(), ::tolower );
 	}

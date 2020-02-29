@@ -23,9 +23,14 @@ public:
 	bool Exists() const;
 	static bool Exists( const char* FileLocation );
 
-	const std::string& Location() const
+	const std::string& Location(const bool IncludeExtension = true) const
 	{
-		return FileLocation;
+		if( IncludeExtension )
+		{
+			return FileLocation;
+		}
+
+		return FileLocationStripped;
 	}
 
 	const std::string& Extension() const
@@ -81,6 +86,7 @@ private:
 	size_t FileSize;
 	std::string FileLocation;
 	std::string FileExtension;
+	std::string FileLocationStripped;
 	bool Binary;
 
 	struct stat Statistics;
