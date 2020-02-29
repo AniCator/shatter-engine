@@ -680,7 +680,7 @@ namespace UI
 			static CLinePass LinePass( Window.GetWidth(), Window.GetHeight(), *ActiveCamera );
 			LinePass.SetCamera( *ActiveCamera );
 
-			Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Scene );
+			Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Standard );
 		}
 
 		for( const auto& Circle : Circles )
