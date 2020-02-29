@@ -282,9 +282,6 @@ void CMesh::GenerateAABB()
 			AABB.Maximum[2] = Vertex.Position[2];
 		}
 	}
-
-	Log::Event( "AABB Minimum: %.2f %.2f %.2f\n", AABB.Minimum.X, AABB.Minimum.Y, AABB.Minimum.Z );
-	Log::Event( "AABB Maximum: %.2f %.2f %.2f\n", AABB.Maximum.X, AABB.Maximum.Y, AABB.Maximum.Z );
 }
 
 void CMesh::GenerateNormals()
