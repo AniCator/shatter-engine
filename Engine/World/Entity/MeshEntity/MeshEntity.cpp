@@ -247,6 +247,17 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 				Static = true;
 			}
 		}
+		else if( Property->Key == "stationary" )
+		{
+			if( Property->Value == "0" )
+			{
+				Stationary = false;
+			}
+			else
+			{
+				Stationary = true;
+			}
+		}
 	}
 
 	if( TextureNames.size() == 0 )
