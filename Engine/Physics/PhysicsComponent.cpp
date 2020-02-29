@@ -12,11 +12,10 @@
 
 static const auto Gravity = Vector3D( 0.0f, 0.0f, 9.81f );
 
-#define DrawDebugLines 0
+#define DrawDebugLines 1
+#define DrawCollisionResponseAABBAABB 1
 
-#if DrawDebugLines == 1
 size_t TextPosition = 0;
-#endif
 
 void VisualizeBounds( TriangleTree* Tree, FTransform* Transform = nullptr, Color BoundsColor = Color::Blue );
 
@@ -53,46 +52,38 @@ CollisionResponse CollisionResponseAABBAABB( const FBounds& A, const FBounds& B 
 	const Vector3D& CenterA = ( A.Maximum + A.Minimum ) * 0.5f;
 	const Vector3D& CenterB = ( B.Maximum + B.Minimum ) * 0.5f;
 
-	const Vector3D HalfWidthA = ( MaximumA - MinimumA ) * 0.5f;
-	const Vector3D HalfWidthB = ( MaximumB - MinimumB ) * 0.5f;
+	const Vector3D SizeA = ( MaximumA - MinimumA );
+	const Vector3D SizeB = ( MaximumB - MinimumB );
 
-	Vector3D AxisDistance = ( CenterA - CenterB );
-	Vector3D Radius = AxisDistance;
-	Radius.X = fabs( Radius.X );
-	Radius.Y = fabs( Radius.Y );
-	Radius.Z = fabs( Radius.Z );
-	Radius = Radius - ( HalfWidthA + HalfWidthB );
+	const Vector3D HalfSizeA = SizeA * 0.5f;
+	const Vector3D HalfSizeB = SizeB * 0.5f;
 
-	Vector3D LocalNormal;
-	LocalNormal.X = fabs( Radius.X );
-	LocalNormal.Y = fabs( Radius.Y );
-	LocalNormal.Z = fabs( Radius.Z );
-
-	AxisDistance = -AxisDistance;
-
-	if( LocalNormal.X < LocalNormal.Y && LocalNormal.X < LocalNormal.Z )
+	const Vector3D CenterDistance = ( CenterA - CenterB );
+	const Vector3D CenterDistanceSquared = CenterDistance * CenterDistance;
+	if( CenterDistanceSquared.Z > CenterDistanceSquared.Y && CenterDistanceSquared.Z > CenterDistanceSquared.X)
 	{
-		Response.Distance = LocalNormal.X;
-		Response.Normal.X = sign( AxisDistance.X );
-		Response.Normal.Y = 0.0f;
-		Response.Normal.Z = 0.0f;
-	}
-	else if( LocalNormal.Y < LocalNormal.X && LocalNormal.Y < LocalNormal.Z )
-	{
-		Response.Distance = LocalNormal.Y;
+		Response.Distance = fabs( CenterDistance.Z ) - ( HalfSizeA.Z + HalfSizeB.Z);
 		Response.Normal.X = 0.0f;
-		Response.Normal.Y = sign( AxisDistance.Y );
+		Response.Normal.Y = 0.0f;
+		Response.Normal.Z = sign( -CenterDistance.Z );
+	}
+	else if( CenterDistanceSquared.Y > CenterDistanceSquared.X )
+	{
+		Response.Distance = fabs( CenterDistance.Y ) - ( HalfSizeA.Y + HalfSizeB.Y );
+		Response.Normal.X = 0.0f;
+		Response.Normal.Y = sign( -CenterDistance.Y );
 		Response.Normal.Z = 0.0f;
 	}
 	else
 	{
-		Response.Distance = LocalNormal.Z;
-		Response.Normal.X = 0.0f;
+		Response.Distance = fabs( CenterDistance.X ) - ( HalfSizeA.X + HalfSizeB.X );
+		Response.Normal.X = sign( -CenterDistance.X );
 		Response.Normal.Y = 0.0f;
-		Response.Normal.Z = sign( AxisDistance.Z );
+		Response.Normal.Z = 0.0f;
 	}
 
-#if DrawDebugLines == 1
+
+#if DrawCollisionResponseAABBAABB == 1
 	UI::AddAABB( MinimumB, MaximumB, Color( 0, 127, 255 ) );
 
 	bool IsInFront = false;
@@ -103,17 +94,7 @@ CollisionResponse CollisionResponseAABBAABB( const FBounds& A, const FBounds& B 
 
 		ScreenPosition.Y += TextPosition * 15.0f;
 		char VectorString[64];
-		sprintf_s( VectorString, "N %.2f %.2f %.2f", Response.Normal.X, Response.Normal.Y, Response.Normal.Z );
-		UI::AddText( ScreenPosition, VectorString );
-
-		TextPosition++;
-		ScreenPosition.Y += 15.0f;
-		sprintf_s( VectorString, "d %.2f %.2f %.2f", AxisDistance.X, AxisDistance.Y, AxisDistance.Z );
-		UI::AddText( ScreenPosition, VectorString );
-
-		TextPosition++;
-		ScreenPosition.Y += 15.0f;
-		sprintf_s( VectorString, "r %.2f %.2f %.2f", Radius.X, Radius.Y, Radius.Z );
+		sprintf_s( VectorString, "c %.2f %.2f %.2f", CenterDistance.X, CenterDistance.Y, CenterDistance.Z );
 		UI::AddText( ScreenPosition, VectorString );
 
 		TextPosition++;
@@ -234,9 +215,10 @@ CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex
 		return Response;
 	}
 
-	Response.Normal = -FaceA.Cross( FaceB );
-	Response.Normal = Response.Normal.Normalized();
-	Response.Distance = Response.Normal.Dot( VertexA );
+	// Response.Normal = FaceB.Cross( FaceA );
+	auto SummedNormal = A.Normal + B.Normal + C.Normal;
+	Response.Normal = -SummedNormal.Normalized();
+	Response.Distance = Response.Normal.Dot( A.Normal );
 
 	const float Radius = Extent.X * fabs( Response.Normal.X ) + Extent.Y * fabs( Response.Normal.Y ) + Extent.Z * fabs( Response.Normal.Z );
 	if( Response.Distance > Radius )
@@ -256,11 +238,17 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 
 	FBounds LocalBounds = WorldBounds;
 	auto& Matrix = BodyTransform.GetTransformationMatrixInverse();
-	LocalBounds.Maximum = Math::FromGLM( glm::vec3( Matrix * glm::vec4( Math::ToGLM( LocalBounds.Maximum ), 1.0f ) ) );
-	LocalBounds.Minimum = Math::FromGLM( glm::vec3( Matrix * glm::vec4( Math::ToGLM( LocalBounds.Minimum ), 1.0f ) ) );
+	LocalBounds.Maximum = Matrix.Transform( LocalBounds.Maximum );
+	LocalBounds.Minimum = Matrix.Transform( LocalBounds.Minimum );
 
 	const Vector3D Center = ( LocalBounds.Maximum + LocalBounds.Minimum ) * 0.5f;
 	const Vector3D Extent = ( LocalBounds.Maximum - LocalBounds.Minimum ) * 0.5f;
+
+#if DrawDebugLines == 1
+	auto Position = BodyTransform.GetPosition();
+	// UI::AddAABB( Position + LocalBounds.Minimum, Position + LocalBounds.Maximum, Color::Green );
+	// UI::AddAABB( Position + Tree->Bounds.Minimum, Position + Tree->Bounds.Maximum, Color::Blue );
+#endif
 
 	if( Math::BoundingBoxIntersection( LocalBounds.Minimum, LocalBounds.Maximum, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
 	{
@@ -272,9 +260,9 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 
 			for( unsigned int Index = 0; Index < Tree->Vertices.size(); )
 			{
-				const Vector3D& VertexA = Tree->Vertices[Index];
-				const Vector3D& VertexB = Tree->Vertices[Index + 1];
-				const Vector3D& VertexC = Tree->Vertices[Index + 2];
+				const FVertex& VertexA = Tree->Vertices[Index];
+				const FVertex& VertexB = Tree->Vertices[Index + 1];
+				const FVertex& VertexC = Tree->Vertices[Index + 2];
 
 				CollisionResponse TriangleResponse = CollisionResponseTriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
 				if( fabs( TriangleResponse.Distance ) > fabs( Response.Distance ) )
@@ -283,12 +271,20 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 					Response.Distance = TriangleResponse.Distance;
 
 #if DrawDebugLines == 1
-					const Vector3D TriangleCenter = ( VertexA + VertexB + VertexC ) / 3.0f;
-					UI::AddLine( VertexA, VertexA - TriangleResponse.Normal * TriangleResponse.Distance, Color( 255, 0, 0 ) );
-					UI::AddLine( VertexB, VertexB - TriangleResponse.Normal * TriangleResponse.Distance, Color( 0, 255, 0 ) );
-					UI::AddLine( VertexC, VertexC - TriangleResponse.Normal * TriangleResponse.Distance, Color( 0, 0, 255 ) );
+					const Vector3D TriangleCenter = ( VertexA.Position + VertexB.Position + VertexC.Position ) / 3.0f;
+					UI::AddLine( BodyTransform.Transform(VertexA.Position), BodyTransform.Transform(VertexA.Position + TriangleResponse.Normal * TriangleResponse.Distance), Color( 255, 0, 0 ) );
+					UI::AddLine( BodyTransform.Transform(VertexB.Position), BodyTransform.Transform(VertexB.Position + TriangleResponse.Normal * TriangleResponse.Distance), Color( 0, 255, 0 ) );
+					UI::AddLine( BodyTransform.Transform(VertexC.Position), BodyTransform.Transform(VertexC.Position + TriangleResponse.Normal * TriangleResponse.Distance), Color( 0, 0, 255 ) );
 #endif
 				}
+#if DrawDebugLines == 1
+				else
+				{
+					UI::AddLine( BodyTransform.Transform( VertexA.Position ), BodyTransform.Transform( VertexA.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 0 ) );
+					UI::AddLine( BodyTransform.Transform( VertexB.Position ), BodyTransform.Transform( VertexB.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 0 ) );
+					UI::AddLine( BodyTransform.Transform( VertexC.Position ), BodyTransform.Transform( VertexC.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 0 ) );
+				}
+#endif
 
 				Index += 3;
 			}
@@ -308,6 +304,13 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 				Response.Normal = ResponseB.Normal;
 				Response.Distance = ResponseB.Distance;
 			}
+
+			Response = ResponseA;
+			Response.Normal += ResponseB.Normal;
+			Response.Distance += ResponseB.Distance;
+
+			Response.Normal *= 0.5f;
+			Response.Distance *= 0.5f;
 		}
 	}
 
@@ -331,6 +334,10 @@ CBody::CBody( CMeshEntity* OwnerIn, const FBounds& LocalBounds, const bool Stati
 
 CBody::~CBody()
 {
+	if( Tree )
+	{
+		delete Tree;
+	}
 }
 
 void CBody::Construct( CPhysics* Physics )
@@ -347,6 +354,7 @@ void CBody::Construct( CPhysics* Physics )
 void CBody::PreCollision()
 {
 	Normal = Vector3D( 0.0f, 0.0f, 0.0f );
+	Contacts = 0;
 }
 
 void CBody::Collision( CBody* Body )
@@ -358,12 +366,16 @@ void CBody::Collision( CBody* Body )
 
 	CollisionResponse Response;
 
+	bool DebugUsingTree = false;
 	// Dynamic interaction with static geometry.
 	if( !Static && Body->Static )
 	{
 		if( Body->Owner && Body->Tree )
 		{
 			Response = CollisionResponseTreeAABB( Body->Tree, WorldBounds, Body->PreviousTransform );
+			// Response.Distance = Response.Distance;
+			DebugUsingTree = true;
+
 		}
 		else
 		{
@@ -376,7 +388,7 @@ void CBody::Collision( CBody* Body )
 	}
 	
 	const Vector3D RelativeVelocity = Body->Velocity - Velocity;
-	float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) - Response.Distance * InverseMass;
+	float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass;
 
 	if( VelocityAlongNormal < 0.0f )
 	{
@@ -387,25 +399,56 @@ void CBody::Collision( CBody* Body )
 		Vector3D Impulse = Response.Normal * Scale;
 
 		Normal += Response.Normal;
+		Depenetration = DeltaVelocity * Response.Normal * Response.Distance;
 
 		Velocity -= InverseMass * Impulse;
 		Body->Velocity += Body->InverseMass * Impulse;
+
+		if( Depenetration.X > 0.001f || Depenetration.Y > 0.001f || Depenetration.Z > 0.001f )
+		{
+			Transform.SetPosition( Transform.GetPosition() + Depenetration );
+			Owner->SetTransform( Transform );
+			Collision( Body );
+		}
 
 #if DrawDebugLines == 1
 		auto Position = Transform.GetPosition();
 		const auto ImpulseEnd = Position + Impulse + ( InverseMass * Impulse * Mass );
 		UI::AddLine( Position, ImpulseEnd, Color( 255, 0, 0 ) );
-		UI::AddCircle( ImpulseEnd, 5.0f, Color( 255, 0, 0 ) );
+		UI::AddCircle( ImpulseEnd, 5.0f, Color( 255, 0, DebugUsingTree ? 255 : 0 ) );
 		UI::AddText( ImpulseEnd, std::to_string( VelocityAlongNormal ).c_str() );
 #endif
 	}
 
 	if( !Static && !Stationary )
 	{
-		// UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, Color::Blue );
-
 		Vector3D ProjectionPosition = Response.Normal * Response.Distance;
-		// UI::AddLine( Transform.GetPosition(), Transform.GetPosition() - Depenetration, Color( 0, 0, 255 ) );
+
+#if DrawCollisionResponseAABBAABB == 1
+		UI::AddAABB( WorldBounds.Minimum + ProjectionPosition, WorldBounds.Maximum + ProjectionPosition, Color( 255, 0, 127 ) );
+
+		const Vector3D& CenterA = ( WorldBounds.Maximum + WorldBounds.Minimum ) * 0.5f;
+		bool IsInFront = false;
+		auto ScreenPosition = UI::WorldToScreenPosition( CenterA, &IsInFront );
+		if( IsInFront )
+		{
+			ScreenPosition.X += 10.0f;
+
+			ScreenPosition.Y += TextPosition * 15.0f;
+			char VectorString[64];
+			sprintf_s( VectorString, "rN %.2f %.2f %.2f (rD %.2f)", Response.Normal.X, Response.Normal.Y, Response.Normal.Z, Response.Distance );
+			UI::AddText( ScreenPosition, VectorString );
+
+			TextPosition++;
+		}
+#endif
+
+#if DrawDebugLines == 1
+		if( Contacts > 0 )
+		{
+			UI::AddLine( WorldBounds.Minimum, Body->WorldBounds.Minimum, Color::White );
+		}
+#endif
 	}
 
 #if DrawDebugLines == 1
@@ -428,50 +471,56 @@ void CBody::Collision( CBody* Body )
 	}
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
+
+	if( Body->Static )
+	{
+		BoundsColor = Color::White;
+		UI::AddAABB( Body->WorldBounds.Minimum, Body->WorldBounds.Maximum, BoundsColor );
+	}
 #endif
 }
 
-std::vector<Vector3D> GatherVertices( std::vector<Vector3D>& Vertices, const Vector3D& Median, const bool Direction, const size_t Axis )
+std::vector<FVertex> GatherVertices( std::vector<FVertex>& Vertices, const Vector3D& Median, const bool Direction, const size_t Axis )
 {
-	std::vector<Vector3D> GatheredVertices;
+	std::vector<FVertex> GatheredVertices;
 	GatheredVertices.reserve( Vertices.size() );
 
 	for( unsigned int Index = 0; Index < Vertices.size(); )
 	{
 		bool InsideBounds = false;
 
-		Vector3D TriangleCenter = Vertices[Index] + Vertices[Index + 1] + Vertices[Index + 2];
+		Vector3D TriangleCenter = Vertices[Index].Position + Vertices[Index + 1].Position + Vertices[Index + 2].Position;
 		TriangleCenter /= 3.0f;
 
 		for( unsigned int TriangleIndex = 0; TriangleIndex < 3; TriangleIndex++ )
 		{
-			Vector3D Vertex = Vertices[Index + TriangleIndex];
+			FVertex Vertex = Vertices[Index + TriangleIndex];
 			if( Direction )
 			{
-				if( Axis == 0 && Vertex.X >= Median.X )
+				if( Axis == 0 && Vertex.Position.X >= Median.X )
 				{
 					InsideBounds = true;
 				}
-				else if( Axis == 1 && Vertex.Y >= Median.Y )
+				else if( Axis == 1 && Vertex.Position.Y >= Median.Y )
 				{
 					InsideBounds = true;
 				}
-				else if( Axis == 2 && Vertex.Z >= Median.Z )
+				else if( Axis == 2 && Vertex.Position.Z >= Median.Z )
 				{
 					InsideBounds = true;
 				}
 			}
 			else
 			{
-				if( Axis == 0 && Vertex.X < Median.X )
+				if( Axis == 0 && Vertex.Position.X < Median.X )
 				{
 					InsideBounds = true;
 				}
-				else if( Axis == 1 && Vertex.Y < Median.Y )
+				else if( Axis == 1 && Vertex.Position.Y < Median.Y )
 				{
 					InsideBounds = true;
 				}
-				else if( Axis == 2 && Vertex.Z < Median.Z )
+				else if( Axis == 2 && Vertex.Position.Z < Median.Z )
 				{
 					InsideBounds = true;
 				}
@@ -508,14 +557,14 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const FBounds& Wor
 		Tree = new TriangleTree();
 	}
 
-	std::vector<Vector3D>& Vertices = Tree->Vertices;
+	std::vector<FVertex>& Vertices = Tree->Vertices;
 	if( Vertices.size() <= 25 )
 		return;
 
 	Vector3D LocalMedian = Vector3D( 0.0f, 0.0f, 0.0f );
 	for( size_t Index = 0; Index < Vertices.size(); Index++ )
 	{
-		LocalMedian += Vertices[Index];
+		LocalMedian += Vertices[Index].Position;
 	}
 
 	LocalMedian /= static_cast<float>( Vertices.size() );
@@ -621,7 +670,28 @@ void VisualizeBounds( TriangleTree* Tree, FTransform* Transform, Color BoundsCol
 
 				if( Transform )
 				{
-					UI::AddAABB( Transform->Transform( Tree->Bounds.Minimum ), Transform->Transform( Tree->Bounds.Maximum ), BoundsColor );
+					const auto& Minimum = Tree->Bounds.Minimum;
+					const auto& Maximum = Tree->Bounds.Maximum;
+
+					Vector3D Positions[8];
+					Positions[0] = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
+					Positions[1] = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
+					Positions[2] = Vector3D( Maximum.X, Minimum.Y, Minimum.Z );
+					Positions[3] = Vector3D( Minimum.X, Minimum.Y, Minimum.Z );
+
+					Positions[4] = Vector3D( Minimum.X, Maximum.Y, Maximum.Z );
+					Positions[5] = Vector3D( Maximum.X, Maximum.Y, Maximum.Z );
+					Positions[6] = Vector3D( Maximum.X, Minimum.Y, Maximum.Z );
+					Positions[7] = Vector3D( Minimum.X, Minimum.Y, Maximum.Z );
+
+					for( size_t PositionIndex = 0; PositionIndex < 8; PositionIndex++ )
+					{
+						Positions[PositionIndex] = Transform->Transform( Positions[PositionIndex] );
+					}
+
+					FBounds TransformedAABB = Math::AABB( Positions, 8 );
+
+					UI::AddAABB( TransformedAABB.Minimum, TransformedAABB.Maximum, BoundsColor );
 				}
 				else
 				{
@@ -631,13 +701,13 @@ void VisualizeBounds( TriangleTree* Tree, FTransform* Transform, Color BoundsCol
 
 				for( size_t Index = 0; Index < Tree->Vertices.size(); )
 				{
-					Vector3D VertexA = Tree->Vertices[Index];
-					Vector3D VertexB = Tree->Vertices[Index + 1];
-					Vector3D VertexC = Tree->Vertices[Index + 2];
+					FVertex VertexA = Tree->Vertices[Index];
+					FVertex VertexB = Tree->Vertices[Index + 1];
+					FVertex VertexC = Tree->Vertices[Index + 2];
 
 					if( Transform )
 					{
-						VertexA = Transform->Transform( VertexA );
+						VertexA.Position = Transform->Transform( VertexA.Position );
 					}
 
 					// UI::AddText( VertexA, std::to_string( Index ).c_str() );
@@ -652,7 +722,7 @@ void VisualizeBounds( TriangleTree* Tree, FTransform* Transform, Color BoundsCol
 	}
 }
 
-void VisualizeBVH( CMesh* Mesh, FTransform& Transform, const FBounds& WorldBounds, TriangleTree*& Tree )
+void CreateBVH( CMesh* Mesh, FTransform& Transform, const FBounds& WorldBounds, TriangleTree*& Tree )
 {
 	if( !Tree )
 	{
@@ -662,19 +732,19 @@ void VisualizeBVH( CMesh* Mesh, FTransform& Transform, const FBounds& WorldBound
 		const auto& IndexData = Mesh->GetIndexData();
 		const auto& VertexBufferData = Mesh->GetVertexBufferData();
 
-		std::vector<Vector3D>& Vertices = Tree->Vertices;
+		std::vector<FVertex>& Vertices = Tree->Vertices;
 		Vertices.reserve( VertexBufferData.IndexCount );
 
 		for( unsigned int Index = 0; Index < VertexBufferData.IndexCount; )
 		{
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index]].Position );
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 1].Position );
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 2].Position );
+			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index]] );
+			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 1] );
+			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 2] );
 
 			Index += 3;
 		}
 
-		BuildMedian( Tree, Transform, WorldBounds, 16 );
+		BuildMedian( Tree, Transform, Mesh->GetBounds(), 16 );
 	}
 
 	// VisualizeBounds( Tree );
@@ -682,15 +752,14 @@ void VisualizeBVH( CMesh* Mesh, FTransform& Transform, const FBounds& WorldBound
 
 void CBody::Tick()
 {
-#if DrawDebugLines == 1
-	TextPosition = 0;
-#endif
-
 	const bool Unmoving = Static || Stationary;
 	InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
 
 	auto Transform = Owner->GetTransform();
-	VisualizeBVH( Owner->Mesh, Transform, LocalBounds, Tree );
+	if( Owner->IsStationary() )
+	{
+		CreateBVH( Owner->Mesh, Transform, LocalBounds, Tree );
+	}
 
 	if( Static )
 		return;
@@ -746,17 +815,15 @@ void CBody::Tick()
 	{
 		Vector3D NormalForce = Velocity.Dot( Normal ) * Normal;
 		Velocity -= NormalForce;
+
+#if DrawDebugLines == 1
+		UI::AddLine( Position, Position + NormalForce * 100.0f, Color( 32, 255, 255 ) );
+#endif
 	}
 
 	if( !Stationary )
 	{
 		NewPosition += Velocity;
-
-		if( Contacts > 0 )
-		{
-			NewPosition += Depenetration;
-			Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
-		}
 
 		if( NewPosition.Z < -20.0f )
 		{
@@ -769,9 +836,16 @@ void CBody::Tick()
 			Normal = Vector3D( 0.0f, 0.0f, -1.0f );
 			Contact = true;
 		}
-	}
 
-	Velocity = NewPosition - PreviousTransform.GetPosition();
+		Velocity = NewPosition - PreviousTransform.GetPosition();
+
+		if( Contacts > 0 )
+		{
+			// NewPosition += Depenetration;
+
+			Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
+		}
+	}
 
 	// if( !Stationary && Contacts > 0 )
 	// {
@@ -786,8 +860,7 @@ void CBody::Tick()
 
 	PreviousTransform = Owner->GetTransform();
 	Acceleration = Vector3D( 0.0f, 0.0f, 0.0f );
-
-	Contacts = 0;
+	TextPosition = 0;
 }
 
 void CBody::Destroy( CPhysics* Physics )
@@ -817,10 +890,11 @@ void CBody::CalculateBounds()
 		Positions[PositionIndex] = Transform.Transform( Positions[PositionIndex] );
 	}
 
+
 	FBounds TransformedAABB = Math::AABB( Positions, 8 );
 	WorldBounds = TransformedAABB;
 
-	Mass = ( WorldBounds.Maximum - WorldBounds.Minimum ).Length() * 100.0f;
+	Mass = ( WorldBounds.Maximum - WorldBounds.Minimum ).Length() * 45.0f;
 }
 
 FBounds CBody::GetBounds() const
@@ -833,5 +907,8 @@ void CBody::Debug()
 	if( !Owner )
 		return;
 
-	VisualizeBounds( Tree, &PreviousTransform );
+	const static Color DebugColor = Color( 0, 255, 64 );
+	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, DebugColor );
+
+	// VisualizeBounds( Tree, &PreviousTransform );
 }

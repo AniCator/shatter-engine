@@ -3,6 +3,7 @@
 
 #include <vector>
 #include <Engine/Utility/Math.h>
+#include <Engine/Utility/Primitive.h>
 
 class CMeshEntity;
 
@@ -25,7 +26,7 @@ struct TriangleTree
 	TriangleTree* Upper;
 	TriangleTree* Lower;
 
-	std::vector<Vector3D> Vertices;
+	std::vector<FVertex> Vertices;
 };
 
 class CBody
