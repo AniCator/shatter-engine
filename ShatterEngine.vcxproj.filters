@@ -320,6 +320,9 @@
     <ClCompile Include="Engine\Utility\Chunk.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\Math\Matrix.cpp">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">

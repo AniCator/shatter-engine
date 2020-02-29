@@ -37,12 +37,13 @@ void CRenderPassShadow::Clear()
 void CRenderPassShadow::Draw( CRenderable* Renderable )
 {
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
-	if( !RenderData.ShouldRender || Renderable->GetShader()->GetBlendMode() != EBlendMode::Opaque )
+	auto Shader = Renderable->GetShader();
+	if( !RenderData.ShouldRender || ( Shader && Shader->GetBlendMode() != EBlendMode::Opaque ) )
 		return;
 
 	RenderData.ShaderProgram = ShadowShader->GetHandles().Program;
 
-	const glm::mat4 ModelMatrix = RenderData.Transform.GetTransformationMatrix();
+	const auto ModelMatrix = RenderData.Transform.GetTransformationMatrix();
 	GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
 	glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
 

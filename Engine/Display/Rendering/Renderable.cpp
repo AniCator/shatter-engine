@@ -100,7 +100,7 @@ void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRend
 			glUniform3fv( ObjectBoundsMaximumLocation, 1, AABB.Maximum.Base() );
 		}
 
-		const glm::mat4 ModelMatrix = RenderData.Transform.GetTransformationMatrix();
+		const auto ModelMatrix = RenderData.Transform.GetTransformationMatrix();
 		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
 		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
 

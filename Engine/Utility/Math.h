@@ -17,7 +17,7 @@
 #define Vector2DToInitializerList(Vector) { Vector[0],Vector[1] }
 #define Vector2DToGLM(Vector) glm::vec2( Vector[0],Vector[1] )
 
-const static glm::mat4 IdentityMatrix = glm::mat4( 1.0f );
+const static Matrix4D IdentityMatrix = Matrix4D();
 static const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
 static const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
 static const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };
@@ -341,6 +341,30 @@ namespace Math
 	{
 		return glm::vec2( Vector.X, Vector.Y );
 	}
+
+	inline Matrix4D FromGLM( const glm::mat4& Matrix )
+	{
+		Matrix4D Result;
+
+		Result[0] = { Matrix[0][0], Matrix[0][1], Matrix[0][2], Matrix[0][3] };
+		Result[1] = { Matrix[1][0], Matrix[1][1], Matrix[1][2], Matrix[1][3] };
+		Result[2] = { Matrix[2][0], Matrix[2][1], Matrix[2][2], Matrix[2][3] };
+		Result[3] = { Matrix[3][0], Matrix[3][1], Matrix[3][2], Matrix[3][3] };
+
+		return Result;
+	}
+
+	inline glm::mat4 ToGLM( const Matrix4D& Matrix )
+	{
+		glm::mat4 Result;
+
+		Result[0] = { Matrix[0][0], Matrix[0][1], Matrix[0][2], Matrix[0][3] };
+		Result[1] = { Matrix[1][0], Matrix[1][1], Matrix[1][2], Matrix[1][3] };
+		Result[2] = { Matrix[2][0], Matrix[2][1], Matrix[2][2], Matrix[2][3] };
+		Result[3] = { Matrix[3][0], Matrix[3][1], Matrix[3][2], Matrix[3][3] };
+
+		return Result;
+	}
 }
 
 struct FFrustumPlane
@@ -407,19 +431,19 @@ public:
 		Dirty();
 	}
 
-	glm::mat4& GetRotationMatrix()
+	Matrix4D& GetRotationMatrix()
 	{
 		Update();
 		return RotationMatrix;
 	}
 
-	glm::mat4& GetTransformationMatrix()
+	Matrix4D& GetTransformationMatrix()
 	{
 		Update();
 		return TransformationMatrix;
 	}
 
-	glm::mat4& GetTransformationMatrixInverse()
+	Matrix4D& GetTransformationMatrixInverse()
 	{
 		Update();
 		return TransformationMatrixInverse;
@@ -440,48 +464,48 @@ public:
 		return StoredSize;
 	}
 
-	glm::vec3 Position( const glm::vec3& Position )
+	Vector3D Position( const Vector3D& Position )
 	{
 		Update();
-		return TransformationMatrix * glm::vec4( Position, 1.0f );
+		return TransformationMatrix.Transform( Position );
 	}
 
-	glm::vec3 Rotate( const glm::vec3& Position )
+	Vector3D Rotate( const Vector3D& Position )
 	{
 		Update();
-		return RotationMatrix * glm::vec4( Position, 1.0f );
+		return RotationMatrix.Transform( Position );
 	}
 
 	glm::vec3 RotateEuler( const glm::vec3& EulerRadians )
 	{
 		Update();
-		return glm::eulerAngles( glm::quat( RotationMatrix ) * glm::quat( EulerRadians ) );
+		return glm::eulerAngles( glm::quat( Math::ToGLM( RotationMatrix ) ) * glm::quat( EulerRadians ) );
 	}
 
-	glm::vec3 Scale( const glm::vec3& Position )
+	Vector3D Scale( const Vector3D& Position )
 	{
 		Update();
-		return ScaleMatrix * glm::vec4( Position, 1.0f );
+		return ScaleMatrix.Transform( Position );
 	}
 
 	glm::vec3 Transform( const glm::vec3& Position )
 	{
 		Update();
-		return TranslationMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Position, 1.0f );
+		return Math::ToGLM( TransformationMatrix ) * glm::vec4( Position, 1.0f );
 	}
 
 	Vector3D Transform( const Vector3D& Position )
 	{
 		Update();
-		glm::vec3 Vector = TranslationMatrix * RotationMatrix * ScaleMatrix * glm::vec4( Math::ToGLM( Position ), 1.0f );
-		return Math::FromGLM( Vector );
+		Vector3D Vector = TransformationMatrix.Transform( Position );
+		return Vector;
 	}
 
 	FTransform Transform( const FTransform& B )
 	{
 		Update();
 
-		auto NewPosition = Position( Math::ToGLM( B.GetPosition() ) );
+		auto NewPosition = Position( B.GetPosition() );
 		Vector3D Position3D = { NewPosition[0], NewPosition[1], NewPosition[2] };
 
 		auto OrientationRadians = glm::radians( Math::ToGLM( B.GetOrientation() ) );
@@ -489,7 +513,7 @@ public:
 		NewOrientation = glm::degrees( NewOrientation );
 		Vector3D Orientation3D = { NewOrientation[0], NewOrientation[1], NewOrientation[2] };
 
-		auto NewSize = Scale( Math::ToGLM( B.GetSize() ) );
+		auto NewSize = Scale( B.GetSize() );
 		Vector3D Size3D = { NewSize[0], NewSize[1], NewSize[2] };
 
 		return FTransform( Position3D, Orientation3D, Size3D );
@@ -509,7 +533,8 @@ private:
 			static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
 			static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
 
-			ScaleMatrix = glm::scale( IdentityMatrix, { StoredSize[0], StoredSize[1], StoredSize[2] } );
+			ScaleMatrix = IdentityMatrix;
+			ScaleMatrix.Scale( { StoredSize[0], StoredSize[1], StoredSize[2] } );
 
 			Vector3D Radians = StoredOrientation;
 			Radians.X = glm::radians( Radians.X );
@@ -521,20 +546,23 @@ private:
 			glm::quat Roll = glm::angleAxis( Radians.Z, AxisZ );
 
 			glm::quat Quaternion = Yaw * Pitch * Roll;
-			RotationMatrix = glm::toMat4( Quaternion );
+			RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
 
-			TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
+			TranslationMatrix = IdentityMatrix;
+			TranslationMatrix.Translate( { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
+			// TranslationMatrix = Math::ToGLM( TranslateTest );
+			// TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
 
 			TransformationMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
-			TransformationMatrixInverse = glm::inverse( TransformationMatrix );
+			TransformationMatrixInverse = Math::FromGLM( glm::inverse( Math::ToGLM( TransformationMatrix ) ) );
 		}
 	}
 
-	glm::mat4 TranslationMatrix;
-	glm::mat4 RotationMatrix;
-	glm::mat4 TransformationMatrix;
-	glm::mat4 TransformationMatrixInverse;
-	glm::mat4 ScaleMatrix;
+	Matrix4D TranslationMatrix;
+	Matrix4D RotationMatrix;
+	Matrix4D TransformationMatrix;
+	Matrix4D TransformationMatrixInverse;
+	Matrix4D ScaleMatrix;
 
 	Vector3D StoredPosition;
 	Vector3D StoredOrientation;

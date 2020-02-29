@@ -1,6 +1,10 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <stdint.h>
+#include <math.h>
+#include <algorithm>
+
 class Vector2D
 {
 public:
