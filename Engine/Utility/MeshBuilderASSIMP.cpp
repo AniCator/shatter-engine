@@ -54,9 +54,9 @@ void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* 
 		NewVertex.Position = Vector3D( TransformedVector.z, TransformedVector.x, TransformedVector.y );
 
 		const auto& Normal = Mesh->mNormals[VertexIndex];
-		auto Transposed = Scene->mRootNode->mTransformation;
-		Transposed.Transpose();
-		auto TransformedNormal = Transposed * Normal;
+		auto Transposed = Transform;
+		// Transposed = Transposed.Transpose();
+		auto TransformedNormal = aiMatrix3x3( Transform ) * Normal;
 		NewVertex.Normal = Vector3D( TransformedNormal.z, TransformedNormal.x, TransformedNormal.y );
 
 		if( Mesh->HasTextureCoords( 0 ) )
@@ -141,10 +141,7 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, const CFile& File )
 	if( Scene->mNumMeshes > 0 )
 	{
 		auto Transform = Scene->mRootNode->mTransformation;
-		Transform.Inverse();
-
 		FMeshData MeshData;
-
 		ParseNodes( Transform, Scene, Scene->mRootNode, MeshData );
 
 		if( true )
