@@ -38,7 +38,7 @@ void MeshBuilder::Plane( FPrimitive& Primitive, const float Radius )
 	};
 
 	static const uint32_t IndexCount = 6;
-	static glm::uint* Indices = new glm::uint[IndexCount]
+	glm::uint* Indices = new glm::uint[IndexCount]
 	{
 		0, 1, 2, // Top-right, Bottom-right, Bottom-left
 		2, 3, 0, // 
@@ -68,8 +68,8 @@ void MeshBuilder::Cube( FPrimitive& Primitive, const float Radius )
 		FVertex( Vector3D( -1.0f,  1.0f, 1.0f ) * Radius ),
 	};
 
-	static const uint32_t IndexCount = 36;
-	static glm::uint* Indices = new glm::uint[IndexCount]
+	const uint32_t IndexCount = 36;
+	glm::uint* Indices = new glm::uint[IndexCount]
 	{
 		2, 1, 0, // Bottom A
 		0, 3, 2, // Bottom B
