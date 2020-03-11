@@ -200,6 +200,7 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Engine\Application\Application.cpp" />
     <ClCompile Include="Engine\Audio\SimpleSound.cpp" />
     <ClCompile Include="Engine\Audio\Sound.cpp" />
@@ -266,6 +267,7 @@
     <ClCompile Include="ThirdParty\imgui-1.70\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Animation\Skeleton.h" />
     <ClInclude Include="Engine\Application\Application.h" />
     <ClInclude Include="Engine\Audio\SimpleSound.h" />
     <ClInclude Include="Engine\Audio\Sound.h" />

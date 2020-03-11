@@ -132,6 +132,16 @@ void CMesh::SetLocation( const std::string& FileLocation )
 	Location = FileLocation;
 }
 
+const Skeleton& CMesh::GetSkeleton()
+{
+	return Skeleton;
+}
+
+void CMesh::SetSkeleton( const ::Skeleton& SkeletonIn )
+{
+	Skeleton = SkeletonIn;
+}
+
 bool CMesh::CreateVertexArrayObject()
 {
 	if( VertexArrayObject == 0 )

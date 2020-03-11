@@ -155,6 +155,18 @@ void CMeshEntity::Debug()
 		{
 			PhysicsComponent->Debug();
 		}
+
+		auto& Skeleton = Mesh->GetSkeleton();
+		if( Skeleton.Matrices.size() > 0 )
+		{
+			auto WorldTransform = GetTransform();
+			for( auto& Matrix : Skeleton.Matrices )
+			{
+				Vector3D Start = WorldTransform.Transform( Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) ) );
+				Vector3D End = WorldTransform.Transform( Matrix.Transform( Vector3D( 0.0f, 0.0f, -1.0f ) ) );
+				UI::AddLine( Start, End, ::Color( 255, 0, 255 ) );
+			}
+		}
 	}
 }
 

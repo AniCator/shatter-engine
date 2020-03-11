@@ -83,7 +83,8 @@ void ParsePayload(FPrimitivePayload* Payload )
 		}
 		else if( Extension != "obj" )
 		{
-			MeshBuilder::ASSIMP( Payload->Primitive, File );
+			Skeleton Skeleton;
+			MeshBuilder::ASSIMP( Payload->Primitive, Skeleton, File );
 		}
 	}
 }
@@ -268,6 +269,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 	{
 		std::string Extension = File.Extension();
 		FPrimitive Primitive;
+		Skeleton Skeleton;
 
 		if( ShouldLoad )
 		{
@@ -283,7 +285,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			}
 			else
 			{
-				MeshBuilder::ASSIMP( Primitive, File );
+				MeshBuilder::ASSIMP( Primitive, Skeleton, File );
 
 				if( Primitive.VertexCount == 0 )
 				{
@@ -310,6 +312,11 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			if( Mesh )
 			{
 				Mesh->SetLocation( FileLocation );
+			}
+
+			if( Skeleton.Matrices.size() > 0 )
+			{
+				Mesh->SetSkeleton( Skeleton );
 			}
 
 			// Automatically export an LM file if the extension was OBJ.

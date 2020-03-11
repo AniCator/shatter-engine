@@ -125,7 +125,7 @@ public:
 		Columns[W][W] *= Factor.W;
 	}
 
-	Vector3D Rotate( const Vector3D& Vector )
+	Vector3D Rotate( const Vector3D& Vector ) const
 	{
 		Vector3D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y + Columns[Z].X * Vector.Z;
@@ -134,7 +134,7 @@ public:
 		return Result;
 	}
 
-	Vector3D Transform( const Vector3D& Vector )
+	Vector3D Transform( const Vector3D& Vector ) const
 	{
 		Vector3D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y + Columns[Z].X * Vector.Z + Columns[W].X;
@@ -143,7 +143,7 @@ public:
 		return Result;
 	}
 
-	Vector4D Transform( const Vector4D& Vector )
+	Vector4D Transform( const Vector4D& Vector ) const
 	{
 		Vector4D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y + Columns[Z].X * Vector.Z + Columns[W].X * Vector.W;

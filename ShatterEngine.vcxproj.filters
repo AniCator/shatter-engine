@@ -132,6 +132,9 @@
     <Filter Include="Source Files\Engine\Display\Rendering\Pass">
       <UniqueIdentifier>{eb9635e9-1e4c-49bf-9a2c-0a2c3a8b32b4}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Animation">
+      <UniqueIdentifier>{976d934a-9308-461f-84bc-010e545431bc}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -325,6 +328,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\Math\Transform.cpp">
       <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Animation\Skeleton.cpp">
+      <Filter>Source Files\Engine\Animation</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -591,6 +597,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Math\Transform.h">
       <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Animation\Skeleton.h">
+      <Filter>Source Files\Engine\Animation</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

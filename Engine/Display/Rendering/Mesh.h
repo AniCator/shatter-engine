@@ -5,6 +5,7 @@
 #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW//glfw3.h>
 #include <ThirdParty/glm/glm.hpp>
 
+#include <Engine/Animation/Skeleton.h>
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
 
@@ -92,6 +93,9 @@ public:
 
 	const std::string& GetLocation() const;
 	void SetLocation( const std::string& FileLocation );
+
+	const Skeleton& GetSkeleton();
+	void SetSkeleton( const Skeleton& Skeleton );
 private:
 	bool CreateVertexArrayObject();
 	bool CreateVertexBuffer();
@@ -112,6 +116,7 @@ private:
 
 	FBounds AABB;
 	FPrimitive Primitive;
+	Skeleton Skeleton;
 
 	std::string Location;
 };
