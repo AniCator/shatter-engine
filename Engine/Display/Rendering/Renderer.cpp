@@ -125,22 +125,22 @@ void CRenderer::Initialize()
 	DefaultShader = Assets.CreateNamedShader( "Default", "Shaders/Default" );
 	Assets.CreateNamedShader( "textured", "Shaders/DefaultTextured" );
 
-	FPrimitive<> Triangle;
+	FPrimitive Triangle;
 	MeshBuilder::Triangle( Triangle, 1.0f );
 
 	Assets.CreateNamedMesh( "triangle", Triangle );
 
-	FPrimitive<> Square;
+	FPrimitive Square;
 	MeshBuilder::Plane( Square, 1.0f );
 
 	CMesh* SquareMesh = Assets.CreateNamedMesh( "square", Square );
 
-	FPrimitive<> Cube;
+	FPrimitive Cube;
 	MeshBuilder::Cube( Cube, 1.0f );
 
 	Assets.CreateNamedMesh( "cube", Cube );
 
-	FPrimitive<> Pyramid;
+	FPrimitive Pyramid;
 	MeshBuilder::Cone( Pyramid, 1.0f, 4 );
 
 	Assets.CreateNamedMesh( "pyramid", Pyramid );

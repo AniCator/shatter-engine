@@ -911,7 +911,7 @@ void DebugMenu( CApplication* Application )
 					CMesh* Mesh = Entry.second;
 					if( Mesh )
 					{
-						FPrimitive<> Primitive;
+						FPrimitive Primitive;
 						MeshBuilder::Mesh( Primitive, Mesh );
 
 						CData Data;
@@ -940,7 +940,7 @@ void DebugMenu( CApplication* Application )
 				File.Load();
 				LoadTimer.Stop();
 
-				FPrimitive<> Primitive;
+				FPrimitive Primitive;
 
 				ParseTimer.Start();
 				MeshBuilder::OBJ( Primitive, File );
@@ -1298,7 +1298,7 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 					File.Load();
 					LoadTimer.Stop();
 
-					FPrimitive<> Primitive;
+					FPrimitive Primitive;
 
 					ParseTimer.Start();
 					MeshBuilder::OBJ( Primitive, File );

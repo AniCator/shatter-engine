@@ -35,7 +35,6 @@ struct FVertex
 	};
 };
 
-template<typename Vertex = FVertex>
 struct FPrimitive
 {
 	FPrimitive()
@@ -75,7 +74,7 @@ struct FPrimitive
 		}
 	}
 
-	Vertex* Vertices;
+	FVertex* Vertices;
 	uint32_t VertexCount;
 	uint32_t* Indices;
 	uint32_t IndexCount;

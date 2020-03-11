@@ -42,7 +42,7 @@ bool CMesh::IsValid()
 	return VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject != 0;
 }
 
-bool CMesh::Populate( const FPrimitive<>& Primitive )
+bool CMesh::Populate( const FPrimitive& Primitive )
 {
 	this->Primitive = Primitive;
 
@@ -55,7 +55,7 @@ bool CMesh::Populate( const FPrimitive<>& Primitive )
 	GenerateNormals();
 
 	// Destroy the primitive, it's in the vertex data now.
-	this->Primitive = FPrimitive<>();
+	this->Primitive = FPrimitive();
 
 	return bCreatedVertexBuffer;
 }

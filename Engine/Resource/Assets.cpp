@@ -267,7 +267,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 	if( File.Exists() )
 	{
 		std::string Extension = File.Extension();
-		FPrimitive<> Primitive;
+		FPrimitive Primitive;
 
 		if( ShouldLoad )
 		{
@@ -317,7 +317,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			{
 				Log::Event( "Exporting Lofty Model mesh \"%s\".", Name );
 
-				FPrimitive<> ExportPrimitive;
+				FPrimitive ExportPrimitive;
 				MeshBuilder::Mesh( ExportPrimitive, Mesh );
 
 				CData Data;
@@ -342,7 +342,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 	return Mesh;
 }
 
-CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive<>& Primitive )
+CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 {
 	// Transform given name into lower case string
 	std::string NameString = Name;
