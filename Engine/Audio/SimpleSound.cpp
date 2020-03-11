@@ -125,6 +125,11 @@ void CSimpleSound::Stop( StreamHandle Handle, const float FadeOut )
 		}
 		else
 		{
+			if( Streams[Handle.Handle].FadeIn )
+			{
+				Streams[Handle.Handle].Volume = Streams[Handle.Handle].Stream->getVolume() / GlobalVolume;
+			}
+
 			Streams[Handle.Handle].FadeDuration = FadeOut;
 			Streams[Handle.Handle].FadeIn = false;
 			Streams[Handle.Handle].StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );

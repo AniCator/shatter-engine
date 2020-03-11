@@ -17,7 +17,7 @@ struct FPrimitivePayload
 {
 	std::string Name;
 	std::string Location;
-	FPrimitive Primitive;
+	FPrimitive<> Primitive;
 	bool Native;
 };
 
@@ -53,7 +53,7 @@ public:
 	void CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
-	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
+	CMesh* CreateNamedMesh( const char* Name, const FPrimitive<>& Primitive );
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation );
 	CShader* CreateNamedShader( const char* Name, const char* VertexLocation, const char* FragmentLocation );
 	CTexture* CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8 );

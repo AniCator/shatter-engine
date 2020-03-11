@@ -421,6 +421,14 @@ public:
 		this->W = W;
 	}
 
+	Vector4D( const Vector3D& Vector, float W )
+	{
+		this->X = Vector.X;
+		this->Y = Vector.Y;
+		this->Z = Vector.Z;
+		this->W = W;
+	}
+
 	inline const float* Base() const
 	{
 		return &X;

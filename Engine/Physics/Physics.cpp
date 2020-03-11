@@ -52,16 +52,14 @@ public:
 			{
 				if( !ComponentA->Static )
 				{
-					ComponentA->Contact = false;
-
 					ComponentA->PreCollision();
 
 					for( auto ComponentB : Components )
 					{
-						if( ComponentB && ComponentB != ComponentA && ComponentB->Owner != ComponentA->Owner && ComponentB->Block )
+						if( ComponentB && ComponentB != ComponentA && ComponentB->Owner != ComponentA->Owner )
 						{
-							FBounds BoundsA = ComponentA->GetBounds();
-							FBounds BoundsB = ComponentB->GetBounds();
+							const FBounds& BoundsA = ComponentA->GetBounds();
+							const FBounds& BoundsB = ComponentB->GetBounds();
 							if( Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
 							{
 								ComponentA->Collision( ComponentB );

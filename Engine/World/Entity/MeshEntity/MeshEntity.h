@@ -31,11 +31,16 @@ public:
 	virtual void Import( CData& Data ) override;
 	virtual void Export( CData& Data ) override;
 
+	virtual bool ShouldCollide() const;
 	virtual bool IsStatic() const;
 	virtual bool IsStationary() const;
 
+	virtual bool IsVisible() const;
+	virtual void SetVisible( const bool& Visible );
+
 public:
 	CMesh* Mesh;
+	CMesh* CollisionMesh;
 	CShader* Shader;
 	std::vector<CTexture*> Textures;
 	CRenderable* Renderable;
@@ -43,10 +48,12 @@ public:
 	glm::vec4 Color;
 
 	std::string MeshName;
+	std::string CollisionMeshName;
 	std::string ShaderName;
 	std::vector<std::string> TextureNames;
 
 	bool Contact;
+	bool Visible;
 
 protected:
 	FBounds WorldBounds;

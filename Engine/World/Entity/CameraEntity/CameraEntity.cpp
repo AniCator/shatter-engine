@@ -8,6 +8,17 @@ static CEntityFactory<CCameraEntity> Factory( "camera" );
 CCameraEntity::CCameraEntity()
 {
 	Priority = 501;
+	Target = -1;
+
+	Inputs["Activate"] = [&] ()
+	{
+		Activate();
+	};
+
+	Inputs["Deactivate"] = [&] ()
+	{
+		Deactivate();
+	};
 }
 
 void CCameraEntity::Construct()

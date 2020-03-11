@@ -16,6 +16,7 @@ static CEntityFactory<CMeshEntity> Factory( "mesh" );
 CMeshEntity::CMeshEntity()
 {
 	Mesh = nullptr;
+	CollisionMesh = nullptr;
 	Shader = nullptr;
 	Textures.reserve( 8 );
 	Renderable = nullptr;
@@ -24,6 +25,7 @@ CMeshEntity::CMeshEntity()
 	Stationary = true;
 	Contact = false;
 	Collision = true;
+	Visible = true;
 
 	// Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
 	Color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
@@ -46,6 +48,7 @@ void CMeshEntity::Spawn( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTrans
 	Textures.clear();
 	Textures.emplace_back( Texture );
 	this->Transform = Transform;
+	ShouldUpdateTransform = true;
 }
 
 void CMeshEntity::Construct()
@@ -91,7 +94,7 @@ void CMeshEntity::Construct()
 			{
 				if( !PhysicsComponent )
 				{
-					PhysicsComponent = new CBody( this, Mesh->GetBounds(), Static, Stationary );
+					PhysicsComponent = new CBody( this, CollisionMesh ? CollisionMesh->GetBounds() : Mesh->GetBounds(), Static, Stationary );
 					PhysicsComponent->Construct( Physics );
 				}
 			}
@@ -105,35 +108,14 @@ void CMeshEntity::Tick()
 	{
 		if( Mesh )
 		{
-			auto& AABB = Mesh->GetBounds();
-
-			const auto& Minimum = AABB.Minimum;
-			const auto& Maximum = AABB.Maximum;
-
-			Vector3D Positions[8];
-			Positions[0] = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
-			Positions[1] = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
-			Positions[2] = Vector3D( Maximum.X, Minimum.Y, Minimum.Z );
-			Positions[3] = Vector3D( Minimum.X, Minimum.Y, Minimum.Z );
-
-			Positions[4] = Vector3D( Minimum.X, Maximum.Y, Maximum.Z );
-			Positions[5] = Vector3D( Maximum.X, Maximum.Y, Maximum.Z );
-			Positions[6] = Vector3D( Maximum.X, Minimum.Y, Maximum.Z );
-			Positions[7] = Vector3D( Minimum.X, Minimum.Y, Maximum.Z );
-
-			for( size_t PositionIndex = 0; PositionIndex < 8; PositionIndex++ )
-			{
-				Positions[PositionIndex] = Transform.Transform( Positions[PositionIndex] );
-			}
-
-			FBounds TransformedAABB = Math::AABB( Positions, 8 );
+			FBounds TransformedAABB = Math::AABB( Mesh->GetBounds(), Transform );
 
 			WorldBounds.Minimum = TransformedAABB.Minimum;
 			WorldBounds.Maximum = TransformedAABB.Maximum;
 		}
 	}
 
-	if( Renderable )
+	if( IsVisible() && Renderable )
 	{
 		if( ShouldUpdateTransform )
 		{
@@ -181,10 +163,6 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 	CPointEntity::Load( Objects );
 	CAssets& Assets = CAssets::Get();
 
-	CMesh* Mesh = nullptr;
-	CShader* Shader = nullptr;
-	CTexture* Texture = nullptr;
-
 	TextureNames.clear();
 
 	for( auto Property : Objects )
@@ -192,6 +170,10 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		if( Property->Key == "mesh" )
 		{
 			MeshName = Property->Value;
+		}
+		else if( Property->Key == "collisionmesh" )
+		{
+			CollisionMeshName = Property->Value;
 		}
 		else if( Property->Key == "shader" )
 		{
@@ -271,10 +253,16 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 void CMeshEntity::Reload()
 {
 	CAssets& Assets = CAssets::Get();
-	CMesh* Mesh = Assets.FindMesh( MeshName );
-	CShader* Shader = Assets.FindShader( ShaderName );
+	CMesh* TargetMesh = Assets.FindMesh( MeshName );
+	CShader* TargetShader = Assets.FindShader( ShaderName );
 
-	Spawn( Mesh, Shader, nullptr, Transform );
+	Spawn( TargetMesh, TargetShader, nullptr, Transform );
+
+	CMesh* TargetCollisionMesh = Assets.FindMesh( CollisionMeshName );
+	if( TargetCollisionMesh )
+	{
+		CollisionMesh = TargetCollisionMesh;
+	}
 
 	Textures.clear();
 	for( auto TextureName : TextureNames )
@@ -288,6 +276,7 @@ void CMeshEntity::Import( CData& Data )
 	CPointEntity::Import( Data );
 
 	DataString::Decode( Data, MeshName );
+	DataString::Decode( Data, CollisionMeshName );
 	DataString::Decode( Data, ShaderName );
 
 	size_t Size = 0;
@@ -300,6 +289,7 @@ void CMeshEntity::Import( CData& Data )
 
 	Data >> Color;
 	Data >> Collision;
+	Data >> Visible;
 }
 
 void CMeshEntity::Export( CData& Data )
@@ -307,6 +297,7 @@ void CMeshEntity::Export( CData& Data )
 	CPointEntity::Export( Data );
 
 	DataString::Encode( Data, MeshName );
+	DataString::Encode( Data, CollisionMeshName );
 	DataString::Encode( Data, ShaderName );
 	
 	size_t Size = TextureNames.size();
@@ -319,6 +310,12 @@ void CMeshEntity::Export( CData& Data )
 
 	Data << Color;
 	Data << Collision;
+	Data << Visible;
+}
+
+bool CMeshEntity::ShouldCollide() const
+{
+	return Collision;
 }
 
 bool CMeshEntity::IsStatic() const
@@ -329,4 +326,14 @@ bool CMeshEntity::IsStatic() const
 bool CMeshEntity::IsStationary() const
 {
 	return Stationary;
+}
+
+bool CMeshEntity::IsVisible() const
+{
+	return Visible;
+}
+
+void CMeshEntity::SetVisible( const bool& VisibleIn )
+{
+	Visible = VisibleIn;
 }

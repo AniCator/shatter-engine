@@ -67,9 +67,9 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 {
 	CAssets& Assets = CAssets::Get();
 
-	Vector3D Position;
-	Vector3D Orientation;
-	Vector3D Size;
+	Vector3D Position( 0.0f, 0.0f, 0.0f );
+	Vector3D Orientation( 0.0f, 0.0f, 0.0f );
+	Vector3D Size( 1.0f, 1.0f, 1.0f );
 
 	for( auto Property : Objects )
 	{

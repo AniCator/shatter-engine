@@ -126,6 +126,10 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 				{
 					Temporary = true;
 				}
+				else
+				{
+					Temporary = false;
+				}
 
 				if( Pass == 0 )
 				{

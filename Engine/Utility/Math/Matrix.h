@@ -125,31 +125,31 @@ public:
 		Columns[W][W] *= Factor.W;
 	}
 
-	inline Vector3D Rotate( const Vector3D& Vector )
+	Vector3D Rotate( const Vector3D& Vector )
 	{
 		Vector3D Result;
-		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X * Vector.X;
-		Result.Y = Columns[X].Y * Vector.Y + Columns[Y].Y * Vector.Y + Columns[Z].Y * Vector.Y;
-		Result.Z = Columns[X].Z * Vector.Z + Columns[Y].Z * Vector.Z + Columns[Z].Z * Vector.Z;
+		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y + Columns[Z].X * Vector.Z;
+		Result.Y = Columns[X].Y * Vector.X + Columns[Y].Y * Vector.Y + Columns[Z].Y * Vector.Z;
+		Result.Z = Columns[X].Z * Vector.X + Columns[Y].Z * Vector.Y + Columns[Z].Z * Vector.Z;
 		return Result;
 	}
 
-	inline Vector3D Transform( const Vector3D& Vector )
+	Vector3D Transform( const Vector3D& Vector )
 	{
 		Vector3D Result;
-		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X * Vector.X + Columns[W].X;
-		Result.Y = Columns[X].Y * Vector.Y + Columns[Y].Y * Vector.Y + Columns[Z].Y * Vector.Y + Columns[W].Y;
-		Result.Z = Columns[X].Z * Vector.Z + Columns[Y].Z * Vector.Z + Columns[Z].Z * Vector.Z + Columns[W].Z;
+		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y + Columns[Z].X * Vector.Z + Columns[W].X;
+		Result.Y = Columns[X].Y * Vector.X + Columns[Y].Y * Vector.Y + Columns[Z].Y * Vector.Z + Columns[W].Y;
+		Result.Z = Columns[X].Z * Vector.X + Columns[Y].Z * Vector.Y + Columns[Z].Z * Vector.Z + Columns[W].Z;
 		return Result;
 	}
 
-	inline Vector4D Transform( const Vector4D& Vector )
+	Vector4D Transform( const Vector4D& Vector )
 	{
 		Vector4D Result;
-		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X * Vector.X + Columns[W].X * Vector.X;
-		Result.Y = Columns[X].Y * Vector.Y + Columns[Y].Y * Vector.Y + Columns[Z].Y * Vector.Y + Columns[W].Y * Vector.Y;
-		Result.Z = Columns[X].Z * Vector.Z + Columns[Y].Z * Vector.Z + Columns[Z].Z * Vector.Z + Columns[W].Z * Vector.Z;
-		Result.W = Columns[X].W * Vector.W + Columns[Y].W * Vector.W + Columns[Z].W * Vector.W + Columns[W].W * Vector.W;
+		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y + Columns[Z].X * Vector.Z + Columns[W].X * Vector.W;
+		Result.Y = Columns[X].Y * Vector.X + Columns[Y].Y * Vector.Y + Columns[Z].Y * Vector.Z + Columns[W].Y * Vector.W;
+		Result.Z = Columns[X].Z * Vector.X + Columns[Y].Z * Vector.Y + Columns[Z].Z * Vector.Z + Columns[W].Z * Vector.W;
+		Result.W = Columns[X].W * Vector.X + Columns[Y].W * Vector.Y + Columns[Z].W * Vector.Z + Columns[W].W * Vector.W;
 		return Result;
 	}
 
@@ -162,7 +162,7 @@ public:
 		return Matrix;
 	}
 
-	inline Matrix4D operator*( const Matrix4D& B )
+	Matrix4D operator*( const Matrix4D& B )
 	{
 		Matrix4D Result;
 		Result[X] = Columns[X] * B[X][X] + Columns[Y] * B[X][Y] + Columns[Z] * B[X][Z] + Columns[W] * B[X][W];

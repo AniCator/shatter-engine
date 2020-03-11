@@ -7,7 +7,7 @@
 
 static const float Pi = static_cast<float>( acos( -1 ) );
 
-void MeshBuilder::Triangle( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Triangle( FPrimitive<>& Primitive, const float Radius )
 {
 	Log::Event( "Generating triangle with radius %.2f\n", Radius );
 
@@ -22,7 +22,7 @@ void MeshBuilder::Triangle( FPrimitive& Primitive, const float Radius )
 	Soup( Primitive, Vertices );
 }
 
-void MeshBuilder::Plane( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Plane( FPrimitive<>& Primitive, const float Radius )
 {
 	Log::Event( "Generating plane with radius %.2f\n", Radius );
 
@@ -50,7 +50,7 @@ void MeshBuilder::Plane( FPrimitive& Primitive, const float Radius )
 	Primitive.IndexCount = IndexCount;
 }
 
-void MeshBuilder::Cube( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Cube( FPrimitive<>& Primitive, const float Radius )
 {
 	Log::Event( "Generating cube with radius %.2f\n", Radius );
 
@@ -96,17 +96,17 @@ void MeshBuilder::Cube( FPrimitive& Primitive, const float Radius )
 	Primitive.IndexCount = IndexCount;
 }
 
-void MeshBuilder::Circle( FPrimitive& Primitive, const float Radius, const uint32_t Segments )
+void MeshBuilder::Circle( FPrimitive<>& Primitive, const float Radius, const uint32_t Segments )
 {
 	Log::Event( Log::Error, "Primitive not supported: Circle.\n" );
 }
 
-void MeshBuilder::Sphere( FPrimitive& Primitive, const float Radius, const uint32_t Segments, const uint32_t Rings )
+void MeshBuilder::Sphere( FPrimitive<>& Primitive, const float Radius, const uint32_t Segments, const uint32_t Rings )
 {
 	Log::Event( Log::Error, "Primitive not supported: Sphere.\n" );
 }
 
-void MeshBuilder::Cone( FPrimitive& Primitive, const float Radius, const uint32_t Sides )
+void MeshBuilder::Cone( FPrimitive<>& Primitive, const float Radius, const uint32_t Sides )
 {
 	Log::Event( "Generating cone with radius %.2f and %i sides\n", Radius, Sides );
 
@@ -175,37 +175,37 @@ void MeshBuilder::Cone( FPrimitive& Primitive, const float Radius, const uint32_
 	Soup( Primitive, Vertices );
 }
 
-void MeshBuilder::Torus( FPrimitive& Primitive, const float Radius, const uint32_t MajorSegments, const uint32_t MinorSegments )
+void MeshBuilder::Torus( FPrimitive<>& Primitive, const float Radius, const uint32_t MajorSegments, const uint32_t MinorSegments )
 {
 	Log::Event( Log::Error, "Primitive not supported: Torus.\n" );
 }
 
-void MeshBuilder::Grid( FPrimitive& Primitive, const float Radius, const uint32_t SubdivisionsX, const uint32_t SubdivisionsY )
+void MeshBuilder::Grid( FPrimitive<>& Primitive, const float Radius, const uint32_t SubdivisionsX, const uint32_t SubdivisionsY )
 {
 	Log::Event( Log::Error, "Primitive not supported: Grid.\n" );
 }
 
-void MeshBuilder::Monkey( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Monkey( FPrimitive<>& Primitive, const float Radius )
 {
 	Log::Event( Log::Error, "Primitive not supported: Monkey.\n" );
 }
 
-void MeshBuilder::Teapot( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Teapot( FPrimitive<>& Primitive, const float Radius )
 {
 	Log::Event( Log::Error, "Primitive not supported: Teapot.\n" );
 }
 
-void MeshBuilder::Bunny( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Bunny( FPrimitive<>& Primitive, const float Radius )
 {
 	Log::Event( Log::Error, "Primitive not supported: Bunny.\n" );
 }
 
-void MeshBuilder::Dragon( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Dragon( FPrimitive<>& Primitive, const float Radius )
 {
 	Log::Event( Log::Error, "Primitive not supported: Dragon.\n" );
 }
 
-void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Buddha( FPrimitive<>& Primitive, const float Radius )
 {
 	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
 }
@@ -224,7 +224,7 @@ bool MeshBuilder::FindVertex( const FVertex& Vertex, const std::map<FVertex, uin
 	}
 }
 
-void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
+void MeshBuilder::OBJ( FPrimitive<>& Primitive, const CFile& File )
 {
 	ProfileBareScope();
 	std::vector<Vector3D> Vertices;
@@ -428,7 +428,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 	}
 }
 
-void MeshBuilder::LM( FPrimitive& Primitive, const CFile& File )
+void MeshBuilder::LM( FPrimitive<>& Primitive, const CFile& File )
 {
 	if( !File.Extract( Primitive ) )
 	{
@@ -437,7 +437,7 @@ void MeshBuilder::LM( FPrimitive& Primitive, const CFile& File )
 	}
 }
 
-void MeshBuilder::Mesh( FPrimitive& Primitive, CMesh* MeshInstance )
+void MeshBuilder::Mesh( FPrimitive<>& Primitive, CMesh* MeshInstance )
 {
 	if( MeshInstance )
 	{
@@ -465,7 +465,7 @@ struct VectorComparator {
 	}
 };
 
-void MeshBuilder::Soup( FPrimitive& Primitive, std::vector<Vector3D> Vertices )
+void MeshBuilder::Soup( FPrimitive<>& Primitive, std::vector<Vector3D> Vertices )
 {
 	std::map<Vector3D, glm::uint, VectorComparator> Soup;
 	std::vector<glm::uint> SoupIndices;

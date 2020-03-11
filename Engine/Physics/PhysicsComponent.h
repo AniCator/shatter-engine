@@ -5,7 +5,8 @@
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
 
-class CMeshEntity;
+#include <Engine/World/Entity/PointEntity/PointEntity.h>
+#include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
 struct TriangleTree
 {
@@ -32,21 +33,32 @@ struct TriangleTree
 class CBody
 {
 public:
+	CBody( CMeshEntity* Owner, const bool Static, const bool Stationary );
 	CBody( CMeshEntity* Owner, const FBounds& LocalBounds, const bool Static, const bool Stationary );
+	CBody( CEntity* Parent, const FBounds& LocalBounds, const bool Static, const bool Stationary );
 	~CBody();
 
+	void Construct();
 	void Construct( class CPhysics* Physics );
-	void PreCollision();
+	virtual void PreCollision();
 	virtual void Collision( CBody* Body );
-	void Tick();
+	virtual void Tick();
 	void Destroy( class CPhysics* Physics );
 
 	virtual void CalculateBounds();
 	FBounds GetBounds() const;
+	virtual void SetBounds( const FBounds& Bounds )
+	{
+		LocalBounds = Bounds;
+		CalculateBounds();
+	}
 
-	void Debug();
+	virtual const FTransform& GetTransform() const;
+
+	virtual void Debug();
 
 	CMeshEntity* Owner;
+	CEntity* Ghost;
 
 	bool Static;
 	bool Stationary;
@@ -71,9 +83,22 @@ template<typename TriggerType>
 class CTriggerBody : public CBody
 {
 public:
-	CTriggerBody( CMeshEntity* Owner, const FBounds& Bounds ) : CBody( Owner, Bounds, false, true )
+	CTriggerBody( CMeshEntity* Owner ) : CBody( Owner, false, true )
 	{
 		Block = false;
+		Static = false;
+		Stationary = true;
+
+		CalculateBounds();
+	}
+
+	CTriggerBody( CEntity* Parent, const FBounds& Bounds ) : CBody( Parent, Bounds, false, true )
+	{
+		Block = false;
+		Static = false;
+		Stationary = true;
+
+		CalculateBounds();
 	}
 
 	~CTriggerBody()
@@ -81,18 +106,50 @@ public:
 
 	};
 
+	virtual void PreCollision() override
+	{
+		Block = false;
+		Static = false;
+		Stationary = true;
+
+		Entity = nullptr;
+		CBody::PreCollision();
+	}
+
 	virtual void Collision( CBody* Body ) override
 	{
-		auto Collider = dynamic_cast<TriggerType*>( Body->Owner );
+		CEntity* Target = Body->Owner ? Body->Owner : Body->Ghost;
+		TriggerType Collider = dynamic_cast<TriggerType>( Target );
 		if( Collider )
 		{
-			CBody::Collision( Body );
-			if( Contacts > 0 )
-			{
-				Entity = Collider;
-			}
+			Entity = Collider;
+			Contacts++;
 		}
 	}
 
-	TriggerType* Entity;
+	virtual void Tick() override
+	{
+
+	}
+
+	TriggerType Entity;
+
+	virtual const FTransform& GetTransform() const override
+	{
+		return TriggerTransform;
+	}
+
+	virtual void SetTransform( const FTransform& Transform )
+	{
+		TriggerTransform = Transform;
+		CalculateBounds();
+	}
+
+	FTransform TriggerTransform;
+};
+
+class Interactable
+{
+public:
+	virtual void Interact( Interactable* Caller ) = 0;
 };

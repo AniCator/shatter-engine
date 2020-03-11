@@ -78,7 +78,7 @@ public:
 
 	virtual void Tick() = 0;
 
-	virtual bool IsKeyDown( int KeyInput ) const = 0;
+	virtual bool IsKeyDown( EKey KeyInput ) const = 0;
 	virtual bool IsAnyKeyDown() const = 0;
 	virtual FFixedPosition2D GetMousePosition() const = 0;
 	virtual void SetMousePosition( const FFixedPosition2D& Position ) = 0;

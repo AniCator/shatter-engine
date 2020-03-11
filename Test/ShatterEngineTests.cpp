@@ -5,6 +5,8 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/World/World.h>
+#include <Engine/Utility/Chunk.h>
+#include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
 #include <string>
@@ -12,7 +14,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #include <direct.h>
 
-namespace Test
+namespace EngineTest
 {
 	TEST_CLASS( PrimitiveTests )
 	{
@@ -56,7 +58,7 @@ namespace Test
 		TEST_METHOD( ParseLevelJSON )
 		{
 			Logger::WriteMessage( "Parsing level JSON." );
-			bool bSuccess = false;
+			bool Success = false;
 
 			CFile LevelFile( "../TestModels/Island.sls" );
 			if( LevelFile.Exists() )
@@ -64,16 +66,16 @@ namespace Test
 				LevelFile.Load();
 				CLevel Test;
 				Test.Load( LevelFile );
-				bSuccess = Test.GetEntities().size() > 0;
+				Success = Test.GetEntities().size() > 0;
 			}
 
-			Assert::AreEqual( 1, bSuccess ? 1 : 0 );
+			Assert::AreEqual( 1, Success ? 1 : 0 );
 		}
 
 		TEST_METHOD( ParseStringTokens )
 		{
 			Logger::WriteMessage( "Parsing line of tokens." );
-			bool bSuccess = false;
+			bool Success = false;
 
 			std::string String = "-0.173 0.251 -0.704\r\n";
 			std::vector<std::string> Tokens = ExtractTokens( String.c_str(), ' ', 3 );
@@ -82,7 +84,7 @@ namespace Test
 			{
 				if( Tokens[0] == "-0.173" && Tokens[1] == "0.251" && Tokens[2] == "-0.704" )
 				{
-					bSuccess = true;
+					Success = true;
 				}
 			}
 
@@ -91,13 +93,13 @@ namespace Test
 				Logger::WriteMessage( Token.c_str() );
 			}
 
-			Assert::AreEqual( 1, bSuccess ? 1 : 0 );
+			Assert::AreEqual( 1, Success ? 1 : 0 );
 		}
 
 		TEST_METHOD( ParseOBJ )
 		{
 			Logger::WriteMessage( "Parsing OBJ." );
-			bool bSuccess = false;
+			bool Success = false;
 
 			char Path[FILENAME_MAX];
 			_getcwd( Path, sizeof( Path ) );
@@ -121,7 +123,7 @@ namespace Test
 						std::string Buffer = buffer;
 						if( Buffer == "-0.704569" )
 						{
-							bSuccess = true;
+							Success = true;
 						}
 					}
 				}
@@ -131,7 +133,74 @@ namespace Test
 				Logger::WriteMessage( buffer );
 			}
 
-			Assert::AreEqual( 1, bSuccess ? 1 : 0 );
+			Assert::AreEqual( 1, Success ? 1 : 0 );
+		}
+
+		TEST_METHOD( SerializeData )
+		{
+			bool Success = false;
+
+			uint32_t Write = 500;
+			CData Data;
+			Data << Write;
+
+			uint32_t Read = 0;
+			Data >> Read;
+
+			Success = Read == Write;
+
+			Assert::AreEqual( 1, Success ? 1 : 0 );
+		}
+
+		TEST_METHOD( SerializeChunk )
+		{
+			bool Success = false;
+
+			uint32_t Write = 500;
+			CData Data;
+
+			Chunk WriteChunk("TSTDT");
+			WriteChunk.Data << Write;
+
+			Data << WriteChunk;
+
+			uint32_t Read = 0;
+			Chunk ReadChunk( "TSTDT" );
+			Data >> ReadChunk;
+			ReadChunk.Data >> Read;
+
+			Success = Read == Write;
+
+			Assert::AreEqual( 1, Success ? 1 : 0 );
+		}
+
+		TEST_METHOD( SerializeChunkToDisk )
+		{
+			bool Success = false;
+
+			uint32_t Write = 500;
+			CData WriteData;
+
+			Chunk WriteChunk( "TSTDT" );
+			WriteChunk.Data << Write;
+
+			WriteData << WriteChunk;
+
+			CFile WriteFile( "TestData.tst" );
+			WriteFile.Load( WriteData );
+			WriteFile.Save();
+
+			CFile ReadFile( "TestData.tst" );
+			ReadFile.Load( true );
+
+			uint32_t Read = 0;
+			Chunk ReadChunk( "TSTDT" );
+			ReadFile.Extract( ReadChunk );
+			ReadChunk.Data >> Read;
+
+			Success = Read == Write;
+
+			Assert::AreEqual( 1, Success ? 1 : 0 );
 		}
 	};
 }

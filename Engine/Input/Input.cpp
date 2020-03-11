@@ -261,9 +261,9 @@ void CInput::Tick()
 	}
 }
 
-bool CInput::IsKeyDown( int KeyInput ) const
+bool CInput::IsKeyDown( EKey KeyInput ) const
 {
-	return KeyboardInput[KeyInput].Action == EAction::Press;
+	return KeyboardInput[static_cast<EKeyType>( KeyInput )].Action == EAction::Press;
 }
 
 bool CInput::IsAnyKeyDown() const

@@ -57,7 +57,7 @@ void CNullInput::Tick()
 
 }
 
-bool CNullInput::IsKeyDown( int KeyInput ) const
+bool CNullInput::IsKeyDown( EKey KeyInput ) const
 {
 	return false;
 }

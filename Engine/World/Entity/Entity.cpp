@@ -248,21 +248,24 @@ CData& operator<<( CData& Data, CEntity* Entity )
 
 		const auto OutputCount = Entity->Outputs.size();
 		Data << OutputCount;
-		for( auto& Output : Entity->Outputs )
+		if( OutputCount > 0 )
 		{
-			DataString::Encode( Data, Output.first.String() );
-
-			const auto MessageCount = Output.second.size();
-			Data << MessageCount;
-			for( auto& Message : Output.second )
+			for( auto& Output : Entity->Outputs )
 			{
-				DataString::Encode( Data, Message.TargetName );
+				DataString::Encode( Data, Output.first.String() );
 
-				const auto InputCount = Message.Inputs.size();
-				Data << InputCount;
-				for( auto& Input : Message.Inputs )
+				const auto MessageCount = Output.second.size();
+				Data << MessageCount;
+				for( auto& Message : Output.second )
 				{
-					DataString::Encode( Data, Input );
+					DataString::Encode( Data, Message.TargetName );
+
+					const auto InputCount = Message.Inputs.size();
+					Data << InputCount;
+					for( auto& Input : Message.Inputs )
+					{
+						DataString::Encode( Data, Input );
+					}
 				}
 			}
 		}

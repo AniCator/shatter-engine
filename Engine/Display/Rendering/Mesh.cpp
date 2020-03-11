@@ -42,7 +42,7 @@ bool CMesh::IsValid()
 	return VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject != 0;
 }
 
-bool CMesh::Populate( const FPrimitive& Primitive )
+bool CMesh::Populate( const FPrimitive<>& Primitive )
 {
 	this->Primitive = Primitive;
 
@@ -55,7 +55,7 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 	GenerateNormals();
 
 	// Destroy the primitive, it's in the vertex data now.
-	this->Primitive = FPrimitive();
+	this->Primitive = FPrimitive<>();
 
 	return bCreatedVertexBuffer;
 }
@@ -305,7 +305,7 @@ void CMesh::GenerateNormals()
 				{
 					const Vector3D U = Primitive.Vertices[VertexIndex + 1].Position - Primitive.Vertices[VertexIndex].Position;
 					const Vector3D V = Primitive.Vertices[VertexIndex + 2].Position - Primitive.Vertices[VertexIndex].Position;
-					const Vector3D Normal = U.Cross( V );
+					const Vector3D Normal = U.Cross( V ).Normalized();
 					VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex + 1].Normal = VertexData.Vertices[VertexIndex + 2].Normal = Normal;
 				}
 			}
@@ -340,9 +340,9 @@ void CMesh::GenerateNormals()
 					const Vector3D& Vertex1 = Primitive.Vertices[Primitive.Indices[Index + 1]].Position;
 					const Vector3D& Vertex2 = Primitive.Vertices[Primitive.Indices[Index + 2]].Position;
 
-					const Vector3D U = Vertex0 - Vertex1;
-					const Vector3D V = Vertex0 - Vertex2;
-					const Vector3D Normal = U.Cross( V );
+					const Vector3D U = Vertex1 - Vertex0;
+					const Vector3D V = Vertex2 - Vertex0;
+					const Vector3D Normal = U.Cross( V ).Normalized();
 
 					VertexData.Vertices[Primitive.Indices[Index]].Normal += Normal;
 					VertexData.Vertices[Primitive.Indices[Index + 1]].Normal += Normal;

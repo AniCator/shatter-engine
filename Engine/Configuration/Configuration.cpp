@@ -142,7 +142,8 @@ void CConfiguration::Reload()
 		while( std::getline( configurationFileStream, line ) )
 		{
 			std::smatch match;
-			if( std::regex_search( line, match, FilterSettings ) )
+			const bool IgnoreLine = line[0] == ';' || line[0] == '#';
+			if( !IgnoreLine && std::regex_search( line, match, FilterSettings ) )
 			{
 				Log::Event( "%s = %s\n", match[1].str().c_str(), match[2].str().c_str() );
 				StoredSettings.insert_or_assign( match[1].str(), match[2].str() );

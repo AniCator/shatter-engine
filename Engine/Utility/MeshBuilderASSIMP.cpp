@@ -109,7 +109,7 @@ void ParseNodes( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNod
 	}
 }
 
-void MeshBuilder::ASSIMP( FPrimitive& Primitive, const CFile& File )
+void MeshBuilder::ASSIMP( FPrimitive<>& Primitive, const CFile& File )
 {
 	Log::Event( "Running ASSIMP to import \"%s\"\n", File.Location().c_str() );
 

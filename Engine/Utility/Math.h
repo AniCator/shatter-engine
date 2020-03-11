@@ -6,6 +6,7 @@
 
 #include <Engine/Utility/Math/Vector.h>
 #include <Engine/Utility/Math/Matrix.h>
+#include <Engine/Utility/Math/Transform.h>
 
 #include <ThirdParty/glm/glm.hpp>
 #include <ThirdParty/glm/gtc/matrix_transform.hpp>
@@ -17,7 +18,6 @@
 #define Vector2DToInitializerList(Vector) { Vector[0],Vector[1] }
 #define Vector2DToGLM(Vector) glm::vec2( Vector[0],Vector[1] )
 
-const static Matrix4D IdentityMatrix = Matrix4D();
 static const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
 static const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
 static const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };
@@ -140,6 +140,12 @@ namespace Math
 		return std::min( A, B );
 	}
 
+	template<typename T>
+	inline T Clamp( const T& X, const T& Minimum, const T& Maximum )
+	{
+		return Min( Max( Minimum, X ), Maximum );
+	}
+
 	inline float Lerp( float A, float B, const float Alpha )
 	{
 		return A + Alpha * ( B - A );
@@ -148,6 +154,16 @@ namespace Math
 	inline Vector3D Lerp( const Vector3D& A, const Vector3D& B, const float Alpha )
 	{
 		return A + Vector3D( Alpha, Alpha, Alpha ) * ( B - A );
+	}
+
+	inline float Abs( const float& Value )
+	{
+		return fabs( Value );
+	}
+
+	inline Vector3D Abs( const Vector3D& Value )
+	{
+		return { fabs( Value.X ), fabs( Value.Y ), fabs( Value.Z ) };
 	}
 
 	inline bool Equal( const Vector3D& A, const Vector3D& B, const float Tolerance = 0.001f )
@@ -218,6 +234,32 @@ namespace Math
 		return AABB;
 	}
 
+	inline FBounds AABB( const FBounds& AABB, FTransform& Transform )
+	{
+		const auto& Minimum = AABB.Minimum;
+		const auto& Maximum = AABB.Maximum;
+
+		Vector3D Positions[8];
+		Positions[0] = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
+		Positions[1] = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
+		Positions[2] = Vector3D( Maximum.X, Minimum.Y, Minimum.Z );
+		Positions[3] = Vector3D( Minimum.X, Minimum.Y, Minimum.Z );
+
+		Positions[4] = Vector3D( Minimum.X, Maximum.Y, Maximum.Z );
+		Positions[5] = Vector3D( Maximum.X, Maximum.Y, Maximum.Z );
+		Positions[6] = Vector3D( Maximum.X, Minimum.Y, Maximum.Z );
+		Positions[7] = Vector3D( Minimum.X, Minimum.Y, Maximum.Z );
+
+		Vector3D TransformedPositions[8];
+		for( size_t PositionIndex = 0; PositionIndex < 8; PositionIndex++ )
+		{
+			TransformedPositions[PositionIndex] = Transform.Transform( Positions[PositionIndex] );
+		}
+
+		FBounds TransformedAABB = Math::AABB( TransformedPositions, 8 );
+		return TransformedAABB;
+	}
+
 	inline bool PointInBoundingBox( const glm::vec3& Vector, const glm::vec3& Minimum, const glm::vec3& Maximum )
 	{
 		if( Vector[0] > Minimum[0] && Vector[1] > Minimum[1] && Vector[2] > Minimum[2] &&
@@ -270,9 +312,9 @@ namespace Math
 
 	inline bool BoundingBoxIntersection( const Vector3D& MinimumA, const Vector3D& MaximumA, const Vector3D& MinimumB, const Vector3D& MaximumB )
 	{
-		if( ( MinimumA.X < MaximumB.X && MaximumA.X  > MinimumB.X ) &&
-			( MinimumA.Y  < MaximumB.Y && MaximumA.Y > MinimumB.Y ) &&
-			( MinimumA.Z  < MaximumB.Z && MaximumA.Z  > MinimumB.Z ) )
+		if( ( MinimumA.X < MaximumB.X && MaximumA.X > MinimumB.X ) &&
+			( MinimumA.Y < MaximumB.Y && MaximumA.Y > MinimumB.Y ) &&
+			( MinimumA.Z < MaximumB.Z && MaximumA.Z > MinimumB.Z ) )
 		{
 			return true;
 		}
@@ -309,7 +351,7 @@ namespace Math
 
 	inline int32_t RandomRangeInteger( const int32_t Minimum, const int32_t Maximum )
 	{
-		return ( Maximum - Minimum ) * static_cast<int32_t>( std::rand() ) / static_cast<int32_t>( RAND_MAX ) + Minimum;
+		return Minimum + ( std::rand() % ( Maximum - Minimum + 1 ) );
 	}
 
 	inline Vector4D FromGLM( const glm::vec4& Vector )
@@ -375,198 +417,4 @@ struct FFrustumPlane
 struct FFrustum
 {
 	FFrustumPlane Planes[6];
-};
-
-struct FTransform
-{
-public:
-	FTransform()
-	{
-		TransformationMatrix = IdentityMatrix;
-		RotationMatrix = IdentityMatrix;
-		ScaleMatrix = IdentityMatrix;
-		TransformationMatrixInverse = IdentityMatrix;
-		StoredPosition = Vector3D( 0.0f, 0.0f, 0.0f );
-		StoredOrientation = Vector3D( 0.0f, 0.0f, 0.0f );
-		StoredSize = Vector3D( 1.0f, 1.0f, 1.0f );
-
-		Dirty();
-	}
-
-	FTransform( const Vector3D& Position, const Vector3D& Orientation, const Vector3D& Size )
-	{
-		SetTransform( Position, Orientation, Size );
-	}
-
-	void SetPosition( const Vector3D& Position )
-	{
-		this->StoredPosition = Position;
-		Dirty();
-	}
-
-	void SetOrientation( const Vector3D& Orientation )
-	{
-		this->StoredOrientation = Orientation;
-		Dirty();
-	}
-
-	void SetSize( const Vector3D& Size )
-	{
-		this->StoredSize = Size;
-		Dirty();
-	}
-
-	void SetTransform( const Vector3D& Position, const Vector3D& Orientation, const Vector3D& Size )
-	{
-		this->StoredPosition = Position;
-		this->StoredOrientation = Orientation;
-		this->StoredSize = Size;
-		Dirty();
-	}
-
-	void SetTransform( const Vector3D& Position, const Vector3D& Orientation )
-	{
-		this->StoredPosition = Position;
-		this->StoredOrientation = Orientation;
-		Dirty();
-	}
-
-	Matrix4D& GetRotationMatrix()
-	{
-		Update();
-		return RotationMatrix;
-	}
-
-	Matrix4D& GetTransformationMatrix()
-	{
-		Update();
-		return TransformationMatrix;
-	}
-
-	Matrix4D& GetTransformationMatrixInverse()
-	{
-		Update();
-		return TransformationMatrixInverse;
-	}
-
-	const Vector3D& GetPosition() const
-	{
-		return StoredPosition;
-	}
-
-	const Vector3D& GetOrientation() const
-	{
-		return StoredOrientation;
-	}
-
-	const Vector3D& GetSize() const
-	{
-		return StoredSize;
-	}
-
-	Vector3D Position( const Vector3D& Position )
-	{
-		Update();
-		return TransformationMatrix.Transform( Position );
-	}
-
-	Vector3D Rotate( const Vector3D& Position )
-	{
-		Update();
-		return RotationMatrix.Transform( Position );
-	}
-
-	glm::vec3 RotateEuler( const glm::vec3& EulerRadians )
-	{
-		Update();
-		return glm::eulerAngles( glm::quat( Math::ToGLM( RotationMatrix ) ) * glm::quat( EulerRadians ) );
-	}
-
-	Vector3D Scale( const Vector3D& Position )
-	{
-		Update();
-		return ScaleMatrix.Transform( Position );
-	}
-
-	glm::vec3 Transform( const glm::vec3& Position )
-	{
-		Update();
-		return Math::ToGLM( TransformationMatrix ) * glm::vec4( Position, 1.0f );
-	}
-
-	Vector3D Transform( const Vector3D& Position )
-	{
-		Update();
-		Vector3D Vector = TransformationMatrix.Transform( Position );
-		return Vector;
-	}
-
-	FTransform Transform( const FTransform& B )
-	{
-		Update();
-
-		auto NewPosition = Position( B.GetPosition() );
-		Vector3D Position3D = { NewPosition[0], NewPosition[1], NewPosition[2] };
-
-		auto OrientationRadians = glm::radians( Math::ToGLM( B.GetOrientation() ) );
-		auto NewOrientation = RotateEuler( OrientationRadians );
-		NewOrientation = glm::degrees( NewOrientation );
-		Vector3D Orientation3D = { NewOrientation[0], NewOrientation[1], NewOrientation[2] };
-
-		auto NewSize = Scale( B.GetSize() );
-		Vector3D Size3D = { NewSize[0], NewSize[1], NewSize[2] };
-
-		return FTransform( Position3D, Orientation3D, Size3D );
-	}
-
-private:
-	void Dirty()
-	{
-		ShouldUpdate = true;
-	}
-
-	void Update()
-	{
-		if( ShouldUpdate )
-		{
-			static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
-			static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
-			static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
-
-			ScaleMatrix = IdentityMatrix;
-			ScaleMatrix.Scale( { StoredSize[0], StoredSize[1], StoredSize[2] } );
-
-			Vector3D Radians = StoredOrientation;
-			Radians.X = glm::radians( Radians.X );
-			Radians.Y = glm::radians( Radians.Y );
-			Radians.Z = glm::radians( Radians.Z );
-
-			glm::quat Pitch = glm::angleAxis( Radians.X, AxisX );
-			glm::quat Yaw = glm::angleAxis( Radians.Y, AxisY );
-			glm::quat Roll = glm::angleAxis( Radians.Z, AxisZ );
-
-			glm::quat Quaternion = Yaw * Pitch * Roll;
-			RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
-
-			TranslationMatrix = IdentityMatrix;
-			TranslationMatrix.Translate( { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
-			// TranslationMatrix = Math::ToGLM( TranslateTest );
-			// TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
-
-			TransformationMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
-			TransformationMatrixInverse = Math::FromGLM( glm::inverse( Math::ToGLM( TransformationMatrix ) ) );
-		}
-	}
-
-	Matrix4D TranslationMatrix;
-	Matrix4D RotationMatrix;
-	Matrix4D TransformationMatrix;
-	Matrix4D TransformationMatrixInverse;
-	Matrix4D ScaleMatrix;
-
-	Vector3D StoredPosition;
-	Vector3D StoredOrientation;
-	Vector3D StoredSize;
-
-	bool ShouldUpdate;
 };

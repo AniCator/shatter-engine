@@ -233,6 +233,7 @@
     <ClCompile Include="Engine\Utility\Chunk.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\Math\Matrix.cpp" />
+    <ClCompile Include="Engine\Utility\Math\Transform.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilder.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilderASSIMP.cpp" />
     <ClCompile Include="Engine\Utility\Presence\Presence.cpp" />
@@ -309,6 +310,7 @@
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />
     <ClInclude Include="Engine\Utility\Math.h" />
     <ClInclude Include="Engine\Utility\Math\Matrix.h" />
+    <ClInclude Include="Engine\Utility\Math\Transform.h" />
     <ClInclude Include="Engine\Utility\Math\Vector.h" />
     <ClInclude Include="Engine\Utility\MeshBuilder.h" />
     <ClInclude Include="Engine\Utility\Presence\Precense.h" />

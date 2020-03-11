@@ -1,8 +1,16 @@
 ﻿// Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <vector>
+
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Display/Rendering/Camera.h>
+
+struct CameraKey
+{
+	FCameraSetup Setup;
+	float Time;
+};
 
 class CCameraEntity : public CPointEntity
 {
@@ -22,6 +30,8 @@ public:
 
 protected:
 	CCamera Camera;
+	std::vector<CameraKey> Keys;
+	int Target;
 	uint32_t Priority;
 	bool Active;
 };

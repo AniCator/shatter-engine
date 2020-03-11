@@ -79,7 +79,7 @@ public:
 
 	bool IsValid();
 
-	bool Populate( const FPrimitive& Primitive );
+	bool Populate( const FPrimitive<>& Primitive );
 
 	void Prepare( EDrawMode DrawModeOverride );
 	void Draw( EDrawMode DrawModeOverride = None );
@@ -111,7 +111,7 @@ private:
 	uint32_t HasIndexBuffer : 1;
 
 	FBounds AABB;
-	FPrimitive Primitive;
+	FPrimitive<> Primitive;
 
 	std::string Location;
 };
