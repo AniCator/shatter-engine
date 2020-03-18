@@ -106,9 +106,16 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 			GLuint ShaderTypeGL = static_cast<GLuint>( ShaderType );
 
 			HandleIn = glCreateShader( ShaderTypeGL );
-			glShaderSource( HandleIn, 1, &ShaderData, NULL );
+			if( HandleIn > 0 )
+			{
+				glShaderSource( HandleIn, 1, &ShaderData, NULL );
 
-			return true;
+				return true;
+			}
+			else
+			{
+				Log::Event( Log::Warning, "Failed to create shader \"%s\".\n", FileLocation );
+			}
 		}
 	}
 

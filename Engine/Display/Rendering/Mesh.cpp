@@ -244,7 +244,14 @@ bool CMesh::CreateIndexBuffer()
 	}
 	else
 	{
-		Log::Event( Log::Warning, "Mesh index buffer has already been created.\n" );
+		if( VertexBufferData.VertexBufferObject != 0 )
+		{
+			Log::Event( Log::Warning, "Mesh index buffer has already been created.\n" );
+		}
+		else
+		{
+			Log::Event( Log::Warning, "Mesh vertex buffer invalid, could not create index buffer.\n" );
+		}
 
 		return false;
 	}
