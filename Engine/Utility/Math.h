@@ -166,6 +166,13 @@ namespace Math
 		return { fabs( Value.X ), fabs( Value.Y ), fabs( Value.Z ) };
 	}
 
+	inline bool Equal( const float& A, const float& B, const float Tolerance = 0.001f )
+	{
+		float Difference = A - B;
+		Difference = fabs( Difference );
+		return Difference < Tolerance;
+	}
+
 	inline bool Equal( const Vector3D& A, const Vector3D& B, const float Tolerance = 0.001f )
 	{
 		Vector3D Difference = A - B;

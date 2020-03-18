@@ -1,6 +1,9 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "MeshEntity.h"
 
+#include <Game/Game.h>
+
+#include <Engine/Animation/Skeleton.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Physics/Physics.h>
@@ -159,12 +162,73 @@ void CMeshEntity::Debug()
 		auto& Skeleton = Mesh->GetSkeleton();
 		if( Skeleton.Matrices.size() > 0 )
 		{
-			auto WorldTransform = GetTransform();
-			for( auto& Matrix : Skeleton.Matrices )
+			std::string Name = "Bind";
+			auto& Iterator = Skeleton.Animations.find( "Idle" );
+			if( Iterator != Skeleton.Animations.end() )
 			{
-				Vector3D Start = WorldTransform.Transform( Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) ) );
-				Vector3D End = WorldTransform.Transform( Matrix.Transform( Vector3D( 0.0f, 0.0f, -1.0f ) ) );
-				UI::AddLine( Start, End, ::Color( 255, 0, 255 ) );
+				auto& Pair = *Iterator;
+				auto& Animation = Pair.second;
+				
+				const float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() );
+				const float Duration = 10.0f;
+				const float ModulatedTime = fmod( Time, Duration );
+
+				UI::AddText( Transform.GetPosition(), std::to_string( ModulatedTime ).c_str() );
+
+				auto WorldTransform = GetTransform();
+				for( size_t MatrixIndex = 0; MatrixIndex < Skeleton.Matrices.size(); MatrixIndex++ )
+				{
+					auto Matrix = Skeleton.Matrices[MatrixIndex];
+					Matrix4D TranslationMatrix, RotationMatrix, ScaleMatrix;
+
+					float ChosenTime = 0.0f;
+
+					for( auto& Key : Animation.Keys )
+					{
+						if( Key.BoneIndex != MatrixIndex )
+							continue;
+
+						float RelativeTime = ( Key.Time / Animation.Duration ) * Duration;
+						if( RelativeTime < ModulatedTime )
+						{
+							if( Key.Type == AnimationKey::Position )
+							{
+								auto Position = glm::mat4();
+								glm::translate( Position, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
+								TranslationMatrix = Math::FromGLM( Position );
+							}
+							else if( Key.Type == AnimationKey::Rotation )
+							{
+								auto Quaternion = glm::quat( Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
+								RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
+							}
+							else if( Key.Type == AnimationKey::Scale )
+							{
+								auto Scale = glm::mat4();
+								glm::scale( Scale, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
+								ScaleMatrix = Math::FromGLM( Scale );
+							}
+						}
+
+						ChosenTime = RelativeTime;
+					}
+
+					auto BoneMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
+					Matrix = Matrix * BoneMatrix;
+					Matrix = Skeleton.GlobalMatrixInverse * Skeleton.GlobalMatrix * Matrix;
+
+					glm::mat4 GLMMatrix = Math::ToGLM( Matrix );
+					auto WorldMatrix = Math::FromGLM( glm::inverse( GLMMatrix ) );
+					Vector3D PointA = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) ) );
+					Vector3D PointB = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -0.5f ) ) );
+					Vector3D PointC = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -1.0f ) ) );
+					UI::AddCircle( PointA, 3.0f, ::Color( 0, 0, 255 ) );
+					UI::AddLine( PointA, PointB, ::Color( 0, 0, 255 ) );
+					UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ) );
+					UI::AddCircle( PointC, 3.0f, ::Color( 255, 0, 0 ) );
+					UI::AddText( PointC, Skeleton.MatrixNames[MatrixIndex].c_str() );
+					UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
+				}
 			}
 		}
 	}

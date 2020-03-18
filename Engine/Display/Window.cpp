@@ -19,6 +19,10 @@
 #include "imgui_impl_opengl3.h"
 #endif
 
+#if defined(_DEBUG)
+#define KHRDebug
+#endif
+
 static void DebugCallbackOpenGL( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam )
 {
 	if( type == GL_DEBUG_TYPE_ERROR )
@@ -137,7 +141,7 @@ void CWindow::Create( const char* Title )
 
 	Log::Event( "OpenGL %s\n", glGetString( GL_VERSION ) );
 
-#if defined(_DEBUG)
+#if defined(KHRDebug)
 	if( GLAD_GL_KHR_debug )
 	{
 		Log::Event( "KHR debug extention enabled.\n" );

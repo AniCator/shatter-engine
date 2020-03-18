@@ -162,7 +162,7 @@ public:
 		return Matrix;
 	}
 
-	Matrix4D operator*( const Matrix4D& B )
+	Matrix4D operator*( const Matrix4D& B ) const
 	{
 		Matrix4D Result;
 		Result[X] = Columns[X] * B[X][X] + Columns[Y] * B[X][Y] + Columns[Z] * B[X][Z] + Columns[W] * B[X][W];
