@@ -134,7 +134,7 @@ void CProfiler::PlotPerformance()
 		auto SortEntries = [&] ( CRingBuffer<FProfileTimeEntry, TimeWindow>* A, CRingBuffer<FProfileTimeEntry, TimeWindow>* B ) {
 			const auto& TimeEntryA = A->Get( A->Offset( -1 ) );
 			const auto& TimeEntryB = B->Get( B->Offset( -1 ) );
-			return ExclusiveComparison( TimeEntryA.StartTime, TimeEntryB.StartTime );
+			return ExclusiveComparison( TimeEntryA.StartTime, TimeEntryB.StartTime ) && ExclusiveComparison( TimeEntryA.Depth, TimeEntryB.Depth );
 		};
 
 		std::sort( PlottableEntries.begin(), PlottableEntries.end(), SortEntries );
@@ -368,7 +368,15 @@ CTimerScope::CTimerScope( const FName& ScopeNameIn, bool TextOnlyIn )
 	ScopeName = ScopeNameIn;
 	TextOnly = TextOnlyIn;
 	StartTime = std::chrono::steady_clock::now();
-};
+}
+CTimerScope::CTimerScope( const FName& ScopeNameIn, const uint64_t& Milliseconds )
+{
+	Depth++;
+	ScopeName = ScopeNameIn;
+	TextOnly = false;
+	StartTime = std::chrono::steady_clock::now();
+	StartTime = std::chrono::steady_clock::time_point( StartTime - std::chrono::milliseconds( Milliseconds ) );
+}
 
 CTimerScope::~CTimerScope()
 {

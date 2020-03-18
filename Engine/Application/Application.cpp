@@ -1047,7 +1047,7 @@ void CApplication::Run()
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
 		if( RenderDeltaTime >= MaximumFrameTime || FPSLimit < 1 )
 		{
-			CTimerScope Scope_( "Frametime", false );
+			CTimerScope Scope_( "Frametime", RenderDeltaTime );
 			const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 			if( InputDeltaTime >= MaximumInputTime )
 			{
@@ -1163,7 +1163,7 @@ void CApplication::InitializeDefaultInputs()
 
 	if( DefaultExit )
 	{
-		Input.AddActionBinding( EKey::Escape, EAction::Release, [this] {
+		Input.AddActionBinding( EKey::Escape, EAction::Release, [&] {
 			Close();
 		} );
 	}
@@ -1180,8 +1180,13 @@ void CApplication::InitializeDefaultInputs()
 		PauseGame = !PauseGame;
 		} );
 
-	Input.AddActionBinding( EKey::NumpadSubtract, EAction::Release, [this] {
+	Input.AddActionBinding( EKey::NumpadSubtract, EAction::Release, [&] {
 		Tools = !Tools;
+	} );
+
+	Input.AddActionBinding( EKey::NumpadAdd, EAction::Release, [] {
+		CProfiler& Profiler = CProfiler::Get();
+		Profiler.SetEnabled( !Profiler.IsEnabled() );
 	} );
 }
 

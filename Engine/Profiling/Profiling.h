@@ -102,6 +102,7 @@ class CTimerScope
 {
 public:
 	CTimerScope( const FName& ScopeNameIn, bool TextOnly = true );
+	CTimerScope( const FName& ScopeNameIn, const uint64_t& Delta );
 	~CTimerScope();
 
 private:
