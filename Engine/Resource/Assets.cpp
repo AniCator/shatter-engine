@@ -81,7 +81,7 @@ void ParsePayload(FPrimitivePayload* Payload )
 			File.Load( true );
 			MeshBuilder::LM( Payload->Primitive, File );
 		}
-		else if( Extension != "obj" )
+		else
 		{
 			Skeleton Skeleton;
 			MeshBuilder::ASSIMP( Payload->Primitive, Skeleton, File );
@@ -314,7 +314,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 				Mesh->SetLocation( FileLocation );
 			}
 
-			if( Skeleton.Matrices.size() > 0 )
+			if( Skeleton.Bones.size() > 0 )
 			{
 				Mesh->SetSkeleton( Skeleton );
 			}

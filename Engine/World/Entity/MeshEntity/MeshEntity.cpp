@@ -146,6 +146,69 @@ void CMeshEntity::Destroy()
 	CPointEntity::Destroy();
 }
 
+const float Duration = 1.0f;
+
+void TransformBones( const float& Time, const Skeleton& Skeleton, const Animation& Animation, const Bone* Bone, std::vector<::Bone>& Result )
+{
+	Matrix4D TranslationMatrix, RotationMatrix, ScaleMatrix;
+	for( auto& Key : Animation.PositionKeys )
+	{
+		if( Key.BoneIndex != Bone->Index )
+			continue;
+
+		float RelativeTime = ( Key.Time / Animation.Duration ) * Duration;
+		if( RelativeTime < Time )
+		{
+			auto Position = glm::mat4();
+			glm::translate( Position, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
+			TranslationMatrix = Math::FromGLM( Position );
+		}
+	}
+
+	for( auto& Key : Animation.RotationKeys )
+	{
+		if( Key.BoneIndex != Bone->Index )
+			continue;
+
+		float RelativeTime = ( Key.Time / Animation.Duration ) * Duration;
+		if( RelativeTime < Time )
+		{
+			auto Quaternion = glm::quat( Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
+			RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
+		}
+	}
+
+	for( auto& Key : Animation.ScalingKeys )
+	{
+		if( Key.BoneIndex != Bone->Index )
+			continue;
+
+		float RelativeTime = ( Key.Time / Animation.Duration ) * Duration;
+		if( RelativeTime < Time )
+		{
+			auto Scale = glm::mat4();
+			glm::scale( Scale, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
+			ScaleMatrix = Math::FromGLM( Scale );
+		}
+	}
+
+	auto BoneMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
+	if( Bone->ParentIndex > -1 )
+	{
+		BoneMatrix = Skeleton.Bones[Bone->ParentIndex].Matrix * BoneMatrix;
+	}
+
+	Result[Bone->Index].Matrix = Skeleton.GlobalMatrixInverse * Skeleton.GlobalMatrix * BoneMatrix;
+
+	for( size_t ChildIndex = 0; ChildIndex < Bone->Children.size(); ChildIndex++ )
+	{
+		if( Bone->Children[ChildIndex] > -1 )
+		{
+			TransformBones( Time, Skeleton, Animation, &Skeleton.Bones[Bone->Children[ChildIndex]], Result );
+		}
+	}
+};
+
 void CMeshEntity::Debug()
 {
 	CPointEntity::Debug();
@@ -160,74 +223,57 @@ void CMeshEntity::Debug()
 		}
 
 		auto& Skeleton = Mesh->GetSkeleton();
-		if( Skeleton.Matrices.size() > 0 )
+		if( Skeleton.Bones.size() > 0 )
 		{
 			std::string Name = "Bind";
-			auto& Iterator = Skeleton.Animations.find( "Idle" );
+			const auto& Iterator = Skeleton.Animations.find( "Idle" );
 			if( Iterator != Skeleton.Animations.end() )
 			{
 				auto& Pair = *Iterator;
 				auto& Animation = Pair.second;
 				
 				const float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() );
-				const float Duration = 10.0f;
 				const float ModulatedTime = fmod( Time, Duration );
 
-				UI::AddText( Transform.GetPosition(), std::to_string( ModulatedTime ).c_str() );
+				// UI::AddText( Transform.GetPosition(), std::to_string( ModulatedTime ).c_str() );
 
-				auto WorldTransform = GetTransform();
-				for( size_t MatrixIndex = 0; MatrixIndex < Skeleton.Matrices.size(); MatrixIndex++ )
+				const Bone* Root = nullptr;
+				for( auto& Bone : Skeleton.Bones )
 				{
-					auto Matrix = Skeleton.Matrices[MatrixIndex];
-					Matrix4D TranslationMatrix, RotationMatrix, ScaleMatrix;
-
-					float ChosenTime = 0.0f;
-
-					for( auto& Key : Animation.Keys )
+					if( !Root )
 					{
-						if( Key.BoneIndex != MatrixIndex )
-							continue;
-
-						float RelativeTime = ( Key.Time / Animation.Duration ) * Duration;
-						if( RelativeTime < ModulatedTime )
-						{
-							if( Key.Type == AnimationKey::Position )
-							{
-								auto Position = glm::mat4();
-								glm::translate( Position, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
-								TranslationMatrix = Math::FromGLM( Position );
-							}
-							else if( Key.Type == AnimationKey::Rotation )
-							{
-								auto Quaternion = glm::quat( Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
-								RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
-							}
-							else if( Key.Type == AnimationKey::Scale )
-							{
-								auto Scale = glm::mat4();
-								glm::scale( Scale, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
-								ScaleMatrix = Math::FromGLM( Scale );
-							}
-						}
-
-						ChosenTime = RelativeTime;
+						Root = &Bone;
+						continue;
 					}
 
-					auto BoneMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
-					Matrix = Matrix * BoneMatrix;
-					Matrix = Skeleton.GlobalMatrixInverse * Skeleton.GlobalMatrix * Matrix;
+					if( Bone.ParentIndex < 0 && Bone.Children.size() > Root->Children.size() )
+					{
+						Root = &Bone;
+					}
+				}
 
-					glm::mat4 GLMMatrix = Math::ToGLM( Matrix );
-					auto WorldMatrix = Math::FromGLM( glm::inverse( GLMMatrix ) );
-					Vector3D PointA = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) ) );
-					Vector3D PointB = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -0.5f ) ) );
-					Vector3D PointC = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -1.0f ) ) );
-					UI::AddCircle( PointA, 3.0f, ::Color( 0, 0, 255 ) );
-					UI::AddLine( PointA, PointB, ::Color( 0, 0, 255 ) );
-					UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ) );
-					UI::AddCircle( PointC, 3.0f, ::Color( 255, 0, 0 ) );
-					UI::AddText( PointC, Skeleton.MatrixNames[MatrixIndex].c_str() );
-					UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
+				if( Root )
+				{
+					std::vector<Bone> Bones;
+					Bones.resize( Skeleton.Bones.size() );
+					TransformBones( ModulatedTime, Skeleton, Animation, Root, Bones );
+
+					auto WorldTransform = GetTransform();
+					for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
+					{
+						auto& Matrix = Bones[MatrixIndex].Matrix;
+						glm::mat4 GLMMatrix = Math::ToGLM( Matrix );
+						auto WorldMatrix = Math::FromGLM( glm::inverse( GLMMatrix ) );
+						Vector3D PointA = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) ) );
+						Vector3D PointB = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -0.5f ) ) );
+						Vector3D PointC = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -1.0f ) ) );
+						UI::AddCircle( PointA, 3.0f, ::Color( 0, 0, 255 ) );
+						UI::AddLine( PointA, PointB, ::Color( 0, 0, 255 ) );
+						UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ) );
+						UI::AddCircle( PointC, 3.0f, ::Color( 255, 0, 0 ) );
+						UI::AddText( PointC, Skeleton.MatrixNames[MatrixIndex].c_str() );
+						// UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
+					}
 				}
 			}
 		}

@@ -16,7 +16,9 @@ namespace EVertexAttribute
 		Position = 0,
 		TextureCoordinate,
 		Normal,
-		Color
+		Color,
+		Bone,
+		Weight
 	};
 }
 
@@ -94,7 +96,7 @@ public:
 	const std::string& GetLocation() const;
 	void SetLocation( const std::string& FileLocation );
 
-	const Skeleton& GetSkeleton();
+	const Skeleton& GetSkeleton() const;
 	void SetSkeleton( const Skeleton& Skeleton );
 private:
 	bool CreateVertexArrayObject();
@@ -113,6 +115,7 @@ private:
 	EMeshType MeshType;
 
 	uint32_t HasIndexBuffer : 1;
+	bool HasBones;
 
 	FBounds AABB;
 	FPrimitive Primitive;

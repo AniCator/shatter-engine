@@ -12,6 +12,8 @@ CMesh::CMesh( EMeshType InMeshType )
 	VertexArrayObject = 0;
 
 	Location = GeneratedMesh;
+
+	Skeleton = ::Skeleton();
 }
 
 CMesh::~CMesh()
@@ -132,7 +134,7 @@ void CMesh::SetLocation( const std::string& FileLocation )
 	Location = FileLocation;
 }
 
-const Skeleton& CMesh::GetSkeleton()
+const Skeleton& CMesh::GetSkeleton() const
 {
 	return Skeleton;
 }
@@ -166,6 +168,14 @@ bool CMesh::CreateVertexArrayObject()
 		glEnableVertexAttribArray( EVertexAttribute::Color );
 		const void* ColorPointer = reinterpret_cast<void*>( offsetof( FVertex, Color ) );
 		glVertexAttribPointer( EVertexAttribute::Color, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), ColorPointer );
+
+		glEnableVertexAttribArray( EVertexAttribute::Bone );
+		const void* BonePointer = reinterpret_cast<void*>( offsetof( FVertex, Bone ) );
+		glVertexAttribPointer( EVertexAttribute::Bone, 4, GL_FLOAT, GL_FALSE, sizeof( FVertex ), BonePointer );
+
+		glEnableVertexAttribArray( EVertexAttribute::Weight );
+		const void* WeightPointer = reinterpret_cast<void*>( offsetof( FVertex, Weight ) );
+		glVertexAttribPointer( EVertexAttribute::Weight, 4, GL_FLOAT, GL_FALSE, sizeof( FVertex ), WeightPointer );
 
 		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
 
@@ -202,6 +212,8 @@ bool CMesh::CreateVertexBuffer()
 			VertexData.Vertices[Index].Position = Primitive.Vertices[Index].Position;
 			VertexData.Vertices[Index].TextureCoordinate = Primitive.Vertices[Index].TextureCoordinate;
 			VertexData.Vertices[Index].Color = Primitive.Vertices[Index].Color;
+			VertexData.Vertices[Index].Bone = Primitive.Vertices[Index].Bone;
+			VertexData.Vertices[Index].Weight = Primitive.Vertices[Index].Weight;
 		}
 
 		VertexBufferData.VertexCount = Primitive.VertexCount;

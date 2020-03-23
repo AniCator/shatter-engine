@@ -29,6 +29,9 @@ struct FVertex
 	Vector3D Normal;
 	Vector3D Color;
 
+	Vector4D Bone;
+	Vector4D Weight;
+
 	bool operator<( const FVertex& B ) const 
 	{
 		return memcmp( ( void*) this, ( void*) &B, sizeof( FVertex ) ) > 0;
