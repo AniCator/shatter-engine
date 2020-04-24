@@ -235,6 +235,7 @@
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\Math\Matrix.cpp" />
     <ClCompile Include="Engine\Utility\Math\Transform.cpp" />
+    <ClCompile Include="Engine\Utility\Math\Vector.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilder.cpp" />
     <ClCompile Include="Engine\Utility\MeshBuilderASSIMP.cpp" />
     <ClCompile Include="Engine\Utility\Presence\Presence.cpp" />

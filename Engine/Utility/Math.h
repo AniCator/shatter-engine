@@ -66,6 +66,15 @@ namespace Math
 		return Direction.Normalized();
 	}
 
+	inline Vector3D DirectionToEuler( const Vector3D& Direction )
+	{
+		const float Pitch = atan2f( Direction.Z, sqrtf( Direction.X * Direction.X + Direction.Y * Direction.Y ) ) * ( 180.f / Math::Pi );
+		const float Yaw = atan2f( Direction.Y, Direction.X ) * ( 180.f / Math::Pi );
+		const float Roll = 0.0f;
+
+		return Vector3D( Pitch, Roll, Yaw );
+	}
+
 	inline float LengthSquared( const glm::vec2& Vector )
 	{
 		return Vector[0] * Vector[0] + Vector[1] * Vector[1];

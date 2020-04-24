@@ -2,6 +2,8 @@
 #pragma once
 
 #include <vector>
+#include <set>
+
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
 
@@ -112,7 +114,7 @@ public:
 		Static = false;
 		Stationary = true;
 
-		Entity = nullptr;
+		Entities.clear();
 		CBody::PreCollision();
 	}
 
@@ -122,7 +124,7 @@ public:
 		TriggerType Collider = dynamic_cast<TriggerType>( Target );
 		if( Collider )
 		{
-			Entity = Collider;
+			Entities.insert( Collider );
 			Contacts++;
 		}
 	}
@@ -132,7 +134,7 @@ public:
 
 	}
 
-	TriggerType Entity;
+	std::set<TriggerType> Entities;
 
 	virtual const FTransform& GetTransform() const override
 	{

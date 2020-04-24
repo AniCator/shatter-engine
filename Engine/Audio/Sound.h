@@ -23,6 +23,16 @@ namespace ESoundType
 	};
 }
 
+namespace EFalloff
+{
+	enum Type
+	{
+		None = 0,
+		Linear,
+		InverseSquare
+	};
+}
+
 class CSound
 {
 public:

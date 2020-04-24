@@ -401,6 +401,9 @@ public:
 
 		return VectorLength;
 	}
+
+	static const Vector3D Zero;
+	static const Vector3D One;
 };
 
 class Vector4D

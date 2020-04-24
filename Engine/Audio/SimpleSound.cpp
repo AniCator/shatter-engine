@@ -19,7 +19,7 @@ SoundBufferHandle CSimpleSound::Sound( const std::string& ResourcePath )
 	if( NewSoundBuffer->loadFromFile( ResourcePath ) )
 	{
 		Log::Event( "Loaded sound \"%s\"\n", ResourcePath.c_str() );
-		SoundBuffers.push_back( NewSoundBuffer );
+		SoundBuffers.emplace_back( NewSoundBuffer );
 
 		SoundBufferHandle Handle;
 		Handle.Handle = SoundBuffers.size() - 1;
@@ -39,7 +39,7 @@ StreamHandle CSimpleSound::Music( const std::string& ResourcePath )
 		Log::Event( "Opening stream \"%s\"\n", ResourcePath.c_str() );
 		FStream Stream;
 		Stream.Stream = NewMusic;
-		Streams.push_back( Stream );
+		Streams.emplace_back( Stream );
 
 		StreamHandle Handle;
 		Handle.Handle = Streams.size() - 1;
@@ -64,7 +64,7 @@ SoundHandle CSimpleSound::Start( SoundBufferHandle Handle )
 		NewSound.Voice->play();
 		NewSound.Playing = true;
 
-		Sounds.push_back( NewSound );
+		Sounds.emplace_back( NewSound );
 
 		SoundHandle NewHandle;
 		NewHandle.Handle = Sounds.size() - 1;

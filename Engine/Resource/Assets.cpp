@@ -693,12 +693,23 @@ CMesh* CAssets::FindMesh( const std::string& Name )
 
 CShader* CAssets::FindShader( const std::string& Name )
 {
-	return Find<CShader>( Name, Shaders );
+	auto Shader = Find<CShader>( Name, Shaders );
+	if( !Shader )
+	{
+		Log::Event( Log::Warning, "Could not find shader \"%s\".", Name.c_str() );
+	}
+
+	return Shader;
 }
 
 CTexture* CAssets::FindTexture( const std::string& Name )
 {
 	auto Texture = Find<CTexture>( Name, Textures );
+	if( !Texture )
+	{
+		Log::Event( Log::Warning, "Could not find texture \"%s\".", Name.c_str() );
+	}
+
 	return Texture ? Texture : Find<CTexture>( "error", Textures );
 }
 

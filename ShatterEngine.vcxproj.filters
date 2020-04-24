@@ -332,6 +332,9 @@
     <ClCompile Include="Engine\Animation\Skeleton.cpp">
       <Filter>Source Files\Engine\Animation</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\Math\Vector.cpp">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">

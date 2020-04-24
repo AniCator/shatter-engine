@@ -24,7 +24,7 @@ namespace Presence
 
 		Initialized = true;
 #else
-		Log::Event( Log::Warning, "Discord presence is disabled for debug builds.\n" );
+		Log::Event( Log::Warning, "Discord presence is disabled.\n" );
 #endif
 	}
 

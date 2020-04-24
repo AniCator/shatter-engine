@@ -220,9 +220,10 @@ SoundBufferHandle CSound::Select()
 		else if( PlayMode == ESoundPlayMode::Random )
 		{
 			uint32_t NewLocation = static_cast<uint32_t>( Math::Random() * BufferHandles.size() );
-			if( NewLocation == Location )
+			while( NewLocation == Location )
 			{
-				NewLocation = ( NewLocation + 1 ) % BufferHandles.size();
+				// NewLocation = ( NewLocation + 1 ) % BufferHandles.size();
+				NewLocation = static_cast<uint32_t>( Math::Random() * BufferHandles.size() );
 			}
 
 			Location = NewLocation;

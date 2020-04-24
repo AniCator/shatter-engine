@@ -1,20 +1,9 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Audio/Sound.h>
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math.h>
-
-class CSound;
-
-namespace EFalloff
-{
-	enum Type
-	{
-		None = 0,
-		Linear,
-		InverseSquare
-	};
-}
 
 class CSoundEntity : public CPointEntity
 {
