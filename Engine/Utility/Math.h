@@ -12,12 +12,6 @@
 #include <ThirdParty/glm/gtc/matrix_transform.hpp>
 #include <ThirdParty/glm/gtx/quaternion.hpp>
 
-#define Vector3DToInitializerList(Vector) { Vector[0],Vector[1],Vector[2] }
-#define Vector3DToGLM(Vector) glm::vec3( Vector[0],Vector[1],Vector[2] )
-
-#define Vector2DToInitializerList(Vector) { Vector[0],Vector[1] }
-#define Vector2DToGLM(Vector) glm::vec2( Vector[0],Vector[1] )
-
 static const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
 static const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
 static const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };

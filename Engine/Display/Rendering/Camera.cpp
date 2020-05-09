@@ -45,7 +45,7 @@ void CCamera::Update()
 		ProjectionMatrix = glm::ortho( -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
 	}
 
-	glm::vec3 CameraPosition = Vector3DToInitializerList( CameraSetup.CameraPosition );
+	glm::vec3 CameraPosition = Math::ToGLM( CameraSetup.CameraPosition );
 
 	CameraSetup.CameraRightVector = WorldUp.Cross( CameraSetup.CameraDirection ).Normalized();
 	CameraSetup.CameraUpVector = CameraSetup.CameraDirection.Cross( CameraSetup.CameraRightVector ).Normalized() - glm::radians( CameraOrientation[2] ) * CameraSetup.CameraRightVector;
@@ -53,7 +53,7 @@ void CCamera::Update()
 	ViewMatrix = glm::lookAt(
 		CameraPosition,
 		CameraPosition + Math::ToGLM( CameraSetup.CameraDirection ),
-		Vector3DToInitializerList( CameraSetup.CameraUpVector )
+		Math::ToGLM( CameraSetup.CameraUpVector )
 	);
 
 	ProjectionViewInverseMatrix = glm::inverse( ProjectionMatrix * ViewMatrix );
@@ -175,7 +175,7 @@ void CCamera::SetCameraDirection( const Vector3D& CameraDirection )
 void CCamera::SetCameraOrientation( const Vector3D& CameraOrientation )
 {
 	this->CameraOrientation = CameraOrientation;
-	this->CameraQuaternion = glm::quat( Vector3DToInitializerList( CameraOrientation ) );
+	this->CameraQuaternion = glm::quat( Math::ToGLM( CameraOrientation ) );
 
 	CameraSetup.CameraDirection[1] = cos( glm::radians( CameraOrientation[0] ) ) * cos( glm::radians( CameraOrientation[1] ) );
 	CameraSetup.CameraDirection[2] = sin( glm::radians( CameraOrientation[0] ) );
