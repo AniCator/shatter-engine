@@ -102,11 +102,18 @@ void CGameLayers::Shutdown()
 	}
 }
 
-void CGameLayers::Time( float& Time )
+void CGameLayers::Time( const float& Time )
 {
 	PreviousTime = CurrentTime;
 	CurrentTime = Time;
 	DeltaTime = CurrentTime - PreviousTime;
+}
+
+void CGameLayers::FrameTime( const float& FrameTime )
+{
+	PreviousFrameTime = CurrentFrameTime;
+	CurrentFrameTime = FrameTime;
+	DeltaFrameTime = CurrentFrameTime - PreviousFrameTime;
 }
 
 float CGameLayers::GetPreviousTime() const
@@ -132,6 +139,11 @@ float CGameLayers::GetTimeScale() const
 void CGameLayers::SetTimeScale( float TimeScaleIn )
 {
 	TimeScale = TimeScaleIn;
+}
+
+float CGameLayers::GetFrameTime() const
+{
+	return DeltaFrameTime;
 }
 
 std::vector<IGameLayer*> CGameLayers::GetGameLayers() const

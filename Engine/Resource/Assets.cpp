@@ -12,6 +12,7 @@
 #include <Engine/Display/Rendering/Mesh.h>
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Texture.h>
+#include <Engine/Display/Window.h>
 
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Profiling/Logging.h>
@@ -384,6 +385,9 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 
 CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -416,6 +420,9 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation 
 
 CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocation, const char* FragmentLocation )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -448,6 +455,9 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 
 CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode, const EImageFormat Format )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -484,6 +494,9 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 
 CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode, const EImageFormat Format )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -520,6 +533,9 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 
 CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -552,6 +568,9 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 
 CSound* CAssets::CreateNamedSound( const char* Name )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -576,6 +595,9 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 
 CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -608,6 +630,9 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 
 CSound* CAssets::CreateNamedStream( const char* Name )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -632,6 +657,9 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 
 CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocation )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -664,6 +692,9 @@ CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocat
 
 CSequence* CAssets::CreateNamedSequence( const char* Name )
 {
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -696,7 +727,7 @@ CShader* CAssets::FindShader( const std::string& Name )
 	auto Shader = Find<CShader>( Name, Shaders );
 	if( !Shader )
 	{
-		Log::Event( Log::Warning, "Could not find shader \"%s\".", Name.c_str() );
+		Log::Event( Log::Warning, "Could not find shader \"%s\".\n", Name.c_str() );
 	}
 
 	return Shader;
@@ -707,7 +738,7 @@ CTexture* CAssets::FindTexture( const std::string& Name )
 	auto Texture = Find<CTexture>( Name, Textures );
 	if( !Texture )
 	{
-		Log::Event( Log::Warning, "Could not find texture \"%s\".", Name.c_str() );
+		Log::Event( Log::Warning, "Could not find texture \"%s\".\n", Name.c_str() );
 	}
 
 	return Texture ? Texture : Find<CTexture>( "error", Textures );

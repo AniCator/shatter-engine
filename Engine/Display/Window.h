@@ -52,6 +52,12 @@ public:
 		return RenderingFrame;
 	}
 
+	void SetWindowless( const bool Enable );
+	bool IsWindowless() const
+	{
+		return Windowless;
+	}
+
 private:
 	struct GLFWmonitor* GetTargetMonitor();
 	ViewDimensions GetMonitorDimensions( struct GLFWmonitor* Monitor );
@@ -65,6 +71,7 @@ private:
 	ViewDimensions CurrentDimensions;
 
 	bool RenderingFrame;
+	bool Windowless;
 
 public:
 	static CWindow& Get()

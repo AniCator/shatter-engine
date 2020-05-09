@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Mesh.h"
 
+#include <Engine/Display/Window.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
@@ -48,8 +49,15 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 {
 	this->Primitive = Primitive;
 
-	bool bCreatedVertexBuffer = CreateVertexBuffer();
-	if( bCreatedVertexBuffer )
+	const bool ShouldCreateBuffers = !CWindow::Get().IsWindowless();
+	if( !ShouldCreateBuffers )
+	{
+		GenerateAABB();
+		return true;
+	}
+
+	bool CreatedVertexBuffer = CreateVertexBuffer();
+	if( CreatedVertexBuffer )
 	{
 		CreateIndexBuffer();
 	}
@@ -59,7 +67,7 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 	// Destroy the primitive, it's in the vertex data now.
 	this->Primitive = FPrimitive();
 
-	return bCreatedVertexBuffer;
+	return CreatedVertexBuffer;
 }
 
 void CMesh::Prepare( EDrawMode DrawModeOverride )

@@ -1030,6 +1030,9 @@ void CApplication::Run()
 	GameTimer.Start();
 	RenderTimer.Start();
 
+	CTimer RealTime( false );
+	RealTime.Start();
+
 	const int FPSLimit = CConfiguration::Get().GetInteger( "fps", 300 );
 
 	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
@@ -1048,10 +1051,17 @@ void CApplication::Run()
 		if( RenderDeltaTime >= MaximumFrameTime || FPSLimit < 1 )
 		{
 			CTimerScope Scope_( "Frametime", RenderDeltaTime );
+
+			GameLayersInstance->FrameTime( static_cast<float>( RealTime.GetElapsedTimeMilliseconds() ) * 0.001f );
+
 			const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 			if( InputDeltaTime >= MaximumInputTime )
 			{
-				PreviousZoomWheel = ImGui::GetIO().MouseWheel;
+				if( !MainWindow.IsWindowless() )
+				{
+					PreviousZoomWheel = ImGui::GetIO().MouseWheel;
+				}
+
 				MainWindow.ProcessInput();
 
 				InputTimer.Start();
@@ -1086,9 +1096,11 @@ void CApplication::Run()
 
 					const float TimeScaleParameter = CConfiguration::Get().GetFloat( "timescale", 1.0f );
 					const float TimeScaleGlobal = TimeScale * TimeScaleParameter;
-					ScaledGameTime += GameDeltaTime * 0.001f * TimeScaleGlobal;
 
-					// Update time
+					// Clamp the maximum time added to avoid excessive tick spikes.
+					ScaledGameTime += Math::Clamp( GameDeltaTime * 0.001f * TimeScaleGlobal, 0.0f, 1.0f );
+
+					// Update game time.
 					GameLayersInstance->Time( ScaledGameTime );
 					GameLayersInstance->SetTimeScale( TimeScaleGlobal );
 
@@ -1113,9 +1125,12 @@ void CApplication::Run()
 				GameLayersInstance->Frame();
 
 #if defined( IMGUI_ENABLED )
-				CProfiler::Get().Display();
-				CProfiler::Get().ClearFrame();
-				DebugMenu( this );
+				if( !MainWindow.IsWindowless() )
+				{
+					CProfiler::Get().Display();
+					CProfiler::Get().ClearFrame();
+					DebugMenu( this );
+				}
 #endif
 
 				MainWindow.RenderFrame();
@@ -1192,6 +1207,9 @@ void CApplication::InitializeDefaultInputs()
 
 void CApplication::ResetImGui()
 {
+	if( MainWindow.IsWindowless() )
+		return;
+
 #if defined( IMGUI_ENABLED )
 	Log::Event( "Setting font configuration.\n" );
 	static const char* FontLocation = "Resources/Roboto-Medium.ttf";
@@ -1330,6 +1348,10 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 		{
 			WaitForInput = true;
 		}
+		else if( strcmp( argv[Index], "-server" ) == 0 )
+		{
+			MainWindow.SetWindowless( true );
+		}
 	}
 }
 
@@ -1466,7 +1488,7 @@ void CApplication::Initialize()
 
 	MainWindow.Create( Name.c_str() );
 
-	if( !MainWindow.Valid() )
+	if( !MainWindow.Valid() && !MainWindow.IsWindowless() )
 	{
 		Log::Event( Log::Fatal, "Application window could not be created.\n" );
 	}
@@ -1474,7 +1496,7 @@ void CApplication::Initialize()
 	ResetImGui();
 
 	// Render a single frame to indicate we're initializing.
-	if( !MainWindow.ShouldClose() )
+	if( !MainWindow.ShouldClose() && !MainWindow.IsWindowless() )
 	{
 		MainWindow.BeginFrame();
 
@@ -1496,8 +1518,11 @@ void CApplication::Initialize()
 	}
 
 #if defined( IMGUI_ENABLED )
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
+	if( !MainWindow.IsWindowless() )
+	{
+		ImGui_ImplOpenGL3_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+	}
 #endif
 
 	ResetImGui();
@@ -1505,12 +1530,15 @@ void CApplication::Initialize()
 	Log::Event( "Binding engine inputs.\n" );
 
 	GLFWwindow* WindowHandle = MainWindow.Handle();
-	glfwSetKeyCallback( WindowHandle, InputKeyCallback );
-	glfwSetCharCallback( WindowHandle, InputCharCallback );
-	glfwSetMouseButtonCallback( WindowHandle, InputMouseButtonCallback );
-	glfwSetCursorPosCallback( WindowHandle, InputMousePositionCallback );
-	glfwSetScrollCallback( WindowHandle, InputScrollCallback );
-	glfwSetJoystickCallback( InputJoystickStatusCallback );
+	if( !MainWindow.IsWindowless() )
+	{
+		glfwSetKeyCallback( WindowHandle, InputKeyCallback );
+		glfwSetCharCallback( WindowHandle, InputCharCallback );
+		glfwSetMouseButtonCallback( WindowHandle, InputMouseButtonCallback );
+		glfwSetCursorPosCallback( WindowHandle, InputMousePositionCallback );
+		glfwSetScrollCallback( WindowHandle, InputScrollCallback );
+		glfwSetJoystickCallback( InputJoystickStatusCallback );
+	}
 
 	InitializeDefaultInputs();
 
@@ -1530,7 +1558,7 @@ void CApplication::Initialize()
 
 	// CAngelEngine::Get().Initialize();
 
-	if( WaitForInput )
+	if( WaitForInput && !MainWindow.IsWindowless() )
 	{
 		while( glfwGetKey( WindowHandle, 32 ) != GLFW_PRESS )
 		{

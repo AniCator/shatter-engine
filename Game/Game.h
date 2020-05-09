@@ -36,7 +36,8 @@ public:
 	void Tick();
 	void Shutdown();
 
-	void Time( float& Time );
+	void Time( const float& Time );
+	void FrameTime( const float& FrameTime );
 
 	float GetPreviousTime() const;
 	float GetCurrentTime() const;
@@ -44,6 +45,8 @@ public:
 
 	float GetTimeScale() const;
 	void SetTimeScale( float TimeScale );
+
+	float GetFrameTime() const;
 
 	std::vector<IGameLayer*> GetGameLayers() const;
 
@@ -55,6 +58,10 @@ private:
 	float DeltaTime;
 
 	float TimeScale;
+
+	float PreviousFrameTime;
+	float CurrentFrameTime;
+	float DeltaFrameTime;
 };
 
 extern CGameLayers* GameLayersInstance;

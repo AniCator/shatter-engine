@@ -40,6 +40,7 @@ CWindow::CWindow()
 {
 	Initialized = false;
 	ShowCursor = false;
+	Windowless = false;
 }
 
 void CWindow::Create( const char* Title )
@@ -56,6 +57,10 @@ void CWindow::Create( const char* Title )
 
 	// Make sure GLFW is terminated before initializing it in case the application is being re-initialized.
 	glfwTerminate();
+
+	if( IsWindowless() )
+		return;
+
 	if( !glfwInit() )
 	{
 		Log::Event( Log::Fatal, "Failed to initialize GLFW\n" );
@@ -151,7 +156,7 @@ void CWindow::Create( const char* Title )
 	}
 #endif
 
-	const int SwapInterval = config.GetInteger( "vsync", 0 );
+	const int SwapInterval = FullScreen ? config.GetInteger( "vsync", 0 ) : 0;
 	Log::Event( "Swap interval: %i\n", SwapInterval );
 	glfwSwapInterval( SwapInterval );
 
@@ -172,6 +177,9 @@ void CWindow::Create( const char* Title )
 
 void CWindow::Resize( const ViewDimensions& Dimensions )
 {
+	if( IsWindowless() ) 
+		return;
+
 	ViewDimensions NewDimensions;
 	if( Dimensions.Width > -1 && Dimensions.Height > -1 )
 	{
@@ -198,6 +206,9 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 
 void CWindow::Terminate()
 {
+	if( IsWindowless() )
+		return;
+
 #if defined( IMGUI_ENABLED )
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
@@ -214,6 +225,9 @@ GLFWwindow* CWindow::Handle() const
 
 void CWindow::ProcessInput()
 {
+	if( IsWindowless() )
+		return;
+
 	Profile( "Input" );
 
 	glfwPollEvents();
@@ -230,7 +244,7 @@ void CWindow::ProcessInput()
 
 void CWindow::BeginFrame()
 {
-	if( RenderingFrame )
+	if( IsRendering() || IsWindowless() )
 		return;
 
 	RenderingFrame = true;
@@ -244,7 +258,7 @@ void CWindow::BeginFrame()
 
 void CWindow::RenderFrame()
 {
-	if( !RenderingFrame )
+	if( !IsRendering() || IsWindowless() )
 		return;
 
 	Profile( "Render" );
@@ -292,6 +306,11 @@ bool CWindow::IsCursorEnabled() const
 CRenderer& CWindow::GetRenderer()
 {
 	return Renderer;
+}
+
+void CWindow::SetWindowless( const bool Enable )
+{
+	Windowless = true;
 }
 
 GLFWmonitor* CWindow::GetTargetMonitor()
