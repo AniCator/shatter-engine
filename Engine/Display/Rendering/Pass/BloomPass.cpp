@@ -24,6 +24,8 @@ CRenderPassBloom::CRenderPassBloom( int Width, int Height, const CCamera& Camera
 	BlurY = Assets.CreateNamedShader( "BloomBlurY", "Shaders/FullScreenQuad", "Shaders/BloomBlurY" );
 	BloomThreshold = Assets.CreateNamedShader( "BloomThreshold", "Shaders/FullScreenQuad", "Shaders/BloomThreshold" );
 	BloomComposite = Assets.CreateNamedShader( "BloomComposite", "Shaders/FullScreenQuad", "Shaders/BloomComposite" );
+
+	LensDirt = Assets.CreateNamedTexture( "LensDirt", "Textures/LensDirt.png" );
 }
 
 CRenderPassBloom::~CRenderPassBloom()
@@ -128,7 +130,7 @@ uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )
 	Composite.SetShader( BloomComposite );
 	Composite.SetTexture( Framebuffer, ETextureSlot::Slot0 );
 	Composite.SetTexture( BloomA, ETextureSlot::Slot1 );
-	Composite.SetTexture( Assets.CreateNamedTexture( "LensDirt", "Textures/LensDirt.png" ), ETextureSlot::Slot2 );
+	Composite.SetTexture( LensDirt, ETextureSlot::Slot2 );
 
 	Target = BloomB;
 	Calls += RenderRenderable( &Composite, Uniforms );

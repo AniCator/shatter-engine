@@ -21,4 +21,6 @@ public:
 	class CShader* BlurY = nullptr;
 
 	class CShader* BloomComposite = nullptr;
+
+	class CTexture* LensDirt = nullptr;
 };
