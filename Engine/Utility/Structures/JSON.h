@@ -11,6 +11,14 @@
 
 namespace JSON
 {
+	struct Container;
+	void PopString( const char*& Token, const char*& Start, const char*& End, size_t& Length );
+	Container GenerateTree( const CFile& File );
+	void RegenerateTree( Container& Tree );
+
+	// Always regenerates the tree.
+	std::string ExportTree( Container& Tree );
+
 	struct Object;
 	typedef std::vector<Object*> Vector;
 
@@ -36,16 +44,55 @@ namespace JSON
 				}
 			);
 
+			if( Result == Objects.end() )
+			{
+				return nullptr;
+			}
+
 			return *Result;
 		}
+
+		Object& operator=( const char* Value )
+		{
+			this->Value = std::string( Value );
+			return *this;
+		}
+
+		Object& operator=( const std::string& Value )
+		{
+			this->Value = Value;
+			return *this;
+		}
+
+		Object& operator=( const Container& Container );
 	};
 
 	struct Container
 	{
 		std::deque<Object> Objects;
 		Vector Tree;
-	};
 
-	void PopString( const char*& Token, const char*& Start, const char*& End, size_t& Length );
-	Container GenerateTree( const CFile& File );
+		Object& operator[]( const std::string& Search )
+		{
+			auto& Result = std::find_if( Tree.begin(), Tree.end(), [Search] ( Object* Item ) -> bool
+				{
+					return Item->Key == Search;
+				}
+			);
+
+			if( Result == Tree.end() )
+			{
+				Object Object;
+				Object.Key = Search;
+				Objects.emplace_back( Object );
+
+				RegenerateTree( *this );
+				return Objects[Objects.size() - 1];
+			}
+
+			return **Result;
+		}
+
+		Container& operator+=( const Container& Container );		
+	};
 }

@@ -100,6 +100,24 @@ bool CFile::Load( char* DataSource, const size_t SizeIn )
 	return true;
 }
 
+bool CFile::Load( const std::string& DataIn )
+{
+	if( Data )
+	{
+		delete[] Data;
+		Data = nullptr;
+	}
+
+	const size_t Characters = DataIn.length();
+
+	Binary = false;
+	Data = new char[Characters];
+	DataIn.copy( Data, Characters );
+	FileSize = Characters * sizeof(char);
+
+	return true;
+}
+
 bool CFile::Load( CData& Data )
 {
 	const size_t Size = Data.Size();

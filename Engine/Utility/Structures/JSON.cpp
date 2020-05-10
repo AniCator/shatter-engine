@@ -192,14 +192,172 @@ namespace JSON
 			Token++;
 		}
 
-		for( auto& Object : Container.Objects )
+		RegenerateTree( Container );
+
+		return Container;
+	}
+
+	void RegenerateTree( Container& Tree )
+	{
+		Tree.Tree.clear();
+
+		for( auto& Object : Tree.Objects )
 		{
 			if( !Object.Parent )
 			{
-				Container.Tree.push_back( &Object );
+				Tree.Tree.push_back( &Object );
 			}
 		}
+	}
 
-		return Container;
+	void StringifyObject( std::stringstream& Stream, Object* Object, const uint32_t Offset, const bool Last )
+	{
+		std::string OffsetString;
+
+		for( uint32_t Index = 0; Index < Offset; Index++ )
+		{
+			OffsetString += "\t";
+		}
+
+		if( Object->Objects.size() > 0 )
+		{
+			const bool HasKey = Object->Key.length() != 0;
+
+			if( HasKey )
+			{
+				Stream << OffsetString << "\"" << Object->Key << "\" : ";
+				Stream << "[\n";
+			}
+			else
+			{
+				Stream << OffsetString << "{\n";
+			}
+
+			uint32_t Iterator = 1;
+			for( uint32_t Index = 0; Index < Object->Objects.size(); Index++ )
+			{
+				uint32_t NewOffset = Offset + 1;
+				StringifyObject( Stream, Object->Objects[Index], NewOffset, Index == ( Object->Objects.size() - 1 ) );
+			}
+
+			if( HasKey )
+			{
+				Stream << OffsetString << "]\n";
+			}
+			else
+			{
+				if( Last )
+				{
+					Stream << OffsetString << "}\n";
+				}
+				else
+				{
+					Stream << OffsetString << "},\n";
+				}
+			}
+		}
+		else
+		{
+			if( Object->Value.length() > 0 )
+			{
+				Stream << OffsetString << "\"" << Object->Key << "\" : \"" << Object->Value;
+			}
+			else
+			{
+				Stream << OffsetString << "\"" << Object->Key;
+			}
+
+			if( Last )
+			{
+				Stream << "\"\n";
+			}
+			else
+			{
+				Stream << "\",\n";
+			}
+			
+		}
+	}
+
+	std::string ExportTree( Container& Tree )
+	{
+		RegenerateTree( Tree );
+
+		std::stringstream Stream;
+
+		Stream << "{\n";
+
+		for( uint32_t Index = 0; Index < Tree.Tree.size(); Index++ )
+		{
+			StringifyObject( Stream, Tree.Tree[Index], 1, Index == ( Tree.Tree.size() - 1 ) );
+		}
+
+		Stream << "}";
+
+		return Stream.str();
+	}
+
+	void IntegrateBranch( Container& Container, Object* Branch )
+	{
+		if( Branch->Objects.size() > 0 )
+		{
+			for( auto& Twig : Branch->Objects )
+			{
+				Object NewObject = *Twig;
+				NewObject.Parent = nullptr;
+				NewObject.Objects.clear();
+				Container.Objects.emplace_back( NewObject );
+
+				IntegrateBranch( Container, &Container.Objects[Container.Objects.size() - 1] );
+			}
+		}
+		else
+		{
+			Object NewObject = *Branch;
+			NewObject.Parent = nullptr;
+			Container.Objects.emplace_back( NewObject );
+		}
+	}
+	Container& Container::operator+=( const Container& Container )
+	{
+		for( auto& Branch : Container.Tree )
+		{
+			IntegrateBranch( *this, Branch );
+		}
+
+		RegenerateTree( *this );
+
+		return *this;
+	}
+
+	void CopyTree( Object* Source, Object* Target )
+	{
+		Target->Key = Source->Key;
+		Target->Value = Source->Value;
+		Target->IsObject = Source->IsObject;
+		Target->Objects.clear();
+
+		if( Source->Objects.size() > 0 )
+		{
+			for( auto& SourceObject : Source->Objects )
+			{
+				Object TargetObject;
+				CopyTree( SourceObject, &TargetObject );
+
+				TargetObject.Parent = Target;
+				// Target->Objects.emplace_back( TargetObject );
+				// TODO: Container isn't known and the container stores all the objects.
+			}
+		}
+	}
+
+	Object& Object::operator=( const Container& Container )
+	{
+		for( auto& Branch : Container.Tree )
+		{
+			CopyTree( Branch, this );
+		}
+
+		return *this;
 	}
 }

@@ -14,6 +14,7 @@ public:
 
 	virtual bool Load( bool Binary = false );
 	virtual bool Load( char* DataSource, const size_t SizeIn );
+	virtual bool Load( const std::string& Data );
 	virtual bool Load( CData& Data );
 	virtual bool Save();
 
