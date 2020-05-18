@@ -318,6 +318,7 @@ namespace JSON
 			Container.Objects.emplace_back( NewObject );
 		}
 	}
+
 	Container& Container::operator+=( const Container& Container )
 	{
 		for( auto& Branch : Container.Tree )
