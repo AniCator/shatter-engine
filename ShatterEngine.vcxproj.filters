@@ -335,6 +335,9 @@
     <ClCompile Include="Engine\Utility\Math\Vector.cpp">
       <Filter>Source Files\Engine\Utility\Math</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\Thread.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -603,6 +606,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Animation\Skeleton.h">
       <Filter>Source Files\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Thread.h">
+      <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
