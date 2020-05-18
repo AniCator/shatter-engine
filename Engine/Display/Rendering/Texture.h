@@ -18,6 +18,7 @@ public:
 
 	bool Load( const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
 	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
+	void Save( const char* FileLocation = nullptr );
 	void Bind( ETextureSlot Slot );
 
 	const std::string& GetLocation() const;

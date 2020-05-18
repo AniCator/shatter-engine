@@ -3,6 +3,9 @@
 
 #define STB_IMAGE_IMPLEMENTATION
 #include <ThirdParty/stb/stb_image.h>
+#define STB_IMAGE_WRITE_IMPLEMENTATION
+#define STBI_MSC_SECURE_CRT
+#include <ThirdParty/stb/stb_image_write.h>
 
 #include <Engine/Display/Rendering/TextureEnumeratorsGL.h>
 #include <Engine/Profiling/Logging.h>
@@ -94,6 +97,19 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 
 	const void* Pixels = Data;
 
+	if( Pixels )
+	{
+		// Delete old data.
+		auto ImageData = GetImageData();
+		if( ImageData )
+		{
+			stbi_image_free( ImageData );
+		}
+
+		// Assume input data is 8-bit.
+		ImageData8 = Data;
+	}
+
 	if( !Pixels )
 	{
 		Pixels = GetImageData();
@@ -102,7 +118,22 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	if( !Pixels || WidthIn < 1 || HeightIn < 1 || ChannelsIn < 1 )
 		return false;
 
-	glGenTextures( 1, &Handle );
+	Width = WidthIn;
+	Height = HeightIn;
+	Channels = ChannelsIn;
+	FilteringMode = ModeIn;
+	Format = PreferredFormatIn;
+
+	if( Handle == 0 )
+	{
+		glGenTextures( 1, &Handle );
+	}
+
+	if( Handle == 0 )
+	{
+		return false;
+	}
+
 	glBindTexture( GL_TEXTURE_2D, Handle );
 
 	// Wrapping parameters
@@ -110,21 +141,14 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
 
 	// Filtering parameters
-	FilteringMode = ModeIn;
 	const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GetFilteringMipMapMode( Mode ) );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
-
-	Width = WidthIn;
-	Height = HeightIn;
-	Channels = ChannelsIn;
 
 	const auto ImageFormat = static_cast<EImageFormatType>( PreferredFormatIn );
 	// auto Format = ImageFormatToFormat[ImageFormat];
 	auto Type = GetImageFormatType( ImageFormat );
 	auto InternalFormat = ::GetImageFormat( ImageFormat );
-
-	Format = PreferredFormatIn;
 
 	const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
 	const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
@@ -162,6 +186,18 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	}
 
 	return Supported;
+}
+
+void CTexture::Save( const char* FileLocation )
+{
+	auto Data = GetImageData();
+	if( Data )
+	{
+		std::string ExportLocation = FileLocation ? FileLocation : Location;
+		ExportLocation += ".tga";
+
+		stbi_write_tga( ExportLocation.c_str(), Width, Height, Channels, Data );
+	}
 }
 
 void CTexture::Bind( ETextureSlot Slot )

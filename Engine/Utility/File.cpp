@@ -5,6 +5,8 @@
 #include <fstream>
 #include <algorithm>
 
+#pragma warning(disable:4996)
+
 CFile::CFile( const char* FileLocationIn )
 {
 	Data = nullptr;
