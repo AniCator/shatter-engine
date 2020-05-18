@@ -1352,6 +1352,106 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 		{
 			MainWindow.SetWindowless( true );
 		}
+		else if( strcmp( argv[Index], "-atlas" ) == 0 )
+		{
+			RedirectLogToConsole();
+
+			MainWindow.Create( "Atlas" );
+			MainWindow.Resize( ViewDimensions( 64, 64 ) );
+
+			Log::Event( "Generating atlas...\n" );
+
+			std::deque<CTexture> Textures;
+
+			int NextIndex = Index + 1;
+			while( NextIndex < argc )
+			{
+				auto Location = argv[NextIndex++];
+				Log::Event( "Path: %s\n", Location );
+				Textures.emplace_back( CTexture( Location ) );
+				Textures[Textures.size() - 1].Load();
+
+			}
+
+			if( Textures.size() > 0 )
+			{
+				int SourceIndex = 0;
+				int SampleIndex = 0;
+				bool SourceValid = true;
+				auto ImageData = Textures[SourceIndex].GetImageData();
+
+				const int AtlasSize = 1024;
+				const int AtlasChannels = 3;
+				const size_t AtlasLength = AtlasSize * AtlasSize * AtlasChannels;
+				unsigned char* AtlasData = new unsigned char[AtlasLength];
+
+				unsigned char OddColor[AtlasChannels] = {
+					255,0,255
+				};
+
+				unsigned char EvenColor[AtlasChannels] = {
+					0,0,0
+				};
+
+				bool Odd = false;
+				for( size_t Index = 0; Index < AtlasLength; Index++ )
+				{
+					size_t Offset = Index % ( AtlasSize * AtlasChannels );
+					const size_t Channel = ( Index ) % AtlasChannels;
+					if( Channel == 0 )
+					{
+						Odd = !Odd;
+					}
+
+					if( Offset == 0 )
+					{
+						Odd = !Odd;
+					}
+
+					auto Pointer = reinterpret_cast<unsigned char*>( ImageData );
+					if( SourceValid && !Pointer[SampleIndex] )
+					{
+						SourceValid = false;
+						SourceIndex++;
+						if( SourceIndex < Textures.size() )
+						{
+							ImageData = Textures[SourceIndex].GetImageData();
+							SampleIndex = 0;
+
+							Pointer = reinterpret_cast<unsigned char*>( ImageData );
+							if( Pointer[SampleIndex] )
+							{
+								SourceValid = true;
+							}
+						}
+					}
+
+					if( SourceValid )
+					{
+						AtlasData[Index] = Pointer[SampleIndex];
+					}
+					else
+					{
+						if( Odd )
+						{
+							AtlasData[Index] = OddColor[Channel];
+						}
+						else
+						{
+							AtlasData[Index] = EvenColor[Channel];
+						}
+					}
+
+					SampleIndex++;
+				}
+
+				CTexture Atlas;
+				Atlas.Load( AtlasData, AtlasSize, AtlasSize, AtlasChannels );
+				Atlas.Save( "Atlas" );
+			}
+
+			exit(0);
+		}
 	}
 }
 
