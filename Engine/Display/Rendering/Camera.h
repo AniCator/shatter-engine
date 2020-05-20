@@ -36,10 +36,38 @@ struct FCameraSetup
 	static FCameraSetup Mix( const FCameraSetup& A, const FCameraSetup& B, const float& Alpha );
 };
 
-struct Corners
+struct Plane
 {
-	Corners() = default;
-	Corners(FCameraSetup& Setup);
+	Plane()
+	{
+		Point = Vector3D::Zero;
+		Normal = Vector3D( 0.0f, 0.0f, 1.0f );
+	};
+
+	Plane(const Vector3D& Point, const Vector3D& Normal)
+	{
+		this->Point = Point;
+		this->Normal = Normal;
+	};
+
+	Plane( const Vector3D& A, const Vector3D& B, const Vector3D& C )
+	{
+		Point = B - A;
+
+		const Vector3D Edge = C - A;
+		Normal = Point.Cross( Edge ).Normalized();
+	};
+
+	Vector3D Point;
+	Vector3D Normal;
+};
+
+struct Frustum
+{
+	Frustum() = default;
+	Frustum( FCameraSetup& Setup );
+
+	bool Contains( const Vector3D& Point ) const;
 
 	Vector3D TopRightNear;
 	Vector3D BottomLeftNear;
@@ -50,6 +78,19 @@ struct Corners
 	Vector3D BottomLeftFar;
 	Vector3D TopRightFar;
 	Vector3D BottomRightFar;
+
+	enum
+	{
+		Top,
+		Bottom,
+		Left,
+		Right,
+		Near,
+		Far,
+		Maximum
+	};
+
+	Plane Plane[Maximum];
 };
 
 class CCamera
@@ -78,7 +119,7 @@ public:
 	const glm::mat4& GetViewProjectionInverse() const;
 
 	FCameraSetup& GetCameraSetup();
-	Corners GetCorners() const;
+	Frustum GetFrustum() const;
 
 	Vector3D CameraOrientation;
 private:
@@ -91,5 +132,5 @@ private:
 
 	glm::quat CameraQuaternion;
 
-	Corners Corners;
+	Frustum Frustum;
 };

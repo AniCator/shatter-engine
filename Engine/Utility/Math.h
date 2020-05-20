@@ -418,13 +418,3 @@ namespace Math
 		return Result;
 	}
 }
-
-struct FFrustumPlane
-{
-
-};
-
-struct FFrustum
-{
-	FFrustumPlane Planes[6];
-};

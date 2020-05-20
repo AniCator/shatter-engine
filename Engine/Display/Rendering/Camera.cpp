@@ -23,7 +23,36 @@ FCameraSetup FCameraSetup::Mix( const FCameraSetup& A, const FCameraSetup& B, co
 	return A;
 }
 
-Corners::Corners( FCameraSetup& Setup )
+bool PlaneTest( const Plane& Plane, const Vector3D& Point )
+{
+	const auto Vector = (Plane.Point - Point).Normalized();
+	return Vector.Dot( Plane.Normal ) > 0.0f;
+}
+
+bool Frustum::Contains( const Vector3D& Point ) const
+{
+	if( !PlaneTest( Plane[Top], Point ) )
+		return false;
+
+	if( !PlaneTest( Plane[Bottom], Point ) )
+		return false;
+
+	if( !PlaneTest( Plane[Left], Point ) )
+		return false;
+
+	if( !PlaneTest( Plane[Right], Point ) )
+		return false;
+
+	if( !PlaneTest( Plane[Near], Point ) )
+		return false;
+
+	if( !PlaneTest( Plane[Far], Point ) )
+		return false;
+
+	return true;
+}
+
+Frustum::Frustum( FCameraSetup& Setup )
 {
 	Vector2D NearOffset;
 	Vector2D FarOffset;
@@ -53,6 +82,7 @@ Corners::Corners( FCameraSetup& Setup )
 	const Vector3D NearCenter = Setup.CameraPosition + Setup.CameraDirection * Setup.NearPlaneDistance;
 	const Vector3D FarCenter = Setup.CameraPosition + Setup.CameraDirection * Setup.FarPlaneDistance;
 
+	// Calculate the Frustum.
 	TopRightNear = NearCenter + Setup.CameraUpVector * NearOffset.Y - Setup.CameraRightVector * NearOffset.X;
 	TopRightFar = FarCenter + Setup.CameraUpVector * FarOffset.Y - Setup.CameraRightVector * FarOffset.X;
 
@@ -64,12 +94,24 @@ Corners::Corners( FCameraSetup& Setup )
 
 	BottomRightNear = NearCenter - Setup.CameraUpVector * NearOffset.Y - Setup.CameraRightVector * NearOffset.X;
 	BottomRightFar = FarCenter - Setup.CameraUpVector * FarOffset.Y - Setup.CameraRightVector * FarOffset.X;
+
+	// Calculate the plane vectors.
+	Plane[Top] = ::Plane(TopLeftNear, TopRightFar, TopLeftFar );
+	Plane[Bottom] = ::Plane(BottomLeftNear, BottomRightFar, BottomRightNear );
+
+	Plane[Left] = ::Plane( BottomLeftNear, TopLeftFar, BottomLeftFar );
+	Plane[Right] = ::Plane( BottomRightNear, TopRightFar, TopRightNear );
+
+	Plane[Near] = ::Plane( BottomLeftNear, TopRightNear, TopLeftNear );
+	Plane[Far] = ::Plane( BottomLeftFar, TopRightFar, TopLeftFar );
 }
 
 CCamera::CCamera()
 {
 	CameraSetup = FCameraSetup();
 	CameraOrientation = { 0.0f, 0.0f, 0.0f };
+
+	Frustum = ::Frustum( CameraSetup );
 }
 
 CCamera::~CCamera()
@@ -101,33 +143,41 @@ void CCamera::Update()
 
 	ProjectionViewInverseMatrix = glm::inverse( ProjectionMatrix * ViewMatrix );
 
-	Corners = ::Corners( CameraSetup );
+	Frustum = ::Frustum( CameraSetup );
 	
 }
 
 void CCamera::DrawFrustum() const
 {
-	const auto Corners = GetCorners();
-
-	UI::AddLine( Corners.TopRightNear, Corners.TopRightFar, Color::Red );
-	UI::AddLine( Corners.BottomLeftNear, Corners.BottomLeftFar, Color::Green );
-	UI::AddLine( Corners.TopLeftNear, Corners.TopLeftFar, Color::Blue );
-	UI::AddLine( Corners.BottomRightNear, Corners.BottomRightFar, Color( 255, 255, 0 ) );
+	UI::AddLine( Frustum.TopRightNear, Frustum.TopRightFar, Color::Red );
+	UI::AddLine( Frustum.BottomLeftNear, Frustum.BottomLeftFar, Color::Green );
+	UI::AddLine( Frustum.TopLeftNear, Frustum.TopLeftFar, Color::Blue );
+	UI::AddLine( Frustum.BottomRightNear, Frustum.BottomRightFar, Color( 255, 255, 0 ) );
 
 	const Color FrustumBorderColor = Color( 128, 128, 128 );
-	UI::AddLine( Corners.TopLeftNear, Corners.TopRightNear, FrustumBorderColor );
-	UI::AddLine( Corners.BottomLeftNear, Corners.BottomRightNear, FrustumBorderColor );
+	UI::AddLine( Frustum.TopLeftNear, Frustum.TopRightNear, FrustumBorderColor );
+	UI::AddLine( Frustum.BottomLeftNear, Frustum.BottomRightNear, FrustumBorderColor );
 
-	UI::AddLine( Corners.TopLeftNear, Corners.BottomLeftNear, FrustumBorderColor );
-	UI::AddLine( Corners.TopRightNear, Corners.BottomRightNear, FrustumBorderColor );
+	UI::AddLine( Frustum.TopLeftNear, Frustum.BottomLeftNear, FrustumBorderColor );
+	UI::AddLine( Frustum.TopRightNear, Frustum.BottomRightNear, FrustumBorderColor );
 
-	UI::AddLine( Corners.TopLeftFar, Corners.TopRightFar, FrustumBorderColor );
-	UI::AddLine( Corners.BottomLeftFar, Corners.BottomRightFar, FrustumBorderColor );
+	UI::AddLine( Frustum.TopLeftFar, Frustum.TopRightFar, FrustumBorderColor );
+	UI::AddLine( Frustum.BottomLeftFar, Frustum.BottomRightFar, FrustumBorderColor );
 
-	UI::AddLine( Corners.TopLeftFar, Corners.BottomLeftFar, FrustumBorderColor );
-	UI::AddLine( Corners.TopRightFar, Corners.BottomRightFar, FrustumBorderColor );
+	UI::AddLine( Frustum.TopLeftFar, Frustum.BottomLeftFar, FrustumBorderColor );
+	UI::AddLine( Frustum.TopRightFar, Frustum.BottomRightFar, FrustumBorderColor );
 
 	UI::AddLine( CameraSetup.CameraPosition, CameraSetup.CameraPosition + CameraSetup.CameraDirection * CameraSetup.NearPlaneDistance, Color::White );
+
+	const Color FrustumPlaneColor = Color( 255, 0, 255 );
+	UI::AddLine( Frustum.Plane[Frustum::Top].Point, Frustum.Plane[Frustum::Top].Point + Frustum.Plane[Frustum::Top].Normal, FrustumPlaneColor );
+	UI::AddLine( Frustum.Plane[Frustum::Bottom].Point, Frustum.Plane[Frustum::Bottom].Point + Frustum.Plane[Frustum::Bottom].Normal, FrustumPlaneColor );
+
+	UI::AddLine( Frustum.Plane[Frustum::Left].Point, Frustum.Plane[Frustum::Left].Point + Frustum.Plane[Frustum::Left].Normal, FrustumPlaneColor );
+	UI::AddLine( Frustum.Plane[Frustum::Right].Point, Frustum.Plane[Frustum::Right].Point + Frustum.Plane[Frustum::Right].Normal, FrustumPlaneColor );
+
+	UI::AddLine( Frustum.Plane[Frustum::Near].Point, Frustum.Plane[Frustum::Near].Point + Frustum.Plane[Frustum::Near].Normal, FrustumPlaneColor );
+	UI::AddLine( Frustum.Plane[Frustum::Far].Point, Frustum.Plane[Frustum::Far].Point + Frustum.Plane[Frustum::Far].Normal, FrustumPlaneColor );
 }
 
 void CCamera::SetFieldOfView( const float& FieldOfView )
@@ -226,7 +276,7 @@ FCameraSetup& CCamera::GetCameraSetup()
 	return CameraSetup;
 }
 
-Corners CCamera::GetCorners() const
+Frustum CCamera::GetFrustum() const
 {
-	return Corners;
+	return Frustum;
 }
