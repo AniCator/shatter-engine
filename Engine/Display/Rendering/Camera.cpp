@@ -88,7 +88,7 @@ void CCamera::Update()
 		ProjectionMatrix = glm::ortho( -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
 	}
 
-	glm::vec3 CameraPosition = Math::ToGLM( CameraSetup.CameraPosition );
+	const glm::vec3 CameraPosition = Math::ToGLM( CameraSetup.CameraPosition );
 
 	CameraSetup.CameraRightVector = WorldUp.Cross( CameraSetup.CameraDirection ).Normalized();
 	CameraSetup.CameraUpVector = CameraSetup.CameraDirection.Cross( CameraSetup.CameraRightVector ).Normalized() - glm::radians( CameraOrientation[2] ) * CameraSetup.CameraRightVector;
@@ -101,7 +101,6 @@ void CCamera::Update()
 
 	ProjectionViewInverseMatrix = glm::inverse( ProjectionMatrix * ViewMatrix );
 
-	// Calculate the frustum's corners.
 	Corners = ::Corners( CameraSetup );
 	
 }
