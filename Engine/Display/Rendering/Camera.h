@@ -36,6 +36,22 @@ struct FCameraSetup
 	static FCameraSetup Mix( const FCameraSetup& A, const FCameraSetup& B, const float& Alpha );
 };
 
+struct Corners
+{
+	Corners() = default;
+	Corners(FCameraSetup& Setup);
+
+	Vector3D TopRightNear;
+	Vector3D BottomLeftNear;
+	Vector3D TopLeftNear;
+	Vector3D BottomRightNear;
+
+	Vector3D TopLeftFar;
+	Vector3D BottomLeftFar;
+	Vector3D TopRightFar;
+	Vector3D BottomRightFar;
+};
+
 class CCamera
 {
 public:
@@ -43,7 +59,7 @@ public:
 	~CCamera();
 
 	void Update();
-	void DrawFrustum();
+	void DrawFrustum() const;
 
 	void SetFieldOfView( const float& FieldOfView );
 	void SetOrthographicScale( const float& OrthographicScale );
@@ -62,11 +78,11 @@ public:
 	const glm::mat4& GetViewProjectionInverse() const;
 
 	FCameraSetup& GetCameraSetup();
+	Corners GetCorners() const;
 
 	Vector3D CameraOrientation;
 private:
 	FCameraSetup CameraSetup;
-	FFrustum Frustum;
 
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
@@ -74,4 +90,6 @@ private:
 	glm::mat4 ProjectionViewInverseMatrix;
 
 	glm::quat CameraQuaternion;
+
+	Corners Corners;
 };
