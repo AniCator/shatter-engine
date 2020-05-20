@@ -67,6 +67,22 @@ namespace JSON
 		Object& operator=( const Container& Container );
 	};
 
+	inline Object* Find( const Vector& Objects, const std::string& Search )
+	{
+		auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
+			{
+				return Item->Key == Search;
+			}
+		);
+
+		if( Result == Objects.end() )
+		{
+			return nullptr;
+		}
+
+		return *Result;
+	}
+
 	struct Container
 	{
 		std::deque<Object> Objects;
