@@ -37,7 +37,7 @@ public:
 	void SetCamera( const CCamera& Camera );
 	void SetPreviousCamera( const CCamera& Camera );
 
-	static void FrustumCull( CCamera& Camera, const std::vector<CRenderable*> Renderables );
+	static void FrustumCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables );
 
 	CRenderTexture* Target;
 	CCamera Camera;

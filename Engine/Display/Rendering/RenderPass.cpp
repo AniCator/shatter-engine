@@ -367,32 +367,22 @@ void CRenderPass::ConfigureDepthTest( CShader* Shader )
 	}
 }
 
-void PointCull( CCamera& Camera, const std::vector<CRenderable*> Renderables )
+void PointCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
-	const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
-	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
-	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
-	const glm::mat4 FrustumMatrix = ProjectionMatrix * ViewMatrix;
-
-	const static glm::vec3 ScreenSpaceMinimum = glm::vec3( -1.0f, -1.0f, -1.0f );
-	const static glm::vec3 ScreenSpaceMaximum = glm::vec3( 1.0f, 1.0f, 1.0f );
-
+	const auto& Frustum = Camera.GetFrustum();
 	for( auto& Renderable : Renderables )
 	{
-		Renderable->GetRenderData().ShouldRender = true;
+		Renderable->GetRenderData().ShouldRender = false;
 
-		const FBounds& Bounds = Renderable->GetMesh()->GetBounds();
-		const auto& Point = FrustumMatrix * glm::vec4( Math::ToGLM( Renderable->GetRenderData().Transform.GetPosition() ), 1.0f );
-		const glm::vec3 NormalizedPosition = glm::vec3( Point.x, -Point.y, Point.z ) / Point.w;
-
-		if( !Math::PointInBoundingBox( NormalizedPosition, ScreenSpaceMinimum, ScreenSpaceMaximum ) )
+		Vector3D Position3D = Renderable->GetRenderData().Transform.GetPosition();
+		if( Frustum.Contains( Position3D ) )
 		{
-			Renderable->GetRenderData().ShouldRender = false;
+			Renderable->GetRenderData().ShouldRender = true;
 		}
 	}
 }
 
-void SphereCull( CCamera& Camera, const std::vector<CRenderable*> Renderables )
+void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
 	const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
@@ -470,10 +460,10 @@ void SphereCull( CCamera& Camera, const std::vector<CRenderable*> Renderables )
 	}
 }
 
-void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*> Renderables )
+void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
-	SphereCull( Camera, Renderables );
-	// Camera.DrawFrustum();
+	// SphereCull( Camera, Renderables );
+	PointCull( Camera, Renderables );	
 }
 
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )
