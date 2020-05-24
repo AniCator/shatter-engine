@@ -50,7 +50,7 @@ void CWindow::Create( const char* Title )
 	// Load configuration data
 	CConfiguration& config = CConfiguration::Get();
 
-	const bool EnableBorder = !config.IsEnabled( "noborder", false );
+	const bool EnableBorder = !config.IsEnabled( "noborder", true );
 
 	CurrentDimensions.Width = config.GetInteger( "width", -1 );
 	CurrentDimensions.Height = config.GetInteger( "height", -1 );
