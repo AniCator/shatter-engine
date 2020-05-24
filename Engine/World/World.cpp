@@ -18,6 +18,7 @@ CWorld::CWorld()
 {
 	ActiveLevel = nullptr;
 	Physics = nullptr;
+	Camera = nullptr;
 }
 
 CWorld::~CWorld()
