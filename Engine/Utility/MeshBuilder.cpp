@@ -74,20 +74,20 @@ void MeshBuilder::Cube( FPrimitive& Primitive, const float Radius )
 		2, 1, 0, // Bottom A
 		0, 3, 2, // Bottom B
 
-		6, 5, 4, // Top A
-		4, 7, 6, // Top B
+		4, 5, 6, // Top A
+		6, 7, 4, // Top B
 
-		3, 2, 6,
-		6, 7, 3,
+		6, 2, 3,
+		3, 7, 6,
 
 		3, 0, 4,
 		4, 7, 3,
 
-		1, 0, 4,
-		4, 5, 1,
+		4, 0, 1,
+		1, 5, 4,
 
-		2, 1, 5,
-		5, 6, 2
+		5, 1, 2,
+		2, 6, 5
 	};
 
 	Primitive.Vertices = Vertices;
