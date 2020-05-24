@@ -1,19 +1,17 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
-#pragma once
-
 #include "Name.h"
 
 static NameIndex PoolIndex = 0;
 
 FName::FName( const char* Name )
 {
-	auto String = std::string( Name );
+	const auto String = std::string( Name );
 	auto& NamePool = Pool();
 
-	auto& Iterator = NamePool.find( String );
+	const auto& Iterator = NamePool.find( String );
 	if( Iterator == NamePool.end() )
 	{
-		auto& Result = NamePool.insert_or_assign( String, PoolIndex++ );
+		const auto& Result = NamePool.insert_or_assign( String, PoolIndex++ );
 		Index = Result.first->second;
 	}
 	else
@@ -26,10 +24,10 @@ FName::FName( const std::string& Name )
 {
 	auto& NamePool = Pool();
 
-	auto& Iterator = NamePool.find( Name );
+	const auto& Iterator = NamePool.find( Name );
 	if( Iterator == NamePool.end() )
 	{
-		auto& Result = NamePool.insert_or_assign( Name, PoolIndex++ );
+		const auto& Result = NamePool.insert_or_assign( Name, PoolIndex++ );
 		Index = Result.first->second;
 	}
 	else
@@ -50,7 +48,7 @@ FName::FName()
 
 const std::string& FName::String() const
 {
-	const auto& NamePool = const_cast<FName*>( this )->Pool();
+	const auto& NamePool = Pool();
 	for( auto& Iterator : NamePool )
 	{
 		if( Iterator.second == Index )
