@@ -56,9 +56,9 @@ struct Worker
 		return Running;
 	}
 
-	void Start(Task& ToExecute)
+	void Start( const Task& ToExecute )
 	{
-		std::unique_lock<std::mutex> Lock(Mutex);
+		std::unique_lock<std::mutex> Lock( Mutex );
 
 		Task = ToExecute;
 		Ready = true;
