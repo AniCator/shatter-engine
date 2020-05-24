@@ -463,7 +463,7 @@ void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
 	// SphereCull( Camera, Renderables );
-	PointCull( Camera, Renderables );	
+	// PointCull( Camera, Renderables );
 }
 
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )
