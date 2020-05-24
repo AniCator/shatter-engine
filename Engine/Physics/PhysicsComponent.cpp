@@ -349,6 +349,7 @@ CBody::CBody( CMeshEntity* OwnerIn, const FBounds& LocalBounds, const bool Stati
 
 CBody::CBody( CEntity* Parent, const FBounds& LocalBounds, const bool Static, const bool Stationary )
 {
+	Owner = nullptr;
 	Ghost = Parent;
 	Block = true;
 	DeltaPosition = Vector3D( 0.0f, 0.0f, 0.0f );
