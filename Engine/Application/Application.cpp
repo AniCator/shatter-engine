@@ -20,6 +20,8 @@
 #pragma comment(lib, "ole32.lib")
 #endif
 
+#include <filesystem>
+
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Audio/SimpleSound.h>
@@ -1618,7 +1620,18 @@ void CApplication::Initialize()
 
 	// Calling Get creates the instance and initializes the class.
 	CConfiguration& ConfigurationInstance = CConfiguration::Get();
-	ConfigurationInstance.SetFile( StorageCategory::User, GetUserSettingsDirectory() + L"/" + GetDirectoryName() + L"/Configuration.ini" );
+
+	static const std::wstring UserConfigurationDirectory = GetUserSettingsDirectory() + L"/" + GetDirectoryName();
+	static const std::wstring UserConfigurationFile = L"Configuration.ini";
+
+	ConfigurationInstance.SetFile( StorageCategory::User, UserConfigurationDirectory + L"/" + UserConfigurationFile );
+
+	const bool DirectoryExists = std::experimental::filesystem::exists( UserConfigurationDirectory );
+	const bool DirectoryValid = std::experimental::filesystem::is_directory( UserConfigurationDirectory );
+	if(!DirectoryExists || !DirectoryValid )
+	{
+		std::experimental::filesystem::create_directory( UserConfigurationDirectory );
+	}
 
 	if( MainWindow.Valid() )
 	{
