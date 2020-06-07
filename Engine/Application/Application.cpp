@@ -51,7 +51,7 @@
 CWindow& MainWindow = CWindow::Get();
 
 std::string CApplication::Name = "Unnamed Shatter Engine Application";
-std::string CApplication::DirectoryName = "UnnamedShatterGame";
+std::wstring CApplication::DirectoryName = L"UnnamedShatterGame";
 
 CCamera DefaultCamera = CCamera();
 FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
@@ -1272,27 +1272,30 @@ void CApplication::SetName( const char* NameIn )
 	Name = NameIn;
 }
 
-const std::string& CApplication::GetDirectoryName()
+const std::wstring& CApplication::GetDirectoryName()
 {
 	return DirectoryName;
 }
 
-void CApplication::SetDirectoryName( const char* Name )
+void CApplication::SetDirectoryName( const wchar_t* Name )
 {
 	DirectoryName = Name;
 }
 
-std::string CApplication::GetUserSettingsDirectory()
+std::wstring CApplication::GetUserSettingsDirectory()
 {
-	static std::string UserSettingsDirectory;
+	static std::wstring UserSettingsDirectory;
 	if( UserSettingsDirectory.empty() )
 	{
-		PWSTR UserPath;
+		wchar_t* UserPath = nullptr;
 
 		HRESULT Ret = SHGetKnownFolderPath( FOLDERID_LocalAppData, 0, NULL, &UserPath );
 		if( SUCCEEDED( Ret ) )
 		{
-			UserSettingsDirectory = *UserPath;
+			std::wstringstream Location;
+			Location << UserPath;
+
+			UserSettingsDirectory = Location.str();
 			CoTaskMemFree( UserPath );
 		}
 	}
@@ -1615,6 +1618,7 @@ void CApplication::Initialize()
 
 	// Calling Get creates the instance and initializes the class.
 	CConfiguration& ConfigurationInstance = CConfiguration::Get();
+	ConfigurationInstance.SetFile( StorageCategory::User, GetUserSettingsDirectory() + L"/" + GetDirectoryName() + L"/Configuration.ini" );
 
 	if( MainWindow.Valid() )
 	{
@@ -1624,7 +1628,6 @@ void CApplication::Initialize()
 
 		// Reload the configuration file if the application is being re-initialized.
 		ConfigurationInstance.Initialize();
-		ConfigurationInstance.AppendFile( StorageCategory::User, CApplication::GetUserSettingsDirectory() );
 	}
 
 	MainWindow.Create( Name.c_str() );

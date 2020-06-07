@@ -24,12 +24,12 @@ public:
 	static void SetName( const char* Name );
 
 	// Returns the local directory name used for storing a user's settings.
-	static const std::string& GetDirectoryName();
+	static const std::wstring& GetDirectoryName();
 
 	// Sets the local directory name used for storing a user's settings.
-	static void SetDirectoryName(const char* Name);
+	static void SetDirectoryName(const wchar_t* Name);
 
-	static std::string GetUserSettingsDirectory();
+	static std::wstring GetUserSettingsDirectory();
 
 	void RedirectLogToConsole();
 	void ProcessCommandLine( int argc, char** argv );
@@ -52,7 +52,7 @@ public:
 
 private:
 	static std::string Name;
-	static std::string DirectoryName;
+	static std::wstring DirectoryName;
 	bool Tools;
 	bool DefaultExit;
 	bool WaitForInput;

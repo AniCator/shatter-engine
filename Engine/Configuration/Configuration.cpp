@@ -6,8 +6,8 @@
 #include <fstream>
 #include <sstream>
 
-static const char* DefaultEngineConfigurationFile = "ShatterEngine.default.ini";
-static const char* EngineConfigurationFile = "ShatterEngine.ini";
+static const std::wstring DefaultEngineConfigurationFile = L"ShatterEngine.default.ini";
+static const std::wstring EngineConfigurationFile = L"ShatterEngine.ini";
 
 bool CConfiguration::IsValidKey( const char* KeyName )
 {
@@ -89,7 +89,7 @@ void CConfiguration::Initialize()
 	Reload();
 }
 
-void CConfiguration::AppendFile( const StorageCategory::Type& Location, const std::string& FilePath )
+void CConfiguration::SetFile( const StorageCategory::Type& Location, const std::wstring& FilePath )
 {
 	if( Location < StorageCategory::Maximum )
 	{
@@ -106,7 +106,7 @@ void CConfiguration::Reload()
 	if( !Initialized )
 	{
 		// Make sure the engine configuration file is loaded first.
-		AppendFile( StorageCategory::Application, EngineConfigurationFile );
+		SetFile( StorageCategory::Application, EngineConfigurationFile );
 		Initialized = true;
 	}
 
@@ -115,7 +115,7 @@ void CConfiguration::Reload()
 	bool IsFirstFile = true;
 	for( const auto& FilePath : FilePaths )
 	{
-		const char* FilePathCharacterString = FilePath.c_str();
+		const wchar_t* FilePathCharacterString = FilePath.c_str();
 		Log::Event( "Loading \"%s\".\n", FilePathCharacterString );
 
 		std::ifstream configurationFileStream;
@@ -166,7 +166,7 @@ void CConfiguration::Reload()
 
 void CConfiguration::Save()
 {
-	std::string SavePath;
+	std::wstring SavePath;
 	for( const auto& FilePath : FilePaths )
 	{
 		if( FilePath.length() > 0 )

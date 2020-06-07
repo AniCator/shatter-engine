@@ -35,7 +35,7 @@ public:
 	float GetFloat( const char* KeyName, const float Default = -1.0f );
 
 	void Initialize();
-	void AppendFile( const StorageCategory::Type& Location, const std::string& FilePath );
+	void SetFile( const StorageCategory::Type& Location, const std::wstring& FilePath );
 	void Reload();
 
 	template<typename T>
@@ -52,7 +52,7 @@ private:
 	std::regex ConfigureFilter( const char* KeyName );
 	const std::string& GetValue( const char* KeyName );
 
-	std::string FilePaths[StorageCategory::Maximum];
+	std::wstring FilePaths[StorageCategory::Maximum];
 	std::map<std::string, std::string> StoredSettings;
 	bool Initialized;
 
