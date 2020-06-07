@@ -1619,12 +1619,12 @@ void CApplication::Initialize()
 	ServiceRegistry.CreateStandardServices();
 
 	// Calling Get creates the instance and initializes the class.
-	CConfiguration& ConfigurationInstance = CConfiguration::Get();
+	CConfiguration& Configuration = CConfiguration::Get();
 
 	static const std::wstring UserConfigurationDirectory = GetUserSettingsDirectory() + L"/" + GetDirectoryName();
 	static const std::wstring UserConfigurationFile = L"Configuration.ini";
 
-	ConfigurationInstance.SetFile( StorageCategory::User, UserConfigurationDirectory + L"/" + UserConfigurationFile );
+	Configuration.SetFile( StorageCategory::User, UserConfigurationDirectory + L"/" + UserConfigurationFile );
 
 	const bool DirectoryExists = std::experimental::filesystem::exists( UserConfigurationDirectory );
 	const bool DirectoryValid = std::experimental::filesystem::is_directory( UserConfigurationDirectory );
@@ -1640,7 +1640,7 @@ void CApplication::Initialize()
 		ImGui_ImplOpenGL3_Reset();
 
 		// Reload the configuration file if the application is being re-initialized.
-		ConfigurationInstance.Initialize();
+		Configuration.Initialize();
 	}
 
 	MainWindow.Create( Name.c_str() );
