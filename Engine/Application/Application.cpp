@@ -356,10 +356,13 @@ bool MenuItem( const char* Label, bool* Selected )
 
 static CTexture* PreviewTexture = nullptr;
 static float Zoom = 1.0f;
+static float ZoomTarget = 1.0f;
 static float PreviousZoomWheel = -1.0f;
 static ImVec2 Drag = ImVec2();
 void ShowTexture( CTexture* Texture )
 {
+	Zoom = Math::Lerp( Zoom, ZoomTarget, 0.314f );
+
 	if( Texture )
 	{
 		auto ImageSize = ImVec2( Texture->GetWidth(), Texture->GetHeight() );
@@ -393,7 +396,7 @@ void ShowTexture( CTexture* Texture )
 		ImTextureID TextureID = (ImTextureID) (intptr_t) Texture->GetHandle();
 		ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 0 );
 
-		if( ImGui::IsItemHovered() )
+		if( ImGui::IsWindowHovered() )
 		{
 			float TextureX = ( ( ImGui::GetMousePos().x - CursorPosition.x ) / ImageSize.x ) * Texture->GetWidth();
 			float TextureY = ( ( ImGui::GetMousePos().y - CursorPosition.y ) / ImageSize.y ) * Texture->GetHeight();
@@ -407,20 +410,20 @@ void ShowTexture( CTexture* Texture )
 			auto Delta = ImGui::GetIO().MouseWheel - PreviousZoomWheel;
 			if( Delta > 0.1f )
 			{
-				Zoom *= 1.2f;
+				ZoomTarget *= 1.2f;
 
 				Drag.x *= 1.2f;
 				Drag.y *= 1.2f;
 			}
 			else if( Delta < -0.1f )
 			{
-				Zoom *= 0.8f;
+				ZoomTarget *= 0.8f;
 
 				Drag.x *= 0.8f;
 				Drag.y *= 0.8f;
 			}
 
-			Zoom = std::max( Zoom, 0.25f );
+			ZoomTarget = std::max( ZoomTarget, 0.25f );
 		}
 
 		if( ImGui::IsItemActive() )
@@ -433,21 +436,21 @@ void ShowTexture( CTexture* Texture )
 
 		ImGui::SetCursorPos( ImVec2( 0, 0 ) );
 
-		ImGui::Text( "Zoom %.2f", Zoom );
+		ImGui::Text( "Zoom %.2f", ZoomTarget );
 
 		if( ImGui::Button( "0.5x" ) )
 		{
-			Zoom = 0.5f;
+			ZoomTarget = 0.5f;
 		}
 
 		if( ImGui::Button( "1x" ) )
 		{
-			Zoom = 1.0f;
+			ZoomTarget = 1.0f;
 		}
 
 		if( ImGui::Button( "2x" ) )
 		{
-			Zoom = 2.0f;
+			ZoomTarget = 2.0f;
 		}
 
 		if( ImGui::Button( "Center" ) )
@@ -476,8 +479,8 @@ void TextureListUI()
 			if( ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1 ) )
 			{
 				PreviewTexture = Texture;
-				Zoom = 1.0f;
-				Drag = ImVec2();
+				// Zoom = 1.0f;
+				// Drag = ImVec2();
 			}
 
 			if( ImGui::IsItemHovered() )
@@ -502,6 +505,54 @@ void TextureListUI()
 	ImGui::EndChild();
 }
 
+static bool ShowNewAssetPopup = false;
+static std::string NewAssetType = "Sequence";
+static std::string NewAssetName = "NewAsset";
+
+void NewAssetUI()
+{
+	if( ShowNewAssetPopup )
+	{
+		if( ImGui::BeginPopupContextItem( "New Asset", 0 ) )
+		{
+			ImGui::Text( "New Asset" );
+			ImGui::Separator();
+
+			static char AssetName[128];
+			ImGui::InputText( "Name", AssetName, 128 );
+			ImGui::SetItemDefaultFocus();
+
+			if( ImGui::BeginCombo( "Type", NewAssetType.c_str() ) )
+			{
+				if( ImGui::Selectable( "Sequence" ) )
+				{
+					NewAssetType = "Sequence";
+				}
+
+				ImGui::Separator();
+
+				ImGui::EndCombo();
+			}
+
+			if( ImGui::Button( "Create" ) )
+			{
+				auto& Assets = CAssets::Get();
+				if( NewAssetType == "Sequence" )
+				{
+					NewAssetName = AssetName;
+					if( NewAssetName.length() > 0 )
+					{
+						const std::string AssetPath = "Sequences/" + NewAssetName + ".lsq";
+						Assets.CreateNamedSequence( AssetName, AssetPath.c_str() );
+					}
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+}
+
 static bool ShowAssets = false;
 
 void AssetUI()
@@ -512,6 +563,13 @@ void AssetUI()
 	{
 		if( ImGui::Begin( "Assets", &ShowAssets, ImVec2( 1000.0f, 700.0f ) ) )
 		{
+			if(ImGui::Button("New") )
+			{
+				ShowNewAssetPopup = true;
+			}
+
+			NewAssetUI();
+
 			ImGui::BeginChild( "Asset List", ImVec2( ImGui::GetWindowContentRegionWidth() * 0.33f, ImGui::GetContentRegionAvail().y ) );
 			ImGui::Columns( 2 );
 
