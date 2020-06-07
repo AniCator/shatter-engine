@@ -29,7 +29,9 @@ public:
 	// Sets the local directory name used for storing a user's settings.
 	static void SetDirectoryName(const wchar_t* Name);
 
-	static std::wstring GetUserSettingsDirectory();
+	static const std::wstring& GetUserSettingsDirectory();
+	static const std::wstring& GetUserSettingsFileName();
+	static const std::wstring& GetUserSettingsPath();
 
 	void RedirectLogToConsole();
 	void ProcessCommandLine( int argc, char** argv );
@@ -51,6 +53,8 @@ public:
 	CServiceRegistry ServiceRegistry;
 
 private:
+	static const std::wstring& GetAppDataDirectory();
+
 	static std::string Name;
 	static std::wstring DirectoryName;
 	bool Tools;

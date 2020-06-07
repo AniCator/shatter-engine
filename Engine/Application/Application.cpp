@@ -1284,10 +1284,10 @@ void CApplication::SetDirectoryName( const wchar_t* Name )
 	DirectoryName = Name;
 }
 
-std::wstring CApplication::GetUserSettingsDirectory()
+const std::wstring& CApplication::GetAppDataDirectory()
 {
-	static std::wstring UserSettingsDirectory;
-	if( UserSettingsDirectory.empty() )
+	static std::wstring AppDataDirectory;
+	if( AppDataDirectory.empty() )
 	{
 		wchar_t* UserPath = nullptr;
 
@@ -1297,12 +1297,30 @@ std::wstring CApplication::GetUserSettingsDirectory()
 			std::wstringstream Location;
 			Location << UserPath;
 
-			UserSettingsDirectory = Location.str();
+			AppDataDirectory = Location.str();
 			CoTaskMemFree( UserPath );
 		}
 	}
 
+	return AppDataDirectory;
+}
+
+const std::wstring& CApplication::GetUserSettingsDirectory()
+{
+	static const std::wstring UserSettingsDirectory = GetAppDataDirectory() + L"/" + GetDirectoryName() + L"/";
 	return UserSettingsDirectory;
+}
+
+const std::wstring& CApplication::GetUserSettingsFileName()
+{
+	static const std::wstring FileName = L"Configuration.ini";
+	return FileName;
+}
+
+const std::wstring& CApplication::GetUserSettingsPath()
+{
+	static const std::wstring Path = GetUserSettingsDirectory() + GetUserSettingsFileName();
+	return Path;
 }
 
 void CApplication::RedirectLogToConsole()
@@ -1621,9 +1639,8 @@ void CApplication::Initialize()
 	// Calling Get creates the instance and initializes the class.
 	CConfiguration& Configuration = CConfiguration::Get();
 
-	static const std::wstring UserConfigurationDirectory = GetUserSettingsDirectory() + L"/" + GetDirectoryName();
-	static const std::wstring UserConfigurationFile = L"Configuration.ini";
-	static const std::wstring UserConfigurationPath = UserConfigurationDirectory + L"/" + UserConfigurationFile;
+	static const std::wstring UserConfigurationDirectory = GetUserSettingsDirectory();
+	static const std::wstring UserConfigurationPath = GetUserSettingsPath();
 
 	Configuration.SetFile( StorageCategory::User, UserConfigurationPath );
 
