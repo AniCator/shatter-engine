@@ -16,7 +16,7 @@ public:
 	virtual bool Load( char* DataSource, const size_t SizeIn );
 	virtual bool Load( const std::string& Data );
 	virtual bool Load( CData& Data );
-	virtual bool Save();
+	virtual bool Save( const bool& CreateDirectory = false );
 
 	template<typename T>
 	const T* Fetch() const { return reinterpret_cast<T*>( Data ); };

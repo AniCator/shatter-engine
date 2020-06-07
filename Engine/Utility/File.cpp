@@ -2,6 +2,7 @@
 #include "File.h"
 #include <Engine/Profiling/Logging.h>
 
+#include <filesystem>
 #include <fstream>
 #include <algorithm>
 
@@ -130,11 +131,20 @@ bool CFile::Load( CData& Data )
 	return Load( Buffer, Size );
 }
 
-bool CFile::Save()
+bool CFile::Save( const bool& CreateDirectory )
 {
 	if( Data )
 	{
 		std::ofstream FileStream;
+
+		if( CreateDirectory )
+		{
+			const auto Path = std::experimental::filesystem::path( FileLocation );
+			if( !exists( Path.parent_path() ) )
+			{
+				create_directory( Path.parent_path() );
+			}
+		}
 
 		if( Binary )
 		{
