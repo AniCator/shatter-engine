@@ -3,12 +3,21 @@
 
 #if defined(_WIN32)
 #include <Windows.h>
-#include <fcntl.h>
-#include <io.h>
+// #include <fcntl.h>
+// #include <io.h>
 
 #include <dbghelp.h>
-#include <shellapi.h>
+// #include <shellapi.h>
 #include <shlobj.h>
+
+// #define WINVER 0x0600
+// #define _WIN32_WINNT 0x0600
+
+#include <stdio.h>
+#include <objbase.h>
+
+#pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "ole32.lib")
 #endif
 
 #include <Engine/Profiling/Logging.h>
@@ -40,6 +49,9 @@
 #endif
 
 CWindow& MainWindow = CWindow::Get();
+
+std::string CApplication::Name = "Unnamed Shatter Engine Application";
+std::string CApplication::DirectoryName = "UnnamedShatterGame";
 
 CCamera DefaultCamera = CCamera();
 FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
@@ -1002,7 +1014,7 @@ void DebugMenu( CApplication* Application )
 
 CApplication::CApplication()
 {
-	Name = "Unnamed Shatter Engine Application";
+	
 	Tools = false;
 	DefaultExit = true;
 	WaitForInput = false;
@@ -1250,7 +1262,7 @@ void CApplication::ResetImGui()
 #endif
 }
 
-std::string CApplication::GetName() const
+const std::string& CApplication::GetName()
 {
 	return Name;
 }
@@ -1258,6 +1270,34 @@ std::string CApplication::GetName() const
 void CApplication::SetName( const char* NameIn )
 {
 	Name = NameIn;
+}
+
+const std::string& CApplication::GetDirectoryName()
+{
+	return DirectoryName;
+}
+
+void CApplication::SetDirectoryName( const char* Name )
+{
+	DirectoryName = Name;
+}
+
+std::string CApplication::GetUserSettingsDirectory()
+{
+	static std::string UserSettingsDirectory;
+	if( UserSettingsDirectory.empty() )
+	{
+		PWSTR UserPath;
+
+		HRESULT Ret = SHGetKnownFolderPath( FOLDERID_LocalAppData, 0, NULL, &UserPath );
+		if( SUCCEEDED( Ret ) )
+		{
+			UserSettingsDirectory = *UserPath;
+			CoTaskMemFree( UserPath );
+		}
+	}
+
+	return UserSettingsDirectory;
 }
 
 void CApplication::RedirectLogToConsole()
@@ -1584,6 +1624,7 @@ void CApplication::Initialize()
 
 		// Reload the configuration file if the application is being re-initialized.
 		ConfigurationInstance.Initialize();
+		ConfigurationInstance.AppendFile( StorageCategory::User, CApplication::GetUserSettingsDirectory() );
 	}
 
 	MainWindow.Create( Name.c_str() );

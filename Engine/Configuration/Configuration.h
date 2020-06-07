@@ -5,7 +5,7 @@
 #include <string>
 #include <map>
 
-enum class ECategory : size_t
+enum class ECategory : uint8_t
 {
 	Miscellaneous = 0,
 	Game,
@@ -13,6 +13,16 @@ enum class ECategory : size_t
 	Graphics,
 	Input
 };
+
+namespace StorageCategory
+{
+	enum Type
+	{
+		Application = 0,
+		User,
+		Maximum
+	};
+}
 
 class CConfiguration
 {
@@ -25,7 +35,7 @@ public:
 	float GetFloat( const char* KeyName, const float Default = -1.0f );
 
 	void Initialize();
-	void AppendFile( std::string FilePath );
+	void AppendFile( const StorageCategory::Type& Location, const std::string& FilePath );
 	void Reload();
 
 	template<typename T>
@@ -42,7 +52,7 @@ private:
 	std::regex ConfigureFilter( const char* KeyName );
 	const std::string& GetValue( const char* KeyName );
 
-	std::vector<std::string> FilePaths;
+	std::string FilePaths[StorageCategory::Maximum];
 	std::map<std::string, std::string> StoredSettings;
 	bool Initialized;
 

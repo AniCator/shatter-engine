@@ -89,9 +89,16 @@ void CConfiguration::Initialize()
 	Reload();
 }
 
-void CConfiguration::AppendFile( std::string FilePath )
+void CConfiguration::AppendFile( const StorageCategory::Type& Location, const std::string& FilePath )
 {
-	FilePaths.push_back( FilePath );
+	if( Location < StorageCategory::Maximum )
+	{
+		FilePaths[Location] = FilePath;
+	}
+	else
+	{
+		Log::Event( Log::Warning, "Can't append path, invalid configuration storage category.\n" );
+	}
 }
 
 void CConfiguration::Reload()
@@ -99,16 +106,15 @@ void CConfiguration::Reload()
 	if( !Initialized )
 	{
 		// Make sure the engine configuration file is loaded first.
-		AppendFile( EngineConfigurationFile );
+		AppendFile( StorageCategory::Application, EngineConfigurationFile );
 		Initialized = true;
 	}
 
 	StoredSettings.clear();
 
 	bool IsFirstFile = true;
-	for( int Index = 0; Index < FilePaths.size(); Index++ )
+	for( const auto& FilePath : FilePaths )
 	{
-		std::string& FilePath = FilePaths[Index];
 		const char* FilePathCharacterString = FilePath.c_str();
 		Log::Event( "Loading \"%s\".\n", FilePathCharacterString );
 
@@ -160,14 +166,24 @@ void CConfiguration::Reload()
 
 void CConfiguration::Save()
 {
-	Log::Event( "Saving configuration files.\n" );
-	if( FilePaths.size() == 1 )
+	std::string SavePath;
+	for( const auto& FilePath : FilePaths )
+	{
+		if( FilePath.length() > 0 )
+		{
+			SavePath = FilePath;
+		}
+	}
+
+	if( SavePath.length() > 0 )
 	{
 		std::ofstream ConfigurationStream;
-		ConfigurationStream.open( FilePaths[0].c_str() );
+		ConfigurationStream.open( SavePath.c_str() );
 
 		if( ConfigurationStream.good() )
 		{
+			Log::Event( "Saving configuration file to \"%s\".\n", SavePath.c_str() );
+
 			for( auto& Setting : StoredSettings )
 			{
 				ConfigurationStream << Setting.first << "=" << Setting.second << std::endl;

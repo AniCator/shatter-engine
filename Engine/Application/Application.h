@@ -20,8 +20,16 @@ public:
 	void InitializeDefaultInputs();
 	void ResetImGui();
 
-	std::string GetName() const;
-	void SetName( const char* Name );
+	static const std::string& GetName();
+	static void SetName( const char* Name );
+
+	// Returns the local directory name used for storing a user's settings.
+	static const std::string& GetDirectoryName();
+
+	// Sets the local directory name used for storing a user's settings.
+	static void SetDirectoryName(const char* Name);
+
+	static std::string GetUserSettingsDirectory();
 
 	void RedirectLogToConsole();
 	void ProcessCommandLine( int argc, char** argv );
@@ -43,7 +51,8 @@ public:
 	CServiceRegistry ServiceRegistry;
 
 private:
-	std::string Name;
+	static std::string Name;
+	static std::string DirectoryName;
 	bool Tools;
 	bool DefaultExit;
 	bool WaitForInput;
