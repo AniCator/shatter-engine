@@ -116,7 +116,7 @@ struct FEventAudio : FTrackEvent
 		int InputLength = (int) Length;
 		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
 		{
-			Length = (Timecode) InputLength;
+			Length = static_cast<Timecode>( InputLength );
 		}
 
 		ImGui::InputFloat( "Volume", &Volume, 1.0f, 10.0f, "%.0f" );
@@ -144,12 +144,12 @@ struct FEventAudio : FTrackEvent
 		}
 	}
 
-	virtual const char* GetName()
+	virtual const char* GetName() override
 	{
 		return Name.c_str();
 	}
 
-	virtual const char* GetType()
+	virtual const char* GetType() override
 	{
 		return "Audio";
 	}
@@ -229,7 +229,7 @@ struct FEventCamera : FTrackEvent
 		int InputLength = ( int) Length;
 		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
 		{
-			Length = ( Timecode) InputLength;
+			Length = static_cast<Timecode>( InputLength );
 		}
 
 		if( ImGui::Button( "View" ) )
@@ -260,12 +260,12 @@ struct FEventCamera : FTrackEvent
 		ImGui::Separator();
 	}
 
-	virtual const char* GetName()
+	virtual const char* GetName() override
 	{
 		return "Camera";
 	}
 
-	virtual const char* GetType()
+	virtual const char* GetType() override
 	{
 		return "Camera";
 	}
@@ -318,7 +318,7 @@ struct FEventRenderable : FTrackEvent
 		int InputLength = ( int) Length;
 		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
 		{
-			Length = ( Timecode) InputLength;
+			Length = static_cast<Timecode>( InputLength );
 		}
 
 		ImGui::Separator();
@@ -390,12 +390,12 @@ struct FEventRenderable : FTrackEvent
 		}
 	}
 
-	virtual const char* GetName()
+	virtual const char* GetName() override
 	{
 		return Name.c_str();
 	}
 
-	virtual const char* GetType()
+	virtual const char* GetType() override
 	{
 		return "Mesh";
 	}
@@ -486,7 +486,7 @@ struct FTrack
 		Data << Track.Start;
 		Data << Track.Length;
 
-		DataVector::Encode( Data, Track.Events );
+		// DataVector::Encode( Data, Track.Events );
 
 		return Data;
 	}
