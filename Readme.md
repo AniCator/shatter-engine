@@ -1,7 +1,7 @@
 # Shatter Engine™
 This is a small game engine framework that is used to power some of my personal projects.
 
-![Lofty Lagoon](aicritters-example.png)
+![Lofty Lagoon](banner.png)
 
 # Current Features
 Here's a short list of things that are currently possible in the engine.
