@@ -1623,14 +1623,23 @@ void CApplication::Initialize()
 
 	static const std::wstring UserConfigurationDirectory = GetUserSettingsDirectory() + L"/" + GetDirectoryName();
 	static const std::wstring UserConfigurationFile = L"Configuration.ini";
+	static const std::wstring UserConfigurationPath = UserConfigurationDirectory + L"/" + UserConfigurationFile;
 
-	Configuration.SetFile( StorageCategory::User, UserConfigurationDirectory + L"/" + UserConfigurationFile );
+	Configuration.SetFile( StorageCategory::User, UserConfigurationPath );
 
 	const bool DirectoryExists = std::experimental::filesystem::exists( UserConfigurationDirectory );
 	const bool DirectoryValid = std::experimental::filesystem::is_directory( UserConfigurationDirectory );
-	if(!DirectoryExists || !DirectoryValid )
+	if( !DirectoryExists || !DirectoryValid )
 	{
 		std::experimental::filesystem::create_directory( UserConfigurationDirectory );
+	}
+
+	Configuration.Initialize();
+
+	const bool ConfigurationPathExists = std::experimental::filesystem::exists( UserConfigurationPath );
+	if( !ConfigurationPathExists )
+	{
+		Configuration.Save();
 	}
 
 	if( MainWindow.Valid() )
@@ -1638,9 +1647,6 @@ void CApplication::Initialize()
 		MainWindow.Terminate();
 		ImGui_ImplGlfw_Reset();
 		ImGui_ImplOpenGL3_Reset();
-
-		// Reload the configuration file if the application is being re-initialized.
-		Configuration.Initialize();
 	}
 
 	MainWindow.Create( Name.c_str() );

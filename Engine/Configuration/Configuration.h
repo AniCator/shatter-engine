@@ -49,7 +49,7 @@ public:
 	void Save();
 
 private:
-	std::regex ConfigureFilter( const char* KeyName );
+	static std::regex ConfigureFilter( const char* KeyName );
 	const std::string& GetValue( const char* KeyName );
 
 	std::wstring FilePaths[StorageCategory::Maximum];

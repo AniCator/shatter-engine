@@ -6,9 +6,6 @@
 #include <fstream>
 #include <sstream>
 
-static const std::wstring DefaultEngineConfigurationFile = L"ShatterEngine.default.ini";
-static const std::wstring EngineConfigurationFile = L"ShatterEngine.ini";
-
 bool CConfiguration::IsValidKey( const char* KeyName )
 {
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
@@ -105,10 +102,13 @@ void CConfiguration::Reload()
 {
 	if( !Initialized )
 	{
-		// Make sure the engine configuration file is loaded first.
-		SetFile( StorageCategory::Application, EngineConfigurationFile );
 		Initialized = true;
 	}
+
+	static const std::wstring DefaultEngineConfigurationFile = L"ShatterEngine.default.ini";
+	static const std::wstring EngineConfigurationFile = L"ShatterEngine.ini";
+
+	SetFile( StorageCategory::Application, EngineConfigurationFile );
 
 	StoredSettings.clear();
 
@@ -209,7 +209,8 @@ const std::string& CConfiguration::GetValue( const char* KeyName )
 {
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
 	{
-		return "";
+		static std::string UnknownEntry( "null" );
+		return UnknownEntry;
 	}
 
 	return StoredSettings[KeyName];
@@ -218,5 +219,4 @@ const std::string& CConfiguration::GetValue( const char* KeyName )
 CConfiguration::CConfiguration()
 {
 	Initialized = false;
-	Initialize();
 }
