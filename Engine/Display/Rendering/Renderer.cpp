@@ -403,17 +403,6 @@ void CRenderer::DrawQueuedRenderables()
 					}
 				}
 
-				/*FramebufferRenderable.SetTexture( &BufferA, ETextureSlot::Slot0 );
-
-				if( BufferPrevious.Ready() )
-				{
-					FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot1 );
-				}
-
-				CRenderPass ImageProcessingPass( "ImageProcessing", ViewportWidth, ViewportHeight, Camera );
-				ImageProcessingPass.Target = &BufferB;
-				DrawCalls += ImageProcessingPass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );*/
-
 				CopyTexture( &BufferA, &BufferB, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
 			}
 
