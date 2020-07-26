@@ -48,6 +48,8 @@ public:
 	void Stop( const float FadeOut = -1.0f );
 	void Loop( const bool Loop );
 	void Rate( const float Rate );
+	float Time() const;
+	void Offset( const float Offset );
 	bool Playing();
 	void Volume( const float Volume );
 

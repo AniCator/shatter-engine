@@ -200,6 +200,34 @@ void CSimpleSound::Rate( StreamHandle Handle, const float Rate )
 	Streams[Handle.Handle].Stream->setPitch( Rate );
 }
 
+float CSimpleSound::Time( SoundHandle Handle )
+{
+	if( !Sounds[Handle.Handle].Voice )
+		return 0.0f;
+
+	return Sounds[Handle.Handle].Voice->getPlayingOffset().asSeconds();
+}
+
+float CSimpleSound::Time( StreamHandle Handle )
+{
+	return Streams[Handle.Handle].Stream->getPlayingOffset().asSeconds();
+}
+
+void CSimpleSound::Offset( SoundHandle Handle, const float Offset )
+{
+	if( !Sounds[Handle.Handle].Voice )
+		return;
+
+	const sf::Time PlayingOffset = sf::seconds( Offset );
+	Sounds[Handle.Handle].Voice->setPlayingOffset( PlayingOffset );
+}
+
+void CSimpleSound::Offset( StreamHandle Handle, const float Offset )
+{
+	const sf::Time PlayingOffset = sf::seconds( Offset );
+	Streams[Handle.Handle].Stream->setPlayingOffset( PlayingOffset );
+}
+
 bool CSimpleSound::Playing( SoundHandle Handle )
 {
 	if( !Sounds[Handle.Handle].Voice )

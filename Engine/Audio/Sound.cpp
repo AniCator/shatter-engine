@@ -151,6 +151,44 @@ void CSound::Rate( const float Rate )
 	}
 }
 
+float CSound::Time() const
+{
+	if( SoundType == ESoundType::Memory )
+	{
+		for( const auto& Handle : SoundHandles )
+		{
+			return CSimpleSound::Time( Handle );
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			return CSimpleSound::Time( Handle );
+		}
+	}
+
+	return 0.0f;
+}
+
+void CSound::Offset( const float Offset )
+{
+	if( SoundType == ESoundType::Memory )
+	{
+		for( const auto& Handle : SoundHandles )
+		{
+			CSimpleSound::Offset( Handle, Offset );
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			CSimpleSound::Offset( Handle, Offset );
+		}
+	}
+}
+
 bool CSound::Playing()
 {
 	bool IsPlaying = false;

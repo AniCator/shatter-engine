@@ -110,6 +110,12 @@ public:
 	static void Rate( SoundHandle Handle, const float Rate );
 	static void Rate( StreamHandle Handle, const float Rate );
 
+	static float Time( SoundHandle Handle );
+	static float Time( StreamHandle Handle );
+
+	static void Offset( SoundHandle Handle, const float Offset );
+	static void Offset( StreamHandle Handle, const float Offset );
+
 	static bool Playing( SoundHandle Handle );
 	static bool Playing( StreamHandle Handle );
 
