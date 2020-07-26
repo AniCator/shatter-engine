@@ -338,6 +338,9 @@
     <ClCompile Include="Engine\Utility\Thread.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Pass\PostProcessPass.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -609,6 +612,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Thread.h">
       <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Pass\PostProcessPass.h">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Resource\Asset.h">
+      <Filter>Source Files\Engine\Resource</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

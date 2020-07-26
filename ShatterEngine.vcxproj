@@ -213,6 +213,7 @@
     <ClCompile Include="Engine\Display\Rendering\Pass\BloomPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\CopyPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\DownsamplePass.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Pass\PostProcessPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\ShadowPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Renderable.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Renderer.cpp" />
@@ -282,6 +283,7 @@
     <ClInclude Include="Engine\Display\Rendering\Pass\BloomPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\CopyPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\DownsamplePass.h" />
+    <ClInclude Include="Engine\Display\Rendering\Pass\PostProcessPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\ShadowPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Renderable.h" />
     <ClInclude Include="Engine\Display\Rendering\Renderer.h" />
@@ -304,6 +306,7 @@
     <ClInclude Include="Engine\Physics\PhysicsComponent.h" />
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
+    <ClInclude Include="Engine\Resource\Asset.h" />
     <ClInclude Include="Engine\Resource\Assets.h" />
     <ClInclude Include="Engine\Sequencer\Sequencer.h" />
     <ClInclude Include="Engine\Utility\Chunk.h" />
