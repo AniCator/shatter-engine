@@ -200,7 +200,7 @@ void CTexture::Save( const char* FileLocation )
 	}
 }
 
-void CTexture::Bind( ETextureSlot Slot )
+void CTexture::Bind( ETextureSlot Slot ) const
 {
 	if( Handle )
 	{
