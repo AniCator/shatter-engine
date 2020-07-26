@@ -19,6 +19,8 @@ namespace JSON
 	// Always regenerates the tree.
 	std::string ExportTree( Container& Tree );
 
+	void PrintTree( const Container& Tree );
+
 	struct Object;
 	typedef std::vector<Object*> Vector;
 
@@ -27,18 +29,40 @@ namespace JSON
 		Object()
 		{
 			IsObject = false;
+			IsArray = false;
+			IsField = false;
 			Parent = nullptr;
 		}
 
 		bool IsObject;
+		bool IsArray;
+		bool IsField;
 		std::string Key;
 		std::string Value;
 		Object* Parent;
 		Vector Objects;
 
-		Object* operator[](const std::string& Search)
+		const std::string& GetValue( const std::string& Key ) const
 		{
-			auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] (Object* Item) -> bool
+			if( this->Key == Key )
+			{
+				return Value;
+			}
+			
+			if( const auto & Object = this->operator[]( Key ) )
+			{
+				return Object->Value;
+			}
+			else
+			{
+				const static std::string EmptyString;
+				return EmptyString;
+			}
+		}
+
+		Object* operator[](const std::string& Search) const
+		{
+			const auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] (Object* Item) -> bool
 				{
 					return Item->Key == Search;
 				}

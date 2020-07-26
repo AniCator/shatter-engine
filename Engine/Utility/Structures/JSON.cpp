@@ -62,51 +62,73 @@ namespace JSON
 		size_t Depth = 0;
 		size_t ArrayDepth = 0;
 
-		bool Entry = true;
+		bool LookingForKeyEntry = true;
 		Object* Current = nullptr;
 		Object* Parent = nullptr;
 		while( !Finished )
 		{
 			if( Token[0] == '{' )
 			{
+				// Entering object.
 				Depth++;
-				Entry = true;
 
-				if( Current )
+				// Check if the current node is a field.
+				const bool IsField = Current && Current->IsField;
+				const bool IsArray = Current && Current->IsArray;
+
+				// Check if we're the top-level object and not a field.
+				if( Depth > 1 )
 				{
-					Current->IsObject = true;
-
-					if( Depth > 1 )
+					if( !IsField )
 					{
 						Object* StackParent = Current;
 						Object Object;
 						Container.Objects.push_back( Object );
 
+						// Create a new node for the object.
 						Current = &Container.Objects[Container.Objects.size() - 1];
+						Current->IsObject = true;
 
 						if( Parent )
 						{
+							// Assign the stored parent node as the parent of the new node.
 							Current->Parent = Parent;
 							Current->Parent->Objects.push_back( Current );
 						}
 						else if( StackParent )
 						{
+							// Assign the previous current node as the parent of the new node.
 							Current->Parent = StackParent;
 							Current->Parent->Objects.push_back( Current );
 						}
 
-						Parent = Current;
+						// Parent = Current->Parent;
 					}
+					
+					Parent = Current;
+					Current = nullptr;
 				}
+
+				LookingForKeyEntry = true;
 			}
 			else if( Token[0] == '}' )
 			{
+				// Exiting object.
 				CheckForSyntaxErrors( LastSpecialToken, Line, Token );
 				Depth--;
-				Entry = true;
+				LookingForKeyEntry = true;
 
+				// Close the object.
+				if( Current )
+				{
+					Current->IsField = false;
+					Current->IsObject = true;
+				}
+
+				// If we have a parent, we want to set our parent to the level above that.
 				if( Parent )
 				{
+					Current = Parent;
 					Parent = Parent->Parent;
 				}
 
@@ -122,7 +144,7 @@ namespace JSON
 				size_t Length = 0;
 				PopString( Token, Start, End, Length );
 
-				if( Entry && Start && End )
+				if( LookingForKeyEntry && Start && End )
 				{
 					Object Object;
 					Container.Objects.push_back( Object );
@@ -130,6 +152,8 @@ namespace JSON
 					Current = &Container.Objects[Container.Objects.size() - 1];
 					if( Current )
 					{
+						Current->IsField = true;
+						
 						Current->Key = std::string( Start, End );
 
 						if( Parent )
@@ -143,42 +167,45 @@ namespace JSON
 				{
 					if( Current )
 					{
-						if( !Current->IsObject )
+						if( Current->IsField )
 						{
 							Current->Value = std::string( Start, End );
-						}
-
-						if( Current->Parent )
-						{
-							Current = Current->Parent;
+							LookingForKeyEntry = true;
 						}
 					}
-
 				}
 			}
 			else if( Token[0] == ':' )
 			{
-				Entry = false;
+				LookingForKeyEntry = false;
 			}
 			else if( Token[0] == ',' )
 			{
-				Entry = true;
+				LookingForKeyEntry = true;
 			}
 			else if( Token[0] == '[' )
 			{
 				ArrayDepth++;
-				Entry = true;
+				LookingForKeyEntry = true;
+
+				if( Current )
+				{
+					Current->IsArray = true;
+					Current->IsField = false;
+				}
 
 				Parent = Current;
+				Current = nullptr;
 			}
 			else if( Token[0] == ']' )
 			{
 				CheckForSyntaxErrors( LastSpecialToken, Line, Token );
 				ArrayDepth--;
-				Entry = true;
+				LookingForKeyEntry = true;
 
 				if( Parent )
 				{
+					Current = Parent;
 					Parent = Parent->Parent;
 				}
 			}
@@ -295,6 +322,48 @@ namespace JSON
 		Stream << "}";
 
 		return Stream.str();
+	}
+
+	static uint16_t TabOffset = 0;
+	void RecurseJSONObject( JSON::Object* Object )
+	{
+		if( !Object )
+			return;
+
+		std::string TabString;
+		for( auto Index = 0; Index < TabOffset; Index++ )
+		{
+			TabString += "---";
+		}
+
+		if( Object->Objects.empty() )
+		{
+			const std::string ObjectKey = TabString + std::string( Object->Key.begin(), Object->Key.end() );
+			Log::Event( "%s\n", ObjectKey.c_str() );
+
+			const std::string ObjectValue = TabString + std::string( Object->Value.begin(), Object->Value.end() );
+			Log::Event( "%s\n", ObjectValue.c_str() );
+		}
+		else
+		{
+			const std::string ObjectKey = TabString + std::string( Object->Key.begin(), Object->Key.end() ) + " (" + std::to_string( Object->Objects.size() ) + ")";
+			Log::Event( "%s\n", ObjectKey.c_str() );
+
+			TabOffset++;
+			for( const auto& SubObject : Object->Objects )
+			{
+				RecurseJSONObject( SubObject );
+			}
+			TabOffset--;
+		}
+	}
+
+	void PrintTree( const Container& Tree )
+	{
+		for( const auto& Object : Tree.Tree )
+		{
+			RecurseJSONObject( Object );
+		}
 	}
 
 	void IntegrateBranch( Container& Container, Object* Branch )
