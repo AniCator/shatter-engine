@@ -70,6 +70,11 @@ bool FName::operator==( const FName& Name ) const
 	return Index == Name.Index;
 }
 
+bool FName::operator!=( const FName& Name ) const
+{
+	return Index != Name.Index;
+}
+
 FName& FName::operator=( const std::string& String )
 {
 	*this = FName( String );

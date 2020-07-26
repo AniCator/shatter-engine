@@ -20,6 +20,7 @@ public:
 	const std::string& String() const;
 
 	bool operator==( const FName& Name ) const;
+	bool operator!=( const FName& Name ) const;
 	bool operator<( const FName& Name ) const;
 
 	static std::map<std::string, NameIndex>& Pool()
