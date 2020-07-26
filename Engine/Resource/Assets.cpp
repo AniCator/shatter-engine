@@ -16,7 +16,6 @@
 
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Profiling/Logging.h>
-#include <Engine/Profiling/Profiling.h>
 
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
@@ -51,6 +50,11 @@ void CAssets::Create( const std::string& Name, CSound* NewSound )
 void CAssets::Create( const std::string& Name, CSequence* NewSequence )
 {
 	Sequences.insert_or_assign( Name, NewSequence );
+}
+
+void CAssets::Create( const std::string& Name, CAsset* NewAsset )
+{
+	Assets.insert_or_assign( Name, NewAsset );
 }
 
 void ParsePayload(FPrimitivePayload* Payload )
@@ -717,39 +721,29 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 	return NewSequence;
 }
 
-CMesh* CAssets::FindMesh( const std::string& Name )
+CMesh* CAssets::FindMesh( const std::string& Name ) const
 {
 	return Find<CMesh>( Name, Meshes );
 }
 
-CShader* CAssets::FindShader( const std::string& Name )
+CShader* CAssets::FindShader( const std::string& Name ) const
 {
 	auto Shader = Find<CShader>( Name, Shaders );
-	if( !Shader )
-	{
-		Log::Event( Log::Warning, "Could not find shader \"%s\".\n", Name.c_str() );
-	}
-
 	return Shader;
 }
 
-CTexture* CAssets::FindTexture( const std::string& Name )
+CTexture* CAssets::FindTexture( const std::string& Name ) const
 {
 	auto Texture = Find<CTexture>( Name, Textures );
-	if( !Texture )
-	{
-		Log::Event( Log::Warning, "Could not find texture \"%s\".\n", Name.c_str() );
-	}
-
 	return Texture ? Texture : Find<CTexture>( "error", Textures );
 }
 
-CSound* CAssets::FindSound( const std::string& Name )
+CSound* CAssets::FindSound( const std::string& Name ) const
 {
 	return Find<CSound>( Name, Sounds );
 }
 
-CSequence* CAssets::FindSequence( const std::string& Name )
+CSequence* CAssets::FindSequence( const std::string& Name ) const
 {
 	return Find<CSequence>( Name, Sequences );
 }

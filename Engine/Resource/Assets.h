@@ -5,6 +5,7 @@
 #include <ThirdParty/glm/glm.hpp>
 
 #include <Engine/Display/Rendering/TextureEnumerators.h>
+#include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Primitive.h>
 
 class CMesh;
@@ -12,6 +13,7 @@ class CShader;
 class CTexture;
 class CSound;
 class CSequence;
+class CAsset;
 
 struct FPrimitivePayload
 {
@@ -49,6 +51,7 @@ public:
 	void Create( const std::string& Name, CTexture* NewTexture );
 	void Create( const std::string& Name, CSound* NewSound );
 	void Create( const std::string& Name, CSequence* NewSequence );
+	void Create( const std::string& Name, CAsset* NewAsset );
 
 	void CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
 
@@ -67,16 +70,47 @@ public:
 	CSequence* CreateNamedSequence( const char* Name, const char* FileLocation );
 	CSequence* CreateNamedSequence( const char* Name );
 
-	CMesh* FindMesh( const std::string& Name );
-	CShader* FindShader( const std::string& Name );
-	CTexture* FindTexture( const std::string& Name );
-	CSound* FindSound( const std::string& Name );
-	CSequence* FindSequence( const std::string& Name );
+	template<class T>
+	T* CreateNamedAsset( const char* Name )
+	{
+		// Transform given name into lower case string
+		std::string NameString = Name;
+		std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+		// Check if the asset exists
+		if( T* ExistingAsset = FindAsset<T>( NameString ) )
+		{
+			return ExistingAsset;
+		}
+
+		T* NewAsset = new T();
+		Create( NameString, NewAsset );
+
+		CProfiler& Profiler = CProfiler::Get();
+		const int64_t Asset = 1;
+		Profiler.AddCounterEntry( FProfileTimeEntry( "Assets", Asset ), false );
+
+		Log::Event( "Created asset \"%s\".\n", NameString.c_str() );
+
+		return NewAsset;
+	}
+
+	CMesh* FindMesh( const std::string& Name ) const;
+	CShader* FindShader( const std::string& Name ) const;
+	CTexture* FindTexture( const std::string& Name ) const;
+	CSound* FindSound( const std::string& Name ) const;
+	CSequence* FindSequence( const std::string& Name ) const;
+
+	template<class T>
+	T* FindAsset( const std::string& Name )
+	{
+		return dynamic_cast<T*>( Find<CAsset>( Name, Assets ) );
+	}
 
 	const std::string& GetReadableImageFormat( EImageFormat Format );
 
 	template<class T>
-	inline T* Find( const std::string& Name, std::unordered_map<std::string, T*> Data )
+	inline T* Find( const std::string& Name, std::unordered_map<std::string, T*> Data ) const
 	{
 		if( Data.find( Name ) != Data.end() )
 		{
@@ -113,12 +147,20 @@ public:
 		return Sequences;
 	}
 
+	const std::unordered_map<std::string, CAsset*>& GetAssets() const
+	{
+		return Assets;
+	}
+
 private:
 	std::unordered_map<std::string, CMesh*> Meshes;
 	std::unordered_map<std::string, CShader*> Shaders;
 	std::unordered_map<std::string, CTexture*> Textures;
 	std::unordered_map<std::string, CSound*> Sounds;
 	std::unordered_map<std::string, CSequence*> Sequences;
+
+	// Non-native assets that are defined by the game project.
+	std::unordered_map<std::string, CAsset*> Assets;
 
 public:
 	static CAssets& Get()

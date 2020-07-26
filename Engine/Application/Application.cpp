@@ -34,6 +34,7 @@
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Resource/Assets.h>
+#include <Engine/Resource/Asset.h>
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/Data.h>
@@ -361,7 +362,7 @@ static float PreviousZoomWheel = -1.0f;
 static ImVec2 Drag = ImVec2();
 void ShowTexture( CTexture* Texture )
 {
-	Zoom = Math::Lerp( Zoom, ZoomTarget, 0.314f );
+	Zoom = Math::Lerp( Zoom, ZoomTarget, 0.2f );
 
 	if( Texture )
 	{
@@ -543,12 +544,21 @@ void NewAssetUI()
 					if( NewAssetName.length() > 0 )
 					{
 						const std::string AssetPath = "Sequences/" + NewAssetName + ".lsq";
-						Assets.CreateNamedSequence( AssetName, AssetPath.c_str() );
+						auto Sequence = Assets.CreateNamedSequence( AssetName, AssetPath.c_str() );
+						Sequence->Draw();
 					}
 				}
+
+				ShowNewAssetPopup = false;
 			}
 
 			ImGui::EndPopup();
+		}
+
+		if( !ShowNewAssetPopup )
+		{
+			ImGui::CloseCurrentPopup();
+			NewAssetName = "";
 		}
 	}
 }
@@ -594,6 +604,22 @@ void AssetUI()
 					ImGui::Text( "Level" ); ImGui::NextColumn();
 					ImGui::Separator();
 				}
+			}
+
+			ImGui::Separator();
+			ImGui::Separator();
+
+			auto CustomAssets = Assets.GetAssets();
+			for( const auto& Pair : CustomAssets )
+			{
+				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				{
+
+				}
+				ImGui::NextColumn();
+
+				ImGui::Text( Pair.second->GetType().c_str() ); ImGui::NextColumn();
+				ImGui::Separator();
 			}
 
 			ImGui::Separator();
