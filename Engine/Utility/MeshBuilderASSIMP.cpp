@@ -427,6 +427,9 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, Skeleton& Skeleton, const CFile
 		0
 	);
 
+	if( !Scene )
+		return;
+
 	Log::Event( "Meshes found: %i\n", Scene->mNumMeshes );
 
 	if( Scene->mNumMeshes > 0 )
