@@ -59,6 +59,15 @@ const FTransform& CPointEntity::GetLocalTransform()
 
 void CPointEntity::SetTransform(const FTransform& TransformIn )
 {
+#if _DEBUG
+	const auto InPosition = TransformIn.GetPosition();
+	const auto InOrientation = TransformIn.GetOrientation();
+	if( !InPosition.IsValid() || !InOrientation.IsValid() )
+	{
+		Log::Event( Log::Error, "Invalid transform.\n" );
+	}
+#endif
+	
 	Transform = TransformIn;
 	ShouldUpdateTransform = true;
 }
