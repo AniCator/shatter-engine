@@ -402,6 +402,25 @@ public:
 		return VectorLength;
 	}
 
+	inline bool IsNaN() const
+	{
+		return isnan( X )
+			|| isnan( Y )
+			|| isnan( Z );
+	}
+
+	inline bool IsInfinite() const
+	{
+		return isinf( X )
+			|| isinf( Y )
+			|| isinf( Z );
+	}
+
+	inline bool IsValid() const
+	{
+		return !IsNaN() && !IsInfinite();
+	}
+
 	static const Vector3D Zero;
 	static const Vector3D One;
 };
