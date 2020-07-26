@@ -16,12 +16,22 @@ struct FVertex
 	FVertex( const Vector3D& InPosition )
 	{
 		Position = InPosition;
+		Color = Vector3D::One;
 	}
 
 	FVertex( const Vector3D& InPosition, const Vector3D& InNormal)
 	{
 		Position = InPosition;
 		Normal = InNormal;
+		Color = Vector3D::One;
+	}
+
+	FVertex( const Vector3D& InPosition, const Vector3D& InNormal, const Vector2D& InTextureCoordinate )
+	{
+		Position = InPosition;
+		Normal = InNormal;
+		TextureCoordinate = InTextureCoordinate;
+		Color = Vector3D::One;
 	}
 
 	Vector3D Position;
