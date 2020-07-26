@@ -31,10 +31,10 @@ void MeshBuilder::Plane( FPrimitive& Primitive, const float Radius )
 	static const uint32_t VertexCount = 4;
 	FVertex* Vertices = new FVertex[VertexCount]
 	{
-		FVertex( Vector3D( -1.0f, -1.0f, 0.0f ) * Radius, Normal ), // Bottom-left
-		FVertex( Vector3D( 1.0f, -1.0f, 0.0f ) * Radius, Normal ), // Bottom-right
-		FVertex( Vector3D( 1.0f,  1.0f, 0.0f ) * Radius, Normal ), // Top-right
-		FVertex( Vector3D( -1.0f,  1.0f, 0.0f ) * Radius, Normal ), // Top-left
+		FVertex( Vector3D( -1.0f, -1.0f, 0.0f ) * Radius, Normal, Vector2D( 0.0f,0.0f ) ), // Bottom-left
+		FVertex( Vector3D( 1.0f, -1.0f, 0.0f ) * Radius, Normal, Vector2D( 1.0f,0.0f ) ), // Bottom-right
+		FVertex( Vector3D( 1.0f,  1.0f, 0.0f ) * Radius, Normal, Vector2D( 1.0f,1.0f ) ), // Top-right
+		FVertex( Vector3D( -1.0f,  1.0f, 0.0f ) * Radius, Normal, Vector2D( 0.0f,1.0f ) ), // Top-left
 	};
 
 	static const uint32_t IndexCount = 6;
