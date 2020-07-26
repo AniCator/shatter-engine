@@ -38,16 +38,25 @@ CRenderTexture::~CRenderTexture()
 	}
 }
 
+void CRenderTexture::BindDepth( ETextureSlot Slot ) const
+{
+	if( DepthHandle )
+	{
+		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
+		glActiveTexture( GetTextureSlot( Index ) );
+		glBindTexture( GL_TEXTURE_2D, DepthHandle );
+	}
+}
+
 void CRenderTexture::Initialize()
 {
 	if( Width < 0 || Height < 0 )
 	{
 		Log::Event( Log::Warning, "Render texture could not be initialized because it hasn't been configured properly.\n" );
 	}
-
 	
-		glGenFramebuffers( 1, &FramebufferHandle );
-		glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
+	glGenFramebuffers( 1, &FramebufferHandle );
+	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
 
 	if( !DepthOnly )
 	{

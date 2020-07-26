@@ -17,6 +17,8 @@ public:
 	CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight, const bool DepthOnly = false );
 	~CRenderTexture();
 
+	void BindDepth( ETextureSlot Slot ) const;
+
 	void Initialize();
 	void Push();
 	void Pop();
