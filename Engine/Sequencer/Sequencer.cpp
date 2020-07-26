@@ -486,7 +486,7 @@ struct FTrack
 		Data << Track.Start;
 		Data << Track.Length;
 
-		// DataVector::Encode( Data, Track.Events );
+		DataVector::Encode( Data, Track.Events );
 
 		return Data;
 	}
@@ -642,6 +642,7 @@ public:
 			if( ImGui::Begin( "Timeline", &DrawTimeline, ImVec2( 1000.0f, 500.0f ) ) )
 			{
 				static FTrack* ActiveTrack = nullptr;
+				static std::vector<FTrackEvent*> ActiveEvents;
 				static int SequenceLengthSeconds = 2;
 
 				if( ImGui::Button( "Play" ) )
@@ -748,7 +749,7 @@ public:
 				ImGui::Separator();
 
 				static float WidthScale = 1.0f;
-				size_t WidthDelta = static_cast<size_t>( 1000.0f / 30 ) * WidthScale;
+				size_t WidthDelta = Math::Max( 1.0f, static_cast<size_t>( 1000.0f / 30 ) * WidthScale );
 				ImGui::SliderFloat( "Scale", &WidthScale, 0.0f, 10.0f );
 
 				ImGui::SameLine();
@@ -857,7 +858,20 @@ public:
 						ImGui::SetCursorPos( EventPosition );
 
 						float Hue = 270.0f - ( GlobalIndex * 0.2f );
-						ImGui::PushStyleColor( ImGuiCol_Button, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, 0.6f ) ) );
+
+						bool SelectedEvent = false;
+						for( auto& ActiveEvent : ActiveEvents )
+						{
+							if( ActiveEvent == Event )
+							{
+								SelectedEvent = true;
+							}
+						}
+
+						const float Brightness = SelectedEvent ? 1.0f : 0.6f;
+						ImGui::PushStyleColor( ImGuiCol_Button, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, Brightness ) ) );
+						ImGui::PushStyleColor( ImGuiCol_ButtonHovered, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, 0.9f ) ) );
+						ImGui::PushStyleColor( ImGuiCol_ButtonActive, static_cast<ImVec4>( ImColor::HSV( Hue, 0.4f, 0.9f ) ) );
 						ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 0.0f );
 						ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0.0f, 0.0f ) );
 
@@ -879,7 +893,13 @@ public:
 
 						if( ImGui::IsItemClicked() )
 						{
+							if( !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift )
+							{
+								ActiveEvents.clear();
+							}
+
 							ActiveTrack = &Track;
+							ActiveEvents.emplace_back( Event );
 						}
 
 						ImVec2 Drag = ImVec2();
@@ -921,6 +941,8 @@ public:
 						ImGui::PopStyleVar();
 						ImGui::PopStyleVar();
 						ImGui::PopStyleColor();
+						ImGui::PopStyleColor();
+						ImGui::PopStyleColor();
 
 						EventIndex++;
 						GlobalIndex++;
@@ -936,7 +958,7 @@ public:
 				auto DrawList = ImGui::GetWindowDrawList();
 				if( DrawList )
 				{
-					auto VerticalOffset = 27.5f;
+					auto VerticalOffset = 32.0f;
 					ScreenPosition.x += CursorOffset;
 
 					auto MarkerPosition = ScreenPosition;
@@ -979,21 +1001,46 @@ public:
 							ActiveTrack = &Tracks[NewTrackIndex];
 						}
 					}
-
 				}
 
-				if( DragEventOccured )
+				if( !ActiveEvents.empty() )
 				{
-					for( auto& Track : Tracks )
+					ImGui::GetIO().WantCaptureKeyboard = true;
+				}
+
+				if( ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Delete ) ) )
+				{
+					for( auto& ActiveEvent : ActiveEvents )
 					{
-						for( auto Event : Track.Events )
+						if( ActiveEvent )
 						{
-							auto EventCode = Event->Start + Event->Length;
-							auto TrackCode = Track.Start + Track.Length;
-							if( EventCode > TrackCode )
+							for( auto& Track : Tracks )
 							{
-								Track.Length = EventCode - Track.Start;
+								auto Iterator = std::find( Track.Events.begin(), Track.Events.end(), ActiveEvent );
+								if( Iterator != Track.Events.end() )
+								{
+									Track.Events.erase( Iterator );
+									ActiveEvent = nullptr;
+								}
 							}
+						}
+					}
+
+					ActiveEvents.clear();
+				}
+
+				// Update the length of each track.
+				for( auto& Track : Tracks )
+				{
+					Track.Length = EndMarker - StartMarker;
+
+					for( auto Event : Track.Events )
+					{
+						auto EventCode = Event->Start + Event->Length;
+						auto TrackCode = Track.Start + Track.Length;
+						if( EventCode > TrackCode )
+						{
+							Track.Length = EventCode - Track.Start;
 						}
 					}
 				}
