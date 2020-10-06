@@ -6,7 +6,7 @@
 
 void CEntityMap::Add( const std::string& Type, EntityFunction Factory )
 {
-	Log::Event( "Registering entity \"%s\".\n", Type.c_str() );
+	// Log::Event( "Registering entity \"%s\".\n", Type.c_str() );
 	Map[Type] = Factory;
 }
 

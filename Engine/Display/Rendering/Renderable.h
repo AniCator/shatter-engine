@@ -8,6 +8,7 @@
 #include <Engine/Display/Rendering/Mesh.h>
 class CShader;
 #include <Engine/Display/Rendering/Texture.h>
+#include <Engine/Display/Rendering/Uniform.h>
 
 #include <Engine/Utility/Math.h>
 
@@ -35,7 +36,7 @@ class CRenderable
 {
 public:
 	CRenderable();
-	~CRenderable();
+	virtual ~CRenderable();
 
 	CMesh* GetMesh();
 	void SetMesh( CMesh* Mesh );
@@ -45,6 +46,8 @@ public:
 
 	CTexture* GetTexture( ETextureSlot Slot );
 	void SetTexture( CTexture* Texture, ETextureSlot Slot );
+
+	void SetUniform( const std::string& Name, const FUniform& Uniform );
 
 	virtual void Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride = None );
 
@@ -57,4 +60,5 @@ private:
 	void Prepare( FRenderData& RenderData );
 
 	FRenderDataInstanced RenderData;
+	UniformMap Uniforms;
 };

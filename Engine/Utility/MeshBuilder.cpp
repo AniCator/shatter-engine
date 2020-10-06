@@ -501,6 +501,7 @@ void MeshBuilder::Soup( FPrimitive& Primitive, std::vector<Vector3D> Vertices )
 		Indices[Index] = SoupIndices[Index];
 	}
 
+	Primitive.HasNormals = false;
 	Primitive.Vertices = UniqueVertices;
 	Primitive.VertexCount = static_cast<uint32_t>( SoupCount );
 	Primitive.Indices = Indices;

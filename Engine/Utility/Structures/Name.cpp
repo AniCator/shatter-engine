@@ -49,7 +49,7 @@ FName::FName()
 const std::string& FName::String() const
 {
 	const auto& NamePool = Pool();
-	for( auto& Iterator : NamePool )
+	for( const auto& Iterator : NamePool )
 	{
 		if( Iterator.second == Index )
 		{

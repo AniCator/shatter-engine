@@ -32,6 +32,8 @@ public:
 	static const std::wstring& GetUserSettingsDirectory();
 	static const std::wstring& GetUserSettingsFileName();
 	static const std::wstring& GetUserSettingsPath();
+	
+	static std::string UTF16ToUTF8( const std::wstring& UTF16 );
 
 	void RedirectLogToConsole();
 	void ProcessCommandLine( int argc, char** argv );

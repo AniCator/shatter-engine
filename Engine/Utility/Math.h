@@ -3,6 +3,7 @@
 
 #include <math.h>
 #include <algorithm>
+#include <string>
 
 #include <Engine/Utility/Math/Vector.h>
 #include <Engine/Utility/Math/Matrix.h>
@@ -36,8 +37,9 @@ struct FBounds
 
 namespace Math
 {
-	static const float Pi = glm::pi<float>();
-	static const float Pi2 = Pi * 2.0f;
+	static const float Pi = 3.14159265358979323846264338327950288f;
+	static const float Pi2 = 6.28318530717958647692528676655900576f;
+	static const float Tau = 6.28318530717958647692528676655900576f;
 
 	inline glm::vec3 EulerToDirection( const glm::vec3& Euler )
 	{
@@ -62,11 +64,11 @@ namespace Math
 
 	inline Vector3D DirectionToEuler( const Vector3D& Direction )
 	{
-		const float Pitch = atan2f( Direction.Z, sqrtf( Direction.X * Direction.X + Direction.Y * Direction.Y ) ) * ( 180.f / Math::Pi );
-		const float Yaw = atan2f( Direction.Y, Direction.X ) * ( 180.f / Math::Pi );
+		const float Pitch = asinf( Direction.Z );
+		const float Yaw = atan2f( Direction.Y, Direction.X );
 		const float Roll = 0.0f;
 
-		return Vector3D( Pitch, Roll, Yaw );
+		return Vector3D( Pitch, Roll, Yaw ) * ( 180.0f / Math::Pi );
 	}
 
 	inline float LengthSquared( const glm::vec2& Vector )
@@ -131,12 +133,14 @@ namespace Math
 		return LengthBiased;
 	}
 
+	// Returns the largest.
 	template<typename T>
 	inline T Max(const T& A, const T& B)
 	{
 		return std::max( A, B );
 	}
 
+	// Returns the smallest.
 	template<typename T>
 	inline T Min( const T& A, const T& B )
 	{
@@ -147,6 +151,44 @@ namespace Math
 	inline T Clamp( const T& X, const T& Minimum, const T& Maximum )
 	{
 		return Min( Max( Minimum, X ), Maximum );
+	}
+
+	template<typename T>
+	T Sign(const T& Input)
+	{
+		return static_cast<T>((0.0f < Input) - (Input < 0.0f));
+	}
+
+	template<typename T>
+	inline float Float( const T& X )
+	{
+		return static_cast<float>( X );
+	}
+
+	template<typename T>
+	inline int Integer( const T& X )
+	{
+		return static_cast<int>( X );
+	}
+
+	inline float Float( const char* X )
+	{
+		return Float( std::strtof( X, nullptr ) );
+	}
+
+	inline float Float( const std::string& String )
+	{
+		return Float( String.c_str() );
+	}
+
+	inline int Integer( const char* X )
+	{
+		return Integer( std::strtol( X, nullptr, 0 ) );
+	}
+
+	inline int Integer( const std::string& String )
+	{
+		return Integer( String.c_str() );
 	}
 
 	inline float Lerp( float A, float B, const float Alpha )
@@ -161,27 +203,27 @@ namespace Math
 
 	inline float Abs( const float& Value )
 	{
-		return fabs( Value );
+		return std::fabs( Value );
 	}
 
 	inline Vector3D Abs( const Vector3D& Value )
 	{
-		return { fabs( Value.X ), fabs( Value.Y ), fabs( Value.Z ) };
+		return { std::fabs( Value.X ), std::fabs( Value.Y ), std::fabs( Value.Z ) };
 	}
 
 	inline bool Equal( const float& A, const float& B, const float Tolerance = 0.001f )
 	{
 		float Difference = A - B;
-		Difference = fabs( Difference );
+		Difference = std::fabs( Difference );
 		return Difference < Tolerance;
 	}
 
 	inline bool Equal( const Vector3D& A, const Vector3D& B, const float Tolerance = 0.001f )
 	{
 		Vector3D Difference = A - B;
-		Difference.X = fabs( Difference.X );
-		Difference.Y = fabs( Difference.Y );
-		Difference.Z = fabs( Difference.Z );
+		Difference.X = std::fabs( Difference.X );
+		Difference.Y = std::fabs( Difference.Y );
+		Difference.Z = std::fabs( Difference.Z );
 		return Difference.X < Tolerance &&
 			Difference.Y < Tolerance &&
 			Difference.Z < Tolerance;
@@ -297,6 +339,17 @@ namespace Math
 	{
 		if( Vector.X > Minimum.X && Vector.Y > Minimum.Y && Vector.Z > Minimum.Z &&
 			Vector.X < Maximum.X && Vector.Y < Maximum.Y && Vector.Z < Maximum.Z )
+		{
+			return true;
+		}
+
+		return false;
+	}
+
+	inline bool PointInBoundingBox( const Vector2D& Vector, const Vector2D& Minimum, const Vector2D& Maximum )
+	{
+		if( Vector.X > Minimum.X && Vector.Y > Minimum.Y &&
+			Vector.X < Maximum.X && Vector.Y < Maximum.Y )
 		{
 			return true;
 		}

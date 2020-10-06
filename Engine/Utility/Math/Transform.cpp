@@ -37,7 +37,9 @@ void FTransform::SetPosition( const Vector3D& Position )
 
 void FTransform::SetOrientation( const Vector3D& Orientation )
 {
-	this->StoredOrientation = Orientation;
+	this->StoredOrientation.X = fmod( Orientation.X, 360.0f );
+	this->StoredOrientation.Y = fmod( Orientation.Y, 360.0f );
+	this->StoredOrientation.Z = fmod( Orientation.Z, 360.0f );
 	Dirty();
 }
 

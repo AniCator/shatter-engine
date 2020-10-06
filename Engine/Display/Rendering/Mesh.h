@@ -116,6 +116,7 @@ private:
 
 	uint32_t HasIndexBuffer : 1;
 	bool HasBones;
+	bool HasNormals;
 
 	FBounds AABB;
 	FPrimitive Primitive;

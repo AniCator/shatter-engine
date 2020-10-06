@@ -57,6 +57,7 @@ void PrintMatrix( const MatrixType& Transform )
 		Transform[0][3], Transform[1][3], Transform[2][3], Transform[3][3] );
 }
 
+// Converts ASSIMP style matrix to Shatter's (OpenGL) convention.
 template<typename MatrixType>
 void ConvertMatrix( Matrix4D& TargetMatrix, const MatrixType& SourceMatrix )
 {
@@ -97,6 +98,7 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 		Skeleton.Weights.resize( Mesh->mNumVertices );
 	}
 
+	// Assign the bone weights for each vertex.
 	for( size_t BoneIndex = 0; BoneIndex < Mesh->mNumBones; BoneIndex++ )
 	{
 		auto Bone = Mesh->mBones[BoneIndex];
@@ -152,6 +154,7 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 
 	ConvertMatrix( MeshData.Skeleton->GlobalMatrix, GlobalTransformation );
 
+	// Map the bones to their respective nodes and viceversa.
 	for( size_t BoneIndex = 0; BoneIndex < Mesh->mNumBones; BoneIndex++ )
 	{
 		auto Bone = Mesh->mBones[BoneIndex];
@@ -233,13 +236,13 @@ void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* 
 
 		const auto& Vertex = Mesh->mVertices[VertexIndex];
 		auto TransformedVector = Transform * Vertex;
-		NewVertex.Position = Vector3D( TransformedVector.z, TransformedVector.x, TransformedVector.y );
+		NewVertex.Position = Vector3D( TransformedVector.x, TransformedVector.y, TransformedVector.z );
 
 		const auto& Normal = Mesh->mNormals[VertexIndex];
 		auto Transposed = Transform;
 		// Transposed = Transposed.Transpose();
 		auto TransformedNormal = aiMatrix3x3( Transform ) * Normal;
-		NewVertex.Normal = Vector3D( TransformedNormal.z, TransformedNormal.x, TransformedNormal.y );
+		NewVertex.Normal = Vector3D( TransformedNormal.x, TransformedNormal.y, TransformedNormal.z );
 
 		if( Mesh->HasTextureCoords( 0 ) )
 		{
@@ -288,7 +291,7 @@ void ParseNodes( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNod
 
 	for( size_t MeshIndex = 0; MeshIndex < Node->mNumMeshes; MeshIndex++ )
 	{
-		AddMesh( Node->mTransformation, Scene, Scene->mMeshes[Node->mMeshes[MeshIndex]], Node, MeshData );
+		AddMesh( Transform * Node->mTransformation, Scene, Scene->mMeshes[Node->mMeshes[MeshIndex]], Node, MeshData );
 	}
 
 	if( Node->mParent )
@@ -434,7 +437,15 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, Skeleton& Skeleton, const CFile
 
 	if( Scene->mNumMeshes > 0 )
 	{
-		auto Transform = Scene->mRootNode->mTransformation;
+		aiMatrix3x3 RotX;
+		aiMatrix3x3 RotY;
+		aiMatrix3x3 RotZ;
+		aiMatrix3x3::Rotation( glm::radians( -90.0f ), aiVector3D( 1.0f, 0.0f, 0.0f ), RotX ); // Pitch
+		aiMatrix3x3::Rotation( glm::radians( -90.0f ), aiVector3D( 0.0f, 1.0f, 0.0f ), RotY ); // Yaw
+		aiMatrix3x3::Rotation( glm::radians( 0.0f ), aiVector3D( 0.0f, 0.0f, 1.0f ), RotZ ); // Roll
+		aiMatrix4x4 RotMat = aiMatrix4x4( RotZ * RotY * RotX );
+		
+		auto Transform = Scene->mRootNode->mTransformation * RotMat;
 		FMeshData MeshData;
 		MeshData.Skeleton = &Skeleton;
 		MeshData.InverseTransform = Transform.Inverse();

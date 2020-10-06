@@ -76,6 +76,9 @@ namespace Log
 		char Name[128];
 		std::ofstream LogOutputStream;
 
+		std::string LogPath;
+		std::string ShatterLogPath;
+
 		CTimer Timer;
 		static std::vector<FHistory> LogHistory;
 

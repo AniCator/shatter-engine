@@ -55,6 +55,7 @@ static CShader* CopyShader = nullptr;
 static bool SkipRenderPasses = false;
 static float SuperSamplingFactor = 2.0f;
 static bool SuperSampling = true;
+static int Samples = 0;
 
 CRenderer::CRenderer()
 {
@@ -159,12 +160,8 @@ void CRenderer::Initialize()
 
 	SkipRenderPasses = CConfiguration::Get().GetInteger( "skiprenderpasses", 0 ) > 0;
 	SuperSampling = CConfiguration::Get().GetInteger( "supersampling", 1 ) > 0;
-	SuperSamplingFactor = CConfiguration::Get().GetFloat( "supersamplingfactor", 2.0f );
-
-	if( SuperSamplingFactor < 0.1f )
-	{
-		SuperSamplingFactor = 0.1f;
-	}
+	SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "supersamplingfactor", 2.0f ) );
+	Samples = CConfiguration::Get().GetInteger( "msaa", 0 );
 }
 
 void CRenderer::DestroyBuffers()
@@ -214,11 +211,36 @@ void CRenderer::DrawQueuedRenderables()
 		FramebufferHeight *= SuperSamplingFactor;
 	}
 
-	if( !Framebuffer.Ready() )
+	const bool CorrectSampleCount = SuperSampling ? Framebuffer.GetSampleCount() == 0 : Framebuffer.GetSampleCount() == Samples;
+	const bool FramebufferReady = Framebuffer.Ready() && 
+		FramebufferWidth == Framebuffer.GetWidth() && 
+		FramebufferHeight == Framebuffer.GetHeight() &&
+		CorrectSampleCount;
+	
+	if( !FramebufferReady )
 	{
 		if( ViewportWidth > -1 && ViewportHeight > -1 )
 		{
-			Framebuffer = CRenderTexture( "Framebuffer", FramebufferWidth, FramebufferHeight );
+			// Update the super sampling values.
+			SuperSampling = CConfiguration::Get().GetInteger( "supersampling", 1 ) > 0;
+			SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "supersamplingfactor", 2.0f ) );
+			Samples = CConfiguration::Get().GetInteger( "msaa", 0 );
+			
+			FramebufferWidth = ViewportWidth;
+			FramebufferHeight = ViewportHeight;
+
+			if( !RenderOnlyMainPass && SuperSampling )
+			{
+				FramebufferWidth *= SuperSamplingFactor;
+				FramebufferHeight *= SuperSamplingFactor;
+			}
+			
+			RenderTextureConfiguration Configuration;
+			Configuration.Width = FramebufferWidth;
+			Configuration.Height = FramebufferHeight;
+			Configuration.Samples = SuperSampling ? 0 : Samples;
+			
+			Framebuffer = CRenderTexture( "Framebuffer", Configuration );
 			Framebuffer.Initialize();
 		}
 	}
@@ -337,12 +359,14 @@ void CRenderer::DrawQueuedRenderables()
 		}
 	}
 
+	Framebuffer.Resolve();
+
 	if( !RenderOnlyMainPass )
 	{
 		Profile( "Post-Process" );
 		if( !SuperSampling )
 		{
-			BufferA = Framebuffer;
+			// BufferA = Framebuffer;
 		}
 
 		if( MainPass.Target && MainPass.Target->Ready() && SuperSampleBicubicShader && ResolveShader && ImageProcessingShader && CopyShader )
@@ -377,12 +401,26 @@ void CRenderer::DrawQueuedRenderables()
 				CRenderPass AntiAliasingResolve( "AntiAliasingResolve", ViewportWidth, ViewportHeight, Camera );
 				AntiAliasingResolve.Target = &BufferA;
 				AntiAliasingResolve.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+				
+				CopyTexture( &BufferA, MainPass.Target, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
+			}
+			else
+			{
+				CopyTexture( MainPass.Target, &BufferA, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
 			}
 
-			FramebufferRenderable.SetShader( ImageProcessingShader );
-
-			if( BufferA.Ready() && BufferB.Ready() )
 			{
+				FramebufferRenderable.SetShader( ImageProcessingShader );
+				
+				CRenderPass ImageProcessingPass( "ImageProcessingPass", ViewportWidth, ViewportHeight, Camera );
+				ImageProcessingPass.Target = &BufferA;
+				ImageProcessingPass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+
+				CopyTexture( &BufferA, MainPass.Target, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
+			}
+			
+			if( BufferA.Ready() && BufferB.Ready() )
+			{			
 				for( auto& Pass : Passes )
 				{
 					if( Pass.Pass && Pass.Location == ERenderPassLocation::PostProcess )

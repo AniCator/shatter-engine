@@ -394,7 +394,7 @@ void ShowTexture( CTexture* Texture )
 
 		const auto CursorPosition = ImGui::GetCursorScreenPos();
 
-		ImTextureID TextureID = (ImTextureID) (intptr_t) Texture->GetHandle();
+		auto* TextureID = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
 		ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 0 );
 
 		if( ImGui::IsWindowHovered() )
@@ -476,10 +476,11 @@ void TextureListUI()
 		{
 			auto ImageSize = ImVec2( 64, 64 );
 
-			ImTextureID TextureID = ( ImTextureID) ( intptr_t) Texture->GetHandle();
+			auto* TextureID = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
 			if( ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1 ) )
 			{
 				PreviewTexture = Texture;
+				
 				// Zoom = 1.0f;
 				// Drag = ImVec2();
 			}
@@ -1100,7 +1101,6 @@ void DebugMenu( CApplication* Application )
 
 CApplication::CApplication()
 {
-	
 	Tools = false;
 	DefaultExit = true;
 	WaitForInput = false;
@@ -1111,10 +1111,15 @@ CApplication::~CApplication()
 
 }
 
+std::string CApplication::UTF16ToUTF8( const std::wstring& UTF16 )
+{
+	static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> Converter;
+	return Converter.to_bytes( UTF16 );
+}
+
 void CApplication::Run()
 {
 	CRenderer& Renderer = MainWindow.GetRenderer();
-
 	Initialize();
 
 	Setup.AspectRatio = static_cast<float>( MainWindow.GetWidth() ) / static_cast<float>( MainWindow.GetHeight() );
@@ -1360,6 +1365,12 @@ void CApplication::SetName( const char* NameIn )
 
 const std::wstring& CApplication::GetDirectoryName()
 {
+	if( DirectoryName.length() == 0 )
+	{
+		static const auto UnnamedProject = L"UnnamedShatterGame";
+		return UnnamedProject;
+	}
+	
 	return DirectoryName;
 }
 
@@ -1661,7 +1672,17 @@ const std::string& CApplication::GetCommand( const std::string& Command )
 
 int GenerateDump( EXCEPTION_POINTERS* pExceptionPointers )
 {
-	HANDLE DumpFile = CreateFile( "CrashDump.mdmp", GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0 );
+	auto DumpPathWide = CApplication::GetUserSettingsDirectory();
+	const auto DirectoryName = CApplication::GetDirectoryName();
+
+	if( DirectoryName.length() == 0 )
+	{
+		return EXCEPTION_EXECUTE_HANDLER;
+	}
+
+	DumpPathWide += L"CrashDump.mdmp";
+	const auto DumpPath = CApplication::UTF16ToUTF8( DumpPathWide );
+	const HANDLE DumpFile = CreateFile( DumpPath.c_str(), GENERIC_READ | GENERIC_WRITE, FILE_SHARE_WRITE | FILE_SHARE_READ, 0, CREATE_ALWAYS, 0, 0 );
 
 	MINIDUMP_EXCEPTION_INFORMATION ExceptionInformation;
 	ExceptionInformation.ThreadId = GetCurrentThreadId();
@@ -1726,6 +1747,7 @@ void CApplication::Initialize()
 	static const std::wstring UserConfigurationDirectory = GetUserSettingsDirectory();
 	static const std::wstring UserConfigurationPath = GetUserSettingsPath();
 
+	Log::Event( "User configuration path: %s\n", UTF16ToUTF8( UserConfigurationPath ).c_str() );
 	Configuration.SetFile( StorageCategory::User, UserConfigurationPath );
 
 	const bool DirectoryExists = std::experimental::filesystem::exists( UserConfigurationDirectory );
@@ -1740,7 +1762,12 @@ void CApplication::Initialize()
 	const bool ConfigurationPathExists = std::experimental::filesystem::exists( UserConfigurationPath );
 	if( !ConfigurationPathExists )
 	{
+		Log::Event( "Seeding user configuration file. (file doesn't exist, first save)\n" );
 		Configuration.Save();
+	}
+	else
+	{
+		Log::Event( "Found existing user configuration file.\n" );
 	}
 
 	if( MainWindow.Valid() )

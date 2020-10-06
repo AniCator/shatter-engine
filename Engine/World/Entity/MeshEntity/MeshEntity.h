@@ -32,11 +32,15 @@ public:
 	virtual void Export( CData& Data ) override;
 
 	virtual bool ShouldCollide() const;
+	virtual void SetCollision( const bool Enable );
+	
 	virtual bool IsStatic() const;
 	virtual bool IsStationary() const;
 
 	virtual bool IsVisible() const;
 	virtual void SetVisible( const bool& Visible );
+
+	virtual FBounds GetWorldBounds() const;
 
 public:
 	CMesh* Mesh;

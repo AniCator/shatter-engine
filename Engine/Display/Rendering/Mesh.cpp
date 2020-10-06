@@ -11,6 +11,7 @@ CMesh::CMesh( EMeshType InMeshType )
 {
 	MeshType = InMeshType;
 	VertexArrayObject = 0;
+	HasNormals = false;
 
 	Location = GeneratedMesh;
 
@@ -340,10 +341,12 @@ void CMesh::GenerateNormals()
 			{
 				if( ( Primitive.VertexCount - VertexIndex ) > 2 )
 				{
-					const Vector3D U = Primitive.Vertices[VertexIndex + 1].Position - Primitive.Vertices[VertexIndex].Position;
-					const Vector3D V = Primitive.Vertices[VertexIndex + 2].Position - Primitive.Vertices[VertexIndex].Position;
+					const auto VertexIndexA = VertexIndex + 1;
+					const auto VertexIndexB = VertexIndex + 2;
+					const Vector3D U = Primitive.Vertices[VertexIndexA].Position - Primitive.Vertices[VertexIndex].Position;
+					const Vector3D V = Primitive.Vertices[VertexIndexB].Position - Primitive.Vertices[VertexIndex].Position;
 					const Vector3D Normal = U.Cross( V ).Normalized();
-					VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex + 1].Normal = VertexData.Vertices[VertexIndex + 2].Normal = Normal;
+					VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndexA].Normal = VertexData.Vertices[VertexIndexB].Normal = Normal;
 				}
 			}
 		}
@@ -373,17 +376,25 @@ void CMesh::GenerateNormals()
 			{
 				if( ( Primitive.IndexCount - Index ) > 2 )
 				{
-					const Vector3D& Vertex0 = Primitive.Vertices[Primitive.Indices[Index]].Position;
-					const Vector3D& Vertex1 = Primitive.Vertices[Primitive.Indices[Index + 1]].Position;
-					const Vector3D& Vertex2 = Primitive.Vertices[Primitive.Indices[Index + 2]].Position;
+					const auto IndexA = Index;
+					const auto IndexB = Index + 1;
+					const auto IndexC = Index + 2;
+
+					const auto VertexIndexA = Primitive.Indices[IndexA];
+					const auto VertexIndexB = Primitive.Indices[IndexB];
+					const auto VertexIndexC = Primitive.Indices[IndexC];
+					
+					const Vector3D& Vertex0 = Primitive.Vertices[VertexIndexA].Position;
+					const Vector3D& Vertex1 = Primitive.Vertices[VertexIndexB].Position;
+					const Vector3D& Vertex2 = Primitive.Vertices[VertexIndexB].Position;
 
 					const Vector3D U = Vertex1 - Vertex0;
 					const Vector3D V = Vertex2 - Vertex0;
 					const Vector3D Normal = U.Cross( V ).Normalized();
 
-					VertexData.Vertices[Primitive.Indices[Index]].Normal += Normal;
-					VertexData.Vertices[Primitive.Indices[Index + 1]].Normal += Normal;
-					VertexData.Vertices[Primitive.Indices[Index + 2]].Normal += Normal;
+					VertexData.Vertices[VertexIndexA].Normal += Normal;
+					VertexData.Vertices[VertexIndexB].Normal += Normal;
+					VertexData.Vertices[VertexIndexC].Normal += Normal;
 				}
 			}
 		}
@@ -400,6 +411,8 @@ void CMesh::GenerateNormals()
 			}
 		}
 	}
+
+	HasNormals = true;
 
 	glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
 }

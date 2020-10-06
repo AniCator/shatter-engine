@@ -133,9 +133,66 @@ public:
 		return *this;
 	};
 
+	inline Vector2D operator/=( const float& Scalar )
+	{
+		X /= Scalar;
+		Y /= Scalar;
+		return *this;
+	};
+
 	inline float Dot( const Vector2D& Vector ) const
 	{
 		return X * Vector.X + Y * Vector.Y;
+	}
+
+	inline float Length() const
+	{
+		return sqrt( Dot( *this ) );
+	}
+
+	inline float LengthSquared() const
+	{
+		return Dot( *this );
+	}
+
+	inline float Length( const Vector2D& Vector ) const
+	{
+		return sqrt( Vector.Dot( Vector ) );
+	}
+
+	inline float Distance( const Vector2D& Vector ) const
+	{
+		return Length( *this - Vector );
+	}
+
+	inline float DistanceSquared( const Vector2D& Vector ) const
+	{
+		const Vector2D Delta = *this - Vector;
+		return Delta.Dot( Delta );
+	}
+
+	inline Vector2D Normalized() const
+	{
+		Vector2D Unit = *this;
+
+		const float VectorLength = Length( Unit );
+		if( VectorLength > 0.0f )
+		{
+			Unit /= VectorLength;
+		}
+
+		return Unit;
+	}
+
+	inline float Normalize()
+	{
+		const float VectorLength = Length( *this );
+		if( VectorLength > 0.0f )
+		{
+			*this /= VectorLength;
+		}
+
+		return VectorLength;
 	}
 };
 

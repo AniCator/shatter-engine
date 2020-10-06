@@ -1,7 +1,9 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Configuration.h"
+
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
+#include <Engine/Utility/Math.h>
 
 #include <fstream>
 #include <sstream>
@@ -57,7 +59,7 @@ int CConfiguration::GetInteger( const char* KeyName, const int Default )
 		return Default;
 	}
 
-	return atoi( GetValue( KeyName ).c_str() );
+	return Math::Integer( GetValue( KeyName ) );
 }
 
 double CConfiguration::GetDouble( const char* KeyName, const double Default )
@@ -69,7 +71,7 @@ double CConfiguration::GetDouble( const char* KeyName, const double Default )
 		return Default;
 	}
 
-	return atof( GetValue( KeyName ).c_str() );
+	return Math::Float( GetValue( KeyName ) );
 }
 
 float CConfiguration::GetFloat( const char* KeyName, const float Default )

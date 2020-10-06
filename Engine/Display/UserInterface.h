@@ -4,6 +4,8 @@
 #include <Engine/Utility/Math.h>
 #include <Engine/Display/Rendering/Camera.h>
 
+class CTexture;
+
 class Color
 {
 public:
@@ -64,6 +66,8 @@ namespace UI
 	// void AddCircleFilled( const Vector2D& centre, float radius, uint32_t col, int num_segments = 12 );
 	void AddText( const Vector2D& Position, const char* Start, const char* End = nullptr, const Color& Color = Color::White, const float Size = 16.0f );
 	void AddText( const Vector3D& Position, const char* Start, const char* End = nullptr, const Color& Color = Color::White );
+	
+	void AddImage( const Vector3D& Position, const Vector2D& Size, const ::CTexture* Texture, const Color& Color = Color::White );
 	// void AddText( const ImFont* font, float font_size, const Vector2D& pos, uint32_t col, const char* text_begin, const char* text_end = NULL, float wrap_width = 0.0f, const Vector4D * cpu_fine_clip_rect = NULL );
 	// void AddImage( ImTextureID user_texture_id, const Vector2D& a, const Vector2D& b, const Vector2D& uv_a = Vector2D( 0, 0 ), const Vector2D& uv_b = Vector2D( 1, 1 ), uint32_t col = 0xFFFFFFFF );
 	// void AddImageQuad( ImTextureID user_texture_id, const Vector2D& a, const Vector2D& b, const Vector2D& c, const Vector2D& d, const Vector2D& uv_a = Vector2D( 0, 0 ), const Vector2D& uv_b = Vector2D( 1, 0 ), const Vector2D& uv_c = Vector2D( 1, 1 ), const Vector2D& uv_d = Vector2D( 0, 1 ), uint32_t col = 0xFFFFFFFF );

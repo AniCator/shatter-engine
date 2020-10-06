@@ -114,7 +114,7 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 			}
 			else
 			{
-				Log::Event( Log::Warning, "Failed to create shader \"%s\".\n", FileLocation );
+				Log::Event( Log::Error, "Failed to create shader \"%s\".\n", FileLocation );
 			}
 		}
 	}

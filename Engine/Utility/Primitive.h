@@ -11,11 +11,15 @@ struct FVertex
 {
 	FVertex()
 	{
+		Position = Vector3D::Zero;
+		Normal = Vector3D( 0.0f, 0.0f, 1.0f );
+		Color = Vector3D::One;
 	}
 
 	FVertex( const Vector3D& InPosition )
 	{
 		Position = InPosition;
+		Normal = Vector3D( 0.0f, 0.0f, 1.0f );
 		Color = Vector3D::One;
 	}
 

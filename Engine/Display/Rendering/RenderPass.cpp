@@ -369,14 +369,19 @@ void CRenderPass::ConfigureDepthTest( CShader* Shader )
 
 void PointCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
+	return;
+	
 	const auto& Frustum = Camera.GetFrustum();
 	for( auto& Renderable : Renderables )
 	{
 		Renderable->GetRenderData().ShouldRender = false;
 
+		const auto& Bounds = Renderable->GetMesh()->GetBounds();
+		const float Radius = Bounds.Minimum.Distance( Bounds.Maximum );
 		Vector3D Position3D = Renderable->GetRenderData().Transform.GetPosition();
-		if( Frustum.Contains( Position3D ) )
+		if( Frustum.Contains( Position3D, Radius ) )
 		{
+			// UI::AddLine( Position3D - Vector3D( 0.0f, 0.0f, Radius * 0.5f ), Position3D + Vector3D( 0.0f, 0.0f, Radius * 0.5f ) );
 			Renderable->GetRenderData().ShouldRender = true;
 		}
 	}
@@ -384,6 +389,8 @@ void PointCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 
 void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
+	return;
+	
 	const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
 	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
@@ -463,12 +470,13 @@ void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
 	// SphereCull( Camera, Renderables );
-	// PointCull( Camera, Renderables );
+	PointCull( Camera, Renderables );
 }
 
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )
 {
 	static CRenderPassCopy Copy( Width, Height, Camera, AlwaysClear );
+	Copy.AlwaysClear = AlwaysClear;
 	Copy.Source = Source;
 	Copy.Target = Target;
 	return Copy.Render( Uniforms );

@@ -7,9 +7,6 @@ static CEntityFactory<CCameraEntity> Factory( "camera" );
 
 CCameraEntity::CCameraEntity()
 {
-	Priority = 501;
-	Target = -1;
-
 	Inputs["Activate"] = [&] ()
 	{
 		Activate();
@@ -49,20 +46,37 @@ void CCameraEntity::Load( const JSON::Vector& Objects )
 {
 	CPointEntity::Load( Objects );
 
-	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
-	for( auto& Property : Objects )
+	FCameraSetup& CameraSetup = Camera.GetCameraSetup();	
+	for( const auto& Property : Objects )
 	{
 		if( Property->Key == "fov" )
 		{
 			const double PropertyFOV = ParseDouble( Property->Value.c_str() );
 			if( PropertyFOV > 0.0f )
 			{
-				CameraSetup.FieldOfView = PropertyFOV;
+				CameraSetup.FieldOfView = Math::Float( PropertyFOV );
 			}
 		}
 		else if( Property->Key == "priority" )
 		{
-			Priority = atoi( Property->Value.c_str() );
+			Priority = Math::Integer( Property->Value );
+		}
+		else if( Property->Key == "points" )
+		{
+			// Check if any points are defined.
+			if( Property->Objects.empty() )
+				continue;
+
+			// Allocate space for the camera key-frames.
+			Keys.reserve( Property->Objects.size() );
+
+			// Parse control points.
+			for( const auto& ObjectKey : Property->Objects )
+			{
+				CameraKey Key;
+				const auto Time = ObjectKey->GetValue( "time" );
+				Key.Time = Math::Float( Time );
+			}
 		}
 	}
 }

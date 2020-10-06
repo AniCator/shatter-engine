@@ -250,6 +250,7 @@
     <ClCompile Include="Engine\Utility\Thread.cpp" />
     <ClCompile Include="Engine\World\Entity\CameraEntity\CameraEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Entity.cpp" />
+    <ClCompile Include="Engine\World\Entity\Info\InfoTextEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicPointEntity\LogicPointEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.cpp" />
@@ -339,6 +340,7 @@
     <ClInclude Include="Engine\Utility\Timer.h" />
     <ClInclude Include="Engine\World\Entity\CameraEntity\CameraEntity.h" />
     <ClInclude Include="Engine\World\Entity\Entity.h" />
+    <ClInclude Include="Engine\World\Entity\Info\InfoTextEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicPointEntity\LogicPointEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicTimerEntity\LogicTimerEntity.h" />

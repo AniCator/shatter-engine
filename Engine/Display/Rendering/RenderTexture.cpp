@@ -3,14 +3,20 @@
 
 #include <Engine/Display/Rendering/TextureEnumeratorsGL.h>
 #include <Engine/Profiling/Logging.h>
-#include <Engine/Utility/Data.h>
-#include <Engine/Utility/File.h>
+#include <Engine/Utility/Math.h>
+
 
 CRenderTexture::CRenderTexture() : CTexture()
 {
 	Width = -1;
 	Height = -1;
-	Initialized = false;
+
+	Configuration.Width = Width;
+	Configuration.Height = Height;
+
+	FramebufferHandle = 0;
+	DepthHandle = 0;
+	MultiSampleHandle = 0;
 
 	FilteringMode = EFilteringMode::Nearest;
 }
@@ -21,30 +27,58 @@ CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int T
 	Width = TextureWidth;
 	Height = TextureHeight;
 
+	Configuration.Width = Width;
+	Configuration.Height = Height;
+
 	FramebufferHandle = 0;
 	DepthHandle = 0;
-
-	this->DepthOnly = DepthOnly;
+	MultiSampleHandle = 0;
+	
 	Initialized = false;
+
+	if( DepthOnly )
+	{
+		Configuration.EnableColor = false;
+		Configuration.EnableDepth = true;
+	}
+}
+
+CRenderTexture::CRenderTexture( const std::string& Name, const RenderTextureConfiguration ConfigurationIn ) : CTexture()
+{
+	Configuration = ConfigurationIn;
+	
+	this->Name = Name;	
+	Width = Configuration.Width;
+	Height = Configuration.Height;
+
+	FramebufferHandle = 0;
+	DepthHandle = 0;
+	MultiSampleHandle = 0;
+
+	Initialized = false;
+
+	const bool DepthOnly = !Configuration.EnableColor && Configuration.EnableDepth;
+	if( DepthOnly )
+	{
+		Configuration.EnableColor = false;
+		Configuration.EnableDepth = true;
+	}
 }
 
 CRenderTexture::~CRenderTexture()
 {
-	glDeleteFramebuffers( 1, &FramebufferHandle );
-
-	if( !DepthOnly )
-	{
-		glDeleteTextures( 1, &DepthHandle );
-	}
+	Delete();
 }
 
 void CRenderTexture::BindDepth( ETextureSlot Slot ) const
 {
-	if( DepthHandle )
+	const bool DepthOnly = !Configuration.EnableColor && Configuration.EnableDepth;
+	const GLuint TextureHandle = DepthOnly ? Handle : DepthHandle;
+	if( TextureHandle )
 	{
 		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
 		glActiveTexture( GetTextureSlot( Index ) );
-		glBindTexture( GL_TEXTURE_2D, DepthHandle );
+		glBindTexture( GL_TEXTURE_2D, TextureHandle );
 	}
 }
 
@@ -54,16 +88,21 @@ void CRenderTexture::Initialize()
 	{
 		Log::Event( Log::Warning, "Render texture could not be initialized because it hasn't been configured properly.\n" );
 	}
+
+	Initialized = true;
+
+	Delete();
 	
 	glGenFramebuffers( 1, &FramebufferHandle );
 	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
 
-	if( !DepthOnly )
+	const bool DepthOnly = !Configuration.EnableColor && Configuration.EnableDepth;
+	if( Configuration.EnableColor )
 	{
 		glGenTextures( 1, &Handle );
 		glBindTexture( GL_TEXTURE_2D, Handle );
 
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB16F, Width, Height, 0, GL_RGB, GL_FLOAT, 0 );
+		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB16F, Width, Height, 0, GL_RGB, GL_FLOAT, nullptr );
 
 		// Wrapping parameters
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -74,52 +113,94 @@ void CRenderTexture::Initialize()
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GetFilteringMode( Mode ) );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
 
-		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Handle, 0 );
+		if( Configuration.Samples < 1)
+		{
+			glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Handle, 0 );
 
-		GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
-		glDrawBuffers( 1, DrawBuffers );
+			GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+			glDrawBuffers( 1, DrawBuffers );
+
+			const GLenum ColorBufferStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+			if( ColorBufferStatus != GL_FRAMEBUFFER_COMPLETE )
+			{
+				Log::Event( Log::Warning, "Failed to create the color buffer.\n" );
+				Initialized = false;
+			}
+		}
+
+		if( Configuration.Samples > 0 )
+		{
+			glGenTextures( 1, &MultiSampleHandle );
+			glBindTexture( GL_TEXTURE_2D_MULTISAMPLE, MultiSampleHandle );
+
+			glTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, Configuration.Samples, GL_RGB16F, Width, Height, true );
+			glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, MultiSampleHandle, 0 );
+
+			GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
+			glDrawBuffers( 1, DrawBuffers );			
+
+			const GLenum MultiSampleBufferStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+			if( MultiSampleBufferStatus != GL_FRAMEBUFFER_COMPLETE )
+			{
+				Log::Event( Log::Warning, "Failed to create the multisample buffer.\n" );
+				Initialized = false;
+			}
+		}
 	}
 
-	glGenTextures( 1, &DepthHandle );
-	glBindTexture( GL_TEXTURE_2D, DepthHandle );
-
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, Width, Height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, 0 );
-
-	// Wrapping parameters
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
-
-	if( DepthOnly )
+	if( Configuration.EnableDepth )
 	{
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+		const GLenum Target = MultiSampleHandle ? GL_TEXTURE_2D_MULTISAMPLE : GL_TEXTURE_2D;
+		
+		glGenTextures( 1, &DepthHandle );
+		glBindTexture( Target, DepthHandle );
 
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_GEQUAL );
-	}
-	else
-	{
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
-	}
-	
-	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, DepthHandle, 0 );
+		if( MultiSampleHandle )
+		{
+			glTexImage2DMultisample( Target, Configuration.Samples, GL_DEPTH_COMPONENT32F, Width, Height, true );
+		}
+		else
+		{
+			glTexImage2D( Target, 0, GL_DEPTH_COMPONENT32F, Width, Height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+		}
 
-	if( DepthOnly )
-	{
-		glDrawBuffer( GL_NONE );
-		glReadBuffer( GL_NONE );
+		// Wrapping parameters
+		glTexParameteri( Target, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
+		glTexParameteri( Target, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
 
-		Handle = DepthHandle;
-	}
+		if( DepthOnly )
+		{
+			glTexParameteri( Target, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+			glTexParameteri( Target, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
 
-	Initialized = true;
+			glTexParameteri( Target, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_REF_TO_TEXTURE );
+			glTexParameteri( Target, GL_TEXTURE_COMPARE_FUNC, GL_GEQUAL );
+		}
+		else
+		{
+			glTexParameteri( Target, GL_TEXTURE_MIN_FILTER, GL_NEAREST );
+			glTexParameteri( Target, GL_TEXTURE_MAG_FILTER, GL_NEAREST );
+		}
 
-	const GLenum FramebufferStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
-	if( FramebufferStatus != GL_FRAMEBUFFER_COMPLETE )
-	{
-		Log::Event( Log::Warning, "Failed to create the framebuffer.\n" );
-		Initialized = false;
+		glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, Target, DepthHandle, 0 );
+
+		if( !Configuration.EnableColor )
+		{
+			glDrawBuffer( GL_NONE );
+			glReadBuffer( GL_NONE );
+
+			// When there is no color buffer the depth handle can be assigned to the regular handle.
+			// This makes binding depth only textures a bit more straight forward.
+			Handle = DepthHandle;
+			DepthHandle = 0;
+		}
+
+		const GLenum DepthBufferStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
+		if( DepthBufferStatus != GL_FRAMEBUFFER_COMPLETE )
+		{
+			Log::Event( Log::Warning, "Failed to create the depth buffer.\n" );
+			Initialized = false;
+		}
 	}
 
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
@@ -127,20 +208,60 @@ void CRenderTexture::Initialize()
 
 void CRenderTexture::Push()
 {
-#if defined(_DEBUG)
-	// const auto& Texture = Name.String();
-	// glPushDebugGroup( GL_DEBUG_SOURCE_APPLICATION, 0, Texture.length(), Texture.c_str() );
-#endif
 	glViewport( 0, 0, (GLsizei) Width, (GLsizei) Height );
-
 	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
 }
 
 void CRenderTexture::Pop()
 {
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
+}
 
-#if defined(_DEBUG)
-	// glPopDebugGroup();
-#endif
+void CRenderTexture::Resolve()
+{
+	if( FramebufferHandle < 1 || MultiSampleHandle < 1 || Configuration.Samples < 1 )
+		return;
+
+	glBindFramebuffer( GL_READ_FRAMEBUFFER, MultiSampleHandle );
+	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, FramebufferHandle );
+	glBlitFramebuffer( 0, 0, Width, Height, 0, 0, Width, Height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Handle, 0 );
+}
+
+void CRenderTexture::Delete()
+{
+	if( FramebufferHandle )
+	{
+		glDeleteFramebuffers( 1, &FramebufferHandle );
+	}
+
+	if( Handle )
+	{
+		glDeleteTextures( 1, &Handle );
+		Handle = 0;
+	}
+
+	if( DepthHandle )
+	{
+		glDeleteTextures( 1, &DepthHandle );
+		DepthHandle = 0;
+	}
+
+	if( MultiSampleHandle )
+	{
+		glDeleteTextures( 1, &MultiSampleHandle );
+		MultiSampleHandle = 0;
+	}
+}
+
+void CRenderTexture::SetSampleCount( const int Samples )
+{
+	int MaximumSamples = 0;
+	glGetIntegerv( GL_SAMPLES, &MaximumSamples );
+	Configuration.Samples = Math::Clamp( Samples, 0, MaximumSamples );
+}
+
+int CRenderTexture::GetSampleCount() const
+{
+	return Configuration.Samples;
 }

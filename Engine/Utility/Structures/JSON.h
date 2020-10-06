@@ -3,7 +3,7 @@
 
 #include <unordered_map>
 #include <vector>
-#include <deque>
+#include <list>
 #include <string>
 #include <algorithm>
 
@@ -22,7 +22,7 @@ namespace JSON
 	void PrintTree( const Container& Tree );
 
 	struct Object;
-	typedef std::vector<Object*> Vector;
+	typedef std::list<Object*> Vector;
 
 	struct Object
 	{
@@ -42,13 +42,26 @@ namespace JSON
 		Object* Parent;
 		Vector Objects;
 
+		void SetValue( const std::string& Key, const std::string& NewValue )
+		{
+			if( this->Key == Key )
+			{
+				Value = NewValue;
+			}
+			
+			if( const auto & Object = this->operator[]( Key ) )
+			{
+				Object->Value = NewValue;
+			}
+		}
+
 		const std::string& GetValue( const std::string& Key ) const
 		{
 			if( this->Key == Key )
 			{
 				return Value;
 			}
-			
+
 			if( const auto & Object = this->operator[]( Key ) )
 			{
 				return Object->Value;
@@ -62,18 +75,23 @@ namespace JSON
 
 		Object* operator[](const std::string& Search) const
 		{
-			const auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] (Object* Item) -> bool
-				{
-					return Item->Key == Search;
-				}
-			);
-
-			if( Result == Objects.end() )
+			if( !Objects.empty() )
 			{
-				return nullptr;
+				const auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
+					{
+						return Item->Key == Search;
+					}
+				);
+
+				if( Result == Objects.end() )
+				{
+					return nullptr;
+				}
+
+				return *Result;
 			}
 
-			return *Result;
+			return nullptr;
 		}
 
 		Object& operator=( const char* Value )
@@ -93,23 +111,28 @@ namespace JSON
 
 	inline Object* Find( const Vector& Objects, const std::string& Search )
 	{
-		auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
-			{
-				return Item->Key == Search;
-			}
-		);
-
-		if( Result == Objects.end() )
+		if( !Objects.empty() )
 		{
-			return nullptr;
+			auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
+				{
+					return Item->Key == Search;
+				}
+			);
+
+			if( Result == Objects.end() )
+			{
+				return nullptr;
+			}
+
+			return *Result;
 		}
 
-		return *Result;
+		return nullptr;
 	}
 
 	struct Container
 	{
-		std::deque<Object> Objects;
+		std::list<Object> Objects;
 		Vector Tree;
 
 		Object& operator[]( const std::string& Search )
@@ -127,7 +150,7 @@ namespace JSON
 				Objects.emplace_back( Object );
 
 				RegenerateTree( *this );
-				return Objects[Objects.size() - 1];
+				return Objects.back();
 			}
 
 			return **Result;

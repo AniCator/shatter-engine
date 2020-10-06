@@ -7,6 +7,7 @@
 #include <Engine/Display/Rendering/RenderPass.h>
 #include <Engine/Display/Rendering/Renderer.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
+#include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/World/World.h>
@@ -61,6 +62,24 @@ namespace UI
 	};
 
 	std::vector<DrawCircle> Circles;
+
+	struct DrawImage
+	{
+		DrawImage( const Vector3D& Position, const Vector2D& Size, const ::CTexture* Texture, const Color& Color )
+		{
+			this->Position = Position;
+			this->Size = Size;
+			this->Texture = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
+			this->Color = Color;
+		}
+
+		Vector3D Position;
+		Vector2D Size;
+		ImTextureID Texture;
+		Color Color;
+	};
+
+	std::vector<DrawImage> Images;
 
 	struct DrawText
 	{
@@ -362,7 +381,7 @@ namespace UI
 	void AddCircleInternal( const Vector3D& Position, float Radius, const Color& Color )
 	{
 		bool IsInFront = false;
-		auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront );
+		const auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront );
 
 		if( IsInFront )
 		{
@@ -398,7 +417,7 @@ namespace UI
 	void AddTextInternal( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
 	{
 		bool IsInFront = false;
-		auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront );
+		const auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront );
 
 		if( IsInFront )
 		{
@@ -410,6 +429,31 @@ namespace UI
 	{
 		DrawText Text( Position, Start, End, Color );
 		Texts.emplace_back( Text );
+	}
+
+	void AddImageInternal( const Vector3D& Position, const Vector2D& Size, const ImTextureID Texture, const Color& Color )
+	{	
+		if( DrawList )
+		{
+			bool IsInFront = false;
+			const auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront );
+
+			if( IsInFront )
+			{
+				const auto Minimum = ScreenPosition - Size * 0.5f;
+				const auto Maximum = ScreenPosition + Size * 0.5f;
+				DrawList->AddImage( Texture, ImVec2( Minimum.X, Minimum.Y ), ImVec2( Maximum.X, Maximum.Y ), ImVec2( 0, 1 ), ImVec2( 1, 0 ), GetColor( Color ) );
+			}
+		}
+	}
+
+	void AddImage( const Vector3D& Position, const Vector2D& Size, const ::CTexture* Texture, const Color& Color )
+	{
+		if( !Texture )
+			return;
+		
+		DrawImage Image( Position, Size, Texture, Color );
+		Images.emplace_back( Image );
 	}
 
 	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color )
@@ -482,8 +526,16 @@ namespace UI
 	{
 		Lines.clear();
 		Circles.clear();
+		Images.clear();
 		Texts.clear();
 		TextsScreen.clear();
+
+		CConfiguration& Configuration = CConfiguration::Get();
+		Width = Configuration.GetFloat( "width" );
+		Height = Configuration.GetFloat( "height" );
+
+		DrawData.DisplaySize.x = Width;
+		DrawData.DisplaySize.y = Height;
 	}
 
 	class CLinePass : public CRenderPass
@@ -686,6 +738,11 @@ namespace UI
 		for( const auto& Circle : Circles )
 		{
 			AddCircleInternal( Circle.Position, Circle.Radius, Circle.Color );
+		}
+
+		for( const auto& Image : Images )
+		{
+			AddImageInternal( Image.Position, Image.Size, Image.Texture, Image.Color );
 		}
 
 		for( const auto& Text : Texts )

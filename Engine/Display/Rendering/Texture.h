@@ -14,9 +14,9 @@ class CTexture
 public:
 	CTexture();
 	CTexture( const char* FileLocation );
-	~CTexture();
+	virtual ~CTexture();
 
-	bool Load( const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
+	virtual bool Load( const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
 	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
 	void Save( const char* FileLocation = nullptr );
 	virtual void Bind( ETextureSlot Slot ) const;

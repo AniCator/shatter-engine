@@ -31,7 +31,10 @@ public:
 protected:
 	CCamera Camera;
 	std::vector<CameraKey> Keys;
-	int Target;
-	uint32_t Priority;
-	bool Active;
+
+	bool Active = false;
+	float StartTime = 0.0f;
+	
+	int Target = -1;
+	uint32_t Priority = 501;
 };

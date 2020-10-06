@@ -146,7 +146,7 @@ void CMeshEntity::Destroy()
 	CPointEntity::Destroy();
 }
 
-const float Duration = 1.0f;
+const float Duration = 4.8f;
 
 void TransformBones( const float& Time, const Skeleton& Skeleton, const Animation& Animation, const Bone* Bone, std::vector<::Bone>& Result )
 {
@@ -213,6 +213,23 @@ void CMeshEntity::Debug()
 {
 	CPointEntity::Debug();
 
+	auto Camera = GetWorld()->GetActiveCamera();
+	if( Camera )
+	{
+		auto Frustum = Camera->GetFrustum();
+		auto Position = Transform.GetPosition();
+
+		const bool Contains = Frustum.Contains( Position );
+		if( Contains )
+		{
+			// UI::AddText( Position + Vector3D( 1.0f, 0.0f, 0.0f ), "Visible" );
+		}
+		else
+		{
+			// UI::AddText( Position + Vector3D( 1.0f, 0.0f, 0.0f ), "Invisible" );
+		}
+	}
+
 	if( Mesh )
 	{
 		UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, Collision ? ( Contact ? Color::Red : Color::Blue ) : Color::Black );
@@ -226,7 +243,7 @@ void CMeshEntity::Debug()
 		if( Skeleton.Bones.size() > 0 )
 		{
 			std::string Name = "Bind";
-			const auto& Iterator = Skeleton.Animations.find( "Idle" );
+			const auto& Iterator = Skeleton.Animations.find( "BoyRig|Idle" );
 			if( Iterator != Skeleton.Animations.end() )
 			{
 				auto& Pair = *Iterator;
@@ -300,6 +317,7 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "shader" )
 		{
 			ShaderName = Property->Value;
+			std::transform( ShaderName.begin(), ShaderName.end(), ShaderName.begin(), ::tolower );
 		}
 		else if( Property->Key == "texture" )
 		{
@@ -440,6 +458,11 @@ bool CMeshEntity::ShouldCollide() const
 	return Collision;
 }
 
+void CMeshEntity::SetCollision( const bool Enable )
+{
+	Collision = Enable;
+}
+
 bool CMeshEntity::IsStatic() const
 {
 	return Static;
@@ -458,4 +481,9 @@ bool CMeshEntity::IsVisible() const
 void CMeshEntity::SetVisible( const bool& VisibleIn )
 {
 	Visible = VisibleIn;
+}
+
+FBounds CMeshEntity::GetWorldBounds() const
+{
+	return WorldBounds;
 }

@@ -135,6 +135,9 @@
     <Filter Include="Source Files\Engine\Animation">
       <UniqueIdentifier>{976d934a-9308-461f-84bc-010e545431bc}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\Info">
+      <UniqueIdentifier>{0b4f342b-01f2-49c4-92df-9ab775ffe26f}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -340,6 +343,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Display\Rendering\Pass\PostProcessPass.cpp">
       <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\Info\InfoTextEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\Info</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -618,6 +624,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Resource\Asset.h">
       <Filter>Source Files\Engine\Resource</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\Info\InfoTextEntity.h">
+      <Filter>Source Files\Engine\World\Entity\Info</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

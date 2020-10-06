@@ -5,6 +5,8 @@
 #include <chrono>
 #include <atomic>
 
+#include <Engine/Application/Application.h>
+
 #ifdef _WIN32
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -67,9 +69,34 @@ namespace Log
 
 			strcpy_s( Name, LogName );
 
-			char LogFileName[256];
-			sprintf_s( LogFileName, "%s.log", Name );
-			LogOutputStream.open( LogFileName );
+			const auto Directory = CApplication::UTF16ToUTF8( CApplication::GetUserSettingsDirectory() );
+			LogPath = Directory + Name + ".log";
+			ShatterLogPath = Directory + "ShatterGlobalLog.log";
+
+			if( Name[0] != '\0' )
+			{
+				if( LogPath.length() > 0 )
+				{
+					LogOutputStream.open( LogPath, std::fstream::out | std::fstream::app );
+				}
+				else
+				{
+					char LogFileName[256];
+					sprintf_s( LogFileName, "%s.log", Name );
+					LogOutputStream.open( LogFileName, std::fstream::out | std::fstream::app );
+				}
+			}
+			else
+			{
+				if( ShatterLogPath.length() > 0 )
+				{
+					LogOutputStream.open( ShatterLogPath, std::fstream::out | std::fstream::app );
+				}
+				else
+				{
+					LogOutputStream.open( "ShatterGlobalLog.log", std::fstream::out | std::fstream::app );
+				}
+			}
 
 			Timer.Start();
 		}
@@ -88,7 +115,11 @@ namespace Log
 #endif
 
 		Name[0] = '\0';
-		LogOutputStream.open( "ShatterGlobalLog.log" );
+
+		const auto Directory = CApplication::UTF16ToUTF8( CApplication::GetUserSettingsDirectory() );
+		// LogPath = Directory + Name + ".log";
+		ShatterLogPath = Directory + "ShatterGlobalLog.log";
+		LogOutputStream.open( ShatterLogPath );
 
 		Timer.Start();
 	}
@@ -168,13 +199,27 @@ namespace Log
 
 				if( Name[0] != '\0' )
 				{
-					char LogFileName[256];
-					sprintf_s( LogFileName, "%s.log", Name );
-					LogOutputStream.open( LogFileName, std::fstream::out | std::fstream::app );
+					if( LogPath.length() > 0 )
+					{
+						LogOutputStream.open( LogPath, std::fstream::out | std::fstream::app );
+					}
+					else
+					{
+						char LogFileName[256];
+						sprintf_s( LogFileName, "%s.log", Name );
+						LogOutputStream.open( LogFileName, std::fstream::out | std::fstream::app );
+					}
 				}
 				else
 				{
-					LogOutputStream.open( "ShatterGlobalLog.log", std::fstream::out | std::fstream::app );
+					if( ShatterLogPath.length() > 0 )
+					{
+						LogOutputStream.open( ShatterLogPath, std::fstream::out | std::fstream::app );
+					}
+					else
+					{
+						LogOutputStream.open( "ShatterGlobalLog.log", std::fstream::out | std::fstream::app );
+					}
 				}
 			}
 		}

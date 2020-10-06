@@ -74,6 +74,11 @@ void CRenderable::SetTexture( CTexture* Texture, ETextureSlot Slot )
 	}
 }
 
+void CRenderable::SetUniform( const std::string& Name, const FUniform& Uniform )
+{
+	Uniforms.insert_or_assign( Name, Uniform );
+}
+
 void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride )
 {
 	if( Mesh && RenderData.ShouldRender )
@@ -106,6 +111,26 @@ void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRend
 
 		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
 		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
+
+		for( auto& UniformBuffer : Uniforms )
+		{
+			const GLint UniformBufferLocation = glGetUniformLocation( RenderData.ShaderProgram, UniformBuffer.first.c_str() );
+			if( UniformBufferLocation > -1 )
+			{
+				if( UniformBuffer.second.Type == FUniform::Component4 )
+				{
+					glUniform4fv( UniformBufferLocation, 1, UniformBuffer.second.Uniform4.Base() );
+				}
+				else if( UniformBuffer.second.Type == FUniform::Component3 )
+				{
+					glUniform3fv( UniformBufferLocation, 1, UniformBuffer.second.Uniform3.Base() );
+				}
+				else if( UniformBuffer.second.Type == FUniform::Component4x4 )
+				{
+					glUniformMatrix4fv( UniformBufferLocation, 1, GL_FALSE, &UniformBuffer.second.Uniform4x4[0][0] );
+				}
+			}
+		}
 
 		const FVertexBufferData& Data = Mesh->GetVertexBufferData();
 		const bool BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;

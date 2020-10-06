@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "File.h"
 #include <Engine/Profiling/Logging.h>
+#include <Engine/Utility/Math.h>
 
 #include <filesystem>
 #include <fstream>
@@ -142,7 +143,7 @@ bool CFile::Save( const bool& CreateDirectory )
 			const auto Path = std::experimental::filesystem::path( FileLocation );
 			if( !exists( Path.parent_path() ) )
 			{
-				create_directory( Path.parent_path() );
+				create_directories( Path.parent_path() );
 			}
 		}
 
@@ -427,7 +428,7 @@ int* ExtractTokensInteger( const char* Start, char Delimiter, size_t& OutTokenCo
 
 				if( Location < TokenBufferSize )
 				{
-					IntegerBuffer[Location++] = atoi( Buffer );
+					IntegerBuffer[Location++] = Math::Integer( Buffer );
 				}
 			}
 

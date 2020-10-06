@@ -86,7 +86,7 @@ namespace JSON
 						Container.Objects.push_back( Object );
 
 						// Create a new node for the object.
-						Current = &Container.Objects[Container.Objects.size() - 1];
+						Current = &Container.Objects.back();
 						Current->IsObject = true;
 
 						if( Parent )
@@ -149,7 +149,7 @@ namespace JSON
 					Object Object;
 					Container.Objects.push_back( Object );
 
-					Current = &Container.Objects[Container.Objects.size() - 1];
+					Current = &Container.Objects.back();
 					if( Current )
 					{
 						Current->IsField = true;
@@ -260,11 +260,17 @@ namespace JSON
 				Stream << OffsetString << "{\n";
 			}
 
-			uint32_t Iterator = 1;
-			for( uint32_t Index = 0; Index < Object->Objects.size(); Index++ )
+			// uint32_t Iterator = 1;
+			/*for( uint32_t Index = 0; Index < Object->Objects.size(); Index++ )
 			{
 				uint32_t NewOffset = Offset + 1;
 				StringifyObject( Stream, Object->Objects[Index], NewOffset, Index == ( Object->Objects.size() - 1 ) );
+			}*/
+
+			for( auto& Iterator : Object->Objects )
+			{
+				const uint32_t NewOffset = Offset + 1;
+				StringifyObject( Stream, Iterator, NewOffset, Iterator == Object->Objects.back() );
 			}
 
 			if( HasKey )
@@ -285,7 +291,7 @@ namespace JSON
 		}
 		else
 		{
-			if( Object->Value.length() > 0 )
+			if( Object->Value.length() > 0 || true )
 			{
 				Stream << OffsetString << "\"" << Object->Key << "\" : \"" << Object->Value;
 			}
@@ -314,9 +320,14 @@ namespace JSON
 
 		Stream << "{\n";
 
-		for( uint32_t Index = 0; Index < Tree.Tree.size(); Index++ )
+		/*for( uint32_t Index = 0; Index < Tree.Tree.size(); Index++ )
 		{
 			StringifyObject( Stream, Tree.Tree[Index], 1, Index == ( Tree.Tree.size() - 1 ) );
+		}*/
+
+		for ( auto& Iterator : Tree.Tree )
+		{
+			StringifyObject( Stream, Iterator, 1, Iterator == Tree.Tree.back() );
 		}
 
 		Stream << "}";
@@ -377,7 +388,7 @@ namespace JSON
 				NewObject.Objects.clear();
 				Container.Objects.emplace_back( NewObject );
 
-				IntegrateBranch( Container, &Container.Objects[Container.Objects.size() - 1] );
+				IntegrateBranch( Container, &Container.Objects.back() );
 			}
 		}
 		else
