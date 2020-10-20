@@ -118,7 +118,7 @@ void CConfiguration::Reload()
 	for( const auto& FilePath : FilePaths )
 	{
 		const wchar_t* FilePathCharacterString = FilePath.c_str();
-		Log::Event( "Loading \"%s\".\n", FilePathCharacterString );
+		Log::Event( "Loading \"%S\".\n", FilePathCharacterString );
 
 		std::ifstream configurationFileStream;
 		configurationFileStream.open( FilePathCharacterString );

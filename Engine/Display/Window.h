@@ -9,8 +9,7 @@ struct ViewDimensions
 {
 	ViewDimensions()
 	{
-		Width = -1;
-		Height = -1;
+		
 	}
 
 	ViewDimensions( int Width, int Height )
@@ -19,8 +18,8 @@ struct ViewDimensions
 		this->Height = Height;
 	}
 
-	int Width;
-	int Height;
+	int Width = -1;
+	int Height = -1;
 };
 
 class CWindow
@@ -28,6 +27,7 @@ class CWindow
 public:
 	void Create( const char* Title );
 	void Resize( const ViewDimensions& Dimensions = ViewDimensions() );
+	void Fullscreen( const bool Enable );
 	void Terminate();
 	GLFWwindow* Handle() const;
 
@@ -57,6 +57,8 @@ public:
 	{
 		return Windowless;
 	}
+
+	bool IsFullscreen() const;
 
 private:
 	struct GLFWmonitor* GetTargetMonitor();

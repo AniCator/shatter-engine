@@ -204,6 +204,34 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 	}
 }
 
+void CWindow::Fullscreen( const bool Enable )
+{
+	if( IsWindowless() )
+		return;
+
+	if( Enable )
+	{
+		GLFWmonitor* Monitor = GetTargetMonitor();
+		const GLFWvidmode* VideoMode = glfwGetVideoMode( Monitor );
+		auto Dimensions = ViewDimensions( VideoMode->width, VideoMode->height );
+
+		glfwSetWindowMonitor( WindowHandle, Monitor, 0, 0, Dimensions.Width, Dimensions.Height, VideoMode->refreshRate );
+		Resize( Dimensions );
+
+		CConfiguration::Get().Store( "fullscreen", 1 );
+		CConfiguration::Get().Store( "noborder", 0 );
+	}
+	else
+	{
+		GLFWmonitor* Monitor = GetTargetMonitor();
+		auto Dimensions = GetMonitorDimensions( Monitor );
+
+		glfwSetWindowMonitor( WindowHandle, nullptr, 100, 100, Dimensions.Width, Dimensions.Height, GLFW_DONT_CARE );
+		CConfiguration::Get().Store( "fullscreen", 0 );
+		CConfiguration::Get().Store( "noborder", 0 );
+	}
+}
+
 void CWindow::Terminate()
 {
 	if( IsWindowless() )
@@ -311,6 +339,11 @@ CRenderer& CWindow::GetRenderer()
 void CWindow::SetWindowless( const bool Enable )
 {
 	Windowless = true;
+}
+
+bool CWindow::IsFullscreen() const
+{
+	return glfwGetWindowMonitor( WindowHandle ) != nullptr;
 }
 
 GLFWmonitor* CWindow::GetTargetMonitor()
