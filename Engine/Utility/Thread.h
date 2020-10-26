@@ -66,6 +66,8 @@ struct Worker
 		Notify.notify_one();
 	}
 
+	void SetName( const std::string& Name );
+
 private:
 	void Work()
 	{
