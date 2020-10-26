@@ -11,6 +11,7 @@ CShader::CShader()
 	BlendMode = EBlendMode::Opaque;
 	DepthMask = EDepthMask::Write;
 	DepthTest = EDepthTest::Less;
+	ModificationTime = time( nullptr );
 }
 
 CShader::~CShader()
@@ -179,7 +180,7 @@ bool LogShaderCompilationErrors( GLuint v )
 
 		Log::Event( Log::Error, "---Shader Compilation Log---\n%s\n", CompileLog );
 
-		delete CompileLog;
+		delete[] CompileLog;
 
 		return true;
 	}
@@ -201,7 +202,7 @@ bool LogProgramCompilationErrors( GLuint v )
 
 		Log::Event( Log::Error, "---Program Compilation Log---\n%s\n", CompileLog );
 
-		delete CompileLog;
+		delete[] CompileLog;
 
 		return true;
 	}

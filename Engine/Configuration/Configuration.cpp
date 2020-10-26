@@ -30,7 +30,7 @@ bool CConfiguration::IsEnabled( const char* KeyName, const bool Default )
 
 	std::string Value = GetValue( KeyName );
 
-	if( Value.compare( "1" ) == 0 || Value.compare( "true" ) == 0 )
+	if( Value == "1" || Value == "true" )
 	{
 		return true;
 	}

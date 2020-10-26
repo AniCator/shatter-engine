@@ -18,12 +18,12 @@ struct FRenderData
 	GLuint IndexBufferObject = 0;
 	GLuint ShaderProgram = 0;
 
-	FTransform Transform;
-	glm::vec4 Color;
+	FTransform Transform{};
+	glm::vec4 Color{};
 
 	EDrawMode DrawMode = None;
 
-	bool ShouldRender;
+	bool ShouldRender = false;
 };
 
 struct FRenderDataInstanced : public FRenderData

@@ -56,8 +56,6 @@ uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )
 	if( !( BlurX && BlurY && BloomThreshold && BloomComposite ) )
 		return 0;
 
-	auto& Assets = CAssets::Get();
-
 	CRenderTexture* Framebuffer = Target;
 
 	CRenderable Threshold;

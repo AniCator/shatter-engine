@@ -12,6 +12,9 @@ CMesh::CMesh( EMeshType InMeshType )
 	MeshType = InMeshType;
 	VertexArrayObject = 0;
 	HasNormals = false;
+	HasIndexBuffer = false;
+	HasBones = false;
+	IndexData = FIndexData();
 
 	Location = GeneratedMesh;
 
@@ -41,7 +44,7 @@ void CMesh::Destroy()
 	}
 }
 
-bool CMesh::IsValid()
+bool CMesh::IsValid() const
 {
 	return VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject != 0;
 }
@@ -57,7 +60,7 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 		return true;
 	}
 
-	bool CreatedVertexBuffer = CreateVertexBuffer();
+	const bool CreatedVertexBuffer = CreateVertexBuffer();
 	if( CreatedVertexBuffer )
 	{
 		CreateIndexBuffer();

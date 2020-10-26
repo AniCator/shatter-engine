@@ -494,7 +494,6 @@ void CBody::Collision( CBody* Body )
 	
 	const Vector3D RelativeVelocity = Body->Velocity - Velocity;
 	float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass;
-	
 
 	if( VelocityAlongNormal < 0.0f )
 	{
@@ -877,8 +876,8 @@ void CBody::Tick()
 	auto Transform = GetTransform();
 	if( Owner && Owner->IsStationary() )
 	{
-		auto Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
-		CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
+		// auto Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
+		// CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
 	}
 
 	if( Static )

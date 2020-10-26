@@ -45,7 +45,7 @@ struct FVertexData
 		delete[] Vertices;
 	}
 
-	FVertex* Vertices;
+	FVertex* Vertices = nullptr;
 };
 
 struct FIndexData
@@ -55,7 +55,7 @@ struct FIndexData
 		delete[] Indices;
 	}
 
-	glm::uint *Indices;
+	glm::uint* Indices = nullptr;
 };
 
 struct FVertexBufferData
@@ -80,7 +80,7 @@ public:
 
 	void Destroy();
 
-	bool IsValid();
+	bool IsValid() const;
 
 	bool Populate( const FPrimitive& Primitive );
 

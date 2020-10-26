@@ -43,6 +43,8 @@ CRenderPass::CRenderPass( const std::string& Name, int Width, int Height, const 
 	DepthTest = EDepthTest::Less;
 	PassName = Name;
 	SendQueuedRenderables = false;
+	Calls = 0;
+	PreviousRenderData = FRenderDataInstanced();
 }
 
 uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable )

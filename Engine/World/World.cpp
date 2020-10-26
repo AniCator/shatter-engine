@@ -10,7 +10,7 @@
 #include <Engine/Utility/Chunk.h>
 
 static const char WorldIdentifier[5] = "LLWF"; // Lofty Lagoon World Format
-static const size_t WorldVersion;
+static const size_t WorldVersion = 0;
 
 CWorld* CWorld::PrimaryWorld = nullptr;
 

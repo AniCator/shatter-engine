@@ -21,6 +21,8 @@
 
 #if defined(_DEBUG)
 #define KHRDebug
+#else
+#define KHRDebug
 #endif
 
 static void DebugCallbackOpenGL( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam )
@@ -34,13 +36,6 @@ static void DebugCallbackOpenGL( GLenum source, GLenum type, GLuint id, GLenum s
 void DebugCallbackGLFW( int error, const char* description )
 {
 	Log::Event( "GLFW: %s\n", description );
-}
-
-CWindow::CWindow()
-{
-	Initialized = false;
-	ShowCursor = false;
-	Windowless = false;
 }
 
 void CWindow::Create( const char* Title )

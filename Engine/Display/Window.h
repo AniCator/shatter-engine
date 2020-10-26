@@ -64,16 +64,16 @@ private:
 	struct GLFWmonitor* GetTargetMonitor();
 	ViewDimensions GetMonitorDimensions( struct GLFWmonitor* Monitor );
 
-	struct GLFWwindow* WindowHandle;
+	struct GLFWwindow* WindowHandle = nullptr;
 	CRenderer Renderer;
 
-	bool Initialized;
-	bool ShowCursor;
+	bool Initialized = false;
+	bool ShowCursor = false;
 
 	ViewDimensions CurrentDimensions;
 
-	bool RenderingFrame;
-	bool Windowless;
+	bool RenderingFrame = false;
+	bool Windowless = false;
 
 public:
 	static CWindow& Get()
@@ -84,7 +84,7 @@ public:
 
 	static struct GLFWwindow* ThreadContext( const bool MakeCurrent = true );
 private:
-	CWindow();
+	CWindow() {};
 
 	CWindow( CWindow const& ) = delete;
 	void operator=( CWindow const& ) = delete;

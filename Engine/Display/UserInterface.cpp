@@ -731,6 +731,8 @@ namespace UI
 			auto& Window = CWindow::Get();
 			static CLinePass LinePass( Window.GetWidth(), Window.GetHeight(), *ActiveCamera );
 			LinePass.SetCamera( *ActiveCamera );
+			LinePass.ViewportWidth = Window.GetWidth();
+			LinePass.ViewportHeight = Window.GetHeight();
 
 			Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Standard );
 		}

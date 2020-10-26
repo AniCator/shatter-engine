@@ -78,7 +78,7 @@ public:
 	float InverseMass;
 	size_t Contacts;
 
-	TriangleTree* Tree;
+	TriangleTree* Tree = nullptr;
 };
 
 template<typename TriggerType>
