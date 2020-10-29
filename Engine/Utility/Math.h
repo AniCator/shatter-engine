@@ -44,9 +44,9 @@ namespace Math
 	inline glm::vec3 EulerToDirection( const glm::vec3& Euler )
 	{
 		glm::vec3 Direction;
-		Direction[1] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[1] ) );
+		Direction[0] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[1] ) );
 		Direction[2] = sin( glm::radians( Euler[0] ) );
-		Direction[0] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[1] ) );
+		Direction[1] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[1] ) );
 		Direction = glm::normalize( Direction );
 
 		return Direction;
@@ -55,9 +55,9 @@ namespace Math
 	inline Vector3D EulerToDirection( const Vector3D& Euler )
 	{
 		Vector3D Direction;
-		Direction[1] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[2] ) );
+		Direction[0] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[2] ) );
 		Direction[2] = sin( glm::radians( Euler[0] ) );
-		Direction[0] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[2] ) );
+		Direction[1] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[2] ) );
 
 		return Direction.Normalized();
 	}
@@ -154,6 +154,12 @@ namespace Math
 	}
 
 	template<typename T>
+	inline T Saturate( const T& X )
+	{
+		return Clamp( X, 0.0f, 1.0f );
+	}
+
+	template<typename T>
 	T Sign(const T& Input)
 	{
 		return static_cast<T>((0.0f < Input) - (Input < 0.0f));
@@ -227,6 +233,26 @@ namespace Math
 		return Difference.X < Tolerance &&
 			Difference.Y < Tolerance &&
 			Difference.Z < Tolerance;
+	}
+
+	inline Vector3D HSVToRGB( const Vector3D& HSV )
+	{
+		// Normalize to a [0-1] range.
+		const float NormalizedHue = HSV.X / 360.0f;
+
+		// Calculate the color value based on the hue.
+		Vector3D Color = Vector3D::Zero;
+		Color.R = Math::Abs( NormalizedHue * 6.0f - 3.0f ) - 1.0f;
+		Color.G = 2.0f - Math::Abs( NormalizedHue * 6.0f - 2.0f );
+		Color.B = 2.0f - Math::Abs( NormalizedHue * 6.0f - 4.0f );
+
+		Color.R = Math::Clamp( Color.R, 0.0f, 1.0f );
+		Color.G = Math::Clamp( Color.G, 0.0f, 1.0f );
+		Color.B = Math::Clamp( Color.B, 0.0f, 1.0f );
+
+		// Apply the saturation and value components.
+		Vector3D RGB = ( Color - 1.0f * HSV.Y + 1.0f ) * HSV.Z;
+		return RGB;
 	}
 
 	inline float VectorMax( const float& A, const float& B, const float& C )
