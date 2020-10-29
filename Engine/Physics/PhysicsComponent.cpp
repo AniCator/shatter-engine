@@ -71,7 +71,7 @@ CollisionResponse CollisionResponseAABBAABB( const FBounds& A, const FBounds& B 
 
 	const Vector3D CenterDistance = ( CenterA - CenterB );
 	const Vector3D CenterDistanceSquared = CenterDistance * CenterDistance;
-	if( CenterDistanceSquared.Z > CenterDistanceSquared.Y && CenterDistanceSquared.Z > CenterDistanceSquared.X)
+	if( CenterDistanceSquared.Z > CenterDistanceSquared.Y && CenterDistanceSquared.Z > CenterDistanceSquared.X )
 	{
 		Response.Distance = fabs( CenterDistance.Z ) - ( HalfSizeA.Z + HalfSizeB.Z );
 		Response.Normal.X = 0.0f;
