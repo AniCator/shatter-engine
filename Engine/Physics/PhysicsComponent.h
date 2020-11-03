@@ -26,8 +26,8 @@ struct TriangleTree
 
 	FBounds Bounds;
 
-	TriangleTree* Upper;
-	TriangleTree* Lower;
+	TriangleTree* Upper = nullptr;
+	TriangleTree* Lower = nullptr;
 
 	std::vector<FVertex> Vertices;
 };
@@ -59,8 +59,8 @@ public:
 
 	virtual void Debug();
 
-	CMeshEntity* Owner;
-	CEntity* Ghost;
+	CMeshEntity* Owner = nullptr;
+	CEntity* Ghost = nullptr;
 
 	bool Static;
 	bool Stationary;
