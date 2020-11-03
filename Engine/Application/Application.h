@@ -52,6 +52,8 @@ public:
 	bool HasCommand( const std::string& Command );
 	const std::string& GetCommand( const std::string& Command );
 
+	void SetFPSLimit( const int& Limit = 0 );
+
 	CServiceRegistry ServiceRegistry;
 
 private:
@@ -62,6 +64,8 @@ private:
 	bool Tools;
 	bool DefaultExit;
 	bool WaitForInput;
+
+	int FPSLimit = 0;
 
 	std::vector<DebugUIFunction> DebugUIFunctions;
 	std::map<std::string, std::string> CommandLine;

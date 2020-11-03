@@ -66,27 +66,27 @@ bool RestartLayers = false;
 
 float ScaledGameTime = 0.0;
 
-void InputScaleTimeEnable()
+void InputScaleTimeEnable( const float& Scale = 1.0f )
 {
 	ScaleTime = true;
 }
 
-void InputScaleTimeDisable()
+void InputScaleTimeDisable( const float& Scale = 1.0f )
 {
 	ScaleTime = false;
 }
 
-void InputPauseGameEnable()
+void InputPauseGameEnable( const float& Scale = 1.0f )
 {
 	PauseGame = true;
 }
 
-void InputPauseGameDisable()
+void InputPauseGameDisable( const float& Scale = 1.0f )
 {
 	PauseGame = !PauseGame;
 }
 
-void InputReloadConfiguration()
+void InputReloadConfiguration( const float& Scale = 1.0f )
 {
 	CConfiguration::Get().Reload();
 }
@@ -123,13 +123,13 @@ void InputRestartGameLayers(CApplication* Application)
 	MainWindow.GetRenderer().RefreshFrame();
 }
 
-void InputReloadShaders()
+void InputReloadShaders( const float& Scale = 1.0f )
 {
 	CAssets::Get().ReloadShaders();
 }
 
 float CameraSpeed = -1.0f;
-void InputMoveCameraUp()
+void InputMoveCameraUp( const float& Scale = 1.0f )
 {
 	const float DistanceToZero = fabs( Setup.CameraPosition[2] );
 	const float Speed = CameraSpeed * DistanceToZero;
@@ -137,7 +137,7 @@ void InputMoveCameraUp()
 	Setup.CameraPosition[1] += Speed;
 }
 
-void InputMoveCameraDown()
+void InputMoveCameraDown( const float& Scale = 1.0f )
 {
 	const float DistanceToZero = fabs( Setup.CameraPosition[2] );
 	const float Speed = CameraSpeed * DistanceToZero;
@@ -145,7 +145,7 @@ void InputMoveCameraDown()
 	Setup.CameraPosition[1] -= Speed;
 }
 
-void InputMoveCameraLeft()
+void InputMoveCameraLeft( const float& Scale = 1.0f )
 {
 	const float DistanceToZero = fabs( Setup.CameraPosition[2] );
 	const float Speed = CameraSpeed * DistanceToZero;
@@ -153,7 +153,7 @@ void InputMoveCameraLeft()
 	Setup.CameraPosition[0] -= Speed;
 }
 
-void InputMoveCameraRight()
+void InputMoveCameraRight( const float& Scale = 1.0f )
 {
 	const float DistanceToZero = fabs( Setup.CameraPosition[2] );
 	const float Speed = CameraSpeed * DistanceToZero;
@@ -161,7 +161,7 @@ void InputMoveCameraRight()
 	Setup.CameraPosition[0] += Speed;
 }
 
-void InputMoveCameraLower()
+void InputMoveCameraLower( const float& Scale = 1.0f )
 {
 	const float DistanceToZero = fabs( Setup.CameraPosition[2] );
 	const float Speed = CameraSpeed * DistanceToZero;
@@ -169,7 +169,7 @@ void InputMoveCameraLower()
 	Setup.CameraPosition[2] -= Speed;
 }
 
-void InputMoveCameraHigher()
+void InputMoveCameraHigher( const float& Scale = 1.0f )
 {
 	const float DistanceToZero = fabs( Setup.CameraPosition[2] );
 	const float Speed = CameraSpeed * DistanceToZero;
@@ -177,7 +177,7 @@ void InputMoveCameraHigher()
 	Setup.CameraPosition[2] += Speed;
 }
 
-void InputToggleMouse()
+void InputToggleMouse( const float& Scale = 1.0f )
 {
 	CursorVisible = !CursorVisible;
 
@@ -1136,11 +1136,10 @@ void CApplication::Run()
 	CTimer RealTime( false );
 	RealTime.Start();
 
-	const int FPSLimit = CConfiguration::Get().GetInteger( "fps", 300 );
+	SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 300 ) );
 
 	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
-	const uint64_t MaximumFrameTime = FPSLimit > 0 ? 1000 / FPSLimit : 999;
 
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
 	CSimpleSound::Volume( GlobalVolume );
@@ -1150,6 +1149,7 @@ void CApplication::Run()
 		if( RestartLayers )
 			InputRestartGameLayers( this );
 
+		const uint64_t MaximumFrameTime = FPSLimit > 0 ? 1000 / FPSLimit : 999;
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
 		if( RenderDeltaTime >= MaximumFrameTime || FPSLimit < 1 )
 		{
@@ -1263,46 +1263,46 @@ void CApplication::InitializeDefaultInputs()
 
 	Input.ClearActionBindings();
 
-	Input.AddActionBinding( EKey::Enter, EAction::Press, InputScaleTimeEnable );
-	Input.AddActionBinding( EKey::Enter, EAction::Release, InputScaleTimeDisable );
+	Input.AddActionBinding( "TimeScaleEnable", EKey::Enter, EAction::Press, InputScaleTimeEnable );
+	Input.AddActionBinding( "TimeScaleDisable", EKey::Enter, EAction::Release, InputScaleTimeDisable );
 
-	Input.AddActionBinding( EKey::H, EAction::Release, InputReloadConfiguration );
-	Input.AddActionBinding( EKey::G, EAction::Release, [] () {
+	Input.AddActionBinding( "ReloadConfiguration", EKey::H, EAction::Release, InputReloadConfiguration );
+	Input.AddActionBinding( "RestartGameLayers", EKey::G, EAction::Release, [] ( const float& Scale ) {
 		RestartLayers = true;
 	} );
-	Input.AddActionBinding( EKey::J, EAction::Release, InputReloadShaders );
+	Input.AddActionBinding( "ReloadShaders", EKey::J, EAction::Release, InputReloadShaders );
 
-	Input.AddActionBinding( EKey::W, EAction::Press, InputMoveCameraUp );
-	Input.AddActionBinding( EKey::S, EAction::Press, InputMoveCameraDown );
-	Input.AddActionBinding( EKey::A, EAction::Press, InputMoveCameraLeft );
-	Input.AddActionBinding( EKey::D, EAction::Press, InputMoveCameraRight );
-	Input.AddActionBinding( EKey::R, EAction::Press, InputMoveCameraLower );
-	Input.AddActionBinding( EKey::F, EAction::Press, InputMoveCameraHigher );
+	Input.AddActionBinding( "CameraUp", EKey::W, EAction::Press, InputMoveCameraUp );
+	Input.AddActionBinding( "CameraDown", EKey::S, EAction::Press, InputMoveCameraDown );
+	Input.AddActionBinding( "CameraLeft", EKey::A, EAction::Press, InputMoveCameraLeft );
+	Input.AddActionBinding( "CameraRight", EKey::D, EAction::Press, InputMoveCameraRight );
+	Input.AddActionBinding( "CameraLower", EKey::R, EAction::Press, InputMoveCameraLower );
+	Input.AddActionBinding( "CameraHigher", EKey::F, EAction::Press, InputMoveCameraHigher );
 
 	if( DefaultExit )
 	{
-		Input.AddActionBinding( EKey::Escape, EAction::Release, [&] {
+		Input.AddActionBinding( "Exit", EKey::Escape, EAction::Release, [&] ( const float& Scale ) {
 			Close();
 		} );
 	}
 
-	Input.AddActionBinding( EKey::L, EAction::Release, [] {
+	Input.AddActionBinding( "DisplayLog", EKey::L, EAction::Release, [] ( const float& Scale ) {
 		DisplayLog = !DisplayLog;
 	} );
 
-	Input.AddActionBinding( EKey::F5, EAction::Release, [] {
+	Input.AddActionBinding( "FrameStep", EKey::F5, EAction::Release, [] ( const float& Scale ) {
 		FrameStep = true;
 		} );
 
-	Input.AddActionBinding( EKey::F6, EAction::Release, [] {
+	Input.AddActionBinding( "Pause", EKey::F6, EAction::Release, [] ( const float& Scale ) {
 		PauseGame = !PauseGame;
 		} );
 
-	Input.AddActionBinding( EKey::NumpadSubtract, EAction::Release, [&] {
+	Input.AddActionBinding( "ShowToolbar", EKey::NumpadSubtract, EAction::Release, [&] ( const float& Scale ) {
 		Tools = !Tools;
 	} );
 
-	Input.AddActionBinding( EKey::NumpadAdd, EAction::Release, [] {
+	Input.AddActionBinding( "ShowProfiler", EKey::NumpadAdd, EAction::Release, [] ( const float& Scale ) {
 		CProfiler& Profiler = CProfiler::Get();
 		Profiler.SetEnabled( !Profiler.IsEnabled() );
 	} );
@@ -1314,6 +1314,9 @@ void CApplication::ResetImGui()
 		return;
 
 #if defined( IMGUI_ENABLED )
+	ImGuiIO& IO = ImGui::GetIO();
+	IO.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+
 	Log::Event( "Setting font configuration.\n" );
 	static const char* FontLocation = "Resources/Roboto-Medium.ttf";
 	const bool FileExists = CFile::Exists( FontLocation );
@@ -1667,6 +1670,11 @@ const std::string& CApplication::GetCommand( const std::string& Command )
 	return CommandLine[Command];
 }
 
+void CApplication::SetFPSLimit( const int& Limit )
+{
+	FPSLimit = Limit;
+}
+
 #if defined(_WIN32)
 #pragma comment(lib, "dbghelp.lib")
 
@@ -1829,6 +1837,14 @@ void CApplication::Initialize()
 		glfwSetCursorPosCallback( WindowHandle, InputMousePositionCallback );
 		glfwSetScrollCallback( WindowHandle, InputScrollCallback );
 		glfwSetJoystickCallback( InputJoystickStatusCallback );
+
+		for( int Index = 0; Index < GLFW_JOYSTICK_LAST; Index++ )
+		{
+			if( glfwJoystickPresent( Index ) )
+			{
+				InputJoystickStatusCallback( Index, GLFW_CONNECTED );
+			}
+		}
 	}
 
 	InitializeDefaultInputs();

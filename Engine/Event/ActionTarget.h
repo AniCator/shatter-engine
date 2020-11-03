@@ -3,4 +3,4 @@
 
 #include <functional>
 
-typedef std::function<void()> ActionTarget;
+typedef std::function<void(const float&)> ActionTarget;

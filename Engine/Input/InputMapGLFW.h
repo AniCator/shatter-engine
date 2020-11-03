@@ -2,7 +2,7 @@
 #pragma once
 
 #include "InputMap.h"
-#include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
+#include <ThirdParty/glfw-3.3.2.bin.WIN64/include/GLFW/glfw3.h>
 
 struct FEKeyPairGLFW
 {
@@ -344,10 +344,47 @@ namespace InputGLFW
 	{
 		switch( Action )
 		{
-			case GLFW_CURSOR_NORMAL:	return ECursor::Normal;
-			case GLFW_CURSOR_HIDDEN:	return ECursor::Hidden;
-			case GLFW_CURSOR_DISABLED:	return ECursor::Disabled;
+			case GLFW_CURSOR_NORMAL:		return ECursor::Normal;
+			case GLFW_CURSOR_HIDDEN:		return ECursor::Hidden;
+			case GLFW_CURSOR_DISABLED:		return ECursor::Disabled;
 			default:						return ECursor::Unknown;
+		}
+	}
+
+	static EGamepad CodeToGamepadButton( int Event )
+	{
+		switch( Event )
+		{
+			case GLFW_GAMEPAD_BUTTON_TRIANGLE:		return EGamepad::GamepadFaceButtonUp;
+			case GLFW_GAMEPAD_BUTTON_CIRCLE:		return EGamepad::GamepadFaceButtonRight;
+			case GLFW_GAMEPAD_BUTTON_CROSS:			return EGamepad::GamepadFaceButtonDown;
+			case GLFW_GAMEPAD_BUTTON_SQUARE:		return EGamepad::GamepadFaceButtonLeft;
+			case GLFW_GAMEPAD_BUTTON_LEFT_BUMPER:	return EGamepad::GamepadLeftShoulder;
+			case GLFW_GAMEPAD_BUTTON_RIGHT_BUMPER:	return EGamepad::GamepadRightShoulder;
+			case GLFW_GAMEPAD_BUTTON_BACK:			return EGamepad::GamepadLeftSpecial;
+			case GLFW_GAMEPAD_BUTTON_START:			return EGamepad::GamepadRightSpecial;
+			case GLFW_GAMEPAD_BUTTON_GUIDE:			return EGamepad::Unknown;
+			case GLFW_GAMEPAD_BUTTON_LEFT_THUMB:	return EGamepad::GamepadLeftTrigger;
+			case GLFW_GAMEPAD_BUTTON_RIGHT_THUMB:	return EGamepad::GamepadRightTrigger;
+			case GLFW_GAMEPAD_BUTTON_DPAD_UP:		return EGamepad::GamepadDirectionalButtonUp;
+			case GLFW_GAMEPAD_BUTTON_DPAD_RIGHT:	return EGamepad::GamepadDirectionalButtonRight;
+			case GLFW_GAMEPAD_BUTTON_DPAD_DOWN:		return EGamepad::GamepadDirectionalButtonDown;
+			case GLFW_GAMEPAD_BUTTON_DPAD_LEFT:		return EGamepad::GamepadDirectionalButtonLeft;
+			default:								return EGamepad::Unknown;
+		}
+	}
+
+	static EGamepad CodeToGamepadAxis( int Event )
+	{
+		switch( Event )
+		{
+			case GLFW_GAMEPAD_AXIS_LEFT_X:			return EGamepad::GamepadLeftStickX;
+			case GLFW_GAMEPAD_AXIS_LEFT_Y:			return EGamepad::GamepadLeftStickY;
+			case GLFW_GAMEPAD_AXIS_RIGHT_X:			return EGamepad::GamepadRightStickX;
+			case GLFW_GAMEPAD_AXIS_RIGHT_Y:			return EGamepad::GamepadRightStickY;
+			case GLFW_GAMEPAD_AXIS_LEFT_TRIGGER:	return EGamepad::GamepadLeftTrigger;
+			case GLFW_GAMEPAD_AXIS_RIGHT_TRIGGER:	return EGamepad::GamepadRightTrigger;
+			default:								return EGamepad::Unknown;
 		}
 	}
 }

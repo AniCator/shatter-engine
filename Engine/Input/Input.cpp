@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Input.h"
 
-// #include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
+// #include <ThirdParty/glfw-3.3.2.bin.WIN64/include/GLFW/glfw3.h>
 
 #include <Engine/Display/Window.h>
 #include <Engine/Utility/Locator/InputLocator.h>
@@ -96,6 +96,15 @@ CInput::CInput()
 		MouseInput[MouseIndex].Action = EAction::Unknown;
 		MouseInput[MouseIndex].Modifiers = 0;
 	}
+
+	// Initialize the Gamepad input array
+	for( int GamepadIndex = 0; GamepadIndex < MaximumJoysticks; GamepadIndex++ )
+	{
+		GamepadInput[GamepadIndex].Input = static_cast<EGamepad>( GamepadIndex );
+		GamepadInput[GamepadIndex].Action = EAction::Unknown;
+		GamepadInput[GamepadIndex].Modifiers = 0;
+		GamepadInput[GamepadIndex].Scale = 1.0f;
+	}
 }
 
 void CInput::RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, int Modifiers )
@@ -171,41 +180,142 @@ void CInput::RegisterJoystickStatus( int Joystick, int Event )
 	{
 		Log::Event( "Joystick %i disconnected.\n", Joystick );
 	}
+
+	EJoystickStatus Status = EJoystickStatus::Disconnected;
+	if( Event == GLFW_CONNECTED )
+	{
+		Status = EJoystickStatus::Connected;
+	}
+
+	JoystickStatus[Joystick] = Status;
 }
 
-void CInput::AddActionBinding( FActionBinding ActionBinding )
+void CInput::PollJoystick( int Joystick )
 {
-	ActionBindings.push_back( ActionBinding );
+	if( !glfwJoystickIsGamepad( Joystick ) )
+	{
+		JoystickStatus[Joystick] = EJoystickStatus::Disconnected;
+	}
+
+	GLFWgamepadstate GamepadState;
+	glfwGetGamepadState( Joystick, &GamepadState );
+	auto Name = glfwGetGamepadName( Joystick );
+	for( int Index = 0; Index <= GLFW_GAMEPAD_BUTTON_LAST; Index++ )
+	{
+		// Check all the button states.
+		const auto& State = GamepadState.buttons[Index];
+		const EGamepad Gamepad = InputGLFW::CodeToGamepadButton( Index );
+		const EAction Action = InputGLFW::CodeToAction( State );
+
+		FGamepadInput& Input = GamepadInput[static_cast<EGamepadType>( Gamepad )];
+		Input.Input = Gamepad;
+
+		// Ignore key repeat messages, toggle between press and release to latch states
+		if( Input.Action == EAction::Unknown && Action == EAction::Press )
+		{
+			Input.Action = Action;
+			ActiveGamepad = Joystick;
+		}
+		else if( Input.Action == EAction::Press && Action == EAction::Release )
+		{
+			Input.Action = EAction::Release;
+		}
+		else if( Input.Action == EAction::Release && Action == EAction::Press )
+		{
+			Input.Action = EAction::Press;
+		}
+
+		Input.Modifiers = 0;
+	}
+
+	for( int Index = 0; Index <= GLFW_GAMEPAD_AXIS_LAST; Index++ )
+	{
+		// Check all the axis states.
+		const auto& State = std::powf( GamepadState.axes[Index], 3.0f );
+		const EGamepad Gamepad = InputGLFW::CodeToGamepadAxis( Index );
+		const EAction Action = std::fabs( State ) > 0.001f ? EAction::Press : EAction::Release;
+
+		FGamepadInput& Input = GamepadInput[static_cast<EGamepadType>( Gamepad )];
+		Input.Input = Gamepad;
+
+		// Ignore key repeat messages, toggle between press and release to latch states
+		if( Input.Action == EAction::Unknown && Action == EAction::Press )
+		{
+			Input.Action = Action;
+		}
+		else if( Input.Action == EAction::Press && Action == EAction::Release )
+		{
+			Input.Action = EAction::Release;
+		}
+		else if( Input.Action == EAction::Release && Action == EAction::Press )
+		{
+			Input.Action = EAction::Press;
+		}
+
+		Input.Modifiers = 0;
+		Input.Scale = State;
+	}
 }
 
-void CInput::AddActionBinding( EKey KeyInput, EAction Action, ActionTarget TargetFunc )
+void CInput::AddActionBinding( const FActionBinding& Binding )
 {
-	FActionBinding ActionBinding;
-	ActionBinding.BindingType = EActionBindingType::Keyboard;
-	ActionBinding.BindingInput = static_cast<EKeyType>( KeyInput );
-	ActionBinding.BindingAction = Action;
-	ActionBinding.TargetFunc = TargetFunc;
-	AddActionBinding( ActionBinding );
+	CreateActionBinding( Binding.ActionName );
+	const auto& Iterator = ActionBindings.find( Binding.ActionName );
+	if( Iterator != ActionBindings.end() )
+	{
+		auto& Bindings = *Iterator;
+		Bindings.second.emplace_back( Binding );
+	}
 }
 
-void CInput::AddActionBinding( EMouse KeyInput, EAction Action, ActionTarget TargetFunc )
+void CInput::CreateActionBinding( const FName& ActionName )
 {
-	FActionBinding ActionBinding;
-	ActionBinding.BindingType = EActionBindingType::Mouse;
-	ActionBinding.BindingInput = static_cast<EKeyType>( KeyInput );
-	ActionBinding.BindingAction = Action;
-	ActionBinding.TargetFunc = TargetFunc;
-	AddActionBinding( ActionBinding );
+	// Check if the action already exists in the binding list.
+	const auto& Iterator = ActionBindings.find( ActionName );
+	if( Iterator == ActionBindings.end() )
+	{
+		// Create a new action.
+		ActionBindings.insert_or_assign( ActionName, std::vector<FActionBinding>() );
+	}
 }
 
-void CInput::AddActionBinding( EGamepad KeyInput, EAction Action, ActionTarget TargetFunc )
+void CInput::AddActionBinding( const FName& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
 {
-	FActionBinding ActionBinding;
-	ActionBinding.BindingType = EActionBindingType::Gamepad;
-	ActionBinding.BindingInput = static_cast<EKeyType>( KeyInput );
-	ActionBinding.BindingAction = Action;
-	ActionBinding.TargetFunc = TargetFunc;
-	AddActionBinding( ActionBinding );
+	FActionBinding Binding;
+	Binding.ActionName = ActionName;
+	Binding.BindingType = EActionBindingType::Keyboard;
+	Binding.BindingInput = static_cast<EKeyType>( Key );
+	Binding.BindingAction = Action;
+	Binding.BindingModifiers = 0;
+	Binding.TargetFunc = TargetFunc;
+	Binding.Scale = Scale;
+	AddActionBinding( Binding );
+}
+
+void CInput::AddActionBinding( const FName& ActionName, const EMouse& Mouse, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
+{
+	FActionBinding Binding;
+	Binding.ActionName = ActionName;
+	Binding.BindingType = EActionBindingType::Mouse;
+	Binding.BindingInput = static_cast<EKeyType>( Mouse );
+	Binding.BindingAction = Action;
+	Binding.BindingModifiers = 0;
+	Binding.TargetFunc = TargetFunc;
+	Binding.Scale = Scale;
+	AddActionBinding( Binding );
+}
+
+void CInput::AddActionBinding( const FName& ActionName, const EGamepad& Gamepad, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
+{
+	FActionBinding Binding;
+	Binding.ActionName = ActionName;
+	Binding.BindingType = EActionBindingType::Gamepad;
+	Binding.BindingInput = static_cast<EKeyType>( Gamepad );
+	Binding.BindingAction = Action;
+	Binding.BindingModifiers = 0;
+	Binding.TargetFunc = TargetFunc;
+	Binding.Scale = Scale;
+	AddActionBinding( Binding );
 }
 
 void CInput::ClearActionBindings()
@@ -218,23 +328,38 @@ void CInput::Tick()
 	// Clear the 'any' key
 	AnyKey = false;
 
-	for( auto ActionBinding : ActionBindings )
+	PollJoysticks();
+
+	for( const auto& Action : ActionBindings )
 	{
-		bool ExecuteTargetFunction = false;
-
-		if( ActionBinding.BindingType == EActionBindingType::Keyboard && KeyboardInput[static_cast<EKeyType>( ActionBinding.BindingInput )].Action == ActionBinding.BindingAction )
+		for( const auto& Binding : Action.second )
 		{
-			ExecuteTargetFunction = true;
-		}
+			bool ExecuteTargetFunction = false;
+			float Scale = 1.0f;
 
-		if( ActionBinding.BindingType == EActionBindingType::Mouse && MouseInput[static_cast<EKeyType>( ActionBinding.BindingInput )].Action == ActionBinding.BindingAction )
-		{
-			ExecuteTargetFunction = true;
-		}
+			const auto& Keyboard = KeyboardInput[static_cast<EKeyType>( Binding.BindingInput )];
+			if( Binding.BindingType == EActionBindingType::Keyboard && Keyboard.Action == Binding.BindingAction )
+			{
+				ExecuteTargetFunction = true;
+			}
 
-		if( ExecuteTargetFunction )
-		{
-			ActionBinding.TargetFunc();
+			const auto& Mouse = MouseInput[static_cast<EKeyType>( Binding.BindingInput )];
+			if( Binding.BindingType == EActionBindingType::Mouse && Mouse.Action == Binding.BindingAction )
+			{
+				ExecuteTargetFunction = true;
+			}
+
+			const auto& Gamepad = GamepadInput[static_cast<EKeyType>( Binding.BindingInput )];
+			if( Binding.BindingType == EActionBindingType::Gamepad && Gamepad.Action == Binding.BindingAction )
+			{
+				ExecuteTargetFunction = true;
+				Scale = Gamepad.Scale;
+			}
+
+			if( ExecuteTargetFunction )
+			{
+				Binding.TargetFunc( Binding.Scale * Scale );
+			}
 		}
 	}
 
@@ -257,6 +382,27 @@ void CInput::Tick()
 		if( Input.Action == EAction::Release )
 		{
 			Input.Action = EAction::Unknown;
+		}
+	}
+
+	for( int i = 1; i < static_cast<int>( EGamepad::Maximum ); i++ )
+	{
+		FGamepadInput& Input = GamepadInput[i];
+		if( Input.Action == EAction::Release )
+		{
+			Input.Action = EAction::Unknown;
+		}
+	}
+}
+
+void CInput::PollJoysticks()
+{
+	for( int Index = 0; Index < MaximumJoysticks; Index++ )
+	{
+		if( JoystickStatus[Index] == EJoystickStatus::Connected )
+		{
+			PollJoystick( Index );
+			break;
 		}
 	}
 }

@@ -12,10 +12,10 @@ public:
 	virtual void RegisterScrollInput( int OffsetX, int OffsetY ) override;
 	virtual void RegisterJoystickStatus( int Joystick, int Event ) override;
 
-	virtual void AddActionBinding( FActionBinding ActionBinding ) override;
-	virtual void AddActionBinding( EKey KeyInput, EAction Action, ActionTarget TargetFunc ) override;
-	virtual void AddActionBinding( EMouse KeyInput, EAction Action, ActionTarget TargetFunc ) override;
-	virtual void AddActionBinding( EGamepad KeyInput, EAction Action, ActionTarget TargetFunc ) override;
+	virtual void CreateActionBinding( const FName& ActionName ) override;
+	virtual void AddActionBinding( const FName& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
+	virtual void AddActionBinding( const FName& ActionName, const EMouse& Mouse, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
+	virtual void AddActionBinding( const FName& ActionName, const EGamepad& Gamepad, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
 	virtual void ClearActionBindings() override;
 
 	virtual void Tick() override;

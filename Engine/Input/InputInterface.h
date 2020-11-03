@@ -43,22 +43,13 @@ enum class EActionBindingType
 
 struct FActionBinding
 {
-	FActionBinding()
-	{
-		ActionName = FName( "unknown" );
-		BindingType = EActionBindingType::Keyboard;
-		BindingInput = static_cast<EKeyType>( EKey::Unknown );
-		BindingAction = EAction::Release;
-		BindingModifiers = 0;
-		TargetFunc = 0;
-	}
-
-	FName ActionName;
-	EActionBindingType BindingType;
-	EKeyType BindingInput;
-	EAction BindingAction;
-	int BindingModifiers;
-	ActionTarget TargetFunc;
+	FName ActionName = FName( "unknown" );
+	EActionBindingType BindingType = EActionBindingType::Keyboard;
+	EKeyType BindingInput = static_cast<EKeyType>( EKey::Unknown );
+	EAction BindingAction = EAction::Release;
+	int BindingModifiers = 0;
+	float Scale = 1.0f;
+	ActionTarget TargetFunc = 0;
 };
 
 class IInput : public IEngineService
@@ -70,10 +61,11 @@ public:
 	virtual void RegisterScrollInput( int OffsetX, int OffsetY ) = 0;
 	virtual void RegisterJoystickStatus( int Joystick, int Event ) = 0;
 
-	virtual void AddActionBinding( FActionBinding ActionBinding ) = 0;
-	virtual void AddActionBinding( EKey KeyInput, EAction Action, ActionTarget TargetFunc ) = 0;
-	virtual void AddActionBinding( EMouse KeyInput, EAction Action, ActionTarget TargetFunc ) = 0;
-	virtual void AddActionBinding( EGamepad KeyInput, EAction Action, ActionTarget TargetFunc ) = 0;
+	virtual void CreateActionBinding( const FName& ActionName ) = 0;
+	virtual void AddActionBinding( const FName& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) = 0;
+	virtual void AddActionBinding( const FName& ActionName, const EMouse& Mouse, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) = 0;
+	virtual void AddActionBinding( const FName& ActionName, const EGamepad& Gamepad, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) = 0;
+
 	virtual void ClearActionBindings() = 0;
 
 	virtual void Tick() = 0;

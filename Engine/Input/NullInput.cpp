@@ -27,22 +27,22 @@ void CNullInput::RegisterJoystickStatus( int Joystick, int Event )
 
 }
 
-void CNullInput::AddActionBinding( FActionBinding ActionBinding )
+void CNullInput::CreateActionBinding( const FName& ActionName )
 {
 
 }
 
-void CNullInput::AddActionBinding( EKey KeyInput, EAction Action, ActionTarget TargetFunc )
+void CNullInput::AddActionBinding( const FName& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
 {
 
 }
 
-void CNullInput::AddActionBinding( EMouse KeyInput, EAction Action, ActionTarget TargetFunc )
+void CNullInput::AddActionBinding( const FName& ActionName, const EMouse& Mouse, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
 {
 
 }
 
-void CNullInput::AddActionBinding( EGamepad KeyInput, EAction Action, ActionTarget TargetFunc )
+void CNullInput::AddActionBinding( const FName& ActionName, const EGamepad& Gamepad, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
 {
 
 }
