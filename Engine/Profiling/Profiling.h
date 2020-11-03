@@ -114,12 +114,14 @@ private:
 	static std::atomic<size_t> Depth;
 };
 
-#ifdef ProfileBuild
 #define CONCAT_(x,y) x##y
 #define CONCAT(x,y) CONCAT_(x,y)
 #define _PROFILENAME_(x) CONCAT(x, __LINE__)
 #define _PROFILE_(Name, Bare) static FName _PROFILENAME_(ScopeName_)( Name ); CTimerScope _PROFILENAME_(Scope_)( Name, Bare )
 
+#define ProfileAlways( Name ) _PROFILE_( Name, false )
+
+#ifdef ProfileBuild
 #define ProfileScope() _PROFILE_( __FUNCTION__, false )
 #define Profile( Name ) _PROFILE_( Name, false )
 #define ProfileBareScope() _PROFILE_( __FUNCTION__, true )

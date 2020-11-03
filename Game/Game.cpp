@@ -54,7 +54,7 @@ void CGameLayers::Initialize()
 
 void CGameLayers::Frame()
 {
-	Profile( "Game Frame" );
+	ProfileAlways( "Game Frame" );
 
 	for( auto GameLayer : GameLayers )
 	{
@@ -67,7 +67,7 @@ void CGameLayers::Frame()
 
 void CGameLayers::Tick()
 {
-	Profile( "Game Tick" );
+	ProfileAlways( "Game Tick" );
 
 	Vector4D Time;
 	Time.X = static_cast<float>( GetCurrentTime() );
