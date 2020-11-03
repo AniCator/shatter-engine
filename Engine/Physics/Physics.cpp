@@ -106,7 +106,7 @@ void CPhysics::Construct()
 
 void CPhysics::Tick()
 {
-	Profile( "Physics" );
+	ProfileAlways( "Physics" );
 	Scene->Tick();
 }
 
