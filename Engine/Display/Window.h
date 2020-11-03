@@ -22,6 +22,17 @@ struct ViewDimensions
 	int Height = -1;
 };
 
+struct SystemInformation
+{
+	int MemoryTotal = 0;
+	int MemoryAvailable = 0;
+	int MemoryUsed = 0;
+
+	int VideoMemoryTotal = 0;
+	int VideoMemoryAvailable = 0;
+	int VideoMemoryUsed = 0;
+};
+
 class CWindow
 {
 public:
@@ -59,6 +70,7 @@ public:
 	}
 
 	bool IsFullscreen() const;
+	void SetVSYNC( const bool Enable );
 
 private:
 	struct GLFWmonitor* GetTargetMonitor();

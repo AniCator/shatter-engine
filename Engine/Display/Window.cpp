@@ -4,7 +4,7 @@
 #include <stdint.h>
 
 #include <ThirdParty/glad/include/glad/glad.h>
-#include <ThirdParty/glfw-3.2.1.bin.WIN64/include/GLFW/glfw3.h>
+#include <ThirdParty/glfw-3.3.2.bin.WIN64/include/GLFW/glfw3.h>
 
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/UserInterface.h>
@@ -67,7 +67,8 @@ void CWindow::Create( const char* Title )
 	glfwWindowHint( GLFW_DECORATED, EnableBorder );
 
 	glfwWindowHint( GLFW_SAMPLES, 0 );
-	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, config.IsEnabled( "opengldebugcontext", false ) );
+	const bool DebugContext = config.IsEnabled( "opengldebugcontext", false );
+	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, DebugContext ? 1 : 0 );
 
 	const int MajorVersion = config.GetInteger( "openglversionmajor", 3 );
 	const int MinorVersion = config.GetInteger( "openglversionminor", 3 );
@@ -142,7 +143,7 @@ void CWindow::Create( const char* Title )
 	Log::Event( "OpenGL %s\n", glGetString( GL_VERSION ) );
 
 #if defined(KHRDebug)
-	if( GLAD_GL_KHR_debug )
+	if( DebugContext && GLAD_GL_KHR_debug )
 	{
 		Log::Event( "KHR debug extention enabled.\n" );
 		glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS_KHR );
@@ -151,9 +152,9 @@ void CWindow::Create( const char* Title )
 	}
 #endif
 
-	const int SwapInterval = FullScreen ? config.GetInteger( "vsync", 0 ) : 0;
-	Log::Event( "Swap interval: %i\n", SwapInterval );
-	glfwSwapInterval( SwapInterval );
+	// const int SwapInterval = FullScreen ? config.GetInteger( "vsync", 0 ) : 0;
+	// Log::Event( "Swap interval: %i\n", SwapInterval );
+	SetVSYNC( false );
 
 	Log::Event( "Initializing ImGui.\n" );
 #if defined( IMGUI_ENABLED )
@@ -251,7 +252,7 @@ void CWindow::ProcessInput()
 	if( IsWindowless() )
 		return;
 
-	Profile( "Input" );
+	ProfileAlways( "Input" );
 
 	glfwPollEvents();
 
@@ -284,7 +285,7 @@ void CWindow::RenderFrame()
 	if( !IsRendering() || IsWindowless() )
 		return;
 
-	Profile( "Render" );
+	ProfileAlways( "Render" );
 
 #if defined(IMGUI_ENABLED)
 	UI::Frame();
@@ -339,6 +340,11 @@ void CWindow::SetWindowless( const bool Enable )
 bool CWindow::IsFullscreen() const
 {
 	return glfwGetWindowMonitor( WindowHandle ) != nullptr;
+}
+
+void CWindow::SetVSYNC( const bool Enable )
+{
+	glfwSwapInterval( Enable ? 1 : 0 );
 }
 
 GLFWmonitor* CWindow::GetTargetMonitor()
