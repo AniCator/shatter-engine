@@ -519,7 +519,7 @@ void CRenderer::SetUniformBuffer( const std::string& Name, const Vector3D& Value
 	GlobalUniformBuffers.insert_or_assign( Name, Uniform );
 }
 
-void CRenderer::SetUniformBuffer( const std::string& Name, const glm::mat4& Value )
+void CRenderer::SetUniformBuffer( const std::string& Name, const Matrix4D& Value )
 {
 	FUniform Uniform( Value );
 	GlobalUniformBuffers.insert_or_assign( Name, Uniform );

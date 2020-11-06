@@ -17,7 +17,7 @@ struct FUniform
 
 	Vector3D Uniform3;
 	Vector4D Uniform4;
-	glm::mat4 Uniform4x4;
+	Matrix4D Uniform4x4;
 
 	FUniform( const Vector4D& Vector )
 	{
@@ -31,7 +31,7 @@ struct FUniform
 		Uniform3 = Vector;
 	}
 
-	FUniform( const glm::mat4& Matrix )
+	FUniform( const Matrix4D& Matrix )
 	{
 		Type = Component4x4;
 		Uniform4x4 = Matrix;

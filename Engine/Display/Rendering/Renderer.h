@@ -46,7 +46,7 @@ public:
 
 	void SetUniformBuffer( const std::string& Name, const Vector4D& Value );
 	void SetUniformBuffer( const std::string& Name, const Vector3D& Value );
-	void SetUniformBuffer( const std::string& Name, const glm::mat4& Value );
+	void SetUniformBuffer( const std::string& Name, const Matrix4D& Value );
 
 	const CCamera& GetCamera() const;
 	void SetCamera( const CCamera& CameraIn );

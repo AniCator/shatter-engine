@@ -72,6 +72,8 @@ public:
 
 	~Skeleton() {};
 
+	int RootIndex = -1;
+
 	Matrix4D GlobalMatrix;
 	Matrix4D GlobalMatrixInverse;
 

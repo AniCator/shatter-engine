@@ -403,6 +403,41 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 	MeshData.Skeleton->Animations = MeshData.Animations;
 }
 
+void FinishSkeleton( FMeshData& MeshData )
+{
+	if( !MeshData.Skeleton )
+		return;
+
+	Skeleton& Skeleton = *MeshData.Skeleton;
+
+	// Find the root bone.
+	for( auto& Bone : Skeleton.Bones )
+	{
+		if( Skeleton.RootIndex < 0 )
+		{
+			Skeleton.RootIndex = Bone.Index;
+			continue;
+		}
+
+		if( Bone.ParentIndex < 0 && Bone.Children.size() > Skeleton.Bones[Skeleton.RootIndex].Children.size() )
+		{
+			Skeleton.RootIndex = Bone.Index;
+		}
+	}
+
+	// Apply weights
+	for( size_t VertexIndex = 0; VertexIndex < Skeleton.Weights.size(); VertexIndex++ )
+	{
+		MeshData.Vertices[VertexIndex].Bone[0] = Math::Float( Skeleton.Weights[VertexIndex].Index[0] );
+		MeshData.Vertices[VertexIndex].Bone[1] = Math::Float( Skeleton.Weights[VertexIndex].Index[1] );
+		MeshData.Vertices[VertexIndex].Bone[2] = Math::Float( Skeleton.Weights[VertexIndex].Index[2] );
+
+		MeshData.Vertices[VertexIndex].Weight[0] = Math::Float( Skeleton.Weights[VertexIndex].Weight[0] );
+		MeshData.Vertices[VertexIndex].Weight[1] = Math::Float( Skeleton.Weights[VertexIndex].Weight[1] );
+		MeshData.Vertices[VertexIndex].Weight[2] = Math::Float( Skeleton.Weights[VertexIndex].Weight[2] );
+	}
+}
+
 void MeshBuilder::ASSIMP( FPrimitive& Primitive, Skeleton& Skeleton, const CFile& File )
 {
 	Log::Event( "Running ASSIMP to import \"%s\"\n", File.Location().c_str() );
@@ -453,8 +488,8 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, Skeleton& Skeleton, const CFile
 
 		ParseNodes( Transform, Scene, Scene->mRootNode, MeshData );
 		UpdateBoneHierarchy( Scene->mRootNode, MeshData );
-
 		ParseAnimations( Transform, Scene, MeshData );
+		FinishSkeleton( MeshData );
 
 		if( true )
 		{

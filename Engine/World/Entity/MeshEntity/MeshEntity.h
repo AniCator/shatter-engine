@@ -4,6 +4,8 @@
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math.h>
 
+#include <Engine/Animation/Skeleton.h>
+
 class CMesh;
 class CShader;
 class CTexture;
@@ -21,6 +23,8 @@ public:
 
 	virtual void Construct() override;
 	virtual void Tick() override;
+	virtual void TickAnimation();
+
 	virtual void Destroy() override;
 
 	virtual void Debug() override;
@@ -66,4 +70,10 @@ protected:
 	bool Static;
 	bool Stationary;
 	CBody* PhysicsComponent;
+
+	// Name of the current animation.
+	std::string CurrentAnimation;
+
+	// Current bone transformations, updated by TickAnimation.
+	std::vector<Bone> Bones;
 };

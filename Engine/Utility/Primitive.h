@@ -11,23 +11,18 @@ struct FVertex
 {
 	FVertex()
 	{
-		Position = Vector3D::Zero;
-		Normal = Vector3D( 0.0f, 0.0f, 1.0f );
-		Color = Vector3D::One;
+		
 	}
 
 	FVertex( const Vector3D& InPosition )
 	{
 		Position = InPosition;
-		Normal = Vector3D( 0.0f, 0.0f, 1.0f );
-		Color = Vector3D::One;
 	}
 
 	FVertex( const Vector3D& InPosition, const Vector3D& InNormal)
 	{
 		Position = InPosition;
 		Normal = InNormal;
-		Color = Vector3D::One;
 	}
 
 	FVertex( const Vector3D& InPosition, const Vector3D& InNormal, const Vector2D& InTextureCoordinate )
@@ -35,16 +30,15 @@ struct FVertex
 		Position = InPosition;
 		Normal = InNormal;
 		TextureCoordinate = InTextureCoordinate;
-		Color = Vector3D::One;
 	}
 
-	Vector3D Position;
-	Vector2D TextureCoordinate;
-	Vector3D Normal;
-	Vector3D Color;
+	Vector3D Position = Vector3D::Zero;
+	Vector2D TextureCoordinate = Vector2D( 0.0f, 0.0f );
+	Vector3D Normal = Vector3D( 0.0f, 0.0f, 1.0f );
+	Vector3D Color = Vector3D::One;
 
-	Vector4D Bone;
-	Vector4D Weight;
+	Vector4D Bone = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
+	Vector4D Weight = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
 
 	bool operator<( const FVertex& B ) const 
 	{

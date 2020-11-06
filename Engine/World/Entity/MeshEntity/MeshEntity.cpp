@@ -3,7 +3,6 @@
 
 #include <Game/Game.h>
 
-#include <Engine/Animation/Skeleton.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Physics/Physics.h>
@@ -125,6 +124,8 @@ void CMeshEntity::Tick()
 			GetTransform();
 		}
 
+		TickAnimation();
+
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
 		RenderData.Color = Color;
@@ -134,22 +135,14 @@ void CMeshEntity::Tick()
 	}
 }
 
-void CMeshEntity::Destroy()
-{
-	if( PhysicsComponent )
-	{
-		PhysicsComponent->Destroy( GetWorld()->GetPhysics() );
-		delete PhysicsComponent;
-		PhysicsComponent = nullptr;
-	}
-
-	CPointEntity::Destroy();
-}
-
 const float Duration = 4.8f;
-
 void TransformBones( const float& Time, const Skeleton& Skeleton, const Animation& Animation, const Bone* Bone, std::vector<::Bone>& Result )
 {
+	if( !Bone )
+	{
+		return;
+	}
+
 	Matrix4D TranslationMatrix, RotationMatrix, ScaleMatrix;
 	for( auto& Key : Animation.PositionKeys )
 	{
@@ -202,12 +195,88 @@ void TransformBones( const float& Time, const Skeleton& Skeleton, const Animatio
 
 	for( size_t ChildIndex = 0; ChildIndex < Bone->Children.size(); ChildIndex++ )
 	{
-		if( Bone->Children[ChildIndex] > -1 )
+		if( Bone->Children[ChildIndex] > -1 && Bone->Children[ChildIndex] < Result.size() )
 		{
 			TransformBones( Time, Skeleton, Animation, &Skeleton.Bones[Bone->Children[ChildIndex]], Result );
 		}
 	}
 };
+
+void CMeshEntity::TickAnimation()
+{
+	if( !Mesh )
+	{
+		return;
+	}
+
+	auto& Skeleton = Mesh->GetSkeleton();
+	if( Skeleton.Bones.empty() )
+	{
+		return;
+	}
+
+	if( Skeleton.RootIndex < 0 )
+	{
+		return;
+	}
+
+	Profile( "Animation" );
+
+	CurrentAnimation = "BoyRig|Idle";
+	const auto& Iterator = Skeleton.Animations.find( CurrentAnimation );
+	if( Iterator == Skeleton.Animations.end() )
+	{
+		return;
+	}
+
+	// UI::AddText( Transform.GetPosition(), std::to_string( ModulatedTime ).c_str() );
+
+	auto& Pair = *Iterator;
+	auto& Animation = Pair.second;
+
+	const float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() );
+	const float ModulatedTime = fmod( Time, Duration );
+
+	Bones.resize( Skeleton.Bones.size() );
+	TransformBones( ModulatedTime, Skeleton, Animation, &Skeleton.Bones[Skeleton.RootIndex], Bones );
+
+	const std::string BoneLocationNamePrefix = "Bones[";
+
+	auto WorldTransform = GetTransform();
+	for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
+	{
+		auto& Matrix = Bones[MatrixIndex].Matrix;
+		glm::mat4 GLMMatrix = Math::ToGLM( Matrix );
+		auto WorldMatrix = Math::FromGLM( glm::inverse( GLMMatrix ) );
+		Vector3D PointA = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) ) );
+		Vector3D PointB = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -0.5f ) ) );
+		Vector3D PointC = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -1.0f ) ) );
+		UI::AddCircle( PointA, 3.0f, ::Color( 0, 0, 255 ) );
+		UI::AddLine( PointA, PointB, ::Color( 0, 0, 255 ) );
+		UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ) );
+		UI::AddCircle( PointC, 3.0f, ::Color( 255, 0, 0 ) );
+		UI::AddText( PointC, Skeleton.MatrixNames[MatrixIndex].c_str() );
+		// UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
+
+		if( Renderable )
+		{
+			std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
+			Renderable->SetUniform( BoneLocationName, Matrix );
+		}
+	}
+}
+
+void CMeshEntity::Destroy()
+{
+	if( PhysicsComponent )
+	{
+		PhysicsComponent->Destroy( GetWorld()->GetPhysics() );
+		delete PhysicsComponent;
+		PhysicsComponent = nullptr;
+	}
+
+	CPointEntity::Destroy();
+}
 
 void CMeshEntity::Debug()
 {
@@ -237,62 +306,6 @@ void CMeshEntity::Debug()
 		if( PhysicsComponent )
 		{
 			PhysicsComponent->Debug();
-		}
-
-		auto& Skeleton = Mesh->GetSkeleton();
-		if( Skeleton.Bones.size() > 0 )
-		{
-			std::string Name = "Bind";
-			const auto& Iterator = Skeleton.Animations.find( "BoyRig|Idle" );
-			if( Iterator != Skeleton.Animations.end() )
-			{
-				auto& Pair = *Iterator;
-				auto& Animation = Pair.second;
-				
-				const float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() );
-				const float ModulatedTime = fmod( Time, Duration );
-
-				// UI::AddText( Transform.GetPosition(), std::to_string( ModulatedTime ).c_str() );
-
-				const Bone* Root = nullptr;
-				for( auto& Bone : Skeleton.Bones )
-				{
-					if( !Root )
-					{
-						Root = &Bone;
-						continue;
-					}
-
-					if( Bone.ParentIndex < 0 && Bone.Children.size() > Root->Children.size() )
-					{
-						Root = &Bone;
-					}
-				}
-
-				if( Root )
-				{
-					std::vector<Bone> Bones;
-					Bones.resize( Skeleton.Bones.size() );
-					TransformBones( ModulatedTime, Skeleton, Animation, Root, Bones );
-
-					auto WorldTransform = GetTransform();
-					for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
-					{
-						auto& Matrix = Bones[MatrixIndex].Matrix;
-						glm::mat4 GLMMatrix = Math::ToGLM( Matrix );
-						auto WorldMatrix = Math::FromGLM( glm::inverse( GLMMatrix ) );
-						Vector3D PointA = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) ) );
-						Vector3D PointB = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -0.5f ) ) );
-						Vector3D PointC = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -1.0f ) ) );
-						UI::AddCircle( PointA, 3.0f, ::Color( 0, 0, 255 ) );
-						UI::AddLine( PointA, PointB, ::Color( 0, 0, 255 ) );
-						UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ) );
-						UI::AddCircle( PointC, 3.0f, ::Color( 255, 0, 0 ) );
-						UI::AddText( PointC, Skeleton.MatrixNames[MatrixIndex].c_str() );
-						// UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
-					}
-				}
-			}
 		}
 	}
 }
