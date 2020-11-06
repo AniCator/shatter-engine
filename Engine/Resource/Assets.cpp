@@ -334,6 +334,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 
 				CData Data;
 				Data << ExportPrimitive;
+				Data << Mesh->GetSkeleton();
 
 				CFile File( ExportPath.c_str() );
 				File.Load( Data );

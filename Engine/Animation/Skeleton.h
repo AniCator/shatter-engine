@@ -6,7 +6,11 @@
 #include <map>
 #include <string>
 
+#include <Engine/Utility/DataString.h>
 #include <Engine/Utility/Math/Matrix.h>
+
+static const char SkeletonIdentifier[5] = "LSKE";
+static const size_t SkeletonVersion = 1;
 
 static const uint32_t MaximumInfluences = 3;
 
@@ -81,4 +85,40 @@ public:
 	std::vector<Bone> Bones;
 	std::vector<std::string> MatrixNames;
 	std::map<std::string, Animation> Animations;
+
+	friend CData& operator<<( CData& Data, Skeleton& Skeleton )
+	{
+		Data << SkeletonIdentifier;
+		Data << SkeletonVersion;
+
+		DataVector::Encode( Data, Skeleton.Weights );
+		DataVector::Encode( Data, Skeleton.Bones );
+		DataVector::Encode( Data, Skeleton.MatrixNames );
+		// DataVector::Encode( Data, Skeleton.Animations );
+
+		return Data;
+	};
+
+	friend CData& operator>>( CData& Data, Skeleton& Skeleton )
+	{
+		char Identifier[5];
+		Data >> Identifier;
+
+		size_t Version;
+		Data >> Version;
+
+		if( strcmp( Identifier, SkeletonIdentifier ) == 0 && Version >= SkeletonVersion )
+		{
+			DataVector::Decode( Data, Skeleton.Weights );
+			DataVector::Decode( Data, Skeleton.Bones );
+			DataVector::Decode( Data, Skeleton.MatrixNames );
+			// DataVector::Decode( Data, Skeleton.Animations );
+		}
+		else
+		{
+			Data.Invalidate();
+		}
+
+		return Data;
+	};
 };

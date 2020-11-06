@@ -104,16 +104,20 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 		auto Bone = Mesh->mBones[BoneIndex];
 		Log::Event( "Importing bone \"%s\" (%i).\n", Bone->mName.C_Str(), BoneIndex );
 
-		for( size_t InfluenceIndex = 0; InfluenceIndex < Bone->mNumWeights; InfluenceIndex++ )
+		for( size_t WeightIndex = 0; WeightIndex < Bone->mNumWeights; WeightIndex++ )
 		{
-			size_t VertexID = IndexOffset + Bone->mWeights[InfluenceIndex].mVertexId;
+			size_t VertexID = IndexOffset + Bone->mWeights[WeightIndex].mVertexId;
 			VertexWeight& Weight = Skeleton.Weights[VertexID];
-			if( Weight.Weight[InfluenceIndex] < 0.001f && InfluenceIndex < MaximumInfluences )
-			{
-				Weight.Index[InfluenceIndex] = BoneIndex;
-				Weight.Weight[InfluenceIndex] = Bone->mWeights[InfluenceIndex].mWeight;
 
-				Log::Event( "Weight %.2f.\n", Weight.Weight[InfluenceIndex] );
+			for( size_t InfluenceIndex = 0; InfluenceIndex < MaximumInfluences; InfluenceIndex++ )
+			{
+				if( Weight.Weight[InfluenceIndex] < 0.001f )
+				{
+					Weight.Index[InfluenceIndex] = BoneIndex;
+					Weight.Weight[InfluenceIndex] = Bone->mWeights[InfluenceIndex].mWeight;
+
+					Log::Event( "Weight %.2f.\n", Weight.Weight[InfluenceIndex] );
+				}
 			}
 		}
 	}
