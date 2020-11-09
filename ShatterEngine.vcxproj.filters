@@ -138,6 +138,9 @@
     <Filter Include="Source Files\Engine\World\Entity\Info">
       <UniqueIdentifier>{0b4f342b-01f2-49c4-92df-9ab775ffe26f}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Physics\Body">
+      <UniqueIdentifier>{f9a02aab-c9ff-4e75-9b9b-3b7229b39c0d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -346,6 +349,12 @@
     </ClCompile>
     <ClCompile Include="Engine\World\Entity\Info\InfoTextEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\Info</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\Body\Plane.cpp">
+      <Filter>Source Files\Engine\Physics\Body</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\Body\Body.cpp">
+      <Filter>Source Files\Engine\Physics\Body</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -627,6 +636,15 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\Info\InfoTextEntity.h">
       <Filter>Source Files\Engine\World\Entity\Info</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\Body\Plane.h">
+      <Filter>Source Files\Engine\Physics\Body</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\Body\Body.h">
+      <Filter>Source Files\Engine\Physics\Body</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\Body\Shared.h">
+      <Filter>Source Files\Engine\Physics\Body</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -7,6 +7,8 @@
 #include <Engine/Display/Window.h>
 #include <Engine/Physics/Physics.h>
 #include <Engine/Physics/PhysicsComponent.h>
+#include <Engine/Physics/Body/Body.h>
+#include <Engine/Physics/Body/Plane.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/World/World.h>
@@ -96,8 +98,25 @@ void CMeshEntity::Construct()
 			{
 				if( !PhysicsComponent )
 				{
-					PhysicsComponent = new CBody( this, CollisionMesh ? CollisionMesh->GetBounds() : Mesh->GetBounds(), Static, Stationary );
-					PhysicsComponent->Construct( Physics );
+					if( CollisionType == BodyType::Plane )
+					{
+						PhysicsComponent = new CPlaneBody();
+					}
+					else
+					{
+						PhysicsComponent = new CBody();
+					}
+
+					PhysicsComponent->Owner = this;
+					PhysicsComponent->Static = Static;
+					PhysicsComponent->Stationary = Stationary;
+					PhysicsComponent->Block = true;
+					PhysicsComponent->LocalBounds = Mesh->GetBounds();
+
+					if( PhysicsComponent )
+					{
+						PhysicsComponent->Construct( Physics );
+					}
 				}
 			}
 		}
@@ -123,8 +142,6 @@ void CMeshEntity::Tick()
 		{
 			GetTransform();
 		}
-
-		TickAnimation();
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
@@ -256,6 +273,9 @@ void CMeshEntity::TickAnimation()
 		UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ) );
 		UI::AddCircle( PointC, 3.0f, ::Color( 255, 0, 0 ) );
 		UI::AddText( PointC, Skeleton.MatrixNames[MatrixIndex].c_str() );
+
+		// Bones[Bones[MatrixIndex].ParentIndex]
+
 		// UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
 
 		if( Renderable )
@@ -263,6 +283,14 @@ void CMeshEntity::TickAnimation()
 			std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
 			Renderable->SetUniform( BoneLocationName, Matrix );
 		}
+	}
+}
+
+void CMeshEntity::Frame()
+{
+	if( Renderable && IsVisible() )
+	{
+		TickAnimation();
 	}
 }
 
@@ -326,6 +354,10 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "collisionmesh" )
 		{
 			CollisionMeshName = Property->Value;
+		}
+		else if( Property->Key == "collisiontype" )
+		{
+			CollisionType = ToBodyType( Property->Value );
 		}
 		else if( Property->Key == "shader" )
 		{
@@ -443,6 +475,10 @@ void CMeshEntity::Import( CData& Data )
 	Data >> Color;
 	Data >> Collision;
 	Data >> Visible;
+
+	std::string CollisionTypeString;
+	DataString::Decode( Data, CollisionTypeString );
+	CollisionType = ToBodyType( CollisionTypeString );
 }
 
 void CMeshEntity::Export( CData& Data )
@@ -464,6 +500,7 @@ void CMeshEntity::Export( CData& Data )
 	Data << Color;
 	Data << Collision;
 	Data << Visible;
+	DataString::Encode( Data, FromBodyType( CollisionType ) );
 }
 
 bool CMeshEntity::ShouldCollide() const

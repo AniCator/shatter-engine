@@ -37,7 +37,7 @@ struct FVertex
 	Vector3D Normal = Vector3D( 0.0f, 0.0f, 1.0f );
 	Vector3D Color = Vector3D::One;
 
-	Vector4D Bone = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
+	Vector4D Bone = Vector4D( -1.0f, -1.0f, -1.0f, -1.0f );
 	Vector4D Weight = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
 
 	bool operator<( const FVertex& B ) const 

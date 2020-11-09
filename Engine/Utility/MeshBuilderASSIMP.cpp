@@ -117,6 +117,7 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 					Weight.Weight[InfluenceIndex] = Bone->mWeights[InfluenceIndex].mWeight;
 
 					Log::Event( "Weight %.2f.\n", Weight.Weight[InfluenceIndex] );
+					break;
 				}
 			}
 		}
@@ -163,7 +164,7 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 	{
 		auto Bone = Mesh->mBones[BoneIndex];
 		// auto SourceMatrix = MeshData.InverseTransform * GlobalTransformation * Bone->mOffsetMatrix * RotMat;
-		auto SourceMatrix = Bone->mOffsetMatrix * RotMat;
+		auto SourceMatrix = Bone->mOffsetMatrix;// *RotMat;
 		auto& TargetMatrix = Skeleton.Bones[BoneIndex].Matrix;
 
 		ConvertMatrix( TargetMatrix, SourceMatrix );

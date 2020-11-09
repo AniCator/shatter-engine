@@ -2,7 +2,10 @@
 #include "PhysicsComponent.h"
 
 #include <Engine/Display/Rendering/Mesh.h>
+
 #include <Engine/Physics/Physics.h>
+#include <Engine/Physics/Body/Body.h>
+
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
@@ -15,7 +18,7 @@ static const auto Gravity = Vector3D( 0.0f, 0.0f, 9.81f );
 
 #define DrawDebugLines 0
 #define DrawCollisionResponseAABBAABB 0
-#define DrawNormalAndDistance 1
+#define DrawNormalAndDistance 0
 
 size_t TextPosition = 0;
 
@@ -364,47 +367,22 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 	return Response;
 }
 
-CBody::CBody( CMeshEntity* OwnerIn, const bool Static, const bool Stationary )
+//MakeBody()
+//{
+//	Owner = OwnerIn;
+//	Block = true;
+//	DeltaPosition = Vector3D( 0.0f, 0.0f, 0.0f );
+//
+//	this->LocalBounds = LocalBounds;
+//	this->Static = Static;
+//	this->Stationary = Stationary;
+//
+//	Tree = nullptr;
+//}
+
+CBody::CBody()
 {
-	if( OwnerIn->Mesh )
-	{
-		Owner = OwnerIn;
-		Block = true;
-		DeltaPosition = Vector3D( 0.0f, 0.0f, 0.0f );
-
-		this->LocalBounds = Owner->Mesh->GetBounds();
-		this->Static = Static;
-		this->Stationary = Stationary;
-
-		Tree = nullptr;
-	}
-}
-
-CBody::CBody( CMeshEntity* OwnerIn, const FBounds& LocalBounds, const bool Static, const bool Stationary )
-{
-	Owner = OwnerIn;
-	Block = true;
-	DeltaPosition = Vector3D( 0.0f, 0.0f, 0.0f );
-
-	this->LocalBounds = LocalBounds;
-	this->Static = Static;
-	this->Stationary = Stationary;
-
-	Tree = nullptr;
-}
-
-CBody::CBody( CEntity* Parent, const FBounds& LocalBounds, const bool Static, const bool Stationary )
-{
-	Owner = nullptr;
-	Ghost = Parent;
-	Block = true;
-	DeltaPosition = Vector3D( 0.0f, 0.0f, 0.0f );
-
-	this->LocalBounds = LocalBounds;
-	this->Static = Static;
-	this->Stationary = Stationary;
-
-	Tree = nullptr;
+	CalculateBounds();
 }
 
 CBody::~CBody()
@@ -893,10 +871,14 @@ void CBody::Tick()
 
 	auto NewPosition = Transform.GetPosition();
 
+	const bool Penetrating = Depenetration.LengthSquared() > 0.001f;
 	if( !Stationary )
 	{
-		Acceleration -= Gravity;
-		Velocity += ( Acceleration * DeltaTime ) * InverseMass;
+		if( !Penetrating )
+		{
+			Acceleration -= Gravity;
+			Velocity += ( Acceleration * DeltaTime ) * InverseMass;
+		}
 
 		// Fake friction.
 		Velocity.X *= 0.9f;
@@ -939,7 +921,8 @@ void CBody::Tick()
 
 	if( !Stationary )
 	{
-		// Velocity -= Depenetration;
+		Velocity -= Depenetration;
+
 		NewPosition += Velocity;
 
 		if( NewPosition.Z < -20.0f )
@@ -966,6 +949,13 @@ void CBody::Tick()
 		else
 		{
 			Velocity = NewPosition - PreviousTransform.GetPosition();
+		}
+
+		if( Penetrating )
+		{
+			NewPosition += Depenetration;
+			// Velocity = Vector3D::Zero;
+			Normal = Depenetration.Normalized() * -1.0f;
 		}
 
 		Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
@@ -996,6 +986,7 @@ void CBody::Tick()
 		PreviousTransform = Owner->GetTransform();
 	}
 
+	CalculateBounds();
 	Acceleration = Vector3D( 0.0f, 0.0f, 0.0f );
 	TextPosition = 0;
 }

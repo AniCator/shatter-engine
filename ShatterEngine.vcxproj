@@ -226,6 +226,8 @@
     <ClCompile Include="Engine\Display\Window.cpp" />
     <ClCompile Include="Engine\Input\Input.cpp" />
     <ClCompile Include="Engine\Input\NullInput.cpp" />
+    <ClCompile Include="Engine\Physics\Body\Body.cpp" />
+    <ClCompile Include="Engine\Physics\Body\Plane.cpp" />
     <ClCompile Include="Engine\Physics\Physics.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsComponent.cpp" />
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
@@ -303,6 +305,9 @@
     <ClInclude Include="Engine\Input\InputMap.h" />
     <ClInclude Include="Engine\Input\InputMapGLFW.h" />
     <ClInclude Include="Engine\Input\NullInput.h" />
+    <ClInclude Include="Engine\Physics\Body\Body.h" />
+    <ClInclude Include="Engine\Physics\Body\Plane.h" />
+    <ClInclude Include="Engine\Physics\Body\Shared.h" />
     <ClInclude Include="Engine\Physics\Physics.h" />
     <ClInclude Include="Engine\Physics\PhysicsComponent.h" />
     <ClInclude Include="Engine\Profiling\Logging.h" />

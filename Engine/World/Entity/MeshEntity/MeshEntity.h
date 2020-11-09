@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Physics/Body/Shared.h>
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math.h>
 
@@ -24,7 +25,7 @@ public:
 	virtual void Construct() override;
 	virtual void Tick() override;
 	virtual void TickAnimation();
-
+	virtual void Frame() override;
 	virtual void Destroy() override;
 
 	virtual void Debug() override;
@@ -57,6 +58,7 @@ public:
 
 	std::string MeshName;
 	std::string CollisionMeshName;
+	BodyType CollisionType = BodyType::TriangleMesh;
 	std::string ShaderName;
 	std::vector<std::string> TextureNames;
 

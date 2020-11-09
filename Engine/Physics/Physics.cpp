@@ -50,10 +50,10 @@ public:
 		{
 			if( ComponentA )
 			{
+				ComponentA->PreCollision();
+
 				if( !ComponentA->Static )
 				{
-					ComponentA->PreCollision();
-
 					for( auto ComponentB : Components )
 					{
 						if( ComponentB && ComponentB != ComponentA && ComponentB->Owner != ComponentA->Owner )
@@ -62,7 +62,7 @@ public:
 							const FBounds& BoundsB = ComponentB->GetBounds();
 							if( Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
 							{
-								ComponentA->Collision( ComponentB );
+								ComponentB->Collision( ComponentA );
 							}
 						}
 					}

@@ -4,101 +4,33 @@
 #include <vector>
 #include <set>
 
+#include <Engine/Physics/Body/Body.h>
+
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
 
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
-struct TriangleTree
-{
-	TriangleTree()
-	{
-		Upper = nullptr;
-		Lower = nullptr;
-	}
-
-	~TriangleTree()
-	{
-		delete Upper;
-		delete Lower;
-	}
-
-	FBounds Bounds;
-
-	TriangleTree* Upper = nullptr;
-	TriangleTree* Lower = nullptr;
-
-	std::vector<FVertex> Vertices;
-};
-
-class CBody
-{
-public:
-	CBody( CMeshEntity* Owner, const bool Static, const bool Stationary );
-	CBody( CMeshEntity* Owner, const FBounds& LocalBounds, const bool Static, const bool Stationary );
-	CBody( CEntity* Parent, const FBounds& LocalBounds, const bool Static, const bool Stationary );
-	~CBody();
-
-	void Construct();
-	void Construct( class CPhysics* Physics );
-	virtual void PreCollision();
-	virtual void Collision( CBody* Body );
-	virtual void Tick();
-	void Destroy( class CPhysics* Physics );
-
-	virtual void CalculateBounds();
-	FBounds GetBounds() const;
-	virtual void SetBounds( const FBounds& Bounds )
-	{
-		LocalBounds = Bounds;
-		CalculateBounds();
-	}
-
-	virtual const FTransform& GetTransform() const;
-
-	virtual void Debug();
-
-	CMeshEntity* Owner = nullptr;
-	CEntity* Ghost = nullptr;
-
-	bool Static;
-	bool Stationary;
-	bool Block;
-	bool Contact;
-	FTransform PreviousTransform;
-	FBounds LocalBounds;
-	FBounds WorldBounds;
-	Vector3D DeltaPosition;
-	Vector3D Acceleration;
-	Vector3D Velocity;
-	Vector3D Depenetration;
-	Vector3D Normal;
-	float Mass;
-	float InverseMass;
-	size_t Contacts;
-
-	TriangleTree* Tree = nullptr;
-};
-
 template<typename TriggerType>
 class CTriggerBody : public CBody
 {
 public:
-	CTriggerBody( CMeshEntity* Owner ) : CBody( Owner, false, true )
+	CTriggerBody( CEntity* OwnerIn ) : CBody()
 	{
 		Block = false;
 		Static = false;
 		Stationary = true;
 
-		CalculateBounds();
-	}
-
-	CTriggerBody( CEntity* Parent, const FBounds& Bounds ) : CBody( Parent, Bounds, false, true )
-	{
-		Block = false;
-		Static = false;
-		Stationary = true;
+		auto MeshEntity = dynamic_cast<CMeshEntity*>( OwnerIn );
+		if( MeshEntity )
+		{
+			Owner = MeshEntity;
+		}
+		else
+		{
+			Ghost = OwnerIn;
+		}
 
 		CalculateBounds();
 	}
