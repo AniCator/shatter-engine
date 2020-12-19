@@ -19,10 +19,12 @@ Make sure you create an EngineMacros.props file for your game projects with a Us
 # Third Party
 The engine requires a couple of third party libraries which aren't available in this repository.
 
+* ThirdParty/assimp/ - ASSIMP for importing non-native assets
 * ThirdParty/glad/ - GLAD for OpenGL 4.3 Core with the KHR debug extension
-* ThirdParty/glfw-3.2.1.bin.WIN64/ - GLFW 3.2.1
+* ThirdParty/glfw-3.3.2.bin.WIN64/ - GLFW 3.3.2
 * ThirdParty/glm/ - GLM 0.9.8.5
 * ThirdParty/imgui-1.70/ - dear imgui 1.70
-* ThirdParty/SFML-2.5.1/ - SFML 2.5.1 (for audio)
+* ThirdParty/SFML-2.5.1/ - SFML 2.5.1 (for audio) (to be removed)
+* ThirdParty/SoLoud/ - SoLoud (for audio)
 * ThirdParty/stb/ - STB
 * ThirdParty/discord-rpc/ - Discord Rich Presence
