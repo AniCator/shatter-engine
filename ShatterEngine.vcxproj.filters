@@ -356,6 +356,9 @@
     <ClCompile Include="Engine\Physics\Body\Body.cpp">
       <Filter>Source Files\Engine\Physics\Body</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Audio\SoLoudSound.cpp">
+      <Filter>Source Files\Engine\Audio</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -645,6 +648,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Physics\Body\Shared.h">
       <Filter>Source Files\Engine\Physics\Body</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\TranslationTable.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\SoLoudSound.h">
+      <Filter>Source Files\Engine\Audio</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

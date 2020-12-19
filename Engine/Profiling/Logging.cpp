@@ -20,7 +20,7 @@
 #endif
 #endif
 
-inline void BreakDebugger()
+void BreakDebugger()
 {
 #ifdef _WIN32
 	if( IsDebuggerPresent() )

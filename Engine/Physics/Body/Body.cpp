@@ -1,47 +1,20 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Body.h"
 
-static struct BodyConverter
-{
-	BodyConverter()
-	{
-		FromString = {
+#include <Engine/Utility/TranslationTable.h>
+
+static auto TranslateBodyType = Translate<std::string, BodyType>( {
 			{ "triangle", BodyType::TriangleMesh },
-			{ "plane", BodyType::Plane }
-		};
-
-		for( auto& Pair : FromString )
-		{
-			ToString.insert_or_assign( Pair.second, Pair.first );
-		}
-	}
-
-	std::map<std::string, BodyType>  FromString;
-	std::map<BodyType, std::string> ToString;
-} Convert;
+			{ "plane", BodyType::Plane },
+			{ "aabb", BodyType::AABB }
+	} );
 
 BodyType ToBodyType( const std::string& Type )
 {
-	auto Iterator = Convert.FromString.find( Type );
-	if( Iterator != Convert.FromString.end() )
-	{
-		return ( *Iterator ).second;
-	}
-	else
-	{
-		return BodyType::TriangleMesh;
-	}
+	return TranslateBodyType.To( Type );
 }
 
-const std::string& FromBodyType( const BodyType& Type )
+std::string FromBodyType( const BodyType& Type )
 {
-	auto Iterator = Convert.ToString.find( Type );
-	if( Iterator != Convert.ToString.end() )
-	{
-		return ( *Iterator ).second;
-	}
-	else
-	{
-		return "triangle";
-	}
+	return TranslateBodyType.From( Type );
 }

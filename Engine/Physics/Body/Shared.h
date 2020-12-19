@@ -10,11 +10,12 @@
 enum class BodyType : uint8_t
 {
 	TriangleMesh,
-	Plane
+	Plane,
+	AABB
 };
 
 BodyType ToBodyType( const std::string& Type );
-const std::string& FromBodyType( const BodyType& Type );
+std::string FromBodyType( const BodyType& Type );
 
 struct TriangleTree
 {

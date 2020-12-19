@@ -102,6 +102,10 @@ void CMeshEntity::Construct()
 					{
 						PhysicsComponent = new CPlaneBody();
 					}
+					else if( CollisionType == BodyType::AABB )
+					{
+						PhysicsComponent = new CBody();
+					}
 					else
 					{
 						PhysicsComponent = new CBody();
@@ -536,4 +540,9 @@ void CMeshEntity::SetVisible( const bool& VisibleIn )
 FBounds CMeshEntity::GetWorldBounds() const
 {
 	return WorldBounds;
+}
+
+CBody* CMeshEntity::GetBody() const
+{
+	return PhysicsComponent;
 }

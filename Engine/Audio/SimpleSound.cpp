@@ -103,7 +103,7 @@ void CSimpleSound::Start( StreamHandle Handle, const float FadeIn )
 
 void CSimpleSound::Stop( SoundHandle Handle )
 {
-	if( Handle.Handle > InvalidHandle)
+	if( Handle.Handle > InvalidHandle )
 	{
 		Sounds[Handle.Handle].Playing = false;
 
@@ -116,7 +116,7 @@ void CSimpleSound::Stop( SoundHandle Handle )
 
 void CSimpleSound::Stop( StreamHandle Handle, const float FadeOut )
 {
-	if( Handle.Handle > InvalidHandle)
+	if( Handle.Handle > InvalidHandle )
 	{
 		if( FadeOut < 0.0f )
 		{

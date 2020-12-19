@@ -35,6 +35,25 @@ struct FBounds
 	Vector3D Maximum;
 };
 
+template<typename NewType, typename OldType>
+NewType* Cast( OldType* Object )
+{
+	return dynamic_cast<NewType*>( Object );
+}
+
+template<typename NewType, typename OldType>
+NewType* StaticCast( OldType* Object )
+{
+	return static_cast<NewType*>( Object );
+}
+
+template<typename MatchType, typename Type>
+bool IsType( Type* Object )
+{
+	MatchType* Match = Cast<MatchType>( Object );
+	return Match != nullptr ? true : false;
+}
+
 namespace Math
 {
 	static const float Pi = 3.14159265358979323846264338327950288f;

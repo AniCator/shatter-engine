@@ -5,6 +5,7 @@
 
 #include <Engine/Physics/Physics.h>
 #include <Engine/Physics/Body/Body.h>
+#include <Engine/Physics/Body/Plane.h>
 
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
@@ -407,10 +408,10 @@ void CBody::Construct()
 
 	if( Entity )
 	{
-		auto World = Entity->GetWorld();
+		auto* World = Entity->GetWorld();
 		if( World )
 		{
-			auto Physics = World->GetPhysics();
+			auto* Physics = World->GetPhysics();
 			if( Physics )
 			{
 				Construct( Physics );
@@ -437,10 +438,44 @@ void CBody::PreCollision()
 	Contacts = 0;
 }
 
-void CBody::Collision( CBody* Body )
+void CBody::Simulate()
+{
+	// We don't need to simulate environmental factors for bodies that don't move.
+	if( Static || Stationary )
+		return;
+
+	// We can't apply environmental factors if we don't have an owner.
+	if( !Owner )
+		return;
+
+	const float DeltaTime = GameLayersInstance->GetDeltaTime();
+
+	// Calculate and apply gravity.
+	Vector3D EnvironmentalForce = Vector3D::Zero;
+	const Vector3D EnvironmentalAcceleration = -Gravity;
+	EnvironmentalForce += ( EnvironmentalAcceleration * DeltaTime ) * InverseMass;
+
+	// Temporary friction factor that only applies to the XY plane.
+	Velocity.X *= 0.9f;
+	Velocity.Y *= 0.9f;
+
+	auto Transform = GetTransform();
+	Transform.SetPosition( Transform.GetPosition() + EnvironmentalForce );
+	Owner->SetTransform( Transform );
+}
+
+bool CBody::Collision( CBody* Body )
 {
 	if( !Body->Block )
-		return;
+		return false;
+
+	if( IsType<CPlaneBody>( Body ) )
+		return false;
+
+	const FBounds& BoundsA = Body->GetBounds();
+	const FBounds& BoundsB = GetBounds();
+	if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
+		return false;
 
 	const float DeltaTime = GameLayersInstance->GetDeltaTime();
 	auto Transform = GetTransform();
@@ -473,8 +508,10 @@ void CBody::Collision( CBody* Body )
 	const Vector3D RelativeVelocity = Body->Velocity - Velocity;
 	float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass;
 
+	bool Collided = false;
 	if( VelocityAlongNormal < 0.0f )
 	{
+		Collided = true;
 		Contacts++;
 		const float Restitution = -1.01f;
 		const float DeltaVelocity = Restitution * VelocityAlongNormal;
@@ -494,7 +531,7 @@ void CBody::Collision( CBody* Body )
 			}
 
 			// Acceleration += Penetration;
-			Depenetration += Penetration;
+			// Depenetration += Penetration;
 		}
 		else
 		{
@@ -573,6 +610,8 @@ void CBody::Collision( CBody* Body )
 		// UI::AddAABB( Body->WorldBounds.Minimum, Body->WorldBounds.Maximum, BoundsColor );
 	}
 #endif
+
+	return Collided;
 }
 
 std::vector<FVertex> GatherVertices( std::vector<FVertex>& Vertices, const Vector3D& Median, const bool Direction, const size_t Axis )
@@ -848,8 +887,7 @@ void CreateBVH( CMesh* Mesh, FTransform& Transform, const FBounds& WorldBounds, 
 
 void CBody::Tick()
 {
-	const bool Unmoving = Static || Stationary;
-	InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
+	Handled = false;
 
 	auto Transform = GetTransform();
 	if( Owner && Owner->IsStationary() )
@@ -863,120 +901,56 @@ void CBody::Tick()
 
 	CalculateBounds();
 
-	float DeltaTime = GameLayersInstance->GetDeltaTime();
-	if( DeltaTime > 1.0f )
-	{
-		DeltaTime = 0.333333f;
-	}
-
 	auto NewPosition = Transform.GetPosition();
 
-	const bool Penetrating = Depenetration.LengthSquared() > 0.001f;
-	if( !Stationary )
-	{
-		if( !Penetrating )
-		{
-			Acceleration -= Gravity;
-			Velocity += ( Acceleration * DeltaTime ) * InverseMass;
-		}
-
-		// Fake friction.
-		Velocity.X *= 0.9f;
-		Velocity.Y *= 0.9f;
-	}
-
 #if DrawDebugLines == 1
-	auto Position = Transform.GetPosition();
-	// UI::AddLine( Position, Position + Velocity * 10.0f, Color::Green );
-	// UI::AddCircle( Position + Velocity * 10.0f, 3.0f, Color::Green );
-	// UI::AddLine( Position, Position + Acceleration, Color::Blue );
-	// UI::AddCircle( Position + Acceleration, 3.0f, Color::Blue );
-
-	bool IsInFront = false;
-	auto ScreenPosition = UI::WorldToScreenPosition( Position, &IsInFront );
-	if( IsInFront && false )
-	{
-		ScreenPosition.Y += TextPosition * 15.0f;
-		char MassString[32];
-		sprintf_s( MassString, "%.2f kg", Mass );
-		UI::AddText( ScreenPosition, MassString );
-
-		TextPosition++;
-
-		ScreenPosition.X += 10.0f;
-		ScreenPosition.Y += 15.0f;
-		char String[32];
-		sprintf_s( String, "v %.2f %.2f %.2f", Velocity.X, Velocity.Y, Velocity.Z );
-		UI::AddText( ScreenPosition, String );
-
-		TextPosition++;
-	}
-#endif
-
-	Vector3D NormalForce = Velocity.Dot( Normal ) * Normal;
-
-#if DrawDebugLines == 1
-	UI::AddLine( Position, Position + Velocity, Color( 32, 255, 255 ) );
+	UI::AddLine( NewPosition, NewPosition + Velocity, Color( 32, 255, 255 ) );
 #endif
 
 	if( !Stationary )
 	{
-		Velocity -= Depenetration;
-
+		// Velocity -= Depenetration;
 		NewPosition += Velocity;
 
-		if( NewPosition.Z < -20.0f )
+		const float MinimumHeight = -21.0f;
+		if( NewPosition.Z < MinimumHeight )
 		{
 			if( Velocity.Z < 0.0f )
 			{
 				Velocity.Z = 0.0f;
 			}
 
-			NewPosition.Z = -20.0f;
+			NewPosition.Z = MinimumHeight;
 			Normal = Vector3D( 0.0f, 0.0f, -1.0f );
 			Contact = true;
 		}
 
-		NormalForce = Velocity.Dot( Normal ) * Normal;
+		// NormalForce = Velocity.Dot( Normal ) * Normal;
 
 		if( Contacts > 0 )
 		{
-			// NewPosition += Depenetration;
-			// Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
-			Velocity = Vector3D( 0.0f, 0.0f, 0.0f );
 			Contact = true;
+			// Velocity = Math::Abs( Velocity.Dot( Depenetration ) ) * Velocity;
+			const float Factor = Math::Saturate( ( Depenetration.Normalized().Dot( Velocity.Normalized() ) * -1.0f ) + 1.0f );
+			// UI::AddLine( NewPosition, NewPosition + Velocity.Normalized(), Color( 255, 0, 255 ) );
+			// UI::AddLine( NewPosition, NewPosition - Depenetration.Normalized(), Color( 0, 255, 255 ) );
+			// UI::AddText( NewPosition, std::to_string( Factor ).c_str() );
+			Velocity *= Factor;
 		}
 		else
 		{
 			Velocity = NewPosition - PreviousTransform.GetPosition();
 		}
 
-		if( Penetrating )
-		{
-			NewPosition += Depenetration;
-			// Velocity = Vector3D::Zero;
-			Normal = Depenetration.Normalized() * -1.0f;
-		}
-
+		// Apply depenetration.
+		NewPosition -= Depenetration;
+		Normal = Depenetration.Normalized() * -1.0f;
 		Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
 	}
-	else
-	{
-		// Velocity = Vector3D( 0.0f, 0.0f, 0.0f );
-	}
-
-	if( Contact )
-	{
-		// Velocity += NormalForce;
-	}
-
-	// if( !Stationary && Contacts > 0 )
-	// {
-	// 	Velocity -= Depenetration;
-	// 	Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
-	// }
 
 	Transform.SetPosition( NewPosition );
+
+	Contact = Contact || Contacts > 0;
 
 	if( Owner )
 	{
@@ -1005,6 +979,9 @@ void CBody::CalculateBounds()
 	EnsureVolume( WorldBounds );
 
 	Mass = ( WorldBounds.Maximum - WorldBounds.Minimum ).Length() * 45.0f;
+
+	const bool Unmoving = Static || Stationary;
+	InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
 }
 
 FBounds CBody::GetBounds() const
@@ -1020,7 +997,7 @@ const FTransform& CBody::GetTransform() const
 	}
 	else if( Ghost )
 	{
-		auto Point = dynamic_cast<CPointEntity*>( Ghost );
+		auto* Point = Cast<CPointEntity>( Ghost );
 		if( Point )
 		{
 			return Point->GetTransform();
@@ -1058,4 +1035,9 @@ void CBody::Debug()
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
 
 	VisualizeBounds( Tree, &PreviousTransform );
+}
+
+BodyType CBody::GetType() const
+{
+	return BodyType::AABB;
 }

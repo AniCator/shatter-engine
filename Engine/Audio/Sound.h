@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <Engine/Audio/SimpleSound.h>
+#include <Engine/Audio/SoLoudSound.h>
 
 namespace ESoundPlayMode
 {
@@ -40,7 +40,7 @@ public:
 	~CSound();
 
 	bool Load( const char* FileLocation );
-	bool Load( const std::vector<std::string> Locations );
+	bool Load( const std::vector<std::string>& Locations );
 
 	void Clear();
 
@@ -49,6 +49,7 @@ public:
 	void Loop( const bool Loop );
 	void Rate( const float Rate );
 	float Time() const;
+	float Length() const;
 	void Offset( const float Offset );
 	bool Playing();
 	void Volume( const float Volume );
@@ -57,6 +58,7 @@ public:
 
 private:
 	std::vector<SoundBufferHandle> BufferHandles;
+	std::vector<StreamHandle> StreamBufferHandles;
 	std::vector<SoundHandle> SoundHandles;
 	std::vector<StreamHandle> StreamHandles;
 

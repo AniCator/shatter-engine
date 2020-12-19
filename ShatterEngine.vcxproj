@@ -203,6 +203,7 @@
     <ClCompile Include="Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Engine\Application\Application.cpp" />
     <ClCompile Include="Engine\Audio\SimpleSound.cpp" />
+    <ClCompile Include="Engine\Audio\SoLoudSound.cpp" />
     <ClCompile Include="Engine\Audio\Sound.cpp" />
     <ClCompile Include="Engine\Configuration\Configuration.cpp" />
     <ClCompile Include="Engine\Display\imgui_impl_glfw.cpp" />
@@ -276,6 +277,7 @@
     <ClInclude Include="Engine\Animation\Skeleton.h" />
     <ClInclude Include="Engine\Application\Application.h" />
     <ClInclude Include="Engine\Audio\SimpleSound.h" />
+    <ClInclude Include="Engine\Audio\SoLoudSound.h" />
     <ClInclude Include="Engine\Audio\Sound.h" />
     <ClInclude Include="Engine\Configuration\Configuration.h" />
     <ClInclude Include="Engine\Display\imgui_impl_glfw.h" />
@@ -343,6 +345,7 @@
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />
     <ClInclude Include="Engine\Utility\Thread.h" />
     <ClInclude Include="Engine\Utility\Timer.h" />
+    <ClInclude Include="Engine\Utility\TranslationTable.h" />
     <ClInclude Include="Engine\World\Entity\CameraEntity\CameraEntity.h" />
     <ClInclude Include="Engine\World\Entity\Entity.h" />
     <ClInclude Include="Engine\World\Entity\Info\InfoTextEntity.h" />

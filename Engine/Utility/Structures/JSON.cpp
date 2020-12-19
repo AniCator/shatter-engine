@@ -65,7 +65,7 @@ namespace JSON
 		bool LookingForKeyEntry = true;
 		Object* Current = nullptr;
 		Object* Parent = nullptr;
-		while( !Finished )
+		while( !Finished && ( Token < ( Data + Length ) ) )
 		{
 			if( Token[0] == '{' )
 			{

@@ -46,6 +46,7 @@ public:
 	virtual void SetVisible( const bool& Visible );
 
 	virtual FBounds GetWorldBounds() const;
+	virtual CBody* GetBody() const;
 
 public:
 	CMesh* Mesh;

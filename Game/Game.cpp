@@ -3,7 +3,7 @@
 
 #include "Game.h"
 
-#include <Engine/Audio/SimpleSound.h>
+#include <Engine/Audio/SoLoudSound.h>
 
 #include <Engine/Display/Rendering/Renderer.h>
 #include <Engine/Display/Window.h>
@@ -34,7 +34,7 @@ void CGameLayers::Initialize()
 {
 	Log::Event( "Initializing game layers.\n" );
 
-	CSimpleSound::StopMusic();
+	CSoLoudSound::StopMusic();
 
 	PreviousTime = 0.0f;
 	CurrentTime = 0.0f;
@@ -49,7 +49,7 @@ void CGameLayers::Initialize()
 	}
 
 	// Tick once.
-	CSimpleSound::Tick();
+	CSoLoudSound::Tick();
 }
 
 void CGameLayers::Frame()
@@ -86,12 +86,12 @@ void CGameLayers::Tick()
 		}
 	}
 
-	CSimpleSound::Tick();
+	CSoLoudSound::Tick();
 }
 
 void CGameLayers::Shutdown()
 {
-	CSimpleSound::StopAll();
+	CSoLoudSound::StopAll();
 
 	for( auto GameLayer : GameLayers )
 	{

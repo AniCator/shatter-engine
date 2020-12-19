@@ -15,8 +15,8 @@ public:
 	void Tick();
 	void Destroy();
 
-	void Register( CBody* Component );
-	void Unregister( CBody* Component );
+	void Register( CBody* Body );
+	void Unregister( CBody* Body );
 
 	CBody* Cast( const Vector3D& Start, const Vector3D& End );
 private:

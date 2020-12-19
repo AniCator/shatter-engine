@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Physics.h"
 
+#include <set>
 #include <vector>
 
 #include <Engine/Physics/PhysicsComponent.h>
@@ -22,18 +23,18 @@ public:
 
 	}
 
-	void Register( CBody* Component )
+	void Register( CBody* Body )
 	{
-		Components.emplace_back( Component );
+		Bodies.emplace_back( Body );
 	}
 
-	void Unregister( CBody* ComponentIn )
+	void Unregister( CBody* BodyIn )
 	{
-		for( auto& Component : Components )
+		for( auto& Body : Bodies )
 		{
-			if( Component == ComponentIn )
+			if( Body == BodyIn )
 			{
-				Component = nullptr;
+				Body = nullptr;
 				return;
 			}
 		}
@@ -41,41 +42,37 @@ public:
 
 	void Destroy()
 	{
-		Components.clear();
+		Bodies.clear();
 	}
 
 	void Tick()
 	{
-		for( auto ComponentA : Components )
+		for( auto* BodyA : Bodies )
 		{
-			if( ComponentA )
+			if( BodyA )
 			{
-				ComponentA->PreCollision();
+				BodyA->PreCollision();
 
-				if( !ComponentA->Static )
+				// Simulate environmental factors. (gravity etc.)
+				BodyA->Simulate();
+
+				for( auto* BodyB : Bodies )
 				{
-					for( auto ComponentB : Components )
+					if( BodyB && BodyB != BodyA && BodyB->Owner != BodyA->Owner )
 					{
-						if( ComponentB && ComponentB != ComponentA && ComponentB->Owner != ComponentA->Owner )
-						{
-							const FBounds& BoundsA = ComponentA->GetBounds();
-							const FBounds& BoundsB = ComponentB->GetBounds();
-							if( Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
-							{
-								ComponentB->Collision( ComponentA );
-							}
-						}
+						BodyA->Collision( BodyB );
+						BodyB->Collision( BodyA );
 					}
 				}
 
-				ComponentA->Tick();
+				BodyA->Tick();
 			}
 		}
 	}
 
 	CBody* Cast( const Vector3D& Start, const Vector3D& End )
 	{
-		for( auto ComponentA : Components )
+		for( auto ComponentA : Bodies )
 		{
 			FBounds BoundsA = ComponentA->GetBounds();
 
@@ -85,7 +82,7 @@ public:
 	}
 
 private:
-	std::vector<CBody*> Components;
+	std::vector<CBody*> Bodies;
 };
 
 CPhysics::CPhysics()
@@ -115,14 +112,14 @@ void CPhysics::Destroy()
 	Scene->Destroy();
 }
 
-void CPhysics::Register( CBody* Component )
+void CPhysics::Register( CBody* Body )
 {
-	Scene->Register( Component );
+	Scene->Register( Body );
 }
 
-void CPhysics::Unregister( CBody* Component )
+void CPhysics::Unregister( CBody* Body )
 {
-	Scene->Unregister( Component );
+	Scene->Unregister( Body );
 }
 
 CBody* CPhysics::Cast( const Vector3D& Start, const Vector3D& End )

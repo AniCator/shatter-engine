@@ -24,7 +24,7 @@
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
-#include <Engine/Audio/SimpleSound.h>
+#include <Engine/Audio/SoLoudSound.h>
 #include <Engine/Audio/Sound.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/UserInterface.h>
@@ -1142,7 +1142,7 @@ void CApplication::Run()
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
 
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
-	CSimpleSound::Volume( GlobalVolume );
+	CSoLoudSound::Volume( GlobalVolume );
 
 	while( !MainWindow.ShouldClose() )
 	{
@@ -1249,7 +1249,7 @@ void CApplication::Run()
 
 	MainWindow.Terminate();
 
-	CSimpleSound::Shutdown();
+	CSoLoudSound::Shutdown();
 }
 
 void CApplication::Close()
@@ -1875,5 +1875,6 @@ void CApplication::Initialize()
 		WaitForInput = false;
 	}
 
+	CSoLoudSound::Initialize();
 	GameLayersInstance->Initialize();
 }

@@ -12,7 +12,7 @@
 #define ConsoleWindowDisabled
 #endif
 
-inline void BreakDebugger();
+void BreakDebugger();
 
 namespace Log
 {
