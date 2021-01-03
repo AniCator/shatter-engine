@@ -51,17 +51,15 @@ void FTransform::SetSize( const Vector3D& Size )
 
 void FTransform::SetTransform( const Vector3D& Position, const Vector3D& Orientation, const Vector3D& Size )
 {
-	this->StoredPosition = Position;
-	this->StoredOrientation = Orientation;
-	this->StoredSize = Size;
-	Dirty();
+	SetPosition( Position );
+	SetOrientation( Orientation );
+	SetSize( Size );
 }
 
 void FTransform::SetTransform( const Vector3D& Position, const Vector3D& Orientation )
 {
-	this->StoredPosition = Position;
-	this->StoredOrientation = Orientation;
-	Dirty();
+	SetPosition( Position );
+	SetOrientation( Orientation );
 }
 
 Matrix4D& FTransform::GetRotationMatrix()
@@ -130,8 +128,8 @@ glm::vec3 FTransform::Transform( const glm::vec3& Position )
 Vector3D FTransform::Transform( const Vector3D& Position )
 {
 	Update();
-	Vector4D Vector = TransformationMatrix.Transform( Vector4D( Position, 1.0f ) );
-	return Vector3D( Vector.X, Vector.Y, Vector.Z );
+	const Vector4D Vector = TransformationMatrix.Transform( Vector4D( Position, 1.0f ) );
+	return { Vector.X, Vector.Y, Vector.Z };
 }
 
 FTransform FTransform::Transform( const FTransform& B )
@@ -141,15 +139,15 @@ FTransform FTransform::Transform( const FTransform& B )
 	auto NewPosition = Position( B.GetPosition() );
 	Vector3D Position3D = { NewPosition[0], NewPosition[1], NewPosition[2] };
 
-	auto OrientationRadians = glm::radians( Math::ToGLM( B.GetOrientation() ) );
-	auto NewOrientation = RotateEuler( OrientationRadians );
-	NewOrientation = glm::degrees( NewOrientation );
+	auto OrientationRadians = Math::ToRadians( B.GetOrientation() );
+	auto NewOrientation = Rotate( OrientationRadians );
+	NewOrientation = Math::ToDegrees( NewOrientation );
 	Vector3D Orientation3D = { NewOrientation[0], NewOrientation[1], NewOrientation[2] };
 
 	auto NewSize = Scale( B.GetSize() );
 	Vector3D Size3D = { NewSize[0], NewSize[1], NewSize[2] };
 
-	return FTransform( Position3D, Orientation3D, Size3D );
+	return { Position3D, Orientation3D, Size3D };
 }
 
 void FTransform::Dirty()
@@ -177,8 +175,9 @@ void FTransform::Update()
 		glm::quat Yaw = glm::angleAxis( Radians.Y, AxisY );
 		glm::quat Roll = glm::angleAxis( Radians.Z, AxisZ );
 
-		glm::quat Quaternion = Yaw * Pitch * Roll;
-		RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
+		// glm::quat Quaternion = Yaw * Pitch * Roll;
+		// RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
+		RotationMatrix = Math::EulerToMatrix( StoredOrientation );
 
 		TranslationMatrix = IdentityMatrix;
 		TranslationMatrix.Translate( { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );

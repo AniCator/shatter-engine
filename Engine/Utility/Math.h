@@ -47,6 +47,12 @@ NewType* StaticCast( OldType* Object )
 	return static_cast<NewType*>( Object );
 }
 
+template<typename NewType, typename OldType>
+NewType StaticCast( OldType Object )
+{
+	return static_cast<NewType>( Object );
+}
+
 template<typename MatchType, typename Type>
 bool IsType( Type* Object )
 {
@@ -60,6 +66,26 @@ namespace Math
 	static const float Pi2 = 6.28318530717958647692528676655900576f;
 	static const float Tau = 6.28318530717958647692528676655900576f;
 
+	inline float ToRadians( const float& Degrees )
+	{
+		return Degrees * 0.01745329251994329576923690768489f;
+	}
+
+	inline float ToDegrees( const float& Radians )
+	{
+		return Radians * 57.295779513082320876798154814105f;
+	}
+
+	inline Vector3D ToRadians( const Vector3D& Degrees )
+	{
+		return Vector3D( ToRadians( Degrees.X ), ToRadians( Degrees.Y ), ToRadians( Degrees.Z ) );
+	}
+
+	inline Vector3D ToDegrees( const Vector3D& Radians )
+	{
+		return Vector3D( ToDegrees( Radians.X ), ToDegrees( Radians.Y ), ToDegrees( Radians.Z ) );
+	}
+
 	inline glm::vec3 EulerToDirection( const glm::vec3& Euler )
 	{
 		glm::vec3 Direction;
@@ -71,7 +97,7 @@ namespace Math
 		return Direction;
 	}
 
-	inline Vector3D EulerToDirection( const Vector3D& Euler )
+	inline Vector3D EulerToDirectionX( const Vector3D& Euler )
 	{
 		Vector3D Direction;
 		Direction[0] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[2] ) );
@@ -81,6 +107,21 @@ namespace Math
 		return Direction.Normalized();
 	}
 
+	inline Vector3D EulerToDirectionY( const Vector3D& Euler )
+	{
+		Vector3D Direction;
+		Direction[0] = cos( glm::radians( Euler[1] ) ) * cos( glm::radians( Euler[2] ) );
+		Direction[2] = sin( glm::radians( Euler[1] ) );
+		Direction[1] = cos( glm::radians( Euler[1] ) ) * sin( glm::radians( Euler[2] ) );
+
+		return Direction.Normalized();
+	}
+
+	inline Vector3D EulerToDirection( const Vector3D& Euler )
+	{
+		return EulerToDirectionX( Euler );
+	}
+
 	inline Vector3D DirectionToEuler( const Vector3D& Direction )
 	{
 		const float Pitch = asinf( Direction.Z );
@@ -88,6 +129,84 @@ namespace Math
 		const float Roll = 0.0f;
 
 		return Vector3D( Pitch, Roll, Yaw ) * ( 180.0f / Math::Pi );
+	}
+
+	inline Matrix4D EulerToMatrixRadians( const Vector3D& EulerRadians )
+	{
+		// Convert orientation to rotation matrix.
+		Matrix4D Roll; // X-axis
+		Roll[0][0] = 1.0f;
+		Roll[0][1] = 0.0f;
+		Roll[0][2] = 0.0f;
+
+		Roll[1][0] = 0.0f;
+		Roll[1][1] = cosf( EulerRadians.Roll );
+		Roll[1][2] = sinf( EulerRadians.Roll );
+
+		Roll[2][0] = 0.0f;
+		Roll[2][1] = -sinf( EulerRadians.Roll );
+		Roll[2][2] = cosf( EulerRadians.Roll );
+
+		Matrix4D Pitch; // Y-axis
+		Pitch[0][0] = cosf( EulerRadians.Pitch );
+		Pitch[0][1] = 0.0f;
+		Pitch[0][2] = -sinf( EulerRadians.Pitch );
+
+		Pitch[1][0] = 0.0f;
+		Pitch[1][1] = 1.0f;
+		Pitch[1][2] = 0.0f;
+
+		Pitch[2][0] = sinf( EulerRadians.Pitch );
+		Pitch[2][1] = 0.0f;
+		Pitch[2][2] = cosf( EulerRadians.Pitch );
+
+		Matrix4D Yaw; // Z-axis
+		Yaw[0][0] = cosf( EulerRadians.Yaw );
+		Yaw[0][1] = sinf( EulerRadians.Yaw );
+		Yaw[0][2] = 0.0f;
+
+		Yaw[1][0] = -sinf( EulerRadians.Yaw );
+		Yaw[1][1] = cosf( EulerRadians.Yaw );
+		Yaw[1][2] = 0.0f;
+
+		Yaw[2][0] = 0.0f;
+		Yaw[2][1] = 0.0f;
+		Yaw[2][2] = 1.0f;
+
+		return Yaw * Pitch * Roll;
+	}
+
+	inline Matrix4D EulerToMatrix( const Vector3D& EulerDegrees )
+	{
+		return EulerToMatrixRadians( Math::ToRadians( EulerDegrees ) );
+	}
+
+	inline Vector3D MatrixToEulerRadians( const Matrix4D& RotationMatrix )
+	{
+		const float Sy = sqrt( RotationMatrix[0][0] * RotationMatrix[0][0] + RotationMatrix[2][0] * RotationMatrix[2][0] );
+
+		const bool Singular = Sy < 1e-6; // If
+
+		Vector3D EulerRadians;
+		if( !Singular )
+		{
+			EulerRadians.X = atan2( RotationMatrix[2][0], RotationMatrix[0][0] );
+			EulerRadians.Y = atan2( RotationMatrix[1][2], RotationMatrix[1][1] );
+			EulerRadians.Z = atan2( RotationMatrix[1][0], Sy );
+		}
+		else
+		{
+			EulerRadians.X = atan2( RotationMatrix[2][1], RotationMatrix[2][2] );
+			EulerRadians.Y = 0;
+			EulerRadians.Z = atan2( -RotationMatrix[1][0], Sy );
+		}
+
+		return EulerRadians;
+	}
+
+	inline Vector3D MatrixToEuler( const Matrix4D& RotationMatrix )
+	{
+		return Math::ToDegrees( MatrixToEulerRadians( RotationMatrix ) );
 	}
 
 	inline float LengthSquared( const glm::vec2& Vector )
@@ -154,7 +273,7 @@ namespace Math
 
 	// Returns the largest.
 	template<typename T>
-	inline T Max(const T& A, const T& B)
+	inline T Max( const T& A, const T& B )
 	{
 		return std::max( A, B );
 	}
@@ -179,9 +298,9 @@ namespace Math
 	}
 
 	template<typename T>
-	T Sign(const T& Input)
+	T Sign( const T& Input )
 	{
-		return static_cast<T>((0.0f < Input) - (Input < 0.0f));
+		return static_cast<T>( ( 0.0f < Input ) - ( Input < 0.0f ) );
 	}
 
 	template<typename T>
@@ -284,7 +403,7 @@ namespace Math
 		return Min( Min( A, C ), B );
 	}
 
-	inline FBounds AABB(const Vector3D* Positions, uint32_t Count)
+	inline FBounds AABB( const Vector3D* Positions, uint32_t Count )
 	{
 		FBounds AABB;
 		for( uint32_t VertexIndex = 0; VertexIndex < Count; VertexIndex++ )
@@ -490,6 +609,28 @@ namespace Math
 	inline glm::vec2 ToGLM( const Vector2D& Vector )
 	{
 		return glm::vec2( Vector.X, Vector.Y );
+	}
+
+	inline Matrix3D FromGLM( const glm::mat3& Matrix )
+	{
+		Matrix3D Result;
+
+		Result[0] = { Matrix[0][0], Matrix[0][1], Matrix[0][2] };
+		Result[1] = { Matrix[1][0], Matrix[1][1], Matrix[1][2] };
+		Result[2] = { Matrix[2][0], Matrix[2][1], Matrix[2][2] };
+
+		return Result;
+	}
+
+	inline glm::mat3 ToGLM( const Matrix3D& Matrix )
+	{
+		glm::mat3 Result;
+
+		Result[0] = { Matrix[0][0], Matrix[0][1], Matrix[0][2] };
+		Result[1] = { Matrix[1][0], Matrix[1][1], Matrix[1][2] };
+		Result[2] = { Matrix[2][0], Matrix[2][1], Matrix[2][2] };
+
+		return Result;
 	}
 
 	inline Matrix4D FromGLM( const glm::mat4& Matrix )

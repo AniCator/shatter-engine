@@ -23,24 +23,24 @@ public:
 		Translate( Translation );
 	}
 
-	inline void Identity()
+	void Identity()
 	{
 		Columns[X] = { 1.0f, 0.0f ,0.0f };
 		Columns[Y] = { 0.0f, 1.0f ,0.0f };
 		Columns[Z] = { 0.0f, 0.0f ,1.0f };
 	}
 
-	inline void Translate( const Vector2D& Translation )
+	void Translate( const Vector2D& Translation )
 	{
 		Columns[Z] = Columns[X] * Translation.X + Columns[Y] * Translation.Y + Columns[Z];
 	}
 
-	inline void Translate( const Vector3D& Translation )
+	void Translate( const Vector3D& Translation )
 	{
 		Columns[Z] = Columns[X] * Translation.X + Columns[Y] * Translation.Y + Columns[Z];
 	}
 
-	inline Vector2D Rotate( const Vector2D& Vector )
+	Vector2D Rotate( const Vector2D& Vector )
 	{
 		Vector2D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X;
@@ -48,7 +48,7 @@ public:
 		return Result;
 	}
 
-	inline Vector2D Transform( const Vector2D& Vector )
+	Vector2D Transform( const Vector2D& Vector )
 	{
 		Vector2D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X;
@@ -56,7 +56,7 @@ public:
 		return Result;
 	}
 
-	inline Vector3D Transform( const Vector3D& Vector )
+	Vector3D Transform( const Vector3D& Vector )
 	{
 		Vector3D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X * Vector.X;
@@ -65,17 +65,26 @@ public:
 		return Result;
 	}
 
-	inline const Vector3D& operator[]( uint32_t Column ) const
+	Matrix3D operator*( const Matrix3D& B ) const
+	{
+		Matrix3D Result;
+		Result[X] = Columns[X] * B[X][X] + Columns[Y] * B[X][Y] + Columns[Z] * B[X][Z];
+		Result[Y] = Columns[X] * B[Y][X] + Columns[Y] * B[Y][Y] + Columns[Z] * B[Y][Z];
+		Result[Z] = Columns[X] * B[Z][X] + Columns[Y] * B[Z][Y] + Columns[Z] * B[Z][Z];
+		return Result;
+	}
+
+	const Vector3D& operator[]( uint32_t Column ) const
 	{
 		return Columns[Column];
 	}
 
-	inline Vector3D& operator[]( uint32_t Column )
+	Vector3D& operator[]( uint32_t Column )
 	{
 		return Columns[Column];
 	}
 
-	Vector3D Columns[3];
+	Vector3D Columns[3]{};
 
 private:
 	const static uint32_t X = 0;
@@ -97,7 +106,7 @@ public:
 		Translate( Offset );
 	}
 
-	inline void Identity()
+	void Identity()
 	{
 		Columns[X] = { 1.0f, 0.0f ,0.0f, 0.0f };
 		Columns[Y] = { 0.0f, 1.0f ,0.0f, 0.0f };
@@ -105,19 +114,19 @@ public:
 		Columns[W] = { 0.0f, 0.0f ,0.0f, 1.0f };
 	}
 
-	inline void Translate( const Vector3D& Offset )
+	void Translate( const Vector3D& Offset )
 	{
 		Columns[W] = Columns[X] * Offset.X + Columns[Y] * Offset.Y + Columns[Z] * Offset.Z + Columns[W];
 	}
 
-	inline void Scale( const Vector3D& Factor )
+	void Scale( const Vector3D& Factor )
 	{
 		Columns[X][X] *= Factor.X;
 		Columns[Y][Y] *= Factor.Y;
 		Columns[Z][Z] *= Factor.Z;
 	}
 
-	inline void Scale( const Vector4D& Factor )
+	void Scale( const Vector4D& Factor )
 	{
 		Columns[X][X] *= Factor.X;
 		Columns[Y][Y] *= Factor.Y;
@@ -153,7 +162,7 @@ public:
 		return Result;
 	}
 
-	inline Matrix3D To3D() const
+	Matrix3D To3D() const
 	{
 		Matrix3D Matrix;
 		Matrix[X] = { Columns[X].X, Columns[X].Y ,Columns[X].Z };
@@ -172,17 +181,42 @@ public:
 		return Result;
 	}
 
-	inline const Vector4D& operator[](uint32_t Column) const
+	const Vector4D& operator[](uint32_t Column) const
 	{
 		return Columns[Column];
 	}
 
-	inline Vector4D& operator[]( uint32_t Column )
+	Vector4D& operator[]( uint32_t Column )
 	{
 		return Columns[Column];
 	}
 
-	Vector4D Columns[4];
+	Matrix4D& operator=( const Matrix3D& B )
+	{
+		Columns[X][X] = B[X][X];
+		Columns[X][Y] = B[X][Y];
+		Columns[X][Z] = B[X][Z];
+		Columns[X][W] = 0.0f;
+
+		Columns[Y][X] = B[X][X];
+		Columns[Y][Y] = B[X][Y];
+		Columns[Y][Z] = B[X][Z];
+		Columns[Y][W] = 0.0f;
+
+		Columns[Z][X] = B[X][X];
+		Columns[Z][Y] = B[X][Y];
+		Columns[Z][Z] = B[X][Z];
+		Columns[Z][W] = 0.0f;
+
+		Columns[W][X] = 0.0f;
+		Columns[W][Y] = 0.0f;
+		Columns[W][Z] = 0.0f;
+		Columns[W][W] = 1.0f;
+		
+		return *this;
+	}
+
+	Vector4D Columns[4]{};
 
 private:
 	const static uint32_t X = 0;

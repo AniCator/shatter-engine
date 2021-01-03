@@ -37,6 +37,17 @@ public:
 
 	FTransform Transform( const FTransform& B );
 
+	inline FTransform operator*( const FTransform& B )
+	{
+		return Transform( B );
+	};
+
+	inline FTransform operator*=( const FTransform& B )
+	{
+		*this = Transform( B );
+		return *this;
+	};
+
 private:
 	void Dirty();
 	void Update();
