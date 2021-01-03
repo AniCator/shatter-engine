@@ -24,7 +24,7 @@ CMeshEntity::CMeshEntity()
 	Shader = nullptr;
 	Textures.reserve( 8 );
 	Renderable = nullptr;
-	PhysicsComponent = nullptr;
+	PhysicsBody = nullptr;
 	Static = true;
 	Stationary = true;
 	Contact = false;
@@ -96,30 +96,30 @@ void CMeshEntity::Construct()
 			auto Physics = World->GetPhysics();
 			if( Physics )
 			{
-				if( !PhysicsComponent )
+				if( !PhysicsBody )
 				{
 					if( CollisionType == BodyType::Plane )
 					{
-						PhysicsComponent = new CPlaneBody();
+						PhysicsBody = new CPlaneBody();
 					}
 					else if( CollisionType == BodyType::AABB )
 					{
-						PhysicsComponent = new CBody();
+						PhysicsBody = new CBody();
 					}
 					else
 					{
-						PhysicsComponent = new CBody();
+						PhysicsBody = new CBody();
 					}
 
-					PhysicsComponent->Owner = this;
-					PhysicsComponent->Static = Static;
-					PhysicsComponent->Stationary = Stationary;
-					PhysicsComponent->Block = true;
-					PhysicsComponent->LocalBounds = Mesh->GetBounds();
+					PhysicsBody->Owner = this;
+					PhysicsBody->Static = Static;
+					PhysicsBody->Stationary = Stationary;
+					PhysicsBody->Block = true;
+					PhysicsBody->LocalBounds = Mesh->GetBounds();
 
-					if( PhysicsComponent )
+					if( PhysicsBody )
 					{
-						PhysicsComponent->Construct( Physics );
+						PhysicsBody->Construct( Physics );
 					}
 				}
 			}
@@ -151,8 +151,7 @@ void CMeshEntity::Tick()
 		RenderData.Transform = Transform;
 		RenderData.Color = Color;
 
-		CRenderer& Renderer = CWindow::Get().GetRenderer();
-		Renderer.QueueRenderable( Renderable );
+		QueueRenderable( Renderable );
 	}
 }
 
@@ -300,11 +299,11 @@ void CMeshEntity::Frame()
 
 void CMeshEntity::Destroy()
 {
-	if( PhysicsComponent )
+	if( PhysicsBody )
 	{
-		PhysicsComponent->Destroy( GetWorld()->GetPhysics() );
-		delete PhysicsComponent;
-		PhysicsComponent = nullptr;
+		PhysicsBody->Destroy( GetWorld()->GetPhysics() );
+		delete PhysicsBody;
+		PhysicsBody = nullptr;
 	}
 
 	CPointEntity::Destroy();
@@ -331,13 +330,22 @@ void CMeshEntity::Debug()
 		}
 	}
 
+	const auto Position = Transform.GetPosition();
+	const auto ForwardVector = Transform.Rotate( Vector3D( 0.0f, 1.0f, 0.0f ) ).Normalized();
+	const auto RightVector = ForwardVector.Cross( WorldUp );
+	const auto UpVector = RightVector.Cross( ForwardVector );
+
+	UI::AddLine( Position, Position + ForwardVector, Color::Green );
+	UI::AddLine( Position, Position + RightVector, Color::Red );
+	UI::AddLine( Position, Position + UpVector, Color::Blue );
+
 	if( Mesh )
 	{
 		UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, Collision ? ( Contact ? Color::Red : Color::Blue ) : Color::Black );
 
-		if( PhysicsComponent )
+		if( PhysicsBody )
 		{
-			PhysicsComponent->Debug();
+			PhysicsBody->Debug();
 		}
 	}
 }
@@ -544,5 +552,11 @@ FBounds CMeshEntity::GetWorldBounds() const
 
 CBody* CMeshEntity::GetBody() const
 {
-	return PhysicsComponent;
+	return PhysicsBody;
+}
+
+void CMeshEntity::QueueRenderable( CRenderable* Renderable )
+{
+	CRenderer& Renderer = CWindow::Get().GetRenderer();
+	Renderer.QueueRenderable( Renderable );
 }

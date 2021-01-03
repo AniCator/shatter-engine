@@ -67,12 +67,13 @@ public:
 	bool Visible;
 
 protected:
+	static void QueueRenderable( CRenderable* Renderable );
 	FBounds WorldBounds;
 
 	bool Collision;
 	bool Static;
 	bool Stationary;
-	CBody* PhysicsComponent;
+	CBody* PhysicsBody;
 
 	// Name of the current animation.
 	std::string CurrentAnimation;
