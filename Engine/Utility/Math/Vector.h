@@ -203,6 +203,7 @@ public:
 		struct { float X, Y, Z; };
 		struct { float R, G, B; };
 		struct { float S, T, P; };
+		struct { float Pitch, Roll, Yaw; };
 	};
 
 	Vector3D() = default;
