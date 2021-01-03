@@ -7,6 +7,7 @@
 #include <Engine/Display/Rendering/TextureEnumerators.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Primitive.h>
+#include <Engine/Utility/Structures/JSON.h>
 
 class CMesh;
 class CShader;
@@ -104,7 +105,7 @@ public:
 	template<class T>
 	T* FindAsset( const std::string& Name )
 	{
-		return dynamic_cast<T*>( Find<CAsset>( Name, Assets ) );
+		return Cast<T>( Find<CAsset>( Name, Assets ) );
 	}
 
 	const std::string& GetReadableImageFormat( EImageFormat Format );
@@ -163,6 +164,7 @@ private:
 	std::unordered_map<std::string, CAsset*> Assets;
 
 public:
+	static void ParseAndLoadJSON( const JSON::Object& Assets );
 	static CAssets& Get()
 	{
 		static CAssets StaticInstance;
