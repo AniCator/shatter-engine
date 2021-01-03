@@ -431,6 +431,30 @@ namespace UI
 		Texts.emplace_back( Text );
 	}
 
+	void AddText( const Vector2D& Position, const std::string& Name, const Vector3D& Vector, const Color& Color, const float Size )
+	{
+		const std::string VectorString = Name + ": " + std::to_string( Vector.X ) + ", " + std::to_string( Vector.Y ) + ", " + std::to_string( Vector.Z );
+		AddText( Position, VectorString.c_str(), nullptr, Color, Size );
+	}
+
+	void AddText( const Vector3D& Position, const std::string& Name, const Vector3D& Vector, const Color& Color )
+	{
+		const std::string VectorString = Name + ": " + std::to_string( Vector.X ) + ", " + std::to_string( Vector.Y ) + ", " + std::to_string( Vector.Z );
+		AddText( Position, VectorString.c_str(), nullptr, Color );
+	}
+
+	void AddText( const Vector2D& Position, const std::string& Name, const float& Float, const Color& Color, const float Size )
+	{
+		const std::string VectorString = Name + ": " + std::to_string( Float );
+		AddText( Position, VectorString.c_str(), nullptr, Color, Size );
+	}
+
+	void AddText( const Vector3D& Position, const std::string& Name, const float& Float, const Color& Color )
+	{
+		const std::string VectorString = Name + ": " + std::to_string( Float );
+		AddText( Position, VectorString.c_str(), nullptr, Color );
+	}
+
 	void AddImageInternal( const Vector3D& Position, const Vector2D& Size, const ImTextureID Texture, const Color& Color )
 	{	
 		if( DrawList )
