@@ -8,6 +8,8 @@
 
 #include <Engine/Display/UserInterface.h>
 
+static CEntityFactory<CInfoText> Factory( "info_text" );
+
 CInfoText::CInfoText()
 {
 	Text = "";
