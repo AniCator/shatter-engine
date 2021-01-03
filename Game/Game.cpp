@@ -126,6 +126,11 @@ float CGameLayers::GetCurrentTime() const
 	return CurrentTime;
 }
 
+float CGameLayers::GetRealTime() const
+{
+	return CurrentFrameTime;
+}
+
 float CGameLayers::GetDeltaTime() const
 {
 	return DeltaTime;

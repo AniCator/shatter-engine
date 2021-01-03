@@ -41,6 +41,7 @@ public:
 
 	float GetPreviousTime() const;
 	float GetCurrentTime() const;
+	float GetRealTime() const;
 	float GetDeltaTime() const;
 
 	float GetTimeScale() const;
