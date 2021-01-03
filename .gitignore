@@ -48,3 +48,4 @@
 /Output/*.log
 /Output/*.ilk
 *x64/
+/Documentation
