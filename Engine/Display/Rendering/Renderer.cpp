@@ -39,7 +39,6 @@ static const size_t RenderableCapacity = 4096;
 static CShader* DefaultShader = nullptr;
 GLuint ProgramHandle = -1;
 
-static CRenderTexture Framebuffer;
 static CRenderTexture BufferA;
 static CRenderTexture BufferB;
 
@@ -190,7 +189,14 @@ void CRenderer::RefreshFrame()
 
 void CRenderer::QueueRenderable( CRenderable* Renderable )
 {
-	Renderables.emplace_back( Renderable );
+	if( Stage == RenderableStage::Tick )
+	{
+		Renderables.emplace_back( Renderable );
+	}
+	else
+	{
+		RenderablesPerFrame.emplace_back( Renderable );
+	}
 }
 
 void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
@@ -291,72 +297,31 @@ void CRenderer::DrawQueuedRenderables()
 			}
 		}
 
-		return ShaderProgram && VertexBufferObject && IndexBufferObject && Distance;
+		return ShaderProgram && VertexBufferObject && IndexBufferObject;
 	};
 
-	std::sort( Renderables.begin(), Renderables.end(), SortRenderables );
-	std::sort( DynamicRenderables.begin(), DynamicRenderables.end(), SortRenderables );
+	// Create the render queue for this frame.
+	UpdateQueue();
+
+	std::sort( RenderQueue.begin(), RenderQueue.end(), SortRenderables );
 
 	MainPass.ClearTarget();
 
-	int64_t DrawCalls = 0;
+	DrawCalls = 0;
 
 	{
 		Profile( "ERenderPassLocation::PreScene" );
-		for( auto& Pass : Passes )
-		{
-			if( Pass.Pass && Pass.Location == ERenderPassLocation::PreScene )
-			{
-				if( !RenderOnlyMainPass )
-				{
-					Pass.Pass->Target = &Framebuffer;
-				}
-
-				if( Pass.Pass->SendQueuedRenderables )
-				{
-					if( Renderables.size() > 0 )
-					{
-						DrawCalls += Pass.Pass->Render( Renderables, GlobalUniformBuffers );
-					}
-				}
-				else
-				{
-					DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
-				}
-			}
-		}
+		DrawPasses( ERenderPassLocation::PreScene );
 	}
 
 	{
 		Profile( "Main Pass" );
-		DrawCalls += MainPass.Render( Renderables, GlobalUniformBuffers );
-		DrawCalls += MainPass.Render( DynamicRenderables, GlobalUniformBuffers );
+		DrawCalls += MainPass.Render( RenderQueue, GlobalUniformBuffers );
 	}
 
 	{
 		Profile( "ERenderPassLocation::Scene" );
-		for( auto& Pass : Passes )
-		{
-			if( Pass.Pass && Pass.Location == ERenderPassLocation::Scene )
-			{
-				if( !RenderOnlyMainPass )
-				{
-					Pass.Pass->Target = &Framebuffer;
-				}
-
-				if( Pass.Pass->SendQueuedRenderables )
-				{
-					if( Renderables.size() > 0 )
-					{
-						DrawCalls += Pass.Pass->Render( Renderables, GlobalUniformBuffers );
-					}
-				}
-				else
-				{
-					DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
-				}
-			}
-		}
+		DrawPasses( ERenderPassLocation::Scene );
 	}
 
 	Framebuffer.Resolve();
@@ -421,26 +386,7 @@ void CRenderer::DrawQueuedRenderables()
 			
 			if( BufferA.Ready() && BufferB.Ready() )
 			{			
-				for( auto& Pass : Passes )
-				{
-					if( Pass.Pass && Pass.Location == ERenderPassLocation::PostProcess )
-					{
-						Pass.Pass->Target = &BufferA;
-
-						if( Pass.Pass->SendQueuedRenderables )
-						{
-							if( Renderables.size() > 0 )
-							{
-								DrawCalls += Pass.Pass->Render( Renderables, GlobalUniformBuffers );
-							}
-						}
-						else
-						{
-							DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
-						}
-					}
-				}
-
+				DrawPasses( ERenderPassLocation::PostProcess );
 				CopyTexture( &BufferA, &BufferB, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
 			}
 
@@ -471,40 +417,31 @@ void CRenderer::DrawQueuedRenderables()
 
 	{
 		Profile( "ERenderPassLocation::Standard" );
-		for( auto& Pass : Passes )
-		{
-			if( Pass.Pass && Pass.Location == ERenderPassLocation::Standard )
-			{
-				Pass.Pass->Target = nullptr;
-
-				if( Pass.Pass->SendQueuedRenderables )
-				{
-					if( Renderables.size() > 0 )
-					{
-						DrawCalls += Pass.Pass->Render( Renderables, GlobalUniformBuffers );
-					}
-				}
-				else
-				{
-					DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
-				}
-			}
-		}
+		DrawPasses( ERenderPassLocation::Standard );
 	}
 
 	CProfiler& Profiler = CProfiler::Get();
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
-	int64_t RenderablesSize = static_cast<int64_t>( Renderables.size() );
+	const int64_t RenderQueueSize = static_cast<int64_t>( RenderQueue.size() );
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Render Queue", RenderQueueSize ), true );
+
+	const int64_t RenderablesSize = static_cast<int64_t>( Renderables.size() );
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables", RenderablesSize ), true );
 
-	int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
+	const int64_t RenderablesPerFrameSize = static_cast<int64_t>( RenderablesPerFrame.size() );
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Frame)", RenderablesPerFrameSize ), true );
+
+	const int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
 
 	UI::SetCamera( Camera );
 
 	// Clean up render passes.
 	Passes.clear();
+
+	// Clean up per-frame renderables.
+	RenderablesPerFrame.clear();
 }
 
 void CRenderer::SetUniformBuffer( const std::string& Name, const Vector4D& Value )
@@ -585,6 +522,16 @@ void CRenderer::AddRenderPass( CRenderPass* Pass, ERenderPassLocation::Type Loca
 	Passes.emplace_back( RenderPass );
 }
 
+void CRenderer::UpdateRenderableStage( const RenderableStage::Type& Stage )
+{
+	this->Stage = Stage;
+}
+
+const CRenderTexture& CRenderer::GetFramebuffer() const
+{
+	return Framebuffer;
+}
+
 void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 {
 	CShader* Shader = Renderable->GetShader();
@@ -598,4 +545,45 @@ void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 	{
 		ProgramHandle = Shader->Activate();
 	}
+}
+
+void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location )
+{
+	const bool RenderOnlyMainPass = SkipRenderPasses || ForceWireFrame;
+	for( auto& Pass : Passes )
+	{
+		if( Pass.Pass && Pass.Location == Location )
+		{
+			if( !RenderOnlyMainPass )
+			{
+				Pass.Pass->Target = &Framebuffer;
+			}
+
+			// Standard passes should be rendered directly to the window buffer.
+			if( Location == ERenderPassLocation::Standard )
+			{
+				Pass.Pass->Target = nullptr;
+			}
+
+			if( Pass.Pass->SendQueuedRenderables )
+			{
+				if( !RenderQueue.empty() )
+				{
+					DrawCalls += Pass.Pass->Render( RenderQueue, GlobalUniformBuffers );
+				}
+			}
+			else
+			{
+				DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
+			}
+		}
+	}
+}
+
+void CRenderer::UpdateQueue()
+{
+	RenderQueue.clear();
+	RenderQueue.insert( RenderQueue.end(), Renderables.begin(), Renderables.end() );
+	RenderQueue.insert( RenderQueue.end(), RenderablesPerFrame.begin(), RenderablesPerFrame.end() );
+	RenderQueue.insert( RenderQueue.end(), DynamicRenderables.begin(), DynamicRenderables.end() );
 }

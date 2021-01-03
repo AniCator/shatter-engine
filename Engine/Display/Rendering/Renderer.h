@@ -5,6 +5,7 @@
 #include <unordered_map>
 
 #include <Engine/Display/Rendering/RenderPass.h>
+#include <Engine/Display/Rendering/RenderTexture.h>
 #include <Engine/Display/Rendering/Uniform.h>
 
 #include "Camera.h"
@@ -29,6 +30,15 @@ struct FRenderPass
 	ERenderPassLocation::Type Location;
 	CRenderPass* Pass;
 };
+
+namespace RenderableStage
+{
+	enum Type
+	{
+		Tick = 0,
+		Frame
+	};
+}
 
 class CRenderer
 {
@@ -56,6 +66,9 @@ public:
 	Vector2D WorldToScreenPosition( const Vector3D& WorldPosition ) const;
 
 	void AddRenderPass( CRenderPass* Pass, ERenderPassLocation::Type Location );
+	void UpdateRenderableStage( const RenderableStage::Type& Stage );
+
+	const CRenderTexture& GetFramebuffer() const;
 
 	bool ForceWireFrame;
 
@@ -63,9 +76,26 @@ protected:
 	void RefreshShaderHandle( CRenderable* Renderable );
 
 private:
+	void DrawPasses( const ERenderPassLocation::Type& Location );
+	void UpdateQueue();
+
+	int64_t DrawCalls = 0;
+	
+	// Render queue for a single frame. Used to concatenate renderable vectors.
+	std::vector<CRenderable*> RenderQueue;
+	
+	// Persistent renderables that are added in tick functions.
 	std::vector<CRenderable*> Renderables;
+
+	// Persistent renderables that are added in frame functions.
+	std::vector<CRenderable*> RenderablesPerFrame;
+
+	// Dynamic renderables that are deleted by the renderer after they have been rendered.
 	std::vector<CRenderable*> DynamicRenderables;
 	UniformMap GlobalUniformBuffers;
+
+	// The main framebuffer.
+	CRenderTexture Framebuffer;
 
 	CCamera Camera;
 	
@@ -73,4 +103,7 @@ private:
 	int ViewportHeight;
 
 	std::vector<FRenderPass> Passes;
+
+	// Used to determine which renderables to clear.
+	RenderableStage::Type Stage = RenderableStage::Tick;
 };

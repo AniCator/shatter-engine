@@ -1207,6 +1207,9 @@ void CApplication::Run()
 					GameLayersInstance->Time( ScaledGameTime );
 					GameLayersInstance->SetTimeScale( TimeScaleGlobal );
 
+					// Update the renderable stage for tick functions.
+					Renderer.UpdateRenderableStage( RenderableStage::Tick );
+					
 					// Tick all game layers
 					GameLayersInstance->Tick();
 
@@ -1225,6 +1228,7 @@ void CApplication::Run()
 			}
 
 			{
+				Renderer.UpdateRenderableStage( RenderableStage::Frame );
 				GameLayersInstance->Frame();
 
 #if defined( IMGUI_ENABLED )
