@@ -44,7 +44,7 @@ public:
 
 	void Clear();
 
-	void Start( const float FadeIn = -1.0f );
+	int32_t Start( const Spatial Information = Spatial() );
 	void Stop( const float FadeOut = -1.0f );
 	void Loop( const bool Loop );
 	void Rate( const float Rate );
@@ -53,8 +53,21 @@ public:
 	void Offset( const float Offset );
 	bool Playing();
 	void Volume( const float Volume );
+	void Fade( const float Volume, const float Time );
 
 	void SetPlayMode( ESoundPlayMode::Type NewPlayMode );
+
+	void Update( const int32_t& Handle, const Vector3D& Position, const Vector3D& Velocity );
+
+	std::vector<SoundHandle> GetSoundHandles() const
+	{
+		return SoundHandles;
+	}
+	
+	std::vector<StreamHandle> GetStreamHandles() const
+	{
+		return StreamHandles;
+	}
 
 private:
 	std::vector<SoundBufferHandle> BufferHandles;

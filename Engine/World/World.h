@@ -12,6 +12,13 @@
 class CEntity;
 class CPhysics;
 
+//struct Event
+//{
+//	CTimer Timer;
+//	float Interval;
+//	std::function<void> Callback;
+//};
+
 class CWorld
 {
 public:
@@ -106,6 +113,8 @@ private:
 	std::deque<CLevel> Levels;
 	CLevel* ActiveLevel;
 
+	Vector3D CameraPosition = Vector3D::Zero;
+	CCamera* PreviousCamera = nullptr;
 	CCamera* Camera;
 	uint32_t CameraPriority;
 

@@ -74,7 +74,22 @@ void CWorld::Tick()
 		auto Width = Configuration.GetInteger( "width" );
 		auto Height = Configuration.GetInteger( "height" );
 		Setup.AspectRatio = static_cast<float>( Width ) / static_cast<float>( Height );
+
+		Vector3D Velocity = Vector3D::Zero;
+		if( Camera == PreviousCamera )
+		{
+			Velocity = Setup.CameraPosition - CameraPosition;
+		}
+
+		CameraPosition = Setup.CameraPosition;
+		
+		CSoLoudSound::SetListenerPosition( Setup.CameraPosition );
+		CSoLoudSound::SetListenerDirection( Setup.CameraDirection );
+		CSoLoudSound::SetListenerUpDirection( Setup.CameraUpVector );
+		CSoLoudSound::SetListenerVelocity( Velocity );
 	}
+
+	PreviousCamera = Camera;
 
 	if( Physics )
 	{
@@ -84,6 +99,11 @@ void CWorld::Tick()
 
 void CWorld::Destroy()
 {
+	if( PrimaryWorld == this )
+	{
+		PrimaryWorld = nullptr;
+	}
+	
 	Camera = nullptr;
 
 	for( auto Level : Levels )

@@ -4,10 +4,17 @@
 #include <ThirdParty/SoLoud/include/soloud.h>
 #include <ThirdParty/SoLoud/include/soloud_wav.h>
 #include <ThirdParty/SoLoud/include/soloud_wavstream.h>
+#include <ThirdParty/SoLoud/include/soloud_speech.h>
+#include <ThirdParty/SoLoud/include/soloud_freeverbfilter.h>
+#include <ThirdParty/SoLoud/include/soloud_echofilter.h>
 
+#include <Engine/World/Entity/MeshEntity/MeshEntity.h>
+
+#include <Engine/Physics/Body/Body.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/File.h>
+#include <Engine/Utility/Math.h>
 
 #undef GetCurrentTime
 #include <Game/Game.h>
@@ -19,6 +26,86 @@ std::vector<FStream> CSoLoudSound::Streams;
 float CSoLoudSound::GlobalVolume = 1.0f;
 
 SoLoud::Soloud Engine;
+SoLoud::FreeverbFilter ReverbEarlyReflection;
+SoLoud::FreeverbFilter ReverbTail;
+SoLoud::EchoFilter Echo;
+
+SoLoud::Bus Mixer[Bus::Maximum];
+SoLoud::handle MixerHandles[Bus::Maximum];
+
+struct ReverbParameters
+{
+	float Freeze = 0.0f;
+	float RoomSize = 0.5f;
+	float Dampening = 0.5f;
+	float Width = 1.0f;
+	float Wet = 1.0f;
+};
+
+struct DelayParameters
+{
+	float Wet = 1.0f;
+	float Delay = 0.01f;
+	float Decay = 0.3f;
+	float Filter = 0.1f;
+};
+
+Spatial Spatial::Create( CMeshEntity* Entity )
+{
+	Spatial Information;
+	if( !Entity )
+		return Information;
+
+	const auto* Body = Entity->GetBody();
+	if( !Body )
+		return Information;
+
+	Information = Create( Body->GetTransform().GetPosition(), Body->Velocity );
+	return Information;
+}
+
+void Configure3DSound( SoLoud::handle Handle, const Spatial& Information )
+{
+	Engine.set3dSourceAttenuation( Handle, Information.Attenuation, Information.Rolloff );
+	Engine.set3dSourceMinMaxDistance( Handle, Information.MinimumDistance, Information.MaximumDistance );
+	Engine.set3dSourceDopplerFactor( Handle, Information.Doppler );
+	Engine.setInaudibleBehavior( Handle, false, true );
+}
+
+SoLoud::handle PlaySound( SoLoud::AudioSource& AudioSource, const Spatial& Information )
+{
+	SoLoud::handle Handle;
+	unsigned int SelectedBus = Information.Bus;
+	if( SelectedBus >= Bus::Maximum )
+	{
+		SelectedBus = Bus::SFX;
+	}
+
+	const bool FadeIn = Information.FadeIn > 0.0f;
+	
+	if( Information.Is3D )
+	{
+		Handle = Mixer[SelectedBus].play3d( AudioSource,
+				Information.Position.X, Information.Position.Y, Information.Position.Z,
+				Information.Velocity.X, Information.Velocity.Y, Information.Velocity.Z,
+				FadeIn ? 0.0f : Information.Volume * 0.01f, Information.StartPaused );
+
+		Configure3DSound( Handle, Information );
+
+		if( Information.DelayByDistance )
+		{
+			AudioSource.set3dDistanceDelay( true );
+		}
+	}
+	else
+	{
+		Handle = Mixer[SelectedBus].play( AudioSource, Information.Volume * 0.01f, 0.0f, Information.StartPaused );
+	}
+
+	Engine.setRelativePlaySpeed( Handle, Information.Rate );
+
+	return Handle;
+}
 
 SoundBufferHandle CSoLoudSound::Sound( const std::string& ResourcePath )
 {
@@ -56,14 +143,37 @@ StreamHandle CSoLoudSound::Music( const std::string& ResourcePath )
 	return EmptyHandle<StreamHandle>();
 }
 
-SoundHandle CSoLoudSound::Start( SoundBufferHandle Handle )
+SoLoud::Speech Speech;
+void CSoLoudSound::Speak( const std::string& Sentence, const Spatial Information )
+{
+	Speech.setText( Sentence.c_str() );
+	Speech.setParams( Math::RandomRangeInteger( 2000, 3000 ), 5.0f );
+
+	unsigned int SelectedBus = Information.Bus;
+	if( SelectedBus >= Bus::Maximum )
+	{
+		SelectedBus = Bus::SFX;
+	}
+	
+	Mixer[SelectedBus].play( Speech, 2.0f );
+}
+
+SoundHandle CSoLoudSound::Start( SoundBufferHandle Handle, const Spatial Information )
 {
 	if( Handle.Handle < SoundBuffers.size() )
 	{
 		auto& AudioSource = *SoundBuffers[Handle.Handle];
 
+		unsigned int SelectedBus = Information.Bus;
+		if( SelectedBus >= Bus::Maximum )
+		{
+			SelectedBus = Bus::SFX;
+		}
+
+		const bool FadeIn = Information.FadeIn > 0.0f;
 		FSound NewSound;
-		NewSound.Voice = Engine.play( AudioSource );
+		NewSound.Voice = PlaySound( AudioSource, Information );
+		
 		NewSound.Playing = true;
 		NewSound.Buffer = Handle;
 
@@ -71,13 +181,19 @@ SoundHandle CSoLoudSound::Start( SoundBufferHandle Handle )
 		
 		SoundHandle Handle;
 		Handle.Handle = Sounds.size() - 1;
+
+		if( FadeIn )
+		{
+			Fade( Handle, 100.0f, Information.FadeIn );
+		}
+		
 		return Handle;
 	}
 	
 	return EmptyHandle<SoundHandle>();
 }
 
-StreamHandle CSoLoudSound::Start( StreamHandle Handle, const float FadeIn )
+StreamHandle CSoLoudSound::Start( StreamHandle Handle, const Spatial Information )
 {
 	if( GlobalVolume == 0.0f )
 		return EmptyHandle<StreamHandle>();
@@ -91,16 +207,26 @@ StreamHandle CSoLoudSound::Start( StreamHandle Handle, const float FadeIn )
 		
 		FStream NewStream;
 		NewStream.Playing = true;
-		NewStream.FadeDuration = FadeIn;
-		NewStream.FadeIn = FadeIn > 0.0f;
+		NewStream.FadeDuration = Information.FadeIn;
+		NewStream.FadeIn = Information.FadeIn > 0.0f;
 		NewStream.StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 		NewStream.Buffer = Handle;
 
-		NewStream.Stream = Engine.play( AudioSource, NewStream.FadeIn ? 0.0f : -1.0f );
+		NewStream.Stream = PlaySound( AudioSource, Information );
+
 		Streams.emplace_back( NewStream );
+
+		// Always tick inaudible streams.
+		Engine.setInaudibleBehavior( NewStream.Stream, true, false );
 
 		StreamHandle Handle;
 		Handle.Handle = Streams.size() - 1;
+
+		if( NewStream.FadeIn )
+		{
+			Fade( Handle, 100.0f, Information.FadeIn );
+		}
+		
 		return Handle;
 	}
 
@@ -133,6 +259,8 @@ void CSoLoudSound::Stop( StreamHandle Handle, const float FadeOut )
 			Streams[Handle.Handle].FadeDuration = FadeOut;
 			Streams[Handle.Handle].FadeIn = false;
 			Streams[Handle.Handle].StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
+
+			Fade( Handle, 0.0f, FadeOut );
 		}
 	}
 }
@@ -270,11 +398,89 @@ bool CSoLoudSound::Playing( StreamHandle Handle )
 void CSoLoudSound::Volume( SoundHandle Handle, const float Volume )
 {
 	Sounds[Handle.Handle].Volume = Volume * 0.01f;
+	Engine.setVolume( Sounds[Handle.Handle].Voice, Volume * 0.01f );
 }
 
 void CSoLoudSound::Volume( StreamHandle Handle, const float Volume )
 {
 	Streams[Handle.Handle].Volume = Volume * 0.01f;
+	Engine.setVolume( Streams[Handle.Handle].Stream, Volume * 0.01f );
+}
+
+void CSoLoudSound::Fade( SoundHandle Handle, const float Volume, const float Time )
+{
+	Engine.fadeVolume( Sounds[Handle.Handle].Voice, Volume * 0.01f, Time );
+}
+
+void CSoLoudSound::Fade( StreamHandle Handle, const float Volume, const float Time )
+{
+	Engine.fadeVolume( Streams[Handle.Handle].Stream, Volume * 0.01f, Time );
+}
+
+SoLoud::handle CreateGroup( const std::vector<StreamHandle>& Handles )
+{
+	const auto VoiceGroup = Engine.createVoiceGroup();
+	for( const auto& Handle : Handles )
+	{
+		Engine.addVoiceToGroup( VoiceGroup, Handle.Handle );
+	}
+
+	return VoiceGroup;
+}
+
+void DeleteGroup( const SoLoud::handle& VoiceGroup )
+{
+	Engine.destroyVoiceGroup( VoiceGroup );
+}
+
+void CSoLoudSound::GroupPause( const std::vector<StreamHandle>& Handles, const bool State )
+{
+	const auto PauseGroup = CreateGroup( Handles );
+	Engine.setPause( PauseGroup, State );
+	DeleteGroup( PauseGroup );
+}
+
+void CSoLoudSound::GroupProtect( const std::vector<StreamHandle>& Handles, const bool State )
+{
+	const auto ProtectGroup = CreateGroup( Handles );
+	Engine.setProtectVoice( ProtectGroup, State );
+	DeleteGroup( ProtectGroup );
+}
+
+void CSoLoudSound::SetListenerPosition( const Vector3D& Position )
+{
+	Engine.set3dListenerPosition( Position.X, Position.Y, Position.Z );
+}
+
+void CSoLoudSound::SetListenerDirection( const Vector3D& Direction )
+{
+	Engine.set3dListenerAt( Direction.X, Direction.Y, Direction.Z );
+}
+
+void CSoLoudSound::SetListenerUpDirection( const Vector3D& Direction )
+{
+	Engine.set3dListenerUp( Direction.X, Direction.Y, Direction.Z );
+}
+
+void CSoLoudSound::SetListenerVelocity( const Vector3D& Velocity )
+{
+	Engine.set3dListenerVelocity( Velocity.X, Velocity.Y, Velocity.Z );
+}
+
+void CSoLoudSound::Update( SoundHandle Handle, const Vector3D& Position, const Vector3D& Velocity )
+{
+	Engine.set3dSourceParameters( Sounds[Handle.Handle].Voice,
+		Position.X, Position.Y, Position.Z,
+		Velocity.X, Velocity.Y, Velocity.Z
+	);
+}
+
+void CSoLoudSound::Update( StreamHandle Handle, const Vector3D& Position, const Vector3D& Velocity )
+{
+	Engine.set3dSourceParameters( Streams[Handle.Handle].Stream,
+		Position.X, Position.Y, Position.Z,
+		Velocity.X, Velocity.Y, Velocity.Z
+	);
 }
 
 void CSoLoudSound::Volume( const float GlobalVolumeIn )
@@ -287,9 +493,6 @@ void CSoLoudSound::Tick()
 	Profile( "Sound" );
 
 	CProfiler& Profiler = CProfiler::Get();
-	// Profiler.AddCounterEntry( FProfileTimeEntry( "Sound Buffers", Sounds.size() ), true );
-	// Profiler.AddCounterEntry( FProfileTimeEntry( "Stream Buffers", Streams.size() ), true );
-
 	const auto CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 
 	size_t ActiveStreams = 0;
@@ -301,44 +504,10 @@ void CSoLoudSound::Tick()
 		if( Stream.Stream && Stream.Playing )
 		{
 			ActiveStreams++;
-			
+		
 			StreamHandle Handle;
 			Handle.Handle = StreamIndex - 1;
 			Stream.Playing = Playing( Handle );
-
-			if( Stream.FadeDuration > 0.0f )
-			{
-				if( Stream.FadeIn )
-				{
-					const float DeltaTime = CurrentTime - Stream.StartTime;
-					float Alpha = DeltaTime / Stream.FadeDuration;
-					Alpha *= Alpha * Alpha;
-					if( Alpha < 1.0f && Alpha > 0.0f )
-					{
-						Engine.setVolume( Stream.Stream, Alpha * Stream.Volume );
-					}
-				}
-				else
-				{
-					const float DeltaTime = CurrentTime - Stream.StartTime;
-					float Alpha = DeltaTime / Stream.FadeDuration;
-					// Alpha *= Alpha * Alpha;
-					Alpha = 1.0f - Alpha;
-					if( Alpha < 1.0f && Alpha > 0.0f )
-					{
-						Engine.setVolume( Stream.Stream, Alpha * Stream.Volume );
-					}
-					else if( Alpha < 0.0f )
-					{
-						Engine.stop( Stream.Stream );
-						Stream.Playing = false;
-					}
-				}
-			}
-			else
-			{
-				Engine.setVolume( Stream.Stream, Stream.Volume );
-			}
 		}
 	}
 
@@ -365,13 +534,106 @@ void CSoLoudSound::Tick()
 		}
 	}
 
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Active Sounds", ActiveSounds ), true );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Active Streams", ActiveStreams ), true );
+	DelayParameters DelayParameter;
+	DelayParameter.Wet = 0.12f;
+	DelayParameter.Delay = 0.343f;
+	DelayParameter.Decay = 0.25f;
+	DelayParameter.Filter = 0.1f;
+
+	Echo.getParamName( 0 );
+	
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 1, 0, DelayParameter.Wet );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 1, 1, DelayParameter.Delay );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 1, 2, DelayParameter.Decay );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 1, 3, DelayParameter.Filter );
+
+	ReverbParameters Parameters;
+	Parameters.Wet = 0.03f;
+	Parameters.Freeze = 0.0f;
+	Parameters.RoomSize = 0.2f;
+	Parameters.Dampening = 0.7f;
+	Parameters.Width = 0.5f;
+	
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 0, Parameters.Wet );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 1, Parameters.Freeze );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 2, Parameters.RoomSize );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 3, Parameters.Dampening );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 4, Parameters.Width );
+
+	Parameters.Wet = 0.003f;
+	Parameters.Freeze = 0.0f;
+	Parameters.RoomSize = 1.0f;
+	Parameters.Dampening = 0.0f;
+	Parameters.Width = 1.0f;
+
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 0, Parameters.Wet );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 1, Parameters.Freeze );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 2, Parameters.RoomSize );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 3, Parameters.Dampening );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 4, Parameters.Width );
+
+	Engine.update3dAudio();
+
+	const auto SoundEntry = FProfileTimeEntry( "Active Sounds", ActiveSounds );
+	Profiler.AddCounterEntry( SoundEntry, true );
+
+	const auto StreamEntry = FProfileTimeEntry( "Active Streams", ActiveStreams );
+	Profiler.AddCounterEntry( StreamEntry, true );
+
+	const auto VoiceEntry = FProfileTimeEntry( "Active Voices", Engine.getActiveVoiceCount() );
+	Profiler.AddCounterEntry( VoiceEntry, true );
 }
 
 void CSoLoudSound::Initialize()
 {
 	Engine.init();
+
+	for( SoLoud::handle Handle = 0; Handle < Bus::Maximum; Handle++ )
+	{
+		MixerHandles[Handle] = Engine.play( Mixer[Handle] );
+	}
+
+	Mixer[Bus::SFX].setFilter( 1, &Echo );
+
+	DelayParameters DelayParameter;
+	DelayParameter.Wet = 0.12f;
+	DelayParameter.Delay = 0.343f;
+	DelayParameter.Decay = 0.25f;
+	DelayParameter.Filter = 0.1f;
+	
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 1, 0, DelayParameter.Wet );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 1, 1, DelayParameter.Delay );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 1, 2, DelayParameter.Decay );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 1, 3, DelayParameter.Filter );
+
+	Mixer[Bus::SFX].setFilter( 2, &ReverbEarlyReflection );
+
+	ReverbParameters Parameters;
+	Parameters.Wet = 0.03f;
+	Parameters.Freeze = 0.0f;
+	Parameters.RoomSize = 0.2f;
+	Parameters.Dampening = 0.7f;
+	Parameters.Width = 0.5f;
+
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 0, Parameters.Wet );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 1, Parameters.Freeze );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 2, Parameters.RoomSize );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 3, Parameters.Dampening );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 2, 4, Parameters.Width );
+
+	Mixer[Bus::SFX].setFilter( 3, &ReverbTail );
+
+	Parameters.Wet = 0.003f;
+	Parameters.Freeze = 0.0f;
+	Parameters.RoomSize = 1.0f;
+	Parameters.Dampening = 0.0f;
+	Parameters.Width = 1.0f;
+
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 0, Parameters.Wet );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 1, Parameters.Freeze );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 2, Parameters.RoomSize );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 3, Parameters.Dampening );
+	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 4, Parameters.Width );
 }
 
 void CSoLoudSound::Shutdown()

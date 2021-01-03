@@ -93,7 +93,10 @@ struct FEventAudio : FTrackEvent
 		if( Sound && !Sound->Playing() )
 		{
 			Sound->Volume( Volume );
-			Sound->Start( FadeIn );
+			
+			auto Information = Spatial::Create();
+			Information.FadeIn = FadeIn;
+			Sound->Start( Information );
 		}
 	}
 

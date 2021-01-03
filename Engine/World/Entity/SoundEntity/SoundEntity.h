@@ -38,6 +38,7 @@ public:
 	float FadeOut;
 	bool AutoPlay;
 	bool Loop;
+	bool Is3D = true;
 
 	bool AutoPlayed;
 

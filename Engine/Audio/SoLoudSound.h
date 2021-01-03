@@ -5,6 +5,8 @@
 #include <vector>
 #include <deque>
 
+#include <Engine/Utility/Math/Vector.h>
+
 static const int32_t InvalidHandle = -1;
 
 template<typename HandleType>
@@ -39,6 +41,24 @@ namespace SoLoud
 	class WavStream;
 }
 
+namespace Bus
+{
+	enum Type
+	{
+		SFX,
+		Dialogue,
+		Music,
+		UI,
+		Auxilery3,
+		Auxilery4,
+		Auxilery5,
+		Auxilery6,
+		Auxilery7,
+		Auxilery8,
+		Maximum
+	};
+}
+
 struct FSound
 {
 	SoLoudHandle Voice = 0;
@@ -58,14 +78,92 @@ struct FStream
 	bool Playing = false;
 };
 
+namespace Attenuation
+{
+	enum Type
+	{
+		// No attenuation
+		Off = 0,
+		// Inverse distance attenuation model
+		Inverse = 1,
+		// Linear distance attenuation model
+		Linear = 2,
+		// Exponential distance attenuation model
+		Exponential = 3
+	};
+}
+
+// Meta-data for 3D sounds.
+struct Spatial
+{
+	bool Is3D = false;
+	Vector3D Position = Vector3D::Zero;
+	Vector3D Velocity = Vector3D::Zero;
+	
+	float MinimumDistance = 5.0f;
+	float MaximumDistance = 10000.0f;
+	bool DelayByDistance = false;
+
+	Attenuation::Type Attenuation = Attenuation::Inverse;
+	float Rolloff = 2.0f;
+	float Doppler = 3.43f;
+
+	Bus::Type Bus = Bus::SFX;
+	bool StartPaused = false;
+	float FadeIn = -1.0f;
+	float Volume = 100.0f;
+	float Rate = 1.0f;
+
+	static Spatial Create()
+	{
+		return {};
+	}
+
+	static Spatial CreateDialogue()
+	{
+		Spatial Information;
+		Information.Bus = Bus::Dialogue;
+		return Information;
+	}
+
+	static Spatial CreateMusic()
+	{
+		Spatial Information;
+		Information.Bus = Bus::Music;
+		return Information;
+	}
+
+	static Spatial CreateUI()
+	{
+		Spatial Information;
+		Information.Bus = Bus::UI;
+		return Information;
+	}
+
+	static Spatial Create(
+		const Vector3D& Position, 
+		const Vector3D& Velocity
+	)
+	{
+		Spatial Information;
+		Information.Is3D = true;
+		Information.Position = Position;
+		Information.Velocity = Velocity;
+		return Information;
+	}
+
+	static Spatial Create( class CMeshEntity* Entity );
+};
+
 class CSoLoudSound
 {
 public:
 	static SoundBufferHandle Sound( const std::string& ResourcePath );
 	static StreamHandle Music( const std::string& ResourcePath );
+	static void Speak( const std::string& Sentence, const Spatial Information = Spatial() );
 
-	static SoundHandle Start( SoundBufferHandle Handle );
-	static StreamHandle Start( StreamHandle Handle, const float FadeIn = -1.0f );
+	static SoundHandle Start( SoundBufferHandle Handle, const Spatial Information = Spatial() );
+	static StreamHandle Start( StreamHandle Handle, const Spatial Information = Spatial() );
 
 	static void Stop( SoundHandle Handle );
 	static void Stop( StreamHandle Handle, const float FadeOut = -1.0f );
@@ -96,6 +194,20 @@ public:
 	static void Volume( StreamHandle Handle, const float Volume );
 
 	static void Volume( const float GlobalVolume );
+
+	static void Fade( SoundHandle Handle, const float Volume, const float Time );
+	static void Fade( StreamHandle Handle, const float Volume, const float Time );
+
+	static void GroupPause( const std::vector<StreamHandle>& Handles, const bool State );
+	static void GroupProtect( const std::vector<StreamHandle>& Handles, const bool State );
+
+	static void SetListenerPosition( const Vector3D& Position );
+	static void SetListenerDirection( const Vector3D& Direction );
+	static void SetListenerUpDirection( const Vector3D& Direction );
+	static void SetListenerVelocity( const Vector3D& Velocity );
+
+	static void Update( SoundHandle Handle, const Vector3D& Position, const Vector3D& Velocity );
+	static void Update( StreamHandle Handle, const Vector3D& Position, const Vector3D& Velocity );
 
 	static void Tick();
 

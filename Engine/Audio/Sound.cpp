@@ -81,24 +81,28 @@ void CSound::Clear()
 	StreamHandles.clear();
 }
 
-void CSound::Start( const float FadeIn )
+int32_t CSound::Start( const Spatial Information )
 {
 	if( SoundType == ESoundType::Memory )
 	{
-		auto Handle = CSoLoudSound::Start( Select() );
+		auto Handle = CSoLoudSound::Start( Select(), Information );
 		if( Handle.Handle > InvalidHandle )
 		{
 			SoundHandles.emplace_back( Handle );
+			return Handle.Handle;
 		}
 	}
 	else if( !StreamBufferHandles.empty() )
 	{
-		auto Handle = CSoLoudSound::Start( StreamBufferHandles[0], FadeIn );
+		auto Handle = CSoLoudSound::Start( StreamBufferHandles[0], Information );
 		if( Handle.Handle > InvalidHandle )
 		{
 			StreamHandles.emplace_back( Handle );
+			return Handle.Handle;
 		}
 	}
+
+	return -1;
 }
 
 void CSound::Stop( const float FadeOut )
@@ -261,9 +265,51 @@ void CSound::Volume( const float Volume )
 	}
 }
 
+void CSound::Fade( const float Volume, const float Time )
+{
+	if( SoundType == ESoundType::Memory )
+	{
+		for( const auto& Handle : SoundHandles )
+		{
+			CSoLoudSound::Fade( Handle, Volume, Time );
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			CSoLoudSound::Fade( Handle, Volume, Time );
+		}
+	}
+}
+
 void CSound::SetPlayMode( ESoundPlayMode::Type NewPlayMode )
 {
 	PlayMode = NewPlayMode;
+}
+
+void CSound::Update( const int32_t& HandleIn, const Vector3D& Position, const Vector3D& Velocity )
+{
+	if( SoundType == ESoundType::Memory )
+	{
+		for( const auto& Handle : SoundHandles )
+		{
+			if( Handle.Handle == HandleIn )
+			{
+				CSoLoudSound::Update( Handle, Position, Velocity );
+			}
+		}
+	}
+	else
+	{
+		for( const auto& Handle : StreamHandles )
+		{
+			if( Handle.Handle == HandleIn )
+			{
+				CSoLoudSound::Update( Handle, Position, Velocity );
+			}
+		}
+	}
 }
 
 SoundBufferHandle CSound::Select()

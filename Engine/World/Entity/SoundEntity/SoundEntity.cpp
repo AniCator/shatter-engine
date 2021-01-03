@@ -108,6 +108,17 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 				Loop = true;
 			}
 		}
+		else if( Property->Key == "3d" )
+		{
+			if( Property->Value == "0" )
+			{
+				Is3D = false;
+			}
+			else
+			{
+				Is3D = true;
+			}
+		}
 	}
 
 	Spawn( Transform );
@@ -117,7 +128,30 @@ void CSoundEntity::Play()
 {
 	if( Sound )
 	{
-		Sound->Start( FadeIn );
+		Spatial Information;
+		if( Is3D )
+		{
+			Information = Spatial::Create( Transform.GetPosition(), Vector3D::Zero );
+		}
+		
+		if( Falloff == EFalloff::None )
+		{
+			Information.Attenuation = Attenuation::Off;
+		}
+		else if( Falloff == EFalloff::Linear )
+		{
+			Information.Attenuation = Attenuation::Linear;
+		}
+		else if( Falloff == EFalloff::InverseSquare )
+		{
+			Information.Attenuation = Attenuation::Inverse;
+		}
+
+		Information.MinimumDistance = Radius;
+		
+		Information.FadeIn = FadeIn;
+		Sound->Start( Information );
+		Sound->Volume( Volume );
 	}
 }
 
@@ -135,29 +169,28 @@ void CSoundEntity::UpdateSound()
 	{
 		if( AutoPlay && !AutoPlayed )
 		{
-			AutoPlayed = true;
-			Sound->Start( FadeIn );
+			Play();
 			Sound->Loop( Loop );
+			AutoPlayed = true;
 		}
 
-		if( Falloff == EFalloff::None )
+		if( Is3D )
+			return;
+		
+		if( Falloff == EFalloff::Linear )
 		{
-			Sound->Volume( Volume );
-		}
-		else if( Falloff == EFalloff::Linear )
-		{
-			auto World = GetWorld();
+			const auto* World = GetWorld();
 			if( World )
 			{
-				auto ActiveCamera = World->GetActiveCamera();
+				auto* ActiveCamera = World->GetActiveCamera();
 				if( ActiveCamera )
 				{
 					const auto& CameraSetup = ActiveCamera->GetCameraSetup();
-					Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+					const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
 					float Length = Delta.Length();
 					Length /= Radius;
-					Length = glm::clamp( Length, 0.0f, 1.0f );
+					Length = 1.0f - glm::clamp( Length, 0.0f, 1.0f );
 
 					Sound->Volume( Length * Volume );
 				}
@@ -169,14 +202,14 @@ void CSoundEntity::UpdateSound()
 		}
 		else if( Falloff == EFalloff::InverseSquare )
 		{
-			auto World = GetWorld();
+			const auto* World = GetWorld();
 			if( World )
 			{
-				auto ActiveCamera = World->GetActiveCamera();
+				auto* ActiveCamera = World->GetActiveCamera();
 				if( ActiveCamera )
 				{
 					const auto& CameraSetup = ActiveCamera->GetCameraSetup();
-					Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+					const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
 					const float Factor = 1.0f / Radius;
 					float Length = Delta.Length() * Factor;
