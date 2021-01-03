@@ -49,6 +49,9 @@ bool CPlaneBody::Collision( CBody* Body )
 	if( !Body->Block )
 		return Collided;
 
+	if( ShouldIgnoreBody( Body ) )
+		return Collided;
+
 	const FBounds& BoundsA = Body->GetBounds();
 	const FBounds& BoundsB = GetBounds();
 	if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )

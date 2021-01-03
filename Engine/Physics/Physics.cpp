@@ -60,8 +60,8 @@ public:
 				{
 					if( BodyB && BodyB != BodyA && BodyB->Owner != BodyA->Owner )
 					{
-						BodyA->Collision( BodyB );
 						BodyB->Collision( BodyA );
+						BodyA->Collision( BodyB );
 					}
 				}
 

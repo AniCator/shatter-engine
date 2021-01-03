@@ -452,8 +452,11 @@ void CBody::Simulate()
 
 	// Calculate and apply gravity.
 	Vector3D EnvironmentalForce = Vector3D::Zero;
-	const Vector3D EnvironmentalAcceleration = -Gravity;
-	EnvironmentalForce += ( EnvironmentalAcceleration * DeltaTime ) * InverseMass;
+	if( AffectedByGravity )
+	{
+		const Vector3D EnvironmentalAcceleration = -Gravity;
+		EnvironmentalForce += ( EnvironmentalAcceleration * DeltaTime ) * InverseMass;
+	}
 
 	// Temporary friction factor that only applies to the XY plane.
 	Velocity.X *= 0.9f;
@@ -470,6 +473,9 @@ bool CBody::Collision( CBody* Body )
 		return false;
 
 	if( IsType<CPlaneBody>( Body ) )
+		return false;
+
+	if( ShouldIgnoreBody( Body ) )
 		return false;
 
 	const FBounds& BoundsA = Body->GetBounds();
@@ -523,15 +529,15 @@ bool CBody::Collision( CBody* Body )
 		if( Response.Distance > 0.0f && !Static && !Stationary )
 		{
 			auto Penetration = ( Response.Normal * Response.Distance );
-			Transform.SetPosition( Transform.GetPosition() - Penetration );
+			// Transform.SetPosition( Transform.GetPosition() - Penetration );
 
 			if( Owner )
 			{
-				Owner->SetTransform( Transform );
+				// Owner->SetTransform( Transform );
 			}
 
 			// Acceleration += Penetration;
-			// Depenetration += Penetration;
+			Depenetration += Penetration;
 		}
 		else
 		{
@@ -1004,7 +1010,7 @@ const FTransform& CBody::GetTransform() const
 		}
 	}
 
-	// Assume the bounds are in world space.
+	// Couldn't fetch the entity transform.
 	static const FTransform Identity = FTransform();
 	return Identity;
 }
@@ -1040,4 +1046,43 @@ void CBody::Debug()
 BodyType CBody::GetType() const
 {
 	return BodyType::AABB;
+}
+
+bool CBody::ShouldIgnoreBody( CBody* Body ) const
+{
+	const auto* MeshEntity = Cast<CMeshEntity>( Body->Owner );
+	if( !MeshEntity )
+		return false;
+
+	for( const auto* IgnoredBody : IgnoredBodies )
+	{
+		if( IgnoredBody == MeshEntity )
+			return true;
+	}
+
+	return false;
+}
+
+void CBody::Ignore( CBody* Body, const bool Clear )
+{
+	Ignore( Cast<CMeshEntity>( Body->Owner ), Clear );
+}
+
+void CBody::Ignore( CMeshEntity* Entity, const bool Clear )
+{
+	if( !Entity )
+		return;
+
+	if( Clear )
+	{
+		const auto DiscoveredBody = IgnoredBodies.find( Entity );
+		if( DiscoveredBody != IgnoredBodies.end() )
+		{
+			IgnoredBodies.erase( DiscoveredBody );
+		}
+	}
+	else
+	{
+		IgnoredBodies.insert( Entity );
+	}
 }

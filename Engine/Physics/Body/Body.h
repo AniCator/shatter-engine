@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <set>
+
 #include <Engine/Physics/Body/Shared.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
@@ -34,6 +36,16 @@ public:
 	virtual void Debug();
 
 	virtual BodyType GetType() const;
+	
+	virtual bool ShouldIgnoreBody( CBody* Body ) const;
+
+	// Adds a body to the ignore list which prevents this body from being checked during collisions.
+	// Setting Clear to true will remove the body from the list. (if it exists)
+	virtual void Ignore( CBody* Body, const bool Clear = false );
+
+	// Adds an entity's body to the ignore list which prevents this body from being checked during collisions.
+	// Setting Clear to true will remove the body from the list. (if it exists)
+	virtual void Ignore( CMeshEntity* Entity, const bool Clear = false );
 
 	CMeshEntity* Owner = nullptr;
 
@@ -48,6 +60,9 @@ public:
 
 	// This body is allowed to block other bodies from moving through it.
 	bool Block = true;
+
+	// This body can be pulled down by gravity.
+	bool AffectedByGravity = true;
 
 	bool Contact = false;
 	FTransform PreviousTransform;
@@ -66,4 +81,6 @@ public:
 	bool Handled = false;
 
 	TriangleTree* Tree = nullptr;
+
+	std::set<CMeshEntity*> IgnoredBodies;
 };
