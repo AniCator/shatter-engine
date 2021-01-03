@@ -23,7 +23,7 @@ CProfiler::~CProfiler()
 	Clear();
 }
 
-void CProfiler::AddTimeEntry( FProfileTimeEntry& TimeEntry )
+void CProfiler::AddTimeEntry( const FProfileTimeEntry& TimeEntry )
 {
 	auto Iterator = TimeEntries.find( TimeEntry.Name );
 	if( Iterator == TimeEntries.end() )
@@ -54,7 +54,7 @@ void CProfiler::AddCounterEntry( const char* NameIn, int TimeIn )
 	}
 }
 
-void CProfiler::AddCounterEntry( FProfileTimeEntry& TimeEntry, const bool PerFrame )
+void CProfiler::AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool PerFrame )
 {
 	if( !Enabled && PerFrame )
 		return;
