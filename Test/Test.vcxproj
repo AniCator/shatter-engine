@@ -112,8 +112,9 @@
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
-      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;$(EnginePath)\Library\;$(EnginePath)\ThirdParty\glfw-3.2.1.bin.WIN64\lib-vc2015;$(EnginePath)\ThirdParty\SFML-2.5.1\lib;$(EnginePath)\ThirdParty\discord-rpc\win64-static\lib;$(EnginePath)\ThirdParty\assimp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>assimp.lib;sfml-audio-s-d.lib;sfml-system-s-d.lib;openal32.lib;flac.lib;vorbisenc.lib;vorbisfile.lib;vorbis.lib;ogg.lib;glfw3.lib;ShatterEngine$(Configuration).lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;$(EnginePath)\Library\;$(EnginePath)\ThirdParty\SoLoud\lib;$(EnginePath)\ThirdParty\glfw-3.3.2.bin.WIN64\lib-vc2015;$(EnginePath)\ThirdParty\SFML-2.5.1\lib;$(EnginePath)\ThirdParty\discord-rpc\win64-static\lib;$(EnginePath)\ThirdParty\assimp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>soloud_static_x64.lib;assimp.lib;sfml-audio-s-d.lib;sfml-system-s-d.lib;openal32.lib;flac.lib;vorbisenc.lib;vorbisfile.lib;vorbis.lib;ogg.lib;glfw3.lib;ShatterEngine$(Configuration).lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalOptions>/WHOLEARCHIVE:ShatterEngine$(Configuration).lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -149,8 +150,8 @@
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;$(EnginePath)\Library\;$(EnginePath)\ThirdParty\glfw-3.2.1.bin.WIN64\lib-vc2015;$(EnginePath)\ThirdParty\SFML-2.5.1\lib;$(EnginePath)\ThirdParty\discord-rpc\win64-static\lib;$(EnginePath)\ThirdParty\assimp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>assimp.lib;discord-rpc.lib;sfml-audio-s.lib;sfml-system-s.lib;openal32.lib;flac.lib;vorbisenc.lib;vorbisfile.lib;vorbis.lib;ogg.lib;glfw3.lib;ShatterEngine$(Configuration).lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VCInstallDir)UnitTest\lib;$(EnginePath)\Library\;$(EnginePath)\ThirdParty\SoLoud\lib;$(EnginePath)\ThirdParty\glfw-3.3.2.bin.WIN64\lib-vc2015;$(EnginePath)\ThirdParty\SFML-2.5.1\lib;$(EnginePath)\ThirdParty\discord-rpc\win64-static\lib;$(EnginePath)\ThirdParty\assimp\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>soloud_static_x64.lib;assimp.lib;discord-rpc.lib;sfml-audio-s.lib;sfml-system-s.lib;openal32.lib;flac.lib;vorbisenc.lib;vorbisfile.lib;vorbis.lib;ogg.lib;glfw3.lib;ShatterEngine$(Configuration).lib;winmm.lib;kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <AdditionalOptions>/WHOLEARCHIVE:ShatterEngine$(Configuration).lib %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
