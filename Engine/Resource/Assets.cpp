@@ -208,6 +208,14 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 				NewSound->Load( Payload.Locations );
 			}
 		}
+		else if( Payload.Type == EAsset::Sequence )
+		{
+			CSequence* NewSequence = FindSequence( Payload.Name );
+			if( NewSequence )
+			{
+				NewSequence->Load( Payload.Locations[0].c_str() );
+			}
+		}
 	}
 
 	for( auto& Future : Futures )
@@ -783,6 +791,7 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 		bool Texture = false;
 		bool Sound = false;
 		bool Stream = false;
+		bool Sequence = false;
 		std::string Name;
 		std::vector<std::string> Paths;
 		Paths.reserve( 10 );
@@ -811,6 +820,8 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 				{
 					Stream = Property->Value == "stream";
 				}
+
+				Sequence = Property->Value == "sequence";
 			}
 			else if( Property->Key == "name" )
 			{
@@ -922,6 +933,17 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 
 					GenericAssets.emplace_back( Payload );
 				}
+			}
+			else if( Sequence )
+			{
+				Assets.CreateNamedSequence( Name.c_str() );
+				FGenericAssetPayload Payload;
+				Payload.Type = EAsset::Sequence;
+				Payload.Name = Name;
+
+				Payload.Locations.emplace_back( Paths[0] );
+
+				GenericAssets.emplace_back( Payload );
 			}
 			else
 			{
