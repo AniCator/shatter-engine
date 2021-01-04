@@ -24,9 +24,12 @@ void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Actio
 	}
 #endif
 
-	const EKey Key = InputGLFW::CodeToKey( KeyInput );
-	const EAction Action = InputGLFW::CodeToAction( ActionInput );
-	CInputLocator::Get().RegisterKeyInput( Key, ScanCode, Action, Modifiers );
+	if( !ImGui::GetIO().WantCaptureKeyboard )
+	{
+		const EKey Key = InputGLFW::CodeToKey( KeyInput );
+		const EAction Action = InputGLFW::CodeToAction( ActionInput );
+		CInputLocator::Get().RegisterKeyInput( Key, ScanCode, Action, Modifiers );
+	}
 }
 
 void InputCharCallback( GLFWwindow* window, unsigned int Character )
@@ -50,9 +53,12 @@ void InputMouseButtonCallback( GLFWwindow* window, int MouseButton, int ActionIn
 	}
 #endif
 
-	const EMouse Mouse = InputGLFW::CodeToMouse( MouseButton );
-	const EAction Action = InputGLFW::CodeToAction( ActionInput );
-	CInputLocator::Get().RegisterMouseButtonInput( Mouse, Action, Modifiers );
+	if( !ImGui::GetIO().WantCaptureMouse )
+	{
+		const EMouse Mouse = InputGLFW::CodeToMouse( MouseButton );
+		const EAction Action = InputGLFW::CodeToAction( ActionInput );
+		CInputLocator::Get().RegisterMouseButtonInput( Mouse, Action, Modifiers );
+	}
 }
 
 void InputMousePositionCallback( GLFWwindow* window, double PositionX, double PositionY )
