@@ -99,7 +99,7 @@ SoLoud::handle PlaySound( SoLoud::AudioSource& AudioSource, const Spatial& Infor
 	}
 	else
 	{
-		Handle = Mixer[SelectedBus].play( AudioSource, Information.Volume * 0.01f, 0.0f, Information.StartPaused );
+		Handle = Mixer[SelectedBus].play( AudioSource, FadeIn ? 0.0f : Information.Volume * 0.01f, 0.0f, Information.StartPaused );
 	}
 
 	Engine.setRelativePlaySpeed( Handle, Information.Rate );
@@ -184,7 +184,7 @@ SoundHandle CSoLoudSound::Start( SoundBufferHandle Handle, const Spatial Informa
 
 		if( FadeIn )
 		{
-			Fade( Handle, 100.0f, Information.FadeIn );
+			Fade( Handle, Information.Volume, Information.FadeIn );
 		}
 		
 		return Handle;
@@ -224,7 +224,7 @@ StreamHandle CSoLoudSound::Start( StreamHandle Handle, const Spatial Information
 
 		if( NewStream.FadeIn )
 		{
-			Fade( Handle, 100.0f, Information.FadeIn );
+			Fade( Handle, Information.Volume, Information.FadeIn );
 		}
 		
 		return Handle;
