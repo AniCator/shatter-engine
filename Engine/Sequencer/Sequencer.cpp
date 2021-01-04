@@ -6,6 +6,7 @@
 
 #include <Engine/Audio/Sound.h>
 #include <Engine/Display/Rendering/Renderable.h>
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/File.h>
@@ -18,6 +19,20 @@
 
 static const Timecode Timebase = 96;
 static bool TimelineCamera = true;
+static CCamera* ActiveTimelineCamera = nullptr;
+
+// True if the mouse is held down while dragging on the timeline bar.
+static bool Scrobbling = false;
+
+float MarkerToTime( const Timecode& Marker )
+{
+	return StaticCast<float>( StaticCast<double>( Marker ) / StaticCast<double>( Timebase ) );
+}
+
+float MarkerRangeToTime( const Timecode& StartMarker, const Timecode& EndMarker )
+{
+	return StaticCast<float>( StaticCast<double>( EndMarker - StartMarker ) / StaticCast<double>( Timebase ) );
+}
 
 enum class ESequenceStatus : uint8_t
 {
@@ -46,6 +61,29 @@ struct FTrackEvent
 	Timecode Start = 0;
 	Timecode Length = 0;
 
+	// The marker position relative to the event.
+	Timecode Offset = 0;
+	Timecode PreviousOffset = 0;
+
+	void UpdateInternalMarkers( const Timecode& Marker )
+	{
+		if( Scrobbling )
+		{
+			PreviousOffset = 0;
+		}
+		else
+		{
+			PreviousOffset = Offset;
+		}
+		
+		Offset = Math::Clamp( Marker - Start, StaticCast<Timecode>( 0 ), Length );
+	}
+
+	bool Frozen() const
+	{
+		return PreviousOffset == Offset;
+	}
+
 	virtual void Export( CData& Data );
 	virtual void Import( CData& Data );
 
@@ -66,6 +104,12 @@ struct FEventAudio : FTrackEvent
 {
 	virtual void Evaluate( const Timecode& Marker ) override
 	{
+		if( !Sound )
+		{
+			Sound = CAssets::Get().FindSound( Name );
+			return;
+		}
+		
 		if( !Triggered && Marker >= Start && Marker < ( Start + Length ) )
 		{
 			Execute();
@@ -75,12 +119,42 @@ struct FEventAudio : FTrackEvent
 		{
 			if( Triggered && ( Marker > ( Start + Length ) || ( Marker < Start ) ) )
 			{
-				if( Sound && Sound->Playing() )
+				if( Sound->Playing() )
 				{
 					Sound->Stop( FadeOut );
 				}
 
 				Triggered = false;
+			}
+
+			if( Triggered )
+			{
+				if( Scrobbling )
+				{
+					if( !Sound->Playing() )
+					{
+						auto Information = Spatial::CreateUI();
+
+						const auto RelativeTime = MarkerToTime( Offset );
+						if( RelativeTime < FadeIn )
+						{
+							Information.FadeIn = FadeIn - RelativeTime;
+						}
+
+						Information.Volume = Volume;
+						Information.Rate = Rate;
+						Sound->Start( Information );
+					}
+
+					Sound->Offset( MarkerToTime( Offset ) );
+				}
+				else
+				{
+					if( Frozen() && Sound->Playing() )
+					{
+						Sound->Stop();
+					}
+				}
 			}
 		}
 	}
@@ -90,13 +164,24 @@ struct FEventAudio : FTrackEvent
 		if( !Sound )
 			return;
 
-		if( Sound && !Sound->Playing() )
-		{
-			Sound->Volume( Volume );
+		if( !Sound->Playing() )
+		{		
+			auto Information = Spatial::CreateUI();
+
+			const auto RelativeTime = MarkerToTime( Offset );
+			if( RelativeTime < FadeIn )
+			{
+				Information.FadeIn = FadeIn - RelativeTime;
+			}
 			
-			auto Information = Spatial::Create();
-			Information.FadeIn = FadeIn;
+			Information.Volume = Volume;
+			Information.Rate = Rate;
 			Sound->Start( Information );
+		}
+
+		if( Scrobbling )
+		{
+			Sound->Offset( MarkerToTime( Offset ) );
 		}
 	}
 
@@ -104,7 +189,10 @@ struct FEventAudio : FTrackEvent
 	{
 		Triggered = false;
 
-		if( Sound && Sound->Playing() )
+		if( !Sound )
+			return;
+
+		if( Sound->Playing() )
 		{
 			Sound->Stop();
 		}
@@ -122,7 +210,22 @@ struct FEventAudio : FTrackEvent
 			Length = static_cast<Timecode>( InputLength );
 		}
 
-		ImGui::InputFloat( "Volume", &Volume, 1.0f, 10.0f, "%.0f" );
+		if( ImGui::InputFloat( "Volume", &Volume, 1.0f, 10.0f, "%.0f" ) )
+		{
+			if( Sound && Sound->Playing() )
+			{
+				Sound->Volume( Volume );
+			}
+		}
+
+		if( ImGui::InputFloat( "Rate", &Rate, 0.1f, 0.2f, "%.1f" ) )
+		{
+			if( Sound && Sound->Playing() )
+			{
+				Sound->Rate( Rate );
+			}
+		}
+		
 		ImGui::InputFloat( "Fade-In", &FadeIn, 1.0f, 10.0f, "%.0f" );
 		ImGui::InputFloat( "Fade-Out", &FadeOut, 1.0f, 10.0f, "%.0f" );
 
@@ -164,6 +267,7 @@ struct FEventAudio : FTrackEvent
 	float FadeIn = 0.0f;
 	float FadeOut = 0.1f;
 	float Volume = 100.0f;
+	float Rate = 1.0f;
 
 	virtual void Export( CData& Data )
 	{
@@ -174,6 +278,7 @@ struct FEventAudio : FTrackEvent
 		Data << FadeIn;
 		Data << FadeOut;
 		Data << Volume;
+		Data << Rate;
 	}
 
 	virtual void Import( CData& Data )
@@ -185,6 +290,7 @@ struct FEventAudio : FTrackEvent
 		Data >> FadeIn;
 		Data >> FadeOut;
 		Data >> Volume;
+		Data >> Rate;
 
 		Sound = CAssets::Get().FindSound( Name );
 	}
@@ -192,6 +298,28 @@ struct FEventAudio : FTrackEvent
 
 struct FEventCamera : FTrackEvent
 {
+	void BlendCameras()
+	{
+		BlendResult = Camera;
+		
+		if( !Blend )
+		{
+			return;
+		}
+
+		auto& BlendSetup = BlendResult.GetCameraSetup();
+		const auto& CameraSetupA = Camera.GetCameraSetup();
+		const auto& CameraSetupB = CameraB.GetCameraSetup();
+		const float Factor = MarkerToTime( Offset ) / MarkerToTime( Length );
+		
+		BlendSetup.CameraPosition = Math::Lerp( CameraSetupA.CameraPosition, CameraSetupB.CameraPosition, Factor );
+		BlendSetup.FieldOfView = Math::Lerp( CameraSetupA.FieldOfView, CameraSetupB.FieldOfView, Factor );
+		BlendResult.SetCameraOrientation( Math::Lerp( Camera.CameraOrientation, CameraB.CameraOrientation, Factor ) );
+		BlendSetup.CameraDirection = Math::Lerp( CameraSetupA.CameraDirection, CameraSetupB.CameraDirection, Factor );
+		
+		BlendResult.Update();
+	}
+	
 	virtual void Evaluate( const Timecode& Marker ) override
 	{
 		if( Marker >= Start && Marker < ( Start + Length ) )
@@ -202,19 +330,22 @@ struct FEventCamera : FTrackEvent
 
 	virtual void Execute() override
 	{
-		auto World = CWorld::GetPrimaryWorld();
+		auto* World = CWorld::GetPrimaryWorld();
 		if( !World )
 			return;
 
-		if( TimelineCamera && World->GetActiveCamera() != &Camera )
+		BlendCameras();
+		ActiveTimelineCamera = &BlendResult;
+
+		if( TimelineCamera && World->GetActiveCamera() != &BlendResult )
 		{
-			World->SetActiveCamera( &Camera, 1000 );
+			World->SetActiveCamera( &BlendResult, 200000 );
 		}
 	}
 
 	virtual void Reset() override
 	{
-		auto World = CWorld::GetPrimaryWorld();
+		auto* World = CWorld::GetPrimaryWorld();
 		if( !World )
 			return;
 
@@ -224,9 +355,26 @@ struct FEventCamera : FTrackEvent
 		}
 	}
 
+	static void ActiveCameraToTarget( CCamera& Target )
+	{
+		const auto* World = CWorld::GetPrimaryWorld();
+		if( World )
+		{
+			const auto* ActiveCamera = World->GetActiveCamera();
+			if( ActiveCamera != nullptr && ActiveCamera != &Target )
+			{
+				Target = *ActiveCamera;
+			}
+		}
+	}
+
 	virtual void Context() override
 	{
 		ImGui::Text( "Camera" );
+
+		const auto& CameraSetup = Camera.GetCameraSetup();
+		ImGui::Text( "Location: %.2f %.2f %.2f", CameraSetup.CameraPosition.X, CameraSetup.CameraPosition.Y, CameraSetup.CameraPosition.Z );
+		ImGui::Text( "FOV: %.2f", CameraSetup.FieldOfView );
 
 		ImGui::Separator();
 		int InputLength = ( int) Length;
@@ -237,7 +385,7 @@ struct FEventCamera : FTrackEvent
 
 		if( ImGui::Button( "View" ) )
 		{
-			auto World = CWorld::GetPrimaryWorld();
+			auto* World = CWorld::GetPrimaryWorld();
 			if( World )
 			{
 				if( World->GetActiveCamera() != &Camera )
@@ -247,15 +395,39 @@ struct FEventCamera : FTrackEvent
 			}
 		}
 
-		if( ImGui::Button( "Update Camera Position to Current" ) )
+		if( ImGui::Checkbox( "Enable Linear Blending", &Blend ) )
 		{
-			auto World = CWorld::GetPrimaryWorld();
+			CameraB = Camera;
+		}
+
+		if( ImGui::Button( "Update Camera" ) )
+		{
+			ActiveCameraToTarget( Camera );
+		}
+
+		ImGui::Separator();
+
+		if( Blend )
+		{
+			if( ImGui::Button( "Update Camera B" ) )
+			{
+				ActiveCameraToTarget( CameraB );
+			}
+		}
+
+		ImGui::Separator();
+		ImGui::Separator();
+
+		if( ImGui::Button( "Apply to Active" ) )
+		{
+			const auto* World = CWorld::GetPrimaryWorld();
 			if( World )
 			{
-				auto ActiveCamera = World->GetActiveCamera();
-				if( ActiveCamera != nullptr && ActiveCamera != &Camera )
+				auto* ActiveCamera = World->GetActiveCamera();
+				if( ActiveCamera && ActiveCamera != &BlendResult )
 				{
-					Camera = *ActiveCamera;
+					*ActiveCamera = BlendResult;
+					ActiveCamera->CameraOrientation = Math::DirectionToEuler( BlendResult.GetCameraSetup().CameraDirection );
 				}
 			}
 		}
@@ -275,6 +447,9 @@ struct FEventCamera : FTrackEvent
 
 	std::string Name = std::string();
 	CCamera Camera;
+	CCamera CameraB;
+	CCamera BlendResult;
+	bool Blend = false;
 
 	virtual void Export( CData& Data )
 	{
@@ -282,6 +457,8 @@ struct FEventCamera : FTrackEvent
 
 		DataString::Encode( Data, Name );
 		Data << Camera;
+		Data << CameraB;
+		Data << Blend;
 	}
 
 	virtual void Import( CData& Data )
@@ -290,6 +467,8 @@ struct FEventCamera : FTrackEvent
 
 		DataString::Decode( Data, Name );
 		Data >> Camera;
+		Data >> CameraB;
+		Data >> Blend;
 	}
 };
 
@@ -463,6 +642,7 @@ struct FTrack
 		{
 			if( Event )
 			{
+				Event->UpdateInternalMarkers( Marker );
 				Event->Evaluate( Marker );
 			}
 		}
@@ -486,18 +666,44 @@ struct FTrack
 
 	friend CData& operator<<( CData& Data, FTrack& Track )
 	{
+		DataString::Encode( Data, "Track" );
 		Data << Track.Start;
 		Data << Track.Length;
 
-		DataVector::Encode( Data, Track.Events );
+		// DataVector::Encode( Data, Track.Events );
+		DataString::Encode( Data, "Events" );
+		uint32_t Events = Track.Events.size();
+		Data << Events;
+
+		for( auto& Event : Track.Events )
+		{
+			DataString::Encode( Data, Event->GetType() );
+			Data << Event;
+		}
 
 		return Data;
 	}
 
 	friend CData& operator>>( CData& Data, FTrack& Track )
 	{
+		std::string String;
+		DataString::Decode( Data, String );
 		Data >> Track.Start;
 		Data >> Track.Length;
+
+		DataString::Decode( Data, String );
+		uint32_t Events = 0;
+		Data >> Events;
+
+		for( uint32_t Index = 0; Index < Events; Index++ )
+		{
+			DataString::Decode( Data, String );
+			
+			FTrackEvent* Event = EventTypes[String]();
+			Track.Events.emplace_back( Event );
+
+			Data >> Event;
+		}
 
 		// DataVector::Decode( Data, Track.Events );
 
@@ -513,6 +719,7 @@ public:
 		StartMarker = Start;
 		EndMarker = End;
 		Marker = 0;
+		Status = ESequenceStatus::Stopped;
 
 		DrawTimeline = false;
 	}
@@ -563,6 +770,21 @@ public:
 
 	void Pause()
 	{
+		if( Status == ESequenceStatus::Paused || Status == ESequenceStatus::Stopped )
+		{
+			Status = ESequenceStatus::Playing;
+
+			Scrobbling = true;
+			for( auto& Track : Tracks )
+			{
+				Track.Reset();
+				Track.Evaluate( Marker );
+			}
+			Scrobbling = false;
+			
+			return;
+		}
+		
 		Status = ESequenceStatus::Paused;
 
 		for( auto& Track : Tracks )
@@ -589,7 +811,7 @@ public:
 
 	bool Stopped() const
 	{
-		return Status == ESequenceStatus::Stopped;
+		return Status == ESequenceStatus::Stopped || Status == ESequenceStatus::Paused;
 	}
 
 	void Step()
@@ -624,29 +846,70 @@ public:
 
 	float Time() const
 	{
-		return static_cast<float>( static_cast<double>( Marker ) / static_cast<double>( Timebase ) );
+		return MarkerToTime( Marker );
 	}
 
 	float Length() const
 	{
-		return static_cast<float>( static_cast<double>( EndMarker - StartMarker ) / static_cast<double>( Timebase ) );
+		return MarkerRangeToTime( StartMarker, EndMarker );
 	}
 
 	void Frame()
 	{
+		// Clear the active timeline camera.
+		ActiveTimelineCamera = nullptr;
+		
 		// Run all the timeline events that are associated with the current marker.
-		for( auto& Track : Tracks )
+		if( Status != ESequenceStatus::Stopped )
 		{
-			Track.Evaluate( Marker );
+			for( auto& Track : Tracks )
+			{
+				Track.Evaluate( Marker );
+			}
+		}
+		
+		Scrobbling = false;
+
+		// Always evaluate cameras if the timeline isn't drawn.
+		if( !DrawTimeline )
+		{
+			TimelineCamera = true;
+		}
+
+		// Make sure we clear the active camera.
+		if( !ActiveTimelineCamera && Playing() )
+		{
+			auto World = CWorld::GetPrimaryWorld();
+			if( World )
+			{
+				World->SetActiveCamera( nullptr );
+			}
 		}
 
 		if( DrawTimeline )
 		{
-			if( ImGui::Begin( "Timeline", &DrawTimeline, ImVec2( 1000.0f, 500.0f ) ) )
+			if( ImGui::Begin( 
+				"Timeline", 
+				&DrawTimeline, 
+				ImVec2( 1000.0f, 500.0f )
+				) )
 			{
 				static FTrack* ActiveTrack = nullptr;
 				static std::vector<FTrackEvent*> ActiveEvents;
 				static int SequenceLengthSeconds = 2;
+
+				const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
+				if( ShouldPlayPause )
+				{
+					if( Status == ESequenceStatus::Stopped )
+					{
+						Play();
+					}
+					else
+					{
+						Pause();
+					}
+				}
 
 				if( ImGui::Button( "Play" ) )
 				{
@@ -665,6 +928,14 @@ public:
 				if( ImGui::Button( "Stop" ) )
 				{
 					Stop();
+				}
+
+				ImGui::SameLine();
+
+				if( ImGui::Button( "Step" ) )
+				{
+					// Increment the timeline step.
+					Marker++;
 				}
 
 				ImGui::SameLine();
@@ -753,7 +1024,12 @@ public:
 
 				static float WidthScale = 1.0f;
 				size_t WidthDelta = Math::Max( 1.0f, static_cast<size_t>( 1000.0f / 30 ) * WidthScale );
-				ImGui::SliderFloat( "Scale", &WidthScale, 0.0f, 10.0f );
+				ImGui::SliderFloat( "Scale", &WidthScale, 0.1f, 10.0f );
+
+				if( ImGui::GetIO().KeyCtrl )
+				{
+					WidthScale = Math::Max( 0.1f, WidthScale + ImGui::GetIO().MouseWheel * 0.33f );
+				}
 
 				ImGui::SameLine();
 				if( ImGui::Checkbox( "Use Timeline Cameras", &TimelineCamera ) )
@@ -768,18 +1044,44 @@ public:
 					}
 				}
 
+				auto MarkerLocalPosition = ( static_cast<float>( Marker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+				auto EndMarkerLocalPosition = ( static_cast<float>( EndMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+				
 				auto CursorOffset = 100.0f;
+
+				auto WindowWidth = ImGui::GetWindowWidth() - CursorOffset;
+				auto MarkerWindowPosition = MarkerLocalPosition;
+				auto MarkerPercentageWindow = MarkerWindowPosition / WindowWidth;
+				auto EndMarkerPercentageWindow = EndMarkerLocalPosition / WindowWidth;
+
+				if( Status != ESequenceStatus::Stopped && EndMarkerPercentageWindow > 1.0f && MarkerPercentageWindow > 0.5f )
+				{
+					CursorOffset -= MarkerWindowPosition - WindowWidth * 0.5f;
+				}
+
+				UI::AddText( Vector2D( 50.0f, 130.0f ), "MarkerWindowPosition", MarkerWindowPosition );
+				UI::AddText( Vector2D( 50.0f, 150.0f ), "MarkerPercentageWindow", MarkerPercentageWindow );
+				
 				auto CursorPosition = ImGui::GetCursorPos();
 				CursorPosition.x += CursorOffset;
 
 				size_t Bars = ( ( EndMarker - StartMarker ) / Timebase );
-				for( size_t BarIndex = 0; BarIndex < Bars; BarIndex++ )
+				for( size_t BarIndex = 0; BarIndex < Bars; )
 				{
 					auto BarPosition = CursorPosition;
 					BarPosition.x += BarIndex * WidthDelta;
 					ImGui::SetCursorPos( BarPosition );
 
 					ImGui::Text( "%zi", BarIndex );
+
+					if( WidthScale > 0.5f )
+					{
+						BarIndex++;
+					}
+					else
+					{
+						BarIndex += 5;
+					}
 				}
 
 				auto BarPosition = ImGui::GetCursorPos();
@@ -808,6 +1110,7 @@ public:
 					if( ImGui::GetIO().MouseDown[0] )
 					{
 						Marker = GhostMarker;
+						Scrobbling = true;
 					}
 				}
 
@@ -878,12 +1181,17 @@ public:
 						ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 0.0f );
 						ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0.0f, 0.0f ) );
 
-						char EventName[128];
-						sprintf_s( EventName, "%s (Length: %llis)##eb%zi", Event->GetName(), Event->Length / Timebase, GlobalIndex );
-						ImGui::Button( EventName, ImVec2( ( static_cast<float>( Event->Length ) / static_cast<float>( Timebase ) )* WidthDelta, 30.0f ) );
+						std::string EventName = std::string( Event->GetName() ) + 
+							" (Length: " + 
+							std::to_string( Event->Length / Timebase ) +
+							")"
+						;
+
+						std::string EventLabel = EventName + "##eb" + std::to_string( GlobalIndex );
+						ImGui::Button( EventLabel.c_str(), ImVec2( ( static_cast<float>( Event->Length ) / static_cast<float>( Timebase ) )* WidthDelta, 30.0f ) );
 						if( ImGui::IsItemHovered() )
 						{
-							ImGui::SetTooltip( EventName );
+							ImGui::SetTooltip( EventName.c_str() );
 						}
 
 						char ContextName[128];
@@ -965,10 +1273,15 @@ public:
 					ScreenPosition.x += CursorOffset;
 
 					auto MarkerPosition = ScreenPosition;
-					MarkerPosition.x += ( static_cast<float>( Marker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+					MarkerPosition.x += MarkerLocalPosition;
 					auto LineEnd = MarkerPosition;
 					LineEnd.y += Tracks.size() * VerticalOffset;
 					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_WHITE );
+
+					UI::AddText( Vector2D( 50.0f, 50.0f ), "ScreenPositionX", ScreenPosition.x );
+					UI::AddText( Vector2D( 50.0f, 70.0f ), "MarkerPosition", MarkerPosition.x );
+					UI::AddText( Vector2D( 50.0f, 90.0f ), "WindowWidth", WindowWidth );
+					UI::AddText( Vector2D( 50.0f, 110.0f ), "CursorPosition", CursorPosition.x );
 
 					MarkerPosition = ScreenPosition;
 					MarkerPosition.x += ( static_cast<float>( GhostMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
@@ -1008,7 +1321,7 @@ public:
 
 				if( !ActiveEvents.empty() )
 				{
-					ImGui::GetIO().WantCaptureKeyboard = true;
+					// ImGui::GetIO().WantCaptureKeyboard = true;
 				}
 
 				if( ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Delete ) ) )
@@ -1081,12 +1394,9 @@ public:
 	friend CData& operator<<( CData& Data, CTimeline& Timeline )
 	{
 		DataString::Encode( Data, Timeline.Location );
-		Data << Timeline.Marker;
 
 		Data << Timeline.StartMarker;
 		Data << Timeline.EndMarker;
-
-		Data << Timeline.Status;
 
 		DataVector::Encode( Data, Timeline.Tracks );
 
@@ -1096,12 +1406,9 @@ public:
 	friend CData& operator>>( CData& Data, CTimeline& Timeline )
 	{
 		DataString::Decode( Data, Timeline.Location );
-		Data >> Timeline.Marker;
 
 		Data >> Timeline.StartMarker;
 		Data >> Timeline.EndMarker;
-
-		Data >> Timeline.Status;
 
 		DataVector::Decode( Data, Timeline.Tracks );
 
