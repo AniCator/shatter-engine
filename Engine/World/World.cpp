@@ -6,6 +6,8 @@
 #include <Engine/Audio/SoLoudSound.h>
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Physics/Physics.h>
+#include <Engine/Resource/Assets.h>
+#include <Engine/Sequencer/Sequencer.h>
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/Utility/Chunk.h>
 
@@ -60,8 +62,6 @@ void CWorld::Frame()
 
 void CWorld::Tick()
 {
-	CameraPriority = 0;
-
 	for( auto Level : Levels )
 	{
 		Level.Tick();
@@ -114,6 +114,16 @@ void CWorld::Destroy()
 	Physics->Destroy();
 
 	CSoLoudSound::StopSounds();
+
+	// Prevent sequences from playing when a world is destroyed.
+	const auto& Sequences = CAssets::Get().GetSequences();
+	for( const auto& Sequence : Sequences )
+	{
+		if( Sequence.second && Sequence.second->Playing() )
+		{
+			Sequence.second->Stop();
+		}
+	}
 }
 
 void CWorld::Reload()
