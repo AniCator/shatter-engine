@@ -63,6 +63,22 @@ namespace UI
 
 	std::vector<DrawCircle> Circles;
 
+	struct DrawCircleScreen
+	{
+		DrawCircleScreen( const Vector2D& Position, const float& Radius, const Color& Color )
+		{
+			this->Position = Position;
+			this->Radius = Radius;
+			this->Color = Color;
+		}
+
+		Vector2D Position;
+		float Radius;
+		Color Color;
+	};
+
+	std::vector<DrawCircleScreen> CirclesScreen;
+
 	struct DrawImage
 	{
 		DrawImage( const Vector3D& Position, const Vector2D& Size, const ::CTexture* Texture, const Color& Color )
@@ -370,7 +386,7 @@ namespace UI
 		}
 	}
 
-	void AddCircle( const Vector2D& Position, float Radius, const Color& Color )
+	void AddCircle2D( const Vector2D& Position, float Radius, const Color& Color )
 	{
 		if( DrawList )
 		{
@@ -385,8 +401,14 @@ namespace UI
 
 		if( IsInFront )
 		{
-			AddCircle( ScreenPosition, Radius, Color );
+			AddCircle2D( ScreenPosition, Radius, Color );
 		}
+	}
+
+	void AddCircle( const Vector2D& Position, float Radius, const Color& Color )
+	{
+		DrawCircleScreen Circle( Position, Radius, Color );
+		CirclesScreen.emplace_back( Circle );
 	}
 
 	void AddCircle( const Vector3D& Position, float Radius, const Color& Color )
@@ -550,6 +572,7 @@ namespace UI
 	{
 		Lines.clear();
 		Circles.clear();
+		CirclesScreen.clear();
 		Images.clear();
 		Texts.clear();
 		TextsScreen.clear();
@@ -764,6 +787,11 @@ namespace UI
 		for( const auto& Circle : Circles )
 		{
 			AddCircleInternal( Circle.Position, Circle.Radius, Circle.Color );
+		}
+
+		for( const auto& Circle : CirclesScreen )
+		{
+			AddCircle2D( Circle.Position, Circle.Radius, Circle.Color );
 		}
 
 		for( const auto& Image : Images )
