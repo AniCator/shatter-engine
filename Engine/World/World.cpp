@@ -102,6 +102,18 @@ void CWorld::Destroy()
 	if( PrimaryWorld == this )
 	{
 		PrimaryWorld = nullptr;
+		
+		CSoLoudSound::StopSounds();
+
+		// Prevent sequences from playing when the primary world is destroyed.
+		const auto& Sequences = CAssets::Get().GetSequences();
+		for( const auto& Sequence : Sequences )
+		{
+			if( Sequence.second && Sequence.second->Playing() )
+			{
+				Sequence.second->Stop();
+			}
+		}
 	}
 	
 	Camera = nullptr;
@@ -112,18 +124,6 @@ void CWorld::Destroy()
 	}
 
 	Physics->Destroy();
-
-	CSoLoudSound::StopSounds();
-
-	// Prevent sequences from playing when a world is destroyed.
-	const auto& Sequences = CAssets::Get().GetSequences();
-	for( const auto& Sequence : Sequences )
-	{
-		if( Sequence.second && Sequence.second->Playing() )
-		{
-			Sequence.second->Stop();
-		}
-	}
 }
 
 void CWorld::Reload()
