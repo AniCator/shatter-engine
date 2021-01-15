@@ -109,6 +109,7 @@ void CMeshEntity::Construct()
 					else
 					{
 						PhysicsBody = new CBody();
+						// PhysicsBody->TriangleMesh = true;
 					}
 
 					PhysicsBody->Owner = this;

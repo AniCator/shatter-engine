@@ -59,7 +59,7 @@ public:
 
 	std::string MeshName;
 	std::string CollisionMeshName;
-	BodyType CollisionType = BodyType::TriangleMesh;
+	BodyType CollisionType = BodyType::AABB;
 	std::string ShaderName;
 	std::vector<std::string> TextureNames;
 
