@@ -399,6 +399,125 @@ namespace EngineTest
 
 			Assert::AreEqual( 1, Success ? 1 : 0 );
 		}
+
+		TEST_METHOD( SerializeMarker )
+		{
+			bool Success = false;
+
+			CData Data;
+			DataMarker::Mark( Data, "TestMarker" );
+
+			const uint8_t Input = 255;
+			Data << Input;
+
+			Data.ReadToStart();
+			if( !DataMarker::Check( Data, "TestMarker2" ) &&
+				DataMarker::Check( Data, "TestMarker" ) )
+			{
+				uint8_t Output = 0;
+				Data >> Output;
+
+				if( Output == Input )
+				{
+					Success = true;
+				}
+			}
+
+			Assert::AreEqual( 1, Success ? 1 : 0 );
+		}
+
+		TEST_METHOD( SerializeMarkerHop )
+		{
+			CData Data;
+			DataMarker::Mark( Data, "TestMarker" );
+
+			Data.WriteToEnd();
+
+			const uint8_t Input = 255;
+			Data << Input;
+
+			Data.ReadToStart();
+			if( DataMarker::Check( Data, "TestMarker" ) )
+			{
+				uint8_t Output = 0;
+				Data >> Output;
+			}
+			else
+			{
+				Assert::Fail( L"TestMarker not found." );
+			}
+
+			if( !DataMarker::Check( Data, "TestMarker2" ) )
+			{
+				// Good.
+			}
+			else
+			{
+				Assert::Fail( L"TestMarker2 shouldn't exist yet." );
+			}
+
+			Data.WriteToEnd();
+
+			DataMarker::Mark( Data, "TestMarker2" );
+			Data << Input;
+
+			Data.ReadToStart();
+			if( DataMarker::Check( Data, "TestMarker" ) )
+			{
+				uint8_t Output = 0;
+				Data >> Output;
+			}
+			else
+			{
+				Assert::Fail( L"TestMarker corrupted." );
+			}
+
+			if( DataMarker::Check( Data, "TestMarker2" ) )
+			{
+				uint8_t Output = 0;
+				Data >> Output;
+
+				if( Output != Input )
+				{
+					Assert::Fail( L"TestMarker2 Output doesn't match Input." );
+				}
+			}
+			else
+			{
+				Assert::Fail( L"TestMarker2 not found." );
+			}
+		}
+
+		// Test if we can recover from reading an incorrect type.
+		TEST_METHOD( SerializeRecovery )
+		{
+			bool Success = false;
+
+			CData Data;
+			int8_t Input = 5;
+			Data << Input;
+			Data.ReadToStart();
+			int32_t Output32 = 0;
+			Data >> Output32;
+
+			int8_t Output8 = 0;
+			Data >> Output8;
+
+			if( Input != Output32 )
+			{
+				Assert::Fail( L"Failed to extract 32-bit output." );
+			}
+
+			if( Input != Output8 )
+			{
+				Assert::Fail( L"Failed to extract 8-bit output." );
+			}
+
+			if( !Data.Valid() )
+			{
+				Assert::Fail( L"Data invalid." );
+			}
+		}
 	};
 
 	TEST_CLASS( Mathematics )
@@ -419,7 +538,7 @@ namespace EngineTest
 
 		bool TestEuler( const Vector3D& Orientation ) const
 		{
-			const Matrix3D RotationMatrix = Math::EulerToMatrix( Orientation );
+			const Matrix4D RotationMatrix = Math::EulerToMatrix( Orientation );
 			const Vector3D ConvertedOrientation = Math::MatrixToEuler( RotationMatrix );
 
 			const bool Equal =
