@@ -20,18 +20,19 @@
 static const Timecode Timebase = 96;
 static bool TimelineCamera = true;
 static CCamera* ActiveTimelineCamera = nullptr;
+static double TimelineStartTime = 0.0f;
 
 // True if the mouse is held down while dragging on the timeline bar.
 static bool Scrobbling = false;
 
-float MarkerToTime( const Timecode& Marker )
+double MarkerToTime( const Timecode& Marker )
 {
-	return StaticCast<float>( StaticCast<double>( Marker ) / StaticCast<double>( Timebase ) );
+	return StaticCast<double>( Marker ) / StaticCast<double>( Timebase );
 }
 
-float MarkerRangeToTime( const Timecode& StartMarker, const Timecode& EndMarker )
+double MarkerRangeToTime( const Timecode& StartMarker, const Timecode& EndMarker )
 {
-	return StaticCast<float>( StaticCast<double>( EndMarker - StartMarker ) / StaticCast<double>( Timebase ) );
+	return StaticCast<double>( EndMarker - StartMarker ) / StaticCast<double>( Timebase );
 }
 
 enum class ESequenceStatus : uint8_t
@@ -279,6 +280,20 @@ struct FEventAudio : FTrackEvent
 		Data << FadeOut;
 		Data << Volume;
 		Data << Rate;
+
+		if( Sound->FileLocation.length() > 0 )
+		{
+			if( Sound->GetSoundType() == ESoundType::Memory )
+			{
+				DataMarker::Mark( Data, "Sound" );
+			}
+			else
+			{
+				DataMarker::Mark( Data, "Stream" );
+			}
+			
+			DataString::Encode( Data, Sound->FileLocation );
+		}
 	}
 
 	virtual void Import( CData& Data )
@@ -292,6 +307,19 @@ struct FEventAudio : FTrackEvent
 		Data >> Volume;
 		Data >> Rate;
 
+		if( DataMarker::Check( Data, "Sound" ) )
+		{
+			std::string FileLocation;
+			DataString::Decode( Data, FileLocation );
+			Sound = CAssets::Get().CreateNamedSound( Name.c_str(), FileLocation.c_str() );
+		}
+		else if( DataMarker::Check( Data, "Stream" ) )
+		{
+			std::string FileLocation;
+			DataString::Decode( Data, FileLocation );
+			Sound = CAssets::Get().CreateNamedStream( Name.c_str(), FileLocation.c_str() );
+		}
+		
 		Sound = CAssets::Get().FindSound( Name );
 	}
 };
@@ -427,7 +455,10 @@ struct FEventCamera : FTrackEvent
 				if( ActiveCamera && ActiveCamera != &BlendResult )
 				{
 					*ActiveCamera = BlendResult;
-					ActiveCamera->CameraOrientation = Math::DirectionToEuler( BlendResult.GetCameraSetup().CameraDirection );
+					auto ShuffleOrientation = Math::ToDegrees( Math::DirectionToEuler( BlendResult.GetCameraSetup().CameraDirection ) );
+					ActiveCamera->CameraOrientation.X = ShuffleOrientation.Pitch;
+					ActiveCamera->CameraOrientation.Y = ShuffleOrientation.Yaw;
+					ActiveCamera->CameraOrientation.Z = ShuffleOrientation.Roll;
 				}
 			}
 		}
@@ -705,8 +736,6 @@ struct FTrack
 			Data >> Event;
 		}
 
-		// DataVector::Decode( Data, Track.Events );
-
 		return Data;
 	}
 };
@@ -844,14 +873,44 @@ public:
 		return StartMarker - EndMarker;
 	}
 
-	float Time() const
+	double Time() const
 	{
 		return MarkerToTime( Marker );
 	}
 
-	float Length() const
+	double Length() const
 	{
 		return MarkerRangeToTime( StartMarker, EndMarker );
+	}
+
+	double PreviousTime = 0.0f;
+	double Remainder = 0.0f;
+	
+	void Feed()
+	{
+		const auto RealTime = GameLayersInstance->GetRealTime();
+		const auto DeltaTime = RealTime - PreviousTime + Remainder;
+		const uint64_t Steps = StaticCast<uint64_t>( std::ceil( DeltaTime * StaticCast<double>( Timebase ) ) );
+		for( uint64_t StepIndex = 0; StepIndex < Steps; StepIndex++ )
+		{
+			if( Status == ESequenceStatus::Stopped )
+				break;
+
+			Step();
+		}
+
+		const auto DebugTime = RealTime - TimelineStartTime;
+		std::string DebugString =
+			"Time Since Play        : " + std::to_string( DebugTime ) +
+			"\nReconstructed Time: " + std::to_string( Time() ) +
+			"\nDrift                  : " + std::to_string( Time() - DebugTime ) +
+			"\nSteps                  : " + std::to_string( Steps )
+			;
+
+		UI::AddText( Vector2D( 51.0f, 201.0f ), DebugString.c_str(), nullptr, Color::Black );
+		UI::AddText( Vector2D( 50.0f, 200.0f ), DebugString.c_str() );
+		
+		PreviousTime = RealTime;
 	}
 
 	void Frame()
@@ -888,470 +947,368 @@ public:
 
 		if( DrawTimeline )
 		{
-			if( ImGui::Begin( 
-				"Timeline", 
-				&DrawTimeline, 
-				ImVec2( 1000.0f, 500.0f )
-				) )
+			DisplayTimeline();
+		}
+
+		Feed();
+	}
+
+	void Draw()
+	{
+		DrawTimeline = true;
+	}
+
+	void DisplayTimeline()
+	{
+		if( ImGui::Begin(
+			"Timeline",
+			&DrawTimeline,
+			ImVec2( 1000.0f, 500.0f )
+		) )
+		{
+			static FTrack* ActiveTrack = nullptr;
+			static std::vector<FTrackEvent*> ActiveEvents;
+			static int SequenceLengthSeconds = 2;
+
+			const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
+			if( ShouldPlayPause )
 			{
-				static FTrack* ActiveTrack = nullptr;
-				static std::vector<FTrackEvent*> ActiveEvents;
-				static int SequenceLengthSeconds = 2;
-
-				const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
-				if( ShouldPlayPause )
-				{
-					if( Status == ESequenceStatus::Stopped )
-					{
-						Play();
-					}
-					else
-					{
-						Pause();
-					}
-				}
-
-				if( ImGui::Button( "Play" ) )
+				if( Status == ESequenceStatus::Stopped )
 				{
 					Play();
 				}
-
-				ImGui::SameLine();
-
-				if( ImGui::Button( "Pause" ) )
+				else
 				{
 					Pause();
 				}
+			}
 
-				ImGui::SameLine();
+			if( ImGui::Button( "Play" ) )
+			{
+				Play();
 
-				if( ImGui::Button( "Stop" ) )
+				TimelineStartTime = GameLayersInstance->GetRealTime();
+			}
+
+			ImGui::SameLine();
+
+			if( ImGui::Button( "Pause" ) )
+			{
+				Pause();
+			}
+
+			ImGui::SameLine();
+
+			if( ImGui::Button( "Stop" ) )
+			{
+				Stop();
+			}
+
+			ImGui::SameLine();
+
+			if( ImGui::Button( "Step" ) )
+			{
+				// Increment the timeline step.
+				Marker++;
+			}
+
+			ImGui::SameLine();
+
+			if( ImGui::Button( "Save" ) )
+			{
+				CData Data;
+				Data << *this;
+
+				CFile File( Location.c_str() );
+				File.Load( Data );
+				File.Save();
+			}
+
+			ImGui::SameLine();
+
+			if( ImGui::Button( "Create Track" ) )
+			{
+				CreateTrack();
+				ActiveTrack = nullptr;
+			}
+
+			ImGui::SameLine();
+
+			static std::string EventType = ( *EventTypes.find( "Audio" ) ).first;
+
+			if( ImGui::Button( "Create Event" ) )
+			{
+				if( ActiveTrack && Tracks.size() > 0 )
 				{
-					Stop();
-				}
+					FTrackEvent* Event = EventTypes[EventType]();
+					Event->Start = Marker;
+					Event->Length = SequenceLengthSeconds * Timebase;
+					ActiveTrack->AddEvent( Event );
 
-				ImGui::SameLine();
+					Marker += Event->Length;
 
-				if( ImGui::Button( "Step" ) )
-				{
-					// Increment the timeline step.
-					Marker++;
-				}
-
-				ImGui::SameLine();
-
-				if( ImGui::Button( "Save" ) )
-				{
-					CData Data;
-					Data << *this;
-
-					CFile File( Location.c_str() );
-					File.Load( Data );
-					File.Save();
-				}
-
-				ImGui::SameLine();
-
-				if( ImGui::Button( "Create Track" ) )
-				{
-					CreateTrack();
-					ActiveTrack = nullptr;
-				}
-
-				ImGui::SameLine();
-
-				static std::string EventType = ( *EventTypes.find( "Audio" ) ).first;
-
-				if( ImGui::Button( "Create Event" ) )
-				{
-					if( ActiveTrack && Tracks.size() > 0 )
+					auto EventCode = Event->Start + Event->Length;
+					auto TrackCode = ActiveTrack->Start + ActiveTrack->Length;
+					if( EventCode > TrackCode )
 					{
-						FTrackEvent* Event = EventTypes[EventType]();
-						Event->Start = Marker;
-						Event->Length = SequenceLengthSeconds * Timebase;
-						ActiveTrack->AddEvent( Event );
-
-						Marker += Event->Length;
-
-						auto EventCode = Event->Start + Event->Length;
-						auto TrackCode = ActiveTrack->Start + ActiveTrack->Length;
-						if( EventCode > TrackCode )
-						{
-							ActiveTrack->Length = EventCode - ActiveTrack->Start;
-						}
-
-						Timecode AdjustedEnd = ActiveTrack->Start + ActiveTrack->Length;
-						if( AdjustedEnd > EndMarker )
-						{
-							EndMarker = AdjustedEnd;
-						}
-					}
-				}
-
-				ImGui::SameLine();
-
-				if( ImGui::BeginCombo( "##EventTypes", EventType.c_str() ) )
-				{
-					for( auto& Pair : EventTypes )
-					{
-						if( ImGui::Selectable( Pair.first.c_str() ) )
-						{
-							EventType = Pair.first;
-						}
-
-						ImGui::Separator();
+						ActiveTrack->Length = EventCode - ActiveTrack->Start;
 					}
 
-					ImGui::EndCombo();
-				}
-
-				ImGui::Separator();
-
-				int StartLocation = StartMarker / Timebase;
-				int EndLocation = EndMarker / Timebase;
-				if( ImGui::InputInt( "Start", &StartLocation ) )
-				{
-					StartMarker = StartLocation * Timebase;
-				}
-
-				if( ImGui::InputInt( "End", &EndLocation ) )
-				{
-					EndMarker = EndLocation * Timebase;
-				}
-
-				ImGui::Separator();
-				ImGui::Separator();
-
-				static float WidthScale = 1.0f;
-				size_t WidthDelta = Math::Max( 1.0f, static_cast<size_t>( 1000.0f / 30 ) * WidthScale );
-				ImGui::SliderFloat( "Scale", &WidthScale, 0.1f, 10.0f );
-
-				if( ImGui::GetIO().KeyCtrl )
-				{
-					WidthScale = Math::Max( 0.1f, WidthScale + ImGui::GetIO().MouseWheel * 0.33f );
-				}
-
-				ImGui::SameLine();
-				if( ImGui::Checkbox( "Use Timeline Cameras", &TimelineCamera ) )
-				{
-					if( !TimelineCamera )
+					Timecode AdjustedEnd = ActiveTrack->Start + ActiveTrack->Length;
+					if( AdjustedEnd > EndMarker )
 					{
-						auto World = CWorld::GetPrimaryWorld();
-						if( World )
-						{
-							World->SetActiveCamera( nullptr );
-						}
+						EndMarker = AdjustedEnd;
 					}
 				}
+			}
 
-				auto MarkerLocalPosition = ( static_cast<float>( Marker ) / static_cast<float>( Timebase ) ) * WidthDelta;
-				auto EndMarkerLocalPosition = ( static_cast<float>( EndMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
-				
-				auto CursorOffset = 100.0f;
+			ImGui::SameLine();
 
-				auto WindowWidth = ImGui::GetWindowWidth() - CursorOffset;
-				auto MarkerWindowPosition = MarkerLocalPosition;
-				auto MarkerPercentageWindow = MarkerWindowPosition / WindowWidth;
-				auto EndMarkerPercentageWindow = EndMarkerLocalPosition / WindowWidth;
-
-				if( Status != ESequenceStatus::Stopped && EndMarkerPercentageWindow > 1.0f && MarkerPercentageWindow > 0.5f )
+			if( ImGui::BeginCombo( "##EventTypes", EventType.c_str() ) )
+			{
+				for( auto& Pair : EventTypes )
 				{
-					CursorOffset -= MarkerWindowPosition - WindowWidth * 0.5f;
-				}
-
-				UI::AddText( Vector2D( 50.0f, 130.0f ), "MarkerWindowPosition", MarkerWindowPosition );
-				UI::AddText( Vector2D( 50.0f, 150.0f ), "MarkerPercentageWindow", MarkerPercentageWindow );
-				
-				auto CursorPosition = ImGui::GetCursorPos();
-				CursorPosition.x += CursorOffset;
-
-				size_t Bars = ( ( EndMarker - StartMarker ) / Timebase );
-				for( size_t BarIndex = 0; BarIndex < Bars; )
-				{
-					auto BarPosition = CursorPosition;
-					BarPosition.x += BarIndex * WidthDelta;
-					ImGui::SetCursorPos( BarPosition );
-
-					ImGui::Text( "%zi", BarIndex );
-
-					if( WidthScale > 0.5f )
+					if( ImGui::Selectable( Pair.first.c_str() ) )
 					{
-						BarIndex++;
+						EventType = Pair.first;
 					}
-					else
-					{
-						BarIndex += 5;
-					}
+
+					ImGui::Separator();
 				}
 
-				auto BarPosition = ImGui::GetCursorPos();
-				ImGui::SetCursorPos( CursorPosition );
-				auto MouseStartPosition = ImGui::GetCursorScreenPos();
-				
-				if( Bars > 0 && ImGui::InvisibleButton( "MarkerTracker", ImVec2( Bars * WidthDelta, 30.0f ) ) )
+				ImGui::EndCombo();
+			}
+
+			ImGui::Separator();
+
+			int StartLocation = StartMarker / Timebase;
+			int EndLocation = EndMarker / Timebase;
+			if( ImGui::InputInt( "Start", &StartLocation ) )
+			{
+				StartMarker = StartLocation * Timebase;
+			}
+
+			if( ImGui::InputInt( "End", &EndLocation ) )
+			{
+				EndMarker = EndLocation * Timebase;
+			}
+
+			ImGui::Separator();
+			ImGui::Separator();
+
+			static float WidthScale = 1.0f;
+			size_t WidthDelta = Math::Max( 1.0f, static_cast<size_t>( 1000.0f / 30 ) * WidthScale );
+			ImGui::SliderFloat( "Scale", &WidthScale, 0.1f, 10.0f );
+
+			if( ImGui::GetIO().KeyCtrl )
+			{
+				WidthScale = Math::Max( 0.1f, WidthScale + ImGui::GetIO().MouseWheel * 0.33f );
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Checkbox( "Use Timeline Cameras", &TimelineCamera ) )
+			{
+				if( !TimelineCamera )
 				{
-					auto MousePosition = ImGui::GetMousePos();
-					auto MouseOffset = MousePosition.x - MouseStartPosition.x;
-					if( MouseOffset < 0.0f )
-						MouseOffset = 0.0f;
-
-					Marker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
-				}
-
-				Timecode GhostMarker = 0;
-				if( ImGui::IsItemHovered() )
-				{
-					auto MousePosition = ImGui::GetMousePos();
-					auto MouseOffset = MousePosition.x - MouseStartPosition.x;
-					if( MouseOffset < 0.0f )
-						MouseOffset = 0.0f;
-
-					GhostMarker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
-					if( ImGui::GetIO().MouseDown[0] )
+					auto World = CWorld::GetPrimaryWorld();
+					if( World )
 					{
-						Marker = GhostMarker;
-						Scrobbling = true;
+						World->SetActiveCamera( nullptr );
 					}
 				}
+			}
 
+			auto MarkerLocalPosition = ( static_cast<float>( Marker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+			auto EndMarkerLocalPosition = ( static_cast<float>( EndMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+
+			auto CursorOffset = 100.0f;
+
+			auto WindowWidth = ImGui::GetWindowWidth() - CursorOffset;
+			auto MarkerWindowPosition = MarkerLocalPosition;
+			auto MarkerPercentageWindow = MarkerWindowPosition / WindowWidth;
+			auto EndMarkerPercentageWindow = EndMarkerLocalPosition / WindowWidth;
+
+			if( Status != ESequenceStatus::Stopped && EndMarkerPercentageWindow > 1.0f && MarkerPercentageWindow > 0.5f )
+			{
+				CursorOffset -= MarkerWindowPosition - WindowWidth * 0.5f;
+			}
+
+			UI::AddText( Vector2D( 50.0f, 130.0f ), "MarkerWindowPosition", MarkerWindowPosition );
+			UI::AddText( Vector2D( 50.0f, 150.0f ), "MarkerPercentageWindow", MarkerPercentageWindow );
+
+			auto CursorPosition = ImGui::GetCursorPos();
+			CursorPosition.x += CursorOffset;
+
+			size_t Bars = ( ( EndMarker - StartMarker ) / Timebase );
+			for( size_t BarIndex = 0; BarIndex < Bars; )
+			{
+				auto BarPosition = CursorPosition;
+				BarPosition.x += BarIndex * WidthDelta;
 				ImGui::SetCursorPos( BarPosition );
 
-				ImGui::Separator();
+				ImGui::Text( "%zi", BarIndex );
 
-				CursorPosition = ImGui::GetCursorPos();
-				auto ScreenPosition = ImGui::GetCursorScreenPos();
-
-				struct FEventTrackDrag
+				if( WidthScale > 0.5f )
 				{
-					bool Up;
-					size_t TrackIndex;
-					FTrackEvent* Event;
-				};
-				std::vector<FEventTrackDrag> DragEvents;
-				DragEvents.reserve( 2 );
-
-				size_t GlobalIndex = 0;
-				size_t TrackIndex = 0;
-				for( auto& Track : Tracks )
-				{
-					auto TrackPosition = ImGui::GetCursorPos();
-					TrackPosition.x += ( static_cast<float>( Track.Start ) / static_cast<float>( Timebase ) ) * WidthDelta;
-					ImGui::SetCursorPos( TrackPosition );
-
-					const float Hue = TrackIndex * 0.05f;
-					const float Value = &Track == ActiveTrack ? 0.4f : 0.2f;
-					ImGui::PushStyleColor( ImGuiCol_ChildBg, static_cast<ImVec4>( ImColor::HSV( Hue, 0.3f, Value ) ) );
-
-					char TrackName[128];
-					sprintf_s( TrackName, "Track %zi", TrackIndex );
-					ImGui::BeginChild( TrackName, ImVec2( CursorOffset + ( static_cast<float>( Track.Length ) / static_cast<float>( Timebase ) ) * WidthDelta, 30.0f ), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
-
-					TrackPosition = ImGui::GetCursorPos();
-
-					if( ImGui::Selectable( TrackName, false, 0, ImVec2( CursorOffset - 5.0f, 30.0f ) ) )
-					{
-						ActiveTrack = &Track;
-					}
-
-					TrackPosition.x += CursorOffset;
-					ImGui::SetCursorPosX( TrackPosition.x );
-
-					size_t EventIndex = 0;
-					for( auto& Event : Track.Events )
-					{
-						auto EventPosition = TrackPosition;
-						EventPosition.x += ( static_cast<float>( Event->Start ) / static_cast<float>( Timebase ) ) * WidthDelta;
-						ImGui::SetCursorPos( EventPosition );
-
-						float Hue = 270.0f - ( GlobalIndex * 0.2f );
-
-						bool SelectedEvent = false;
-						for( auto& ActiveEvent : ActiveEvents )
-						{
-							if( ActiveEvent == Event )
-							{
-								SelectedEvent = true;
-							}
-						}
-
-						const float Brightness = SelectedEvent ? 1.0f : 0.6f;
-						ImGui::PushStyleColor( ImGuiCol_Button, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, Brightness ) ) );
-						ImGui::PushStyleColor( ImGuiCol_ButtonHovered, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, 0.9f ) ) );
-						ImGui::PushStyleColor( ImGuiCol_ButtonActive, static_cast<ImVec4>( ImColor::HSV( Hue, 0.4f, 0.9f ) ) );
-						ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 0.0f );
-						ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0.0f, 0.0f ) );
-
-						std::string EventName = std::string( Event->GetName() ) + 
-							" (Length: " + 
-							std::to_string( Event->Length / Timebase ) +
-							")"
-						;
-
-						std::string EventLabel = EventName + "##eb" + std::to_string( GlobalIndex );
-						ImGui::Button( EventLabel.c_str(), ImVec2( ( static_cast<float>( Event->Length ) / static_cast<float>( Timebase ) )* WidthDelta, 30.0f ) );
-						if( ImGui::IsItemHovered() )
-						{
-							ImGui::SetTooltip( EventName.c_str() );
-						}
-
-						char ContextName[128];
-						sprintf_s( ContextName, "ec##%zi", EventIndex );
-						if( ImGui::BeginPopupContextItem( ContextName ) )
-						{
-							Event->Context();
-							ImGui::EndPopup();
-						}
-
-						if( ImGui::IsItemClicked() )
-						{
-							if( !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift )
-							{
-								ActiveEvents.clear();
-							}
-
-							ActiveTrack = &Track;
-							ActiveEvents.emplace_back( Event );
-						}
-
-						ImVec2 Drag = ImVec2();
-
-						if( ImGui::IsItemHovered() && ImGui::GetIO().MouseDown[0] )
-						{
-							auto Delta = ImGui::GetMouseDragDelta( 0, 0.0f );
-							Drag.x += Delta.x;
-							Drag.y += Delta.y;
-							ImGui::ResetMouseDragDelta( 0 );
-
-							// Marker = Event->Start;
-						}
-
-						auto NewEventStart = Event->Start + static_cast<Timecode>( Drag.x / WidthDelta * Timebase );
-						if( fabs( Drag.x ) > 0.001f && NewEventStart > Track.Start && NewEventStart < ( Track.Start + Track.Length ) )
-						{
-							Event->Start = NewEventStart;
-
-							auto EventCode = Event->Start + Event->Length;
-							auto TrackCode = Track.Start + Track.Length;
-							if( EventCode > TrackCode )
-							{
-								Track.Length = EventCode - Track.Start;
-							}
-						}
-
-						if( fabs( Drag.y ) > 1.0f && ImGui::IsItemActive() ) // 
-						{
-							const bool Up = Drag.y < 0.0f;
-							FEventTrackDrag DragEvent;
-							DragEvent.Up = Up;
-							DragEvent.TrackIndex = TrackIndex;
-							DragEvent.Event = Event;
-
-							DragEvents.emplace_back( DragEvent );
-						}
-
-						ImGui::PopStyleVar();
-						ImGui::PopStyleVar();
-						ImGui::PopStyleColor();
-						ImGui::PopStyleColor();
-						ImGui::PopStyleColor();
-
-						EventIndex++;
-						GlobalIndex++;
-					}
-
-					TrackIndex++;
-
-					ImGui::EndChild();
-
-					ImGui::PopStyleColor();
+					BarIndex++;
 				}
-
-				auto DrawList = ImGui::GetWindowDrawList();
-				if( DrawList )
+				else
 				{
-					auto VerticalOffset = 32.0f;
-					ScreenPosition.x += CursorOffset;
-
-					auto MarkerPosition = ScreenPosition;
-					MarkerPosition.x += MarkerLocalPosition;
-					auto LineEnd = MarkerPosition;
-					LineEnd.y += Tracks.size() * VerticalOffset;
-					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_WHITE );
-
-					UI::AddText( Vector2D( 50.0f, 50.0f ), "ScreenPositionX", ScreenPosition.x );
-					UI::AddText( Vector2D( 50.0f, 70.0f ), "MarkerPosition", MarkerPosition.x );
-					UI::AddText( Vector2D( 50.0f, 90.0f ), "WindowWidth", WindowWidth );
-					UI::AddText( Vector2D( 50.0f, 110.0f ), "CursorPosition", CursorPosition.x );
-
-					MarkerPosition = ScreenPosition;
-					MarkerPosition.x += ( static_cast<float>( GhostMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
-					LineEnd = MarkerPosition;
-					LineEnd.y += Tracks.size() * VerticalOffset;
-					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 128, 128, 128, 255 ) );
-
-					MarkerPosition = ScreenPosition;
-					MarkerPosition.x += ( StartMarker / Timebase ) * WidthDelta;
-					LineEnd = MarkerPosition;
-					LineEnd.y += Tracks.size() * VerticalOffset;
-					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK );
-
-					MarkerPosition = ScreenPosition;
-					MarkerPosition.x += ( EndMarker / Timebase ) * WidthDelta;
-					LineEnd = MarkerPosition;
-					LineEnd.y += Tracks.size() * VerticalOffset;
-					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK );
+					BarIndex += 5;
 				}
+			}
 
-				bool DragEventOccured = false;
-				for( auto& DragEvent : DragEvents )
+			auto BarPosition = ImGui::GetCursorPos();
+			ImGui::SetCursorPos( CursorPosition );
+			auto MouseStartPosition = ImGui::GetCursorScreenPos();
+
+			if( Bars > 0 && ImGui::InvisibleButton( "MarkerTracker", ImVec2( Bars * WidthDelta, 30.0f ) ) )
+			{
+				auto MousePosition = ImGui::GetMousePos();
+				auto MouseOffset = MousePosition.x - MouseStartPosition.x;
+				if( MouseOffset < 0.0f )
+					MouseOffset = 0.0f;
+
+				Marker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
+			}
+
+			Timecode GhostMarker = 0;
+			if( ImGui::IsItemHovered() )
+			{
+				auto MousePosition = ImGui::GetMousePos();
+				auto MouseOffset = MousePosition.x - MouseStartPosition.x;
+				if( MouseOffset < 0.0f )
+					MouseOffset = 0.0f;
+
+				GhostMarker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
+				if( ImGui::GetIO().MouseDown[0] )
 				{
-					size_t NewTrackIndex = std::min( Tracks.size() - 1, std::max( size_t( 0 ), DragEvent.Up ? ( DragEvent.TrackIndex == 0 ? 0 : DragEvent.TrackIndex - 1 ) : DragEvent.TrackIndex + 1 ) );
-					if( NewTrackIndex != DragEvent.TrackIndex )
+					Marker = GhostMarker;
+					Scrobbling = true;
+
+					if( Status == ESequenceStatus::Stopped )
 					{
-						auto Iterator = std::find( Tracks[DragEvent.TrackIndex].Events.begin(), Tracks[DragEvent.TrackIndex].Events.end(), DragEvent.Event );
-						if( Iterator != Tracks[DragEvent.TrackIndex].Events.end() )
-						{
-							Tracks[DragEvent.TrackIndex].Events.erase( Iterator );
-							Tracks[NewTrackIndex].Events.emplace_back( DragEvent.Event );
-							DragEventOccured = true;
-							ActiveTrack = &Tracks[NewTrackIndex];
-						}
+						Status = ESequenceStatus::Paused;
 					}
 				}
+			}
 
-				if( !ActiveEvents.empty() )
+			ImGui::SetCursorPos( BarPosition );
+
+			ImGui::Separator();
+
+			CursorPosition = ImGui::GetCursorPos();
+			auto ScreenPosition = ImGui::GetCursorScreenPos();
+
+			struct FEventTrackDrag
+			{
+				bool Up;
+				size_t TrackIndex;
+				FTrackEvent* Event;
+			};
+			std::vector<FEventTrackDrag> DragEvents;
+			DragEvents.reserve( 2 );
+
+			size_t GlobalIndex = 0;
+			size_t TrackIndex = 0;
+			for( auto& Track : Tracks )
+			{
+				auto TrackPosition = ImGui::GetCursorPos();
+				TrackPosition.x += ( static_cast<float>( Track.Start ) / static_cast<float>( Timebase ) ) * WidthDelta;
+				ImGui::SetCursorPos( TrackPosition );
+
+				const float Hue = TrackIndex * 0.05f;
+				const float Value = &Track == ActiveTrack ? 0.4f : 0.2f;
+				ImGui::PushStyleColor( ImGuiCol_ChildBg, static_cast<ImVec4>( ImColor::HSV( Hue, 0.3f, Value ) ) );
+
+				char TrackName[128];
+				sprintf_s( TrackName, "Track %zi", TrackIndex );
+				ImGui::BeginChild( TrackName, ImVec2( CursorOffset + ( static_cast<float>( Track.Length ) / static_cast<float>( Timebase ) ) * WidthDelta, 30.0f ), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
+
+				TrackPosition = ImGui::GetCursorPos();
+
+				if( ImGui::Selectable( TrackName, false, 0, ImVec2( CursorOffset - 5.0f, 30.0f ) ) )
 				{
-					// ImGui::GetIO().WantCaptureKeyboard = true;
+					ActiveTrack = &Track;
 				}
 
-				if( ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Delete ) ) )
+				TrackPosition.x += CursorOffset;
+				ImGui::SetCursorPosX( TrackPosition.x );
+
+				size_t EventIndex = 0;
+				for( auto& Event : Track.Events )
 				{
+					auto EventPosition = TrackPosition;
+					EventPosition.x += ( static_cast<float>( Event->Start ) / static_cast<float>( Timebase ) ) * WidthDelta;
+					ImGui::SetCursorPos( EventPosition );
+
+					float Hue = 270.0f - ( GlobalIndex * 0.2f );
+
+					bool SelectedEvent = false;
 					for( auto& ActiveEvent : ActiveEvents )
 					{
-						if( ActiveEvent )
+						if( ActiveEvent == Event )
 						{
-							for( auto& Track : Tracks )
-							{
-								auto Iterator = std::find( Track.Events.begin(), Track.Events.end(), ActiveEvent );
-								if( Iterator != Track.Events.end() )
-								{
-									Track.Events.erase( Iterator );
-									ActiveEvent = nullptr;
-								}
-							}
+							SelectedEvent = true;
 						}
 					}
 
-					ActiveEvents.clear();
-				}
+					const float Brightness = SelectedEvent ? 1.0f : 0.6f;
+					ImGui::PushStyleColor( ImGuiCol_Button, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, Brightness ) ) );
+					ImGui::PushStyleColor( ImGuiCol_ButtonHovered, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, 0.9f ) ) );
+					ImGui::PushStyleColor( ImGuiCol_ButtonActive, static_cast<ImVec4>( ImColor::HSV( Hue, 0.4f, 0.9f ) ) );
+					ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 0.0f );
+					ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0.0f, 0.0f ) );
 
-				// Update the length of each track.
-				for( auto& Track : Tracks )
-				{
-					Track.Length = EndMarker - StartMarker;
+					std::string EventName = std::string( Event->GetName() ) +
+						" (Length: " +
+						std::to_string( Event->Length / Timebase ) +
+						")"
+						;
 
-					for( auto Event : Track.Events )
+					std::string EventLabel = EventName + "##eb" + std::to_string( GlobalIndex );
+					ImGui::Button( EventLabel.c_str(), ImVec2( ( static_cast<float>( Event->Length ) / static_cast<float>( Timebase ) ) * WidthDelta, 30.0f ) );
+					if( ImGui::IsItemHovered() )
 					{
+						ImGui::SetTooltip( EventName.c_str() );
+					}
+
+					char ContextName[128];
+					sprintf_s( ContextName, "ec##%zi", EventIndex );
+					if( ImGui::BeginPopupContextItem( ContextName ) )
+					{
+						Event->Context();
+						ImGui::EndPopup();
+					}
+
+					if( ImGui::IsItemClicked() )
+					{
+						if( !ImGui::GetIO().KeyCtrl && !ImGui::GetIO().KeyShift )
+						{
+							ActiveEvents.clear();
+						}
+
+						ActiveTrack = &Track;
+						ActiveEvents.emplace_back( Event );
+					}
+
+					ImVec2 Drag = ImVec2();
+
+					if( ImGui::IsItemHovered() && ImGui::GetIO().MouseDown[0] )
+					{
+						auto Delta = ImGui::GetMouseDragDelta( 0, 0.0f );
+						Drag.x += Delta.x;
+						Drag.y += Delta.y;
+						ImGui::ResetMouseDragDelta( 0 );
+
+						// Marker = Event->Start;
+					}
+
+					auto NewEventStart = Event->Start + static_cast<Timecode>( Drag.x / WidthDelta * Timebase );
+					if( fabs( Drag.x ) > 0.001f && NewEventStart > Track.Start && NewEventStart < ( Track.Start + Track.Length ) )
+					{
+						Event->Start = NewEventStart;
+
 						auto EventCode = Event->Start + Event->Length;
 						auto TrackCode = Track.Start + Track.Length;
 						if( EventCode > TrackCode )
@@ -1359,27 +1316,132 @@ public:
 							Track.Length = EventCode - Track.Start;
 						}
 					}
+
+					if( fabs( Drag.y ) > 1.0f && ImGui::IsItemActive() ) // 
+					{
+						const bool Up = Drag.y < 0.0f;
+						FEventTrackDrag DragEvent;
+						DragEvent.Up = Up;
+						DragEvent.TrackIndex = TrackIndex;
+						DragEvent.Event = Event;
+
+						DragEvents.emplace_back( DragEvent );
+					}
+
+					ImGui::PopStyleVar();
+					ImGui::PopStyleVar();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+					ImGui::PopStyleColor();
+
+					EventIndex++;
+					GlobalIndex++;
+				}
+
+				TrackIndex++;
+
+				ImGui::EndChild();
+
+				ImGui::PopStyleColor();
+			}
+
+			auto DrawList = ImGui::GetWindowDrawList();
+			if( DrawList )
+			{
+				auto VerticalOffset = 32.0f;
+				ScreenPosition.x += CursorOffset;
+
+				auto MarkerPosition = ScreenPosition;
+				MarkerPosition.x += MarkerLocalPosition;
+				auto LineEnd = MarkerPosition;
+				LineEnd.y += Tracks.size() * VerticalOffset;
+				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_WHITE );
+
+				UI::AddText( Vector2D( 50.0f, 50.0f ), "ScreenPositionX", ScreenPosition.x );
+				UI::AddText( Vector2D( 50.0f, 70.0f ), "MarkerPosition", MarkerPosition.x );
+				UI::AddText( Vector2D( 50.0f, 90.0f ), "WindowWidth", WindowWidth );
+				UI::AddText( Vector2D( 50.0f, 110.0f ), "CursorPosition", CursorPosition.x );
+
+				MarkerPosition = ScreenPosition;
+				MarkerPosition.x += ( static_cast<float>( GhostMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+				LineEnd = MarkerPosition;
+				LineEnd.y += Tracks.size() * VerticalOffset;
+				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 128, 128, 128, 255 ) );
+
+				MarkerPosition = ScreenPosition;
+				MarkerPosition.x += ( StartMarker / Timebase ) * WidthDelta;
+				LineEnd = MarkerPosition;
+				LineEnd.y += Tracks.size() * VerticalOffset;
+				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK );
+
+				MarkerPosition = ScreenPosition;
+				MarkerPosition.x += ( EndMarker / Timebase ) * WidthDelta;
+				LineEnd = MarkerPosition;
+				LineEnd.y += Tracks.size() * VerticalOffset;
+				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK );
+			}
+
+			bool DragEventOccured = false;
+			for( auto& DragEvent : DragEvents )
+			{
+				size_t NewTrackIndex = std::min( Tracks.size() - 1, std::max( size_t( 0 ), DragEvent.Up ? ( DragEvent.TrackIndex == 0 ? 0 : DragEvent.TrackIndex - 1 ) : DragEvent.TrackIndex + 1 ) );
+				if( NewTrackIndex != DragEvent.TrackIndex )
+				{
+					auto Iterator = std::find( Tracks[DragEvent.TrackIndex].Events.begin(), Tracks[DragEvent.TrackIndex].Events.end(), DragEvent.Event );
+					if( Iterator != Tracks[DragEvent.TrackIndex].Events.end() )
+					{
+						Tracks[DragEvent.TrackIndex].Events.erase( Iterator );
+						Tracks[NewTrackIndex].Events.emplace_back( DragEvent.Event );
+						DragEventOccured = true;
+						ActiveTrack = &Tracks[NewTrackIndex];
+					}
 				}
 			}
 
-			ImGui::End();
+			if( !ActiveEvents.empty() )
+			{
+				// ImGui::GetIO().WantCaptureKeyboard = true;
+			}
+
+			if( ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Delete ) ) )
+			{
+				for( auto& ActiveEvent : ActiveEvents )
+				{
+					if( ActiveEvent )
+					{
+						for( auto& Track : Tracks )
+						{
+							auto Iterator = std::find( Track.Events.begin(), Track.Events.end(), ActiveEvent );
+							if( Iterator != Track.Events.end() )
+							{
+								Track.Events.erase( Iterator );
+								ActiveEvent = nullptr;
+							}
+						}
+					}
+				}
+
+				ActiveEvents.clear();
+			}
+
+			// Update the length of each track.
+			for( auto& Track : Tracks )
+			{
+				Track.Length = EndMarker - StartMarker;
+
+				for( auto Event : Track.Events )
+				{
+					auto EventCode = Event->Start + Event->Length;
+					auto TrackCode = Track.Start + Track.Length;
+					if( EventCode > TrackCode )
+					{
+						Track.Length = EventCode - Track.Start;
+					}
+				}
+			}
 		}
 
-		static float PreviousTime = 0.0f;
-		auto Time = GameLayersInstance->GetCurrentTime();
-		auto DeltaTime = Time - PreviousTime;
-		size_t Steps = ( DeltaTime / ( 1.0f / (float) Timebase ) ) + 1;
-		for( size_t StepIndex = 0; StepIndex < Steps; StepIndex++ )
-		{
-			Step();
-		}
-
-		PreviousTime = Time;
-	}
-
-	void Draw()
-	{
-		DrawTimeline = true;
+		ImGui::End();
 	}
 
 	void CreateTrack()
