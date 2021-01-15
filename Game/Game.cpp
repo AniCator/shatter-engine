@@ -17,7 +17,7 @@ CGameLayers::CGameLayers()
 {
 	GameLayers.reserve( 128 );
 
-	TimeScale = 1.0f;
+	TimeScale = 1.0;
 }
 
 CGameLayers::~CGameLayers()
@@ -36,11 +36,11 @@ void CGameLayers::Initialize()
 
 	CSoLoudSound::StopMusic();
 
-	PreviousTime = 0.0f;
-	CurrentTime = 0.0f;
+	PreviousTime = 0.0;
+	CurrentTime = 0.0;
 	DeltaTime = CurrentTime - PreviousTime;
 
-	for( auto GameLayer : GameLayers )
+	for( auto* GameLayer : GameLayers )
 	{
 		if( GameLayer )
 		{
@@ -56,7 +56,7 @@ void CGameLayers::Frame()
 {
 	ProfileAlways( "Game Frame" );
 
-	for( auto GameLayer : GameLayers )
+	for( auto* GameLayer : GameLayers )
 	{
 		if( GameLayer )
 		{
@@ -78,7 +78,7 @@ void CGameLayers::Tick()
 	CWindow& Window = CWindow::Get();
 	Window.GetRenderer().SetUniformBuffer( "Time", Time );
 
-	for( auto GameLayer : GameLayers )
+	for( auto* GameLayer : GameLayers )
 	{
 		if( GameLayer )
 		{
@@ -102,46 +102,46 @@ void CGameLayers::Shutdown()
 	}
 }
 
-void CGameLayers::Time( const float& Time )
+void CGameLayers::Time( const double& Time )
 {
 	PreviousTime = CurrentTime;
 	CurrentTime = Time;
 	DeltaTime = CurrentTime - PreviousTime;
 }
 
-void CGameLayers::FrameTime( const float& FrameTime )
+void CGameLayers::FrameTime( const double& FrameTime )
 {
 	PreviousFrameTime = CurrentFrameTime;
 	CurrentFrameTime = FrameTime;
 	DeltaFrameTime = CurrentFrameTime - PreviousFrameTime;
 }
 
-float CGameLayers::GetPreviousTime() const
+double CGameLayers::GetPreviousTime() const
 {
 	return PreviousTime;
 }
 
-float CGameLayers::GetCurrentTime() const
+double CGameLayers::GetCurrentTime() const
 {
 	return CurrentTime;
 }
 
-float CGameLayers::GetRealTime() const
+double CGameLayers::GetRealTime() const
 {
 	return CurrentFrameTime;
 }
 
-float CGameLayers::GetDeltaTime() const
+double CGameLayers::GetDeltaTime() const
 {
 	return DeltaTime;
 }
 
-float CGameLayers::GetTimeScale() const
+double CGameLayers::GetTimeScale() const
 {
 	return TimeScale;
 }
 
-void CGameLayers::SetTimeScale( float TimeScaleIn )
+void CGameLayers::SetTimeScale( const double& TimeScaleIn )
 {
 	TimeScale = TimeScaleIn;
 }
