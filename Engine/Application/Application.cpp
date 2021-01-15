@@ -1,5 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Application.h"
+#include "ApplicationMenu.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -25,17 +26,11 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Audio/SoLoudSound.h>
-#include <Engine/Audio/Sound.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Configuration/Configuration.h>
 
-#include <Engine/Display/Rendering/Camera.h>
-#include <Engine/Display/Rendering/Renderable.h>
-#include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Resource/Assets.h>
-#include <Engine/Resource/Asset.h>
-#include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
@@ -64,7 +59,7 @@ bool ScaleTime = false;
 bool CursorVisible = true;
 bool RestartLayers = false;
 
-float ScaledGameTime = 0.0;
+double ScaledGameTime = 0.0;
 
 void InputScaleTimeEnable( const float& Scale = 1.0f )
 {
@@ -343,435 +338,6 @@ void SetTheme( const char* Theme )
 	}
 }
 
-bool MenuItem( const char* Label, bool* Selected )
-{
-	if( ImGui::MenuItem( Label, "", Selected ) )
-	{
-		*Selected = true;
-
-		return true;
-	}
-
-	return false;
-}
-
-static CTexture* PreviewTexture = nullptr;
-static float Zoom = 1.0f;
-static float ZoomTarget = 1.0f;
-static float PreviousZoomWheel = -1.0f;
-static ImVec2 Drag = ImVec2();
-void ShowTexture( CTexture* Texture )
-{
-	Zoom = Math::Lerp( Zoom, ZoomTarget, 0.2f );
-
-	if( Texture )
-	{
-		auto ImageSize = ImVec2( Texture->GetWidth(), Texture->GetHeight() );
-		auto ImageRatio = ImageSize.y / ImageSize.x;
-
-		auto ContentOffset = ImGui::GetContentRegionAvail();
-
-		auto MinimumSize = std::min( std::min( ImageSize.x, ImageSize.y ), std::min( ContentOffset.x, ContentOffset.y ) ) * Zoom;
-
-		ImageSize.x = MinimumSize;
-		ImageSize.y = MinimumSize * ImageRatio;
-
-		ContentOffset.x /= 2;
-		ContentOffset.y /= 2;
-
-		auto HalfSize = ImageSize;
-		HalfSize.x /= 2;
-		HalfSize.y /= 2;
-
-		auto ContentPosition = ContentOffset;
-		ContentPosition.x -= HalfSize.x;
-		ContentPosition.y -= HalfSize.y;
-
-		ContentPosition.x += Drag.x;
-		ContentPosition.y += Drag.y;
-
-		ImGui::SetCursorPos( ContentPosition );
-
-		const auto CursorPosition = ImGui::GetCursorScreenPos();
-
-		auto* TextureID = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
-		ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 0 );
-
-		if( ImGui::IsWindowHovered() )
-		{
-			float TextureX = ( ( ImGui::GetMousePos().x - CursorPosition.x ) / ImageSize.x ) * Texture->GetWidth();
-			float TextureY = ( ( ImGui::GetMousePos().y - CursorPosition.y ) / ImageSize.y ) * Texture->GetHeight();
-
-			ImGui::BeginTooltip();
-			ImGui::Text( "X: %i Y: %i", (int) TextureX, (int) TextureY );
-			ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
-			ImGui::Text( "%s", CAssets::Get().GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
-			ImGui::EndTooltip();
-
-			auto Delta = ImGui::GetIO().MouseWheel - PreviousZoomWheel;
-			if( Delta > 0.1f )
-			{
-				ZoomTarget *= 1.2f;
-
-				Drag.x *= 1.2f;
-				Drag.y *= 1.2f;
-			}
-			else if( Delta < -0.1f )
-			{
-				ZoomTarget *= 0.8f;
-
-				Drag.x *= 0.8f;
-				Drag.y *= 0.8f;
-			}
-
-			ZoomTarget = std::max( ZoomTarget, 0.25f );
-		}
-
-		if( ImGui::IsItemActive() )
-		{
-			auto Delta = ImGui::GetMouseDragDelta( 0, 0.0f );
-			Drag.x += Delta.x;
-			Drag.y += Delta.y;
-			ImGui::ResetMouseDragDelta( 0 );
-		}
-
-		ImGui::SetCursorPos( ImVec2( 0, 0 ) );
-
-		ImGui::Text( "Zoom %.2f", ZoomTarget );
-
-		if( ImGui::Button( "0.5x" ) )
-		{
-			ZoomTarget = 0.5f;
-		}
-
-		if( ImGui::Button( "1x" ) )
-		{
-			ZoomTarget = 1.0f;
-		}
-
-		if( ImGui::Button( "2x" ) )
-		{
-			ZoomTarget = 2.0f;
-		}
-
-		if( ImGui::Button( "Center" ) )
-		{
-			Drag = ImVec2();
-		}
-	}
-}
-
-void TextureListUI()
-{
-	ImGui::BeginChild( "Texture Panel", ImVec2( 0, ImGui::GetContentRegionAvail().y * 0.5f ) );
-	const int Columns = std::max( static_cast<int>( ImGui::GetWindowWidth() / 66 ), 1 );
-	ImGui::Columns( Columns );
-
-	auto& Assets = CAssets::Get();
-	auto Textures = Assets.GetTextures();
-	for( const auto& Pair : Textures )
-	{
-		CTexture* Texture = Pair.second;
-		if( Texture )
-		{
-			auto ImageSize = ImVec2( 64, 64 );
-
-			auto* TextureID = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
-			if( ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1 ) )
-			{
-				PreviewTexture = Texture;
-				
-				// Zoom = 1.0f;
-				// Drag = ImVec2();
-			}
-
-			if( ImGui::IsItemHovered() )
-			{
-				ImGui::BeginTooltip();
-				ImGui::Text( "%s", Pair.first.c_str() );
-				ImGui::Text( "%s", Texture->GetLocation().c_str() );
-				ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
-				ImGui::Text( "%s", Assets.GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
-				ImGui::EndTooltip();
-			}
-
-			ImGui::NextColumn();
-		}
-	}
-
-	ImGui::Columns( 1 );
-	ImGui::EndChild();
-
-	ImGui::BeginChild( "Texture Preview", ImVec2( 0, 0 ), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
-	ShowTexture( PreviewTexture );
-	ImGui::EndChild();
-}
-
-static bool ShowNewAssetPopup = false;
-static std::string NewAssetType = "Sequence";
-static std::string NewAssetName = "NewAsset";
-
-void NewAssetUI()
-{
-	if( ShowNewAssetPopup )
-	{
-		if( ImGui::BeginPopupContextItem( "New Asset", 0 ) )
-		{
-			ImGui::Text( "New Asset" );
-			ImGui::Separator();
-
-			static char AssetName[128];
-			ImGui::InputText( "Name", AssetName, 128 );
-			ImGui::SetItemDefaultFocus();
-
-			if( ImGui::BeginCombo( "Type", NewAssetType.c_str() ) )
-			{
-				if( ImGui::Selectable( "Sequence" ) )
-				{
-					NewAssetType = "Sequence";
-				}
-
-				ImGui::Separator();
-
-				ImGui::EndCombo();
-			}
-
-			if( ImGui::Button( "Create" ) )
-			{
-				auto& Assets = CAssets::Get();
-				if( NewAssetType == "Sequence" )
-				{
-					NewAssetName = AssetName;
-					if( NewAssetName.length() > 0 )
-					{
-						const std::string AssetPath = "Sequences/" + NewAssetName + ".lsq";
-						auto Sequence = Assets.CreateNamedSequence( AssetName, AssetPath.c_str() );
-						Sequence->Draw();
-					}
-				}
-
-				ShowNewAssetPopup = false;
-			}
-
-			ImGui::EndPopup();
-		}
-
-		if( !ShowNewAssetPopup )
-		{
-			ImGui::CloseCurrentPopup();
-			NewAssetName = "";
-		}
-	}
-}
-
-static bool ShowAssets = false;
-
-void AssetUI()
-{
-	auto& Assets = CAssets::Get();
-
-	if( ShowAssets )
-	{
-		if( ImGui::Begin( "Assets", &ShowAssets, ImVec2( 1000.0f, 700.0f ) ) )
-		{
-			if(ImGui::Button("New") )
-			{
-				ShowNewAssetPopup = true;
-			}
-
-			NewAssetUI();
-
-			ImGui::BeginChild( "Asset List", ImVec2( ImGui::GetWindowContentRegionWidth() * 0.33f, ImGui::GetContentRegionAvail().y ) );
-			ImGui::Columns( 2 );
-
-			ImGui::Separator();
-			ImGui::Text( "Name" ); ImGui::NextColumn();
-			ImGui::Text( "Type" ); ImGui::NextColumn();
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			auto World = CWorld::GetPrimaryWorld();
-			if( World )
-			{
-				auto& Levels = World->GetLevels();
-				for( auto& Level : Levels )
-				{
-					if( ImGui::Selectable( Level.GetName().c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-					{
-						Level.Reload();
-					}
-					ImGui::NextColumn();
-					ImGui::Text( "Level" ); ImGui::NextColumn();
-					ImGui::Separator();
-				}
-			}
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			auto CustomAssets = Assets.GetAssets();
-			for( const auto& Pair : CustomAssets )
-			{
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-
-				}
-				ImGui::NextColumn();
-
-				ImGui::Text( Pair.second->GetType().c_str() ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			auto Meshes = Assets.GetMeshes();
-			for( const auto& Pair : Meshes )
-			{
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					auto& Assets = CAssets::Get();
-					if( Pair.second && Assets.FindMesh( Pair.first ) )
-					{
-						CTimer LoadTimer;
-
-						LoadTimer.Start();
-						auto Mesh = Assets.CreateNamedMesh( Pair.first.c_str(), Pair.second->GetLocation().c_str(), true );
-						LoadTimer.Stop();
-
-						const size_t Triangles = Mesh->GetVertexBufferData().IndexCount / 3;
-
-						Log::Event( "Re-import: %ims %i triangles\n", LoadTimer.GetElapsedTimeMilliseconds(), Triangles );
-					}
-				}
-				ImGui::NextColumn();
-				ImGui::Text( "Mesh" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-
-			auto Shaders = Assets.GetShaders();
-			for( const auto& Pair : Shaders )
-			{
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					Pair.second->Reload();
-				}
-				ImGui::NextColumn();
-
-				ImGui::Text( "Shader" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-
-			auto Textures = Assets.GetTextures();
-			for( const auto& Pair : Textures )
-			{
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					PreviewTexture = Pair.second;
-				}
-				ImGui::NextColumn();
-
-				ImGui::Text( "Texture" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-
-			auto Sounds = Assets.GetSounds();
-			for( const auto& Pair : Sounds )
-			{
-				if( ImGui::Selectable( Pair.first.c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					if( Pair.second->Playing() )
-					{
-						Pair.second->Stop();
-					}
-					else
-					{
-						Pair.second->Start();
-					}
-				}
-				ImGui::NextColumn();
-
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				ImGui::Text( "Sound" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			auto Sequences = Assets.GetSequences();
-			for( const auto& Pair : Sequences )
-			{
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					Pair.second->Draw();
-				}
-				ImGui::NextColumn();
-
-				ImGui::Text( "Sequence" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-			ImGui::Columns( 1 );
-			ImGui::EndChild();
-
-			ImGui::SameLine();
-			ImGui::BeginChild( "Texture List", ImVec2( ImGui::GetWindowContentRegionWidth() * 0.66f, 0 ) );
-			TextureListUI();
-			ImGui::EndChild();
-		}
-
-		ImGui::End();
-	}
-
-	auto Sequences = Assets.GetSequences();
-	for( const auto& Pair : Sequences )
-	{
-		Pair.second->Frame();
-	}
-}
-
-static bool ShowStrings = false;
-
-void StringUI()
-{
-	if( ShowStrings )
-	{
-		if( ImGui::Begin( "Strings", &ShowStrings, ImVec2( 500.0f, 700.0f ) ) )
-		{
-			ImGui::Columns( 2 );
-
-			ImGui::Separator();
-			ImGui::Text( "String" ); ImGui::NextColumn();
-			ImGui::Text( "Index" ); ImGui::NextColumn();
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			for( const auto& Pair : FName::Pool() )
-			{
-				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				ImGui::Text( "%i", Pair.second ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			ImGui::Columns( 1 );
-		}
-
-		ImGui::End();
-	}
-}
-
 static bool ShowTestWindow = false;
 static bool ShowMetricsWindow = false;
 
@@ -924,12 +490,12 @@ void DebugMenu( CApplication* Application )
 
 			ImGui::Separator();
 
-			if( MenuItem( "Assets", &ShowAssets ) )
+			if( MenuItem( "Assets", DisplayAssets() ) )
 			{
-				PreviewTexture = nullptr;
+				SetPreviewTexture( nullptr );
 			}
 
-			MenuItem( "Strings", &ShowStrings );
+			MenuItem( "Strings", DisplayStrings() );
 
 			MenuItem( "ImGui Test Window", &ShowTestWindow );
 			MenuItem( "ImGui Metrics Window", &ShowMetricsWindow );
@@ -1155,14 +721,14 @@ void CApplication::Run()
 		{
 			CTimerScope Scope_( "Frametime", RenderDeltaTime );
 
-			GameLayersInstance->FrameTime( static_cast<float>( RealTime.GetElapsedTimeMilliseconds() ) * 0.001f );
+			GameLayersInstance->FrameTime( StaticCast<double>( RealTime.GetElapsedTimeMilliseconds() ) * 0.001 );
 
 			const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 			if( InputDeltaTime >= MaximumInputTime )
 			{
 				if( !MainWindow.IsWindowless() )
 				{
-					PreviousZoomWheel = ImGui::GetIO().MouseWheel;
+					SetMouseWheel( ImGui::GetIO().MouseWheel );
 				}
 
 				MainWindow.ProcessInput();
@@ -1197,11 +763,11 @@ void CApplication::Run()
 					CProfiler::Get().Clear();
 					Renderer.RefreshFrame();
 
-					const float TimeScaleParameter = CConfiguration::Get().GetFloat( "timescale", 1.0f );
-					const float TimeScaleGlobal = TimeScale * TimeScaleParameter;
+					const double TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
+					const double TimeScaleGlobal = TimeScale * TimeScaleParameter;
 
 					// Clamp the maximum time added to avoid excessive tick spikes.
-					ScaledGameTime += Math::Clamp( GameDeltaTime * 0.001f * TimeScaleGlobal, 0.0f, 1.0f );
+					ScaledGameTime += Math::Clamp( GameDeltaTime * 0.001 * TimeScaleGlobal, 0.0, 1.0 );
 
 					// Update game time.
 					GameLayersInstance->Time( ScaledGameTime );

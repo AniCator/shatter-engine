@@ -202,6 +202,7 @@
   <ItemGroup>
     <ClCompile Include="Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Engine\Application\Application.cpp" />
+    <ClCompile Include="Engine\Application\ApplicationMenu.cpp" />
     <ClCompile Include="Engine\Audio\SimpleSound.cpp" />
     <ClCompile Include="Engine\Audio\SoLoudSound.cpp" />
     <ClCompile Include="Engine\Audio\Sound.cpp" />
@@ -276,6 +277,7 @@
   <ItemGroup>
     <ClInclude Include="Engine\Animation\Skeleton.h" />
     <ClInclude Include="Engine\Application\Application.h" />
+    <ClInclude Include="Engine\Application\ApplicationMenu.h" />
     <ClInclude Include="Engine\Audio\SimpleSound.h" />
     <ClInclude Include="Engine\Audio\SoLoudSound.h" />
     <ClInclude Include="Engine\Audio\Sound.h" />

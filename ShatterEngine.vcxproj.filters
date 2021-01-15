@@ -359,6 +359,9 @@
     <ClCompile Include="Engine\Audio\SoLoudSound.cpp">
       <Filter>Source Files\Engine\Audio</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Application\ApplicationMenu.cpp">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -654,6 +657,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Audio\SoLoudSound.h">
       <Filter>Source Files\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Application\ApplicationMenu.h">
+      <Filter>Source Files\Engine\Application</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
