@@ -67,19 +67,25 @@ public:
 	}
 
 	template<typename T>
-	void operator>>( T& Object )
+	uint32_t operator>>( T& Object )
 	{
 		if( Invalid )
-			return;
+			return 0;
 
 		static_assert( !std::is_pointer<T>::value, "Pointers can not be deserialized." );
 		const uint32_t Size = sizeof( T );
-		Data.read( reinterpret_cast<char*>( &Object ), Size );
 
+		const auto Position = Data.tellg();
+		Data.read( reinterpret_cast<char*>( &Object ), Size );
+		
 		if( !Data.good() )
 		{
-			Invalidate();
+			// Reset the position.
+			Data.clear();
+			Data.seekg( Position );
 		}
+
+		return Size;
 	}
 
 	void operator>>( char* Object )
@@ -87,6 +93,7 @@ public:
 		if( Invalid )
 			return;
 
+		const auto Position = Data.tellg();		
 		do
 		{
 			Data.read( Object, sizeof( char ) );
@@ -95,7 +102,9 @@ public:
 
 		if( !Data.good() )
 		{
-			Invalidate();
+			// Reset the position.
+			Data.clear();
+			Data.seekg( Position );
 		}
 	}
 
@@ -128,7 +137,7 @@ public:
 
 	void Store( char* Buffer, const size_t Size )
 	{
-		ResetCursor();
+		ReadToStart();
 		Data.read( Buffer, Size );
 	}
 
@@ -136,17 +145,58 @@ public:
 	{
 		Data = std::stringstream();
 		Data.write( Buffer, Size );
-		ResetCursor();
+		ReadToStart();
 	}
 
-	void ResetCursor()
+	// Moves the reading cursor to the start of the data.
+	void ReadToStart()
 	{
 		Data.seekg( std::ios::beg );
 	}
 
-	void Jump( const int Offset )
+	// Moves the reading cursor to the end of the data.
+	void ReadToEnd()
+	{
+		Data.seekg( Size() );
+	}
+
+	// Moves the writing cursor to the start of the data.
+	void WriteToStart()
+	{
+		Data.seekp( std::ios::beg );
+	}
+
+	// Moves the writing cursor to the end of the data.
+	void WriteToEnd()
+	{
+		Data.seekp( Size() );
+	}
+
+	void Jump( const int32_t Offset )
 	{
 		Data.seekg( Offset, std::ios::cur );
+	}
+
+	std::basic_stringstream<char>::pos_type WritePosition()
+	{
+		return Data.tellp();
+	}
+
+	void WritePosition( const int32_t Position )
+	{
+		Data.clear();
+		Data.seekp( Position );
+	}
+
+	std::basic_stringstream<char>::pos_type ReadPosition()
+	{
+		return Data.tellg();
+	}
+
+	void ReadPosition( const int32_t Position )
+	{
+		Data.clear();
+		Data.seekg( Position );
 	}
 
 	const size_t Size()

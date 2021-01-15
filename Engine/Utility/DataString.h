@@ -4,6 +4,37 @@
 #include "Data.h"
 #include <string>
 
+struct DataMarker
+{
+	static void Mark( CData& Data, const char* Identifier )
+	{
+		const size_t Length = std::strlen( Identifier );
+		for( size_t Index = 0; Index < Length; Index++ )
+		{
+			Data << Identifier[Index];
+		}
+	}
+
+	static bool Check( CData& Data, const char* Identifier )
+	{
+		const auto ReadPosition = Data.ReadPosition();
+		const size_t Length = std::strlen( Identifier );
+		for( size_t Index = 0; Index < Length; Index++ )
+		{
+			char Extracted;
+			Data >> Extracted;
+			if( Extracted != Identifier[Index] )
+			{
+				// Reset the read position if we didn't find the marker.
+				Data.ReadPosition( ReadPosition );
+				return false;
+			}
+		}
+		
+		return true;
+	}
+};
+
 struct DataString
 {
 	DataString()
