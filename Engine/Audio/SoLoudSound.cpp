@@ -88,9 +88,15 @@ SoLoud::handle PlaySound( SoLoud::AudioSource& AudioSource, const Spatial& Infor
 		Handle = Mixer[SelectedBus].play3d( AudioSource,
 				Information.Position.X, Information.Position.Y, Information.Position.Z,
 				Information.Velocity.X, Information.Velocity.Y, Information.Velocity.Z,
-				FadeIn ? 0.0f : Information.Volume * 0.01f, Information.StartPaused );
+				0.0f, Information.StartPaused );
 
 		Configure3DSound( Handle, Information );
+
+		// The volume has to be set after the 3D sound is configured, otherwise the buffer will get populated with full volume sound too early.
+		if( !FadeIn )
+		{
+			Engine.setVolume( Handle, Information.Volume );
+		}
 
 		if( Information.DelayByDistance )
 		{
@@ -178,6 +184,9 @@ SoundHandle CSoLoudSound::Start( SoundBufferHandle Handle, const Spatial Informa
 		NewSound.Buffer = Handle;
 
 		Sounds.emplace_back( NewSound );
+
+		// Kill inaudible sounds.
+		Engine.setInaudibleBehavior( NewSound.Voice, false, true );
 		
 		SoundHandle Handle;
 		Handle.Handle = Sounds.size() - 1;
@@ -217,7 +226,7 @@ StreamHandle CSoLoudSound::Start( StreamHandle Handle, const Spatial Information
 		Streams.emplace_back( NewStream );
 
 		// Always tick inaudible streams.
-		Engine.setInaudibleBehavior( NewStream.Stream, true, false );
+		// Engine.setInaudibleBehavior( NewStream.Stream, true, false );
 
 		StreamHandle Handle;
 		Handle.Handle = Streams.size() - 1;
@@ -575,22 +584,24 @@ void CSoLoudSound::Tick()
 	Engine.update3dAudio();
 
 	const auto SoundEntry = FProfileTimeEntry( "Active Sounds", ActiveSounds );
-	Profiler.AddCounterEntry( SoundEntry, true );
+	Profiler.AddCounterEntry( SoundEntry, false, true );
 
 	const auto StreamEntry = FProfileTimeEntry( "Active Streams", ActiveStreams );
-	Profiler.AddCounterEntry( StreamEntry, true );
+	Profiler.AddCounterEntry( StreamEntry, false, true );
 
 	const auto VoiceEntry = FProfileTimeEntry( "Active Voices", Engine.getActiveVoiceCount() );
-	Profiler.AddCounterEntry( VoiceEntry, true );
+	Profiler.AddCounterEntry( VoiceEntry, false, true );
 }
 
 void CSoLoudSound::Initialize()
 {
-	Engine.init();
+	Engine.init( 0 );
+
+	Engine.setMaxActiveVoiceCount( 128 );
 
 	for( SoLoud::handle Handle = 0; Handle < Bus::Maximum; Handle++ )
 	{
-		MixerHandles[Handle] = Engine.play( Mixer[Handle] );
+		MixerHandles[Handle] = Engine.play( Mixer[Handle], 1.0f );
 	}
 
 	Mixer[Bus::SFX].setFilter( 1, &Echo );
@@ -634,6 +645,8 @@ void CSoLoudSound::Initialize()
 	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 2, Parameters.RoomSize );
 	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 3, Parameters.Dampening );
 	Engine.setFilterParameter( MixerHandles[Bus::SFX], 3, 4, Parameters.Width );
+
+	StopAll();
 }
 
 void CSoLoudSound::Shutdown()

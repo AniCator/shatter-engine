@@ -54,7 +54,7 @@ void CProfiler::AddCounterEntry( const char* NameIn, int TimeIn )
 	}
 }
 
-void CProfiler::AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool PerFrame )
+void CProfiler::AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool& PerFrame, const bool& Assign )
 {
 	if( !Enabled && PerFrame )
 		return;
@@ -68,7 +68,14 @@ void CProfiler::AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool 
 		}
 		else
 		{
-			Iterator->second += TimeEntry.Time;
+			if( Assign )
+			{
+				Iterator->second = TimeEntry.Time;
+			}
+			else
+			{
+				Iterator->second += TimeEntry.Time;
+			}
 		}
 	}
 	else
@@ -80,7 +87,14 @@ void CProfiler::AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool 
 		}
 		else
 		{
-			Iterator->second += TimeEntry.Time;
+			if( Assign )
+			{
+				Iterator->second = TimeEntry.Time;
+			}
+			else
+			{
+				Iterator->second += TimeEntry.Time;
+			}
 		}
 	}
 }

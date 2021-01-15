@@ -64,7 +64,7 @@ public:
 	~CProfiler();
 
 	void AddTimeEntry( const FProfileTimeEntry& TimeEntry );
-	void AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool PerFrame = false );
+	void AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool& PerFrame = false, const bool& Assign = false );
 	void AddCounterEntry( const char* NameIn, int TimeIn );
 	void AddDebugMessage( const char* NameIn, const char* Body );
 	void Display();
