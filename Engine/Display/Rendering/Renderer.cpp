@@ -349,6 +349,7 @@ void CRenderer::DrawQueuedRenderables()
 				if( ViewportWidth > -1 && ViewportHeight > -1 )
 				{
 					BufferA = CRenderTexture( "BufferA", ViewportWidth, ViewportHeight );
+					BufferA.Initialize();
 				}
 			}
 
@@ -554,7 +555,7 @@ void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location )
 	{
 		if( Pass.Pass && Pass.Location == Location )
 		{
-			if( !RenderOnlyMainPass )
+			if( !RenderOnlyMainPass && !Pass.Pass->Target )
 			{
 				Pass.Pass->Target = &Framebuffer;
 			}

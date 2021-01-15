@@ -18,6 +18,8 @@ struct RenderTextureConfiguration
 
 	int Width = 0; // Only used on construction. Use the texture's internal width and height members outside of it.
 	int Height = 0; // Only used on construction. Use the texture's internal width and height members outside of it.
+
+	EImageFormat Format = EImageFormat::RGB16F;
 };
 
 class CRenderTexture : public CTexture

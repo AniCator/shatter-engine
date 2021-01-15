@@ -18,6 +18,7 @@ class CRenderPass
 {
 public:
 	CRenderPass(const std::string& Name, int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
+	virtual ~CRenderPass() = default;
 
 	virtual uint32_t RenderRenderable( CRenderable* Renderable );
 	virtual uint32_t RenderRenderable( CRenderable* Renderable, const UniformMap& Uniforms );

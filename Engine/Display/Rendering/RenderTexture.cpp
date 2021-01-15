@@ -13,6 +13,7 @@ CRenderTexture::CRenderTexture() : CTexture()
 
 	Configuration.Width = Width;
 	Configuration.Height = Height;
+	Format = Configuration.Format;
 
 	FramebufferHandle = 0;
 	DepthHandle = 0;
@@ -29,6 +30,7 @@ CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int T
 
 	Configuration.Width = Width;
 	Configuration.Height = Height;
+	Format = Configuration.Format;
 
 	FramebufferHandle = 0;
 	DepthHandle = 0;
@@ -46,6 +48,8 @@ CRenderTexture::CRenderTexture( const std::string& Name, int TextureWidth, int T
 CRenderTexture::CRenderTexture( const std::string& Name, const RenderTextureConfiguration ConfigurationIn ) : CTexture()
 {
 	Configuration = ConfigurationIn;
+
+	Format = Configuration.Format;
 	
 	this->Name = Name;	
 	Width = Configuration.Width;
@@ -96,13 +100,18 @@ void CRenderTexture::Initialize()
 	glGenFramebuffers( 1, &FramebufferHandle );
 	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
 
+	const auto ImageFormat = StaticCast<EImageFormatType>( Format );
+	const auto Type = GetImageFormatType( ImageFormat );
+	const auto InternalFormat = ::GetImageFormat( ImageFormat );
+	const auto Channels = ::GetImageFormatChannels( ImageFormat );
+
 	const bool DepthOnly = !Configuration.EnableColor && Configuration.EnableDepth;
 	if( Configuration.EnableColor )
 	{
 		glGenTextures( 1, &Handle );
 		glBindTexture( GL_TEXTURE_2D, Handle );
-
-		glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB16F, Width, Height, 0, GL_RGB, GL_FLOAT, nullptr );
+		
+		glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, Channels, Type, nullptr );
 
 		// Wrapping parameters
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
@@ -113,7 +122,7 @@ void CRenderTexture::Initialize()
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GetFilteringMode( Mode ) );
 		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
 
-		if( Configuration.Samples < 1)
+		if( Configuration.Samples < 1 )
 		{
 			glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, Handle, 0 );
 
@@ -133,7 +142,7 @@ void CRenderTexture::Initialize()
 			glGenTextures( 1, &MultiSampleHandle );
 			glBindTexture( GL_TEXTURE_2D_MULTISAMPLE, MultiSampleHandle );
 
-			glTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, Configuration.Samples, GL_RGB16F, Width, Height, true );
+			glTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, Configuration.Samples, InternalFormat, Width, Height, true );
 			glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, MultiSampleHandle, 0 );
 
 			GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
