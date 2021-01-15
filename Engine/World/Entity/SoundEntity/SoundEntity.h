@@ -29,7 +29,8 @@ public:
 	virtual void Export( CData& Data ) override;
 
 public:
-	CSound* Sound;
+	CSound* Asset = nullptr;
+	SoundInstance Sound;
 
 	EFalloff::Type Falloff;
 	float Radius;
@@ -39,6 +40,9 @@ public:
 	bool AutoPlay;
 	bool Loop;
 	bool Is3D = true;
+	
+	bool OutOfRange = false;
+	float Range = -1.0f;
 
 	bool AutoPlayed;
 
