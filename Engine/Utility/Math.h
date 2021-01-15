@@ -291,16 +291,24 @@ namespace Math
 		return Min( Max( Minimum, X ), Maximum );
 	}
 
-	template<typename T>
-	inline T Saturate( const T& X )
+	inline float Saturate( const float& X )
 	{
 		return Clamp( X, 0.0f, 1.0f );
 	}
 
-	template<typename T>
-	T Sign( const T& Input )
+	inline double Saturate( const double& X )
 	{
-		return static_cast<T>( ( 0.0f < Input ) - ( Input < 0.0f ) );
+		return Clamp( X, 0.0, 1.0 );
+	}
+
+	inline float Sign( const float& Input )
+	{
+		return StaticCast<float>( ( 0.0f < Input ) - ( Input < 0.0f ) );
+	}
+
+	inline double Sign( const double& Input )
+	{
+		return StaticCast<double>( ( 0.0 < Input ) - ( Input < 0.0 ) );
 	}
 
 	template<typename T>
@@ -335,12 +343,12 @@ namespace Math
 		return Integer( String.c_str() );
 	}
 
-	inline float Lerp( float A, float B, const float Alpha )
+	inline float Lerp( const float& A, const float& B, const float& Alpha )
 	{
 		return A + Alpha * ( B - A );
 	}
 
-	inline Vector3D Lerp( const Vector3D& A, const Vector3D& B, const float Alpha )
+	inline Vector3D Lerp( const Vector3D& A, const Vector3D& B, const float& Alpha )
 	{
 		return A + Vector3D( Alpha, Alpha, Alpha ) * ( B - A );
 	}
@@ -355,14 +363,14 @@ namespace Math
 		return { std::fabs( Value.X ), std::fabs( Value.Y ), std::fabs( Value.Z ) };
 	}
 
-	inline bool Equal( const float& A, const float& B, const float Tolerance = 0.001f )
+	inline bool Equal( const float& A, const float& B, const float& Tolerance = 0.001f )
 	{
 		float Difference = A - B;
 		Difference = std::fabs( Difference );
 		return Difference < Tolerance;
 	}
 
-	inline bool Equal( const Vector3D& A, const Vector3D& B, const float Tolerance = 0.001f )
+	inline bool Equal( const Vector3D& A, const Vector3D& B, const float& Tolerance = 0.001f )
 	{
 		Vector3D Difference = A - B;
 		Difference.X = std::fabs( Difference.X );
