@@ -17,11 +17,13 @@
 
 static const auto Gravity = Vector3D( 0.0f, 0.0f, 9.81f );
 
-#define DrawDebugLines 0
+#define DrawDebugLines 1
 #define DrawCollisionResponseAABBAABB 0
 #define DrawNormalAndDistance 0
 
 size_t TextPosition = 0;
+
+void CreateBVH( CMesh* Mesh, FTransform& Transform, const FBounds& WorldBounds, TriangleTree*& Tree, CBody* Body );
 
 void EnsureVolume( FBounds& Bounds )
 {
@@ -231,16 +233,16 @@ CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex
 		return Response;
 	}
 
-	Response.Normal = FaceB.Cross( FaceA );
-	// Response.Normal -= A.Normal + B.Normal + C.Normal;
+	// Response.Normal = FaceB.Cross( FaceA );
+	Response.Normal -= A.Normal + B.Normal + C.Normal;
 	Response.Distance = fabs( Response.Normal.Dot( A.Normal ) );
-	// Response.Normal = Response.Normal.Normalized();
+	Response.Normal = Response.Normal.Normalized();
 
-	const float Radius = Extent.X * fabs( Response.Normal.X ) + Extent.Y * fabs( Response.Normal.Y ) + Extent.Z * fabs( Response.Normal.Z );
+	/*const float Radius = Extent.X * fabs( Response.Normal.X ) + Extent.Y * fabs( Response.Normal.Y ) + Extent.Z * fabs( Response.Normal.Z );
 	if( Response.Distance > Radius )
 	{
 		Response.Distance = Radius;
-	}
+	}*/
 
 	return Response;
 }
@@ -429,6 +431,13 @@ void CBody::Construct( CPhysics* Physics )
 	DeltaPosition = Vector3D( 0.0f, 0.0f, 0.0f );
 	Velocity = Vector3D( 0.0f, 0.0f, 0.0f );
 	Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
+
+	auto Transform = GetTransform();
+	if( Owner && ( Owner->IsStatic() || Owner->IsStationary() ) && TriangleMesh )
+	{
+		auto* Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
+		CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
+	}
 }
 
 void CBody::PreCollision()
@@ -494,7 +503,7 @@ bool CBody::Collision( CBody* Body )
 	// Dynamic interaction with static geometry.
 	if( !Static && Body->Static )
 	{
-		if( Body->Owner && Body->Tree )
+		if( Body->Owner && Body->Tree && Body->TriangleMesh && !Stationary )
 		{
 			Response = CollisionResponseTreeAABB( Body->Tree, WorldBounds, Body->PreviousTransform );
 			// Response.Distance = Response.Distance;
@@ -529,15 +538,14 @@ bool CBody::Collision( CBody* Body )
 		if( Response.Distance > 0.0f && !Static && !Stationary )
 		{
 			auto Penetration = ( Response.Normal * Response.Distance );
-			// Transform.SetPosition( Transform.GetPosition() - Penetration );
-
-			if( Owner )
+			if( Body->TriangleMesh )
 			{
-				// Owner->SetTransform( Transform );
+				Depenetration += Penetration;
 			}
-
-			// Acceleration += Penetration;
-			Depenetration += Penetration;
+			else
+			{
+				Depenetration += Penetration;
+			}
 		}
 		else
 		{
@@ -896,12 +904,6 @@ void CBody::Tick()
 	Handled = false;
 
 	auto Transform = GetTransform();
-	if( Owner && Owner->IsStationary() )
-	{
-		// auto Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
-		// CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
-	}
-
 	if( Static )
 		return;
 
@@ -1040,7 +1042,7 @@ void CBody::Debug()
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
 
-	VisualizeBounds( Tree, &PreviousTransform );
+	// VisualizeBounds( Tree, &PreviousTransform );
 }
 
 BodyType CBody::GetType() const

@@ -64,6 +64,9 @@ public:
 	// This body can be pulled down by gravity.
 	bool AffectedByGravity = true;
 
+	// Determines whether triangle mesh tests should be done for this object.
+	bool TriangleMesh = false;
+
 	bool Contact = false;
 	FTransform PreviousTransform;
 	FBounds LocalBounds;
