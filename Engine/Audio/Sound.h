@@ -33,6 +33,31 @@ namespace EFalloff
 	};
 }
 
+class SoundInstance
+{
+public:
+	SoundInstance() = default;
+	SoundInstance( class CSound* Sound );
+
+	void Start( const Spatial Information = Spatial() );
+	void Stop( const float FadeOut = -1.0f );
+	void Loop( const bool Loop );
+	void Rate( const float Rate );
+	float Time() const;
+	float Length() const;
+	void Offset( const float Offset );
+	bool Playing();
+	void Volume( const float Volume );
+	void Fade( const float Volume, const float Time );
+	void Update( const Vector3D& Position, const Vector3D& Velocity );
+
+protected:
+	class CSound* Asset = nullptr;
+	int32_t Handle = -1;
+	SoundHandle SoundHandle;
+	StreamHandle StreamHandle;
+};
+
 class CSound
 {
 public:
@@ -59,6 +84,27 @@ public:
 
 	void Update( const int32_t& Handle, const Vector3D& Position, const Vector3D& Velocity );
 
+	SoundBufferHandle GetSoundHandle()
+	{
+		return Select();
+	}
+
+	StreamHandle GetStreamHandle()
+	{
+		auto Handle = EmptyHandle<StreamHandle>();
+		return StreamHandles.empty() ? Handle : StreamHandles[0];
+	}
+
+	std::vector<SoundBufferHandle> GetSoundBufferHandles() const
+	{
+		return BufferHandles;
+	}
+
+	std::vector<StreamHandle> GetStreamBufferHandles() const
+	{
+		return StreamBufferHandles;
+	}
+
 	std::vector<SoundHandle> GetSoundHandles() const
 	{
 		return SoundHandles;
@@ -69,6 +115,12 @@ public:
 		return StreamHandles;
 	}
 
+	ESoundType::Type GetSoundType() const
+	{
+		return SoundType;
+	}
+
+	std::string FileLocation;
 private:
 	std::vector<SoundBufferHandle> BufferHandles;
 	std::vector<StreamHandle> StreamBufferHandles;

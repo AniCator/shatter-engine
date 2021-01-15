@@ -4,6 +4,168 @@
 #include <Engine/Audio/SoLoudSound.h>
 #include <Engine/Utility/Math.h>
 
+SoundInstance::SoundInstance( CSound* Sound )
+{
+	Asset = Sound;
+
+	if( !Asset )
+		return;
+}
+
+void SoundInstance::Start( const Spatial Information )
+{
+	if( !Asset )
+		return;
+
+	Handle = Asset->Start( Information );
+	SoundHandle.Handle = Handle;
+	StreamHandle.Handle = Handle;
+}
+
+void SoundInstance::Stop( const float FadeOut )
+{
+	if( !Asset )
+		return;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		CSoLoudSound::Stop( SoundHandle );
+	}
+	else
+	{
+		CSoLoudSound::Stop( StreamHandle, FadeOut );
+	}
+}
+
+void SoundInstance::Loop( const bool Loop )
+{
+	if( !Asset )
+		return;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		CSoLoudSound::Loop( SoundHandle, Loop );
+	}
+	else
+	{
+		CSoLoudSound::Loop( StreamHandle, Loop );
+	}
+}
+
+void SoundInstance::Rate( const float Rate )
+{
+	if( !Asset )
+		return;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		CSoLoudSound::Rate( SoundHandle, Rate );
+	}
+	else
+	{
+		CSoLoudSound::Rate( StreamHandle, Rate );
+	}
+}
+
+float SoundInstance::Time() const
+{
+	if( !Asset )
+		return 0.0f;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		return CSoLoudSound::Time( SoundHandle );
+	}
+
+	return CSoLoudSound::Time( StreamHandle );
+}
+
+float SoundInstance::Length() const
+{
+	if( !Asset )
+		return 0.0f;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		return CSoLoudSound::Length( SoundHandle );
+	}
+
+	return CSoLoudSound::Length( StreamHandle );
+}
+
+void SoundInstance::Offset( const float Offset )
+{
+	if( !Asset )
+		return;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		CSoLoudSound::Offset( SoundHandle, Offset );
+	}
+	else
+	{
+		CSoLoudSound::Offset( StreamHandle, Offset );
+	}
+}
+
+bool SoundInstance::Playing()
+{
+	if( !Asset )
+		return false;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		return CSoLoudSound::Playing( SoundHandle );
+	}
+
+	return CSoLoudSound::Playing( StreamHandle );
+}
+
+void SoundInstance::Volume( const float Volume )
+{
+	if( !Asset )
+		return;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		CSoLoudSound::Volume( SoundHandle, Volume );
+	}
+	else
+	{
+		CSoLoudSound::Volume( StreamHandle, Volume );
+	}
+}
+
+void SoundInstance::Fade( const float Volume, const float Time )
+{
+	if( !Asset )
+		return;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		CSoLoudSound::Fade( SoundHandle, Volume, Time );
+	}
+	else
+	{
+		CSoLoudSound::Fade( StreamHandle, Volume, Time );
+	}
+}
+
+void SoundInstance::Update( const Vector3D& Position, const Vector3D& Velocity )
+{
+	if( !Asset || Handle < 0 )
+		return;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		CSoLoudSound::Update( SoundHandle, Position, Velocity );
+	}
+	else
+	{
+		CSoLoudSound::Update( StreamHandle, Position, Velocity );
+	}
+}
+
 CSound::CSound( ESoundType::Type TypeIn )
 {
 	SoundType = TypeIn;
@@ -39,6 +201,8 @@ bool CSound::Load( const char* FileLocation )
 		}
 	}
 
+	this->FileLocation = FileLocation;
+
 	return Loaded;
 }
 
@@ -46,7 +210,7 @@ bool CSound::Load( const std::vector<std::string>& Locations )
 {
 	if( !Loaded )
 	{
-		for( auto& FileLocation : Locations )
+		for( const auto& FileLocation : Locations )
 		{
 			if( SoundType == ESoundType::Memory )
 			{
@@ -67,6 +231,11 @@ bool CSound::Load( const std::vector<std::string>& Locations )
 				}
 			}
 		}
+	}
+
+	if( !Locations.empty() )
+	{
+		FileLocation = Locations[0];
 	}
 
 	return Loaded;
