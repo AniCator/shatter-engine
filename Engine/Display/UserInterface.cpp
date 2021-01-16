@@ -21,6 +21,9 @@ Color Color::Blue = Color( 0, 0, 255 );
 Color Color::White = Color( 255, 255, 255 );
 Color Color::Black = Color( 0, 0, 0 );
 
+Color Color::Yellow = Color( 255, 255, 0 );
+Color Color::Purple = Color( 255, 0, 255 );
+
 namespace UI
 {
 	bool Ready = false;
@@ -372,13 +375,13 @@ namespace UI
 	void AddTriangleFilled( const Vector3D& A, const Vector3D& B, const Vector3D& C, const Color& Color )
 	{
 		bool IsInFrontA = false;
-		auto& ScreenA = WorldToScreenPosition( A, &IsInFrontA );
+		const auto ScreenA = WorldToScreenPosition( A, &IsInFrontA );
 
 		bool IsInFrontB = false;
-		auto& ScreenB = WorldToScreenPosition( B, &IsInFrontB );
+		const auto ScreenB = WorldToScreenPosition( B, &IsInFrontB );
 
 		bool IsInFrontC = false;
-		auto& ScreenC = WorldToScreenPosition( C, &IsInFrontC );
+		const auto ScreenC = WorldToScreenPosition( C, &IsInFrontC );
 
 		if( IsInFrontA || IsInFrontB || IsInFrontC )
 		{
@@ -598,8 +601,7 @@ namespace UI
 
 		~CLinePass()
 		{
-			if( RenderLines )
-				delete RenderLines;
+			delete RenderLines;
 		}
 
 		virtual void Clear() override

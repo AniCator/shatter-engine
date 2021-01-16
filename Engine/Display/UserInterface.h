@@ -15,6 +15,9 @@ public:
 	static Color White;
 	static Color Black;
 
+	static Color Yellow;
+	static Color Purple;
+
 public:
 	Color()
 	{
