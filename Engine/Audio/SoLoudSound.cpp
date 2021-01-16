@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "SoLoudSound.h"
 
+#include <stack>
+
 #include <ThirdParty/SoLoud/include/soloud.h>
 #include <ThirdParty/SoLoud/include/soloud_wav.h>
 #include <ThirdParty/SoLoud/include/soloud_wavstream.h>
@@ -49,6 +51,68 @@ struct DelayParameters
 	float Decay = 0.3f;
 	float Filter = 0.1f;
 };
+
+struct Effect
+{
+	SoLoud::Filter* Filter = nullptr;
+	std::vector<float> Parameters;
+};
+
+struct FilterStack
+{
+	FilterStack()
+	{
+		Stack.reserve( 8 );
+	}
+	
+	void Add( SoLoud::Filter* Filter, const std::vector<float>& Parameters )
+	{
+		Effect NewEffect;
+		NewEffect.Filter = Filter;
+		NewEffect.Parameters = Parameters;
+		
+		Stack.emplace_back( NewEffect );
+	}
+	
+	void SetForBus( const Bus::Type& Bus )
+	{
+		if( Stack.empty() )
+			return;
+		
+		uint32_t FilterID = 1;
+		for( auto& Effect : Stack )
+		{
+			Mixer[Bus].setFilter( FilterID, Effect.Filter );
+			FilterID++;
+		}
+
+		UpdateForBus( Bus );
+	}
+
+	void UpdateForBus( const Bus::Type& Bus )
+	{
+		if( Stack.empty() )
+			return;
+		
+		uint32_t FilterID = 1;
+		for( const auto& Effect : Stack )
+		{
+			uint32_t AttributeID = 0;
+			for( const auto& Parameter: Effect.Parameters )
+			{
+				Engine.setFilterParameter( MixerHandles[Bus], FilterID, AttributeID, Parameter );
+				AttributeID++;
+			}
+			
+			FilterID++;
+		}
+	}
+
+private:
+	std::vector<Effect> Stack;
+};
+
+FilterStack EnvironmentStack;
 
 Spatial Spatial::Create( CMeshEntity* Entity )
 {
@@ -658,7 +722,30 @@ void CSoLoudSound::Initialize()
 		MixerHandles[Handle] = Engine.play( Mixer[Handle], 1.0f );
 	}
 
-	InitializeFilters( Bus::SFX );
+	EnvironmentStack.Add( &Echo, {
+		0.12f, // Wet
+		0.343f, // Delay
+		0.25f, // Decay
+		0.1f, // Filter
+		} );
+
+	EnvironmentStack.Add( &ReverbEarlyReflection, {
+		0.03f, // Wet
+		0.0f, // Freeze
+		0.2f, // RoomSize
+		0.7f, // Dampening
+		0.5f, // Width
+		} );
+	
+	EnvironmentStack.Add( &ReverbTail, {
+		0.003f, // Wet
+		0.0f, // Freeze
+		1.0f, // RoomSize
+		0.0f, // Dampening
+		1.0f, // Width
+		} );
+	
+	EnvironmentStack.SetForBus( Bus::SFX );
 
 	StopAll();
 }
