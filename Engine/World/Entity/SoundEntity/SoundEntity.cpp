@@ -135,6 +135,10 @@ void CSoundEntity::Play()
 		{
 			Information = Spatial::Create( Transform.GetPosition(), Vector3D::Zero );
 		}
+		else
+		{
+			Information.Bus = Bus::Auxilery3;
+		}
 		
 		if( Falloff == EFalloff::None )
 		{
@@ -152,12 +156,9 @@ void CSoundEntity::Play()
 		Information.MinimumDistance = Radius;
 		
 		Information.FadeIn = FadeIn;
-		Information.Volume = Volume;
 
-		if( !Is3D && Range > -0.5f )
-		{
-			Information.Volume *= Range;
-		}
+		// Start at volume 0 to avoid sounds from blasting loudly on the first tick.
+		Information.Volume = 0.0f;
 		
 		Sound.Start( Information );
 	}
