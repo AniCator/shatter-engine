@@ -1345,7 +1345,7 @@ public:
 				ImGui::PopStyleColor();
 			}
 
-			auto DrawList = ImGui::GetWindowDrawList();
+			auto* DrawList = ImGui::GetWindowDrawList();
 			if( DrawList )
 			{
 				auto VerticalOffset = 32.0f;
@@ -1429,7 +1429,7 @@ public:
 			{
 				Track.Length = EndMarker - StartMarker;
 
-				for( auto Event : Track.Events )
+				for( auto* Event : Track.Events )
 				{
 					auto EventCode = Event->Start + Event->Length;
 					auto TrackCode = Track.Start + Track.Length;
