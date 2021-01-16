@@ -352,7 +352,6 @@ void ContentBrowserUI()
 					if( !Playing )
 					{
 						auto Information = Spatial::CreateUI();
-						Information.Volume = 200.0f;
 						Sound->Start( Information );
 					}
 					else
