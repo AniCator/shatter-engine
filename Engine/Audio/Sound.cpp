@@ -12,6 +12,11 @@ SoundInstance::SoundInstance( CSound* Sound )
 		return;
 }
 
+SoundInstance::~SoundInstance()
+{
+	Stop();
+}
+
 void SoundInstance::Start( const Spatial Information )
 {
 	if( !Asset )
@@ -22,7 +27,7 @@ void SoundInstance::Start( const Spatial Information )
 	StreamHandle.Handle = Handle;
 }
 
-void SoundInstance::Stop( const float FadeOut )
+void SoundInstance::Stop( const float FadeOut ) const
 {
 	if( !Asset )
 		return;
@@ -37,7 +42,7 @@ void SoundInstance::Stop( const float FadeOut )
 	}
 }
 
-void SoundInstance::Loop( const bool Loop )
+void SoundInstance::Loop( const bool Loop ) const
 {
 	if( !Asset )
 		return;
@@ -52,7 +57,7 @@ void SoundInstance::Loop( const bool Loop )
 	}
 }
 
-void SoundInstance::Rate( const float Rate )
+void SoundInstance::Rate( const float Rate ) const
 {
 	if( !Asset )
 		return;
@@ -93,7 +98,7 @@ float SoundInstance::Length() const
 	return CSoLoudSound::Length( StreamHandle );
 }
 
-void SoundInstance::Offset( const float Offset )
+void SoundInstance::Offset( const float Offset ) const
 {
 	if( !Asset )
 		return;
@@ -108,7 +113,7 @@ void SoundInstance::Offset( const float Offset )
 	}
 }
 
-bool SoundInstance::Playing()
+bool SoundInstance::Playing() const
 {
 	if( !Asset )
 		return false;
@@ -121,7 +126,7 @@ bool SoundInstance::Playing()
 	return CSoLoudSound::Playing( StreamHandle );
 }
 
-void SoundInstance::Volume( const float Volume )
+void SoundInstance::Volume( const float Volume ) const
 {
 	if( !Asset )
 		return;
@@ -136,7 +141,7 @@ void SoundInstance::Volume( const float Volume )
 	}
 }
 
-void SoundInstance::Fade( const float Volume, const float Time )
+void SoundInstance::Fade( const float Volume, const float Time ) const
 {
 	if( !Asset )
 		return;
@@ -151,7 +156,7 @@ void SoundInstance::Fade( const float Volume, const float Time )
 	}
 }
 
-void SoundInstance::Update( const Vector3D& Position, const Vector3D& Velocity )
+void SoundInstance::Update( const Vector3D& Position, const Vector3D& Velocity ) const
 {
 	if( !Asset || Handle < 0 )
 		return;
@@ -254,7 +259,8 @@ int32_t CSound::Start( const Spatial Information )
 {
 	if( SoundType == ESoundType::Memory )
 	{
-		auto Handle = CSoLoudSound::Start( Select(), Information );
+		const auto Buffer = Select();
+		auto Handle = CSoLoudSound::Start( Buffer, Information );
 		if( Handle.Handle > InvalidHandle )
 		{
 			SoundHandles.emplace_back( Handle );
