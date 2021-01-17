@@ -9,6 +9,7 @@
 #include <ThirdParty/SoLoud/include/soloud_speech.h>
 #include <ThirdParty/SoLoud/include/soloud_freeverbfilter.h>
 #include <ThirdParty/SoLoud/include/soloud_echofilter.h>
+#include <ThirdParty/SoLoud/include/soloud_limiter.h>
 
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
@@ -82,7 +83,15 @@ struct FilterStack
 		uint32_t FilterID = 1;
 		for( auto& Effect : Stack )
 		{
-			Mixer[Bus].setFilter( FilterID, Effect.Filter );
+			if( Bus == Bus::Maximum )
+			{
+				Engine.setGlobalFilter( FilterID, Effect.Filter );
+			}
+			else
+			{
+				Mixer[Bus].setFilter( FilterID, Effect.Filter );
+			}
+			
 			FilterID++;
 		}
 
@@ -100,7 +109,15 @@ struct FilterStack
 			uint32_t AttributeID = 0;
 			for( const auto& Parameter: Effect.Parameters )
 			{
-				Engine.setFilterParameter( MixerHandles[Bus], FilterID, AttributeID, Parameter );
+				if( Bus == Bus::Maximum )
+				{
+					Engine.setFilterParameter( 0, FilterID, AttributeID, Parameter );
+				}
+				else
+				{
+					Engine.setFilterParameter( MixerHandles[Bus], FilterID, AttributeID, Parameter );
+				}
+				
 				AttributeID++;
 			}
 			
@@ -113,6 +130,7 @@ private:
 };
 
 FilterStack EnvironmentStack;
+FilterStack GlobalStack;
 
 Spatial Spatial::Create( CMeshEntity* Entity )
 {
@@ -580,79 +598,6 @@ void CSoLoudSound::Volume( const float GlobalVolumeIn )
 	Engine.setGlobalVolume( GlobalVolumeIn * 0.01f );
 }
 
-static bool EnableEcho = true;
-static bool EnableER   = true;
-static bool EnableTail = true;
-
-void UpdateFilters( const Bus::Type& Bus )
-{
-	if( EnableEcho )
-	{
-		DelayParameters Parameters;
-		Parameters.Wet = 0.12f;
-		Parameters.Delay = 0.343f;
-		Parameters.Decay = 0.25f;
-		Parameters.Filter = 0.1f;
-
-		Engine.setFilterParameter( MixerHandles[Bus], 1, 0, Parameters.Wet );
-		Engine.setFilterParameter( MixerHandles[Bus], 1, 1, Parameters.Delay );
-		Engine.setFilterParameter( MixerHandles[Bus], 1, 2, Parameters.Decay );
-		Engine.setFilterParameter( MixerHandles[Bus], 1, 3, Parameters.Filter );
-	}
-
-	if( EnableER )
-	{
-		ReverbParameters Parameters;
-		Parameters.Wet = 0.03f;
-		Parameters.Freeze = 0.0f;
-		Parameters.RoomSize = 0.2f;
-		Parameters.Dampening = 0.7f;
-		Parameters.Width = 0.5f;
-
-		Engine.setFilterParameter( MixerHandles[Bus], 2, 0, Parameters.Wet );
-		Engine.setFilterParameter( MixerHandles[Bus], 2, 1, Parameters.Freeze );
-		Engine.setFilterParameter( MixerHandles[Bus], 2, 2, Parameters.RoomSize );
-		Engine.setFilterParameter( MixerHandles[Bus], 2, 3, Parameters.Dampening );
-		Engine.setFilterParameter( MixerHandles[Bus], 2, 4, Parameters.Width );
-	}
-
-	if( EnableTail )
-	{
-		ReverbParameters Parameters;
-		Parameters.Wet = 0.003f;
-		Parameters.Freeze = 0.0f;
-		Parameters.RoomSize = 1.0f;
-		Parameters.Dampening = 0.0f;
-		Parameters.Width = 1.0f;
-
-		Engine.setFilterParameter( MixerHandles[Bus], 3, 0, Parameters.Wet );
-		Engine.setFilterParameter( MixerHandles[Bus], 3, 1, Parameters.Freeze );
-		Engine.setFilterParameter( MixerHandles[Bus], 3, 2, Parameters.RoomSize );
-		Engine.setFilterParameter( MixerHandles[Bus], 3, 3, Parameters.Dampening );
-		Engine.setFilterParameter( MixerHandles[Bus], 3, 4, Parameters.Width );
-	}
-}
-
-void InitializeFilters( const Bus::Type& Bus )
-{
-	if( EnableEcho )
-	{
-		Mixer[Bus].setFilter( 1, &Echo );
-	}
-
-	if( EnableER )
-	{
-		Mixer[Bus].setFilter( 2, &ReverbEarlyReflection );
-	}
-
-	if( EnableTail )
-	{
-		Mixer[Bus].setFilter( 3, &ReverbTail );
-	}
-
-	UpdateFilters( Bus );
-}
-
 void CSoLoudSound::Tick()
 {
 	Profile( "Sound" );
@@ -746,6 +691,17 @@ void CSoLoudSound::Initialize()
 		} );
 	
 	EnvironmentStack.SetForBus( Bus::SFX );
+
+	static SoLoud::Limiter Limiter;
+	GlobalStack.Add( &Limiter, {
+		3.0f, // Pre-Gain
+		0.95f, // Post-Gain
+		0.01f, // Release
+		1.0f // Oof owie my ears clipper
+		} );
+
+	// Master Bus
+	GlobalStack.SetForBus( Bus::Maximum );
 
 	StopAll();
 }
