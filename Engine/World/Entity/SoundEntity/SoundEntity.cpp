@@ -137,7 +137,7 @@ void CSoundEntity::Play()
 		}
 		else
 		{
-			Information.Bus = Bus::Auxilery3;
+			Information.Bus = Bus::Music;
 		}
 		
 		if( Falloff == EFalloff::None )
