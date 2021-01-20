@@ -490,12 +490,7 @@ void DebugMenu( CApplication* Application )
 
 			ImGui::Separator();
 
-			if( MenuItem( "Assets", DisplayAssets() ) )
-			{
-				SetPreviewTexture( nullptr );
-			}
-
-			MenuItem( "Strings", DisplayStrings() );
+			RenderMenuItems();
 
 			MenuItem( "ImGui Test Window", &ShowTestWindow );
 			MenuItem( "ImGui Metrics Window", &ShowMetricsWindow );
@@ -649,8 +644,7 @@ void DebugMenu( CApplication* Application )
 		ImGui::End();
 	}
 
-	AssetUI();
-	StringUI();
+	RenderMenuPanels();
 
 	if( ShowTestWindow )
 	{
@@ -681,6 +675,47 @@ std::string CApplication::UTF16ToUTF8( const std::wstring& UTF16 )
 {
 	static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> Converter;
 	return Converter.to_bytes( UTF16 );
+}
+
+std::wstring CApplication::UTF8ToUTF16( const std::string& UTF8 )
+{
+	static std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> Converter;
+	return Converter.from_bytes( UTF8 );
+}
+
+std::wstring CApplication::Relative( const std::wstring& UTF16 )
+{
+	std::wstring Path = UTF16;
+
+	const auto ApplicationDirectoryWide = CApplication::GetApplicationDirectory();
+
+	size_t Position = std::string::npos;
+	while( ( Position = Path.find( ApplicationDirectoryWide ) ) != std::string::npos )
+	{
+		Path.erase( Position, ApplicationDirectoryWide.length() );
+	}
+
+	std::replace( Path.begin(), Path.end(), '\\', '/' );
+
+	return Path;
+}
+
+std::string CApplication::Relative( const std::string& UTF8 )
+{
+	std::string Path = UTF8;
+	
+	const auto ApplicationDirectoryWide = CApplication::GetApplicationDirectory();
+	const auto ApplicationDirectory = CApplication::UTF16ToUTF8( ApplicationDirectoryWide ) + "\\";
+
+	size_t Position = std::string::npos;
+	while( ( Position = Path.find( ApplicationDirectory ) ) != std::string::npos )
+	{
+		Path.erase( Position, ApplicationDirectory.length() );
+	}
+
+	std::replace( Path.begin(), Path.end(), '\\', '/' );
+
+	return Path;
 }
 
 void CApplication::Run()
@@ -988,6 +1023,12 @@ const std::wstring& CApplication::GetUserSettingsFileName()
 const std::wstring& CApplication::GetUserSettingsPath()
 {
 	static const std::wstring Path = GetUserSettingsDirectory() + GetUserSettingsFileName();
+	return Path;
+}
+
+const std::wstring& CApplication::GetApplicationDirectory()
+{
+	static const std::wstring Path = std::experimental::filesystem::canonical( std::experimental::filesystem::path() );
 	return Path;
 }
 

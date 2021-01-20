@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "ApplicationMenu.h"
 
+#include <Engine/Application/Application.h>
 #include <Engine/Audio/Sound.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Camera.h>
@@ -352,6 +353,13 @@ void ContentBrowserUI()
 					if( !Playing )
 					{
 						auto Information = Spatial::CreateUI();
+
+						static uint32_t BusIndex = Bus::Auxilery3;
+						if( BusIndex == Bus::Maximum )
+							BusIndex = Bus::Auxilery3;
+
+						Information.Bus = Bus::Type( BusIndex++ );
+						
 						Sound->Start( Information );
 					}
 					else
@@ -490,6 +498,15 @@ void NewAssetUI()
 			if( SoundAsset )
 			{
 				ImGui::InputText( "Location", AssetLocation, 512 );
+				ImGui::SameLine();
+				if( ImGui::Button( "..." ) )
+				{
+					DialogFormats Formats;
+					Formats.insert_or_assign( L"Audio", L"*.ogg;*.flac;*.wav;" );
+					const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );					
+					strcpy_s( AssetLocation, Path.c_str() );
+				}
+				
 				ImGui::Checkbox( "Stream", &AudioStream );
 			}
 
@@ -765,4 +782,319 @@ void SetPreviewTexture( CTexture* Texture )
 void SetMouseWheel( const float& Wheel )
 {
 	PreviousZoomWheel = Wheel;
+}
+
+static bool ShowMixer = false;
+bool* DisplayMixer()
+{
+	return &ShowMixer;
+}
+
+//float AmplitudeTodB( const float& Amplitude )
+//{
+//	static const float Reference = std::powf( 10.0f, -5.0f );
+//	const float X = std::fabs( Amplitude );
+//	return 20 * std::log10f( X / Reference );
+//}
+
+float AmplitudeTodB( const float& Amplitude )
+{
+	return 20 * std::log10f( Amplitude );
+}
+
+float dBToAmplitude( const float& Decibels )
+{
+	return std::powf( 10, Decibels / 20 );
+}
+
+struct BusInformation
+{
+	Bus::Volume Volume;
+	float PeakLeft = 0.0f;
+	float PeakRight = 0.0f;
+};
+
+static bool HoveringBus = false;
+std::unordered_map<std::string, BusInformation> BusEntry;
+static int BusID = 0;
+void DrawBus( const std::string& Name, const Bus::Type& Bus )
+{
+	ImGui::BeginChild( Name.c_str(), ImVec2( 50.0f, 200.0f ), true );
+	if( ImGui::IsWindowHovered() )
+	{
+		HoveringBus = true;
+	}
+	
+	const auto Volume = CSoLoudSound::GetBusOutput( Bus );
+	if( BusEntry.find( Name ) == BusEntry.end() )
+	{
+		BusInformation Information;
+		Information.Volume = Volume;
+		Information.PeakLeft = Volume.Left;
+		Information.PeakRight = Volume.Right;
+		BusEntry.insert_or_assign( Name, Information );
+	}
+	
+	const float MaximumVolume = CSoLoudSound::Volume( Bus );
+
+	const auto PreviousFrame = BusEntry[Name];
+	const auto PreviousVolume = PreviousFrame.Volume;
+
+	const float BlendFactor = Math::Saturate( GameLayersInstance->GetFrameTime() * 20.0f );
+	Bus::Volume NewVolume;
+	NewVolume.Left = Math::Lerp( PreviousVolume.Left, Volume.Left, BlendFactor );
+	NewVolume.Right = Math::Lerp( PreviousVolume.Right, Volume.Right, BlendFactor );
+
+	BusInformation Information;
+	Information.Volume = NewVolume;
+	Information.PeakLeft = Math::Max( NewVolume.Left * MaximumVolume, PreviousFrame.PeakLeft * 0.99f );
+	Information.PeakRight = Math::Max( NewVolume.Right * MaximumVolume, PreviousFrame.PeakRight * 0.99f );
+	BusEntry.insert_or_assign( Name, Information );
+
+	const float DecibelLeft = AmplitudeTodB( NewVolume.Left );
+	const float DecibelRight = AmplitudeTodB( NewVolume.Right );
+	const float ScaleLeft = NewVolume.Left;
+	const float ScaleRight = NewVolume.Right;
+
+	auto* DrawList = ImGui::GetWindowDrawList();
+	const auto Position = ImGui::GetCursorScreenPos();
+	const auto ButtonText = Name + "##Volume";
+	auto BaseColor = ImColor( 0.0f, 0.0f, 0.25f, 0.25f );
+	auto LeftColor = ImColor( Math::Lerp( 0.0f, 1.0f, std::powf( ScaleLeft, 2.2f ) ), 0.0f, Math::Lerp( 2.0f, 0.0f, std::powf( ScaleLeft, 2.2f ) ), 0.75f );
+	auto RightColor = ImColor( Math::Lerp( 0.0f, 1.0f, std::powf( ScaleRight, 2.2f ) ), 0.0f, Math::Lerp( 2.0f, 0.0f, std::powf( ScaleRight, 2.2f ) ), 0.75f );
+
+	if( DecibelLeft > -0.5f )
+	{
+		LeftColor = ImColor( 2.0f, 0.0f, 0.0f, 0.75f );
+		BaseColor = LeftColor;
+	}
+
+	if( DecibelRight > -0.5f )
+	{
+		RightColor = ImColor( 2.0f, 0.0f, 0.0f, 0.75f );
+		BaseColor = RightColor;
+	}
+	
+	DrawList->AddRectFilledMultiColor( 
+		ImVec2( Position.x, Position.y + 190.0f ), ImVec2( Position.x + 20.0f, Position.y + 20.0f + Math::Saturate( 1.0f - ScaleLeft * MaximumVolume ) * 170.0f ),
+		BaseColor, BaseColor, LeftColor, LeftColor
+	);
+	
+	DrawList->AddRectFilledMultiColor( 
+		ImVec2( Position.x + 20.0f, Position.y + 190.0f ), ImVec2( Position.x + 40.0f, Position.y + 20.0f + Math::Saturate( 1.0f - ScaleRight * MaximumVolume ) * 170.0f ),
+		BaseColor, BaseColor, RightColor, RightColor
+	);
+
+	if( Bus != Bus::Master )
+	{
+		BaseColor = ImColor( 0.0f, 0.0f, 0.0f, 0.25f );
+		LeftColor = ImColor( 0.0f, 0.0f, 0.0f, 0.25f );
+		RightColor = ImColor( 0.0f, 0.0f, 0.0f, 0.25f );
+
+		DrawList->AddRectFilledMultiColor(
+			ImVec2( Position.x, Position.y + 190.0f ), ImVec2( Position.x + 20.0f, Position.y + 20.0f + Math::Saturate( 1.0f - ScaleLeft ) * 170.0f ),
+			BaseColor, BaseColor, LeftColor, LeftColor
+		);
+
+		DrawList->AddRectFilledMultiColor(
+			ImVec2( Position.x + 20.0f, Position.y + 190.0f ), ImVec2( Position.x + 40.0f, Position.y + 20.0f + Math::Saturate( 1.0f - ScaleRight ) * 170.0f ),
+			BaseColor, BaseColor, RightColor, RightColor
+		);
+	}
+
+	const int Lines = 10;
+	for( int LineIndex = 0; LineIndex < Lines; LineIndex++ )
+	{
+		float Magnitude = StaticCast<float>( LineIndex ) / StaticCast<float>( Lines );
+		Magnitude = std::powf( Magnitude, 0.5f );
+		DrawList->AddLine( 
+			ImVec2( Position.x, Position.y + 20.0f + 170.0f * Magnitude ), 
+			ImVec2( Position.x + 40.0f, Position.y + 20.0f + 170.0f * Magnitude ), 
+			ImColor( 0.0f, 0.0f, 0.0f, 0.125f )
+		);
+
+		const float Decibels = AmplitudeTodB( 1.0f - Magnitude );
+		const auto DecibelString = std::to_string( StaticCast<int>( Decibels ) );
+		DrawList->AddText(
+			ImVec2( Position.x, Position.y + 20.0f + 170.0f * Magnitude ),
+			ImColor( 0.0f, 0.0f, 0.0f, 0.25f ),
+			DecibelString.c_str()
+		);
+	}
+
+	DrawList->AddLine(
+		ImVec2( Position.x, Position.y + 20.0f + 170.0f * ( 1.0f - Information.PeakLeft ) ),
+		ImVec2( Position.x + 20.0f, Position.y + 20.0f + 170.0f * ( 1.0f - Information.PeakLeft ) ),
+		ImColor( Information.PeakLeft, 0.0f, 2.0f - Information.PeakLeft * 2.0f, Information.PeakLeft ),
+		3.0f
+	);
+
+	DrawList->AddLine(
+		ImVec2( Position.x + 20.0f, Position.y + 20.0f + 170.0f * ( 1.0f - Information.PeakRight ) ),
+		ImVec2( Position.x + 40.0f, Position.y + 20.0f + 170.0f * ( 1.0f - Information.PeakRight ) ),
+		ImColor( Information.PeakRight, 0.0f, 2.0f - Information.PeakRight * 2.0f, Information.PeakRight ),
+		3.0f
+	);
+	
+	ImGui::Text( "%s", Name.c_str() );
+
+	ImGui::SetCursorScreenPos( ImVec2( Position.x + 10.0f, Position.y + 20.0f + ( 1.0f - MaximumVolume ) * 160.0f ) );
+	const auto VolumeText = "##Adjust" + Name;
+
+	ImGui::Button( VolumeText.c_str(), ImVec2( 10.0f, 10.0f ) );
+	if( ImGui::IsItemHovered() || ( ImGui::IsWindowFocused() && ImGui::IsMouseDragging( 0, 0.0f ) ) )
+	{
+		const float Drag = ImGui::GetMouseDragDelta( 0, 0.0f ).y / 160.0f;
+		if( Math::Abs( Drag ) > 0.001f )
+		{
+			CSoLoudSound::Volume( Bus, Math::Saturate( MaximumVolume - Drag ) );
+			ImGui::ResetMouseDragDelta();
+		}
+	}
+	
+	ImGui::EndChild();
+
+	ImGui::SameLine();
+	const auto NewPosition = ImGui::GetCursorScreenPos();
+
+	ImGui::SetCursorScreenPos( ImVec2( Position.x + 10.0f, Position.y + 200.0f ) );
+
+	const auto MuteText = "M##" + Name;
+	bool Muted = MaximumVolume < 0.001f;
+	if( ImGui::Checkbox( MuteText.c_str(), &Muted ) )
+	{
+		CSoLoudSound::Volume( Bus, CSoLoudSound::Volume( Bus ) > 0.001f ? 0.0f : 1.0f );
+	}
+
+	ImGui::SetCursorScreenPos( NewPosition );
+}
+
+void MixerUI()
+{
+	if( !ShowMixer )
+		return;
+
+	ImGuiWindowFlags Flags = ImGuiWindowFlags_AlwaysAutoResize;
+	if( HoveringBus && ImGui::IsMouseDown( 0 ) )
+	{
+		Flags |= ImGuiWindowFlags_NoMove;
+	}
+
+	HoveringBus = false;
+	if( ImGui::Begin( "Mixer", &ShowMixer, ImVec2( 1000.0f, 700.0f ), -1, Flags ) )
+	{
+		DrawBus( "Master", Bus::Master );
+		DrawBus( "SFX", Bus::SFX );
+		DrawBus( "Music", Bus::Music );
+		DrawBus( "UI", Bus::UI );
+		DrawBus( "Dialogue", Bus::Dialogue );
+		DrawBus( "AUX3", Bus::Auxilery3 );
+		DrawBus( "AUX4", Bus::Auxilery4 );
+		DrawBus( "AUX5", Bus::Auxilery5 );
+		DrawBus( "AUX6", Bus::Auxilery6 );
+		DrawBus( "AUX7", Bus::Auxilery7 );
+		DrawBus( "AUX8", Bus::Auxilery8 );
+	}
+
+	ImGui::End();
+}
+
+void RenderMenuItems()
+{
+	if( MenuItem( "Assets", DisplayAssets() ) )
+	{
+		SetPreviewTexture( nullptr );
+	}
+
+	MenuItem( "Strings", DisplayStrings() );
+	MenuItem( "Mixer", DisplayMixer() );
+}
+
+void RenderMenuPanels()
+{
+	ShowMixer = true;
+	
+	AssetUI();
+	StringUI();
+	MixerUI();
+}
+
+#if defined(_WIN32)
+#include <Windows.h>
+#include <shlobj.h>
+#include <objbase.h> // COM headers
+#include <shobjidl.h>  // IFileOpenDialog
+
+#undef GetCurrentTime
+#endif
+
+std::string OpenFileDialog( const DialogFormats& Formats )
+{
+#if defined(_WIN32)
+	HRESULT hr = CoInitializeEx( NULL, 0 );
+	if( SUCCEEDED( hr ) )
+	{
+		IFileOpenDialog* pFileOpen;
+
+		// Create the FileOpenDialog object.
+		hr = CoCreateInstance( CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
+			IID_IFileOpenDialog, reinterpret_cast<void**>( &pFileOpen ) );
+
+		if( SUCCEEDED( hr ) )
+		{
+			COMDLG_FILTERSPEC* rgSpec = new COMDLG_FILTERSPEC[Formats.size()];
+			int FormatIndex = 0;
+			for( auto& Format : Formats )
+			{
+				rgSpec[FormatIndex].pszName = Format.first.c_str();
+				rgSpec[FormatIndex].pszSpec = Format.second.c_str();
+				FormatIndex++;
+			}
+			
+			hr = pFileOpen->SetFileTypes( 1, rgSpec );
+
+			delete rgSpec;
+
+			if( SUCCEEDED( hr ) )
+			{
+				// Show the Open dialog box.
+				hr = pFileOpen->Show( NULL );
+
+				// Get the file name from the dialog box.
+				if( SUCCEEDED( hr ) )
+				{
+					IShellItem* pItem;
+					hr = pFileOpen->GetResult( &pItem );
+					if( SUCCEEDED( hr ) )
+					{
+						PWSTR pszFilePath;
+						hr = pItem->GetDisplayName( SIGDN_FILESYSPATH, &pszFilePath );
+
+						// Display the file name to the user.
+						if( SUCCEEDED( hr ) )
+						{
+							size_t Converted;
+							char FilePath[256];
+							auto Result = wcstombs_s( &Converted, FilePath, pszFilePath, sizeof( FilePath ) );
+							if( Result == 256 )
+							{
+								FilePath[255] = '\0';
+							}
+
+							CoTaskMemFree( pszFilePath );
+
+							return FilePath;
+						}
+						pItem->Release();
+					}
+				}
+			}
+
+			pFileOpen->Release();
+		}
+		CoUninitialize();
+	}
+#endif
+
+	return "";
 }

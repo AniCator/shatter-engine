@@ -593,6 +593,43 @@ void CSoLoudSound::Update( StreamHandle Handle, const Vector3D& Position, const 
 	);
 }
 
+Bus::Volume CSoLoudSound::GetBusOutput( const Bus::Type& Bus )
+{
+	Bus::Volume Volume;
+	if( Bus == Bus::Master )
+	{
+		Volume.Left = Engine.getApproximateVolume( 0 );
+		Volume.Right = Engine.getApproximateVolume( 1 );
+	}
+	else
+	{
+		Volume.Left = Mixer[Bus].getApproximateVolume( 0 );
+		Volume.Right = Mixer[Bus].getApproximateVolume( 1 );
+	}
+
+	return Volume;
+}
+
+float CSoLoudSound::Volume( const Bus::Type& Bus )
+{
+	if( Bus == Bus::Master )
+	{
+		return Engine.getGlobalVolume();
+	}
+	
+	return Mixer[Bus].getVolume();
+}
+
+void CSoLoudSound::Volume( const Bus::Type& Bus, const float& Volume )
+{
+	if( Bus == Bus::Master )
+	{
+		Engine.setGlobalVolume( Volume );
+	}
+	
+	Mixer[Bus].setVolume( Volume );
+}
+
 void CSoLoudSound::Volume( const float GlobalVolumeIn )
 {
 	Engine.setGlobalVolume( GlobalVolumeIn * 0.01f );
@@ -661,10 +698,12 @@ void CSoLoudSound::Initialize()
 	Engine.init( 0 );
 
 	Engine.setMaxActiveVoiceCount( 128 );
+	Engine.setVisualizationEnable( true );
 
 	for( SoLoud::handle Handle = 0; Handle < Bus::Maximum; Handle++ )
 	{
 		MixerHandles[Handle] = Engine.play( Mixer[Handle], 1.0f );
+		Mixer[Handle].setVisualizationEnable( true );
 	}
 
 	EnvironmentStack.Add( &Echo, {
@@ -701,7 +740,7 @@ void CSoLoudSound::Initialize()
 		} );
 
 	// Master Bus
-	GlobalStack.SetForBus( Bus::Maximum );
+	GlobalStack.SetForBus( Bus::Master );
 
 	StopAll();
 }
