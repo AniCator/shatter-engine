@@ -862,7 +862,7 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 	auto BaseColor = ImColor( 0.0f, 0.0f, 0.25f, 0.25f );
 	auto LeftColor = ImColor( Math::Lerp( 0.0f, 1.0f, std::powf( ScaleLeft, 2.2f ) ), 0.0f, Math::Lerp( 2.0f, 0.0f, std::powf( ScaleLeft, 2.2f ) ), 0.75f );
 	auto RightColor = ImColor( Math::Lerp( 0.0f, 1.0f, std::powf( ScaleRight, 2.2f ) ), 0.0f, Math::Lerp( 2.0f, 0.0f, std::powf( ScaleRight, 2.2f ) ), 0.75f );
-
+	
 	if( DecibelLeft > -0.5f )
 	{
 		LeftColor = ImColor( 2.0f, 0.0f, 0.0f, 0.75f );
@@ -874,14 +874,26 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		RightColor = ImColor( 2.0f, 0.0f, 0.0f, 0.75f );
 		BaseColor = RightColor;
 	}
+
+	const float VerticalMarginBottom = 190.0f;
+	const float VerticalMarginTop = 20.0f;
+	const float VerticalPositionBottom = Position.y + VerticalMarginBottom;
+	const float VerticalPositionTop = Position.y + VerticalMarginTop;
+
+	const float HorizontalMargin = 20.0f;
+	const float HorizontalPosition = Position.x + HorizontalMargin;
+	const float HorizontalPositionDouble = Position.x + HorizontalMargin * 2.0f;
+
+	const float LeftMaximum = Math::Saturate( 1.0f - ScaleLeft * MaximumVolume ) * 170.0f;
+	const float RightMaximum = Math::Saturate( 1.0f - ScaleRight * MaximumVolume ) * 170.0f;
 	
 	DrawList->AddRectFilledMultiColor( 
-		ImVec2( Position.x, Position.y + 190.0f ), ImVec2( Position.x + 20.0f, Position.y + 20.0f + Math::Saturate( 1.0f - ScaleLeft * MaximumVolume ) * 170.0f ),
+		ImVec2( Position.x, VerticalPositionBottom ), ImVec2( HorizontalPosition, VerticalPositionTop + LeftMaximum ),
 		BaseColor, BaseColor, LeftColor, LeftColor
 	);
 	
 	DrawList->AddRectFilledMultiColor( 
-		ImVec2( Position.x + 20.0f, Position.y + 190.0f ), ImVec2( Position.x + 40.0f, Position.y + 20.0f + Math::Saturate( 1.0f - ScaleRight * MaximumVolume ) * 170.0f ),
+		ImVec2( HorizontalPosition, VerticalPositionBottom ), ImVec2( HorizontalPositionDouble, VerticalPositionTop + RightMaximum ),
 		BaseColor, BaseColor, RightColor, RightColor
 	);
 
@@ -892,12 +904,12 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		RightColor = ImColor( 0.0f, 0.0f, 0.0f, 0.25f );
 
 		DrawList->AddRectFilledMultiColor(
-			ImVec2( Position.x, Position.y + 190.0f ), ImVec2( Position.x + 20.0f, Position.y + 20.0f + Math::Saturate( 1.0f - ScaleLeft ) * 170.0f ),
+			ImVec2( Position.x, VerticalPositionTop + LeftMaximum ), ImVec2( HorizontalPosition, VerticalPositionTop + Math::Saturate( 1.0f - ScaleLeft ) * 170.0f ),
 			BaseColor, BaseColor, LeftColor, LeftColor
 		);
 
 		DrawList->AddRectFilledMultiColor(
-			ImVec2( Position.x + 20.0f, Position.y + 190.0f ), ImVec2( Position.x + 40.0f, Position.y + 20.0f + Math::Saturate( 1.0f - ScaleRight ) * 170.0f ),
+			ImVec2( HorizontalPosition, VerticalPositionTop + RightMaximum ), ImVec2( HorizontalPositionDouble, VerticalPositionTop + Math::Saturate( 1.0f - ScaleRight ) * 170.0f ),
 			BaseColor, BaseColor, RightColor, RightColor
 		);
 	}
@@ -908,7 +920,7 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		float Magnitude = StaticCast<float>( LineIndex ) / StaticCast<float>( Lines );
 		Magnitude = std::powf( Magnitude, 0.5f );
 		DrawList->AddLine( 
-			ImVec2( Position.x, Position.y + 20.0f + 170.0f * Magnitude ), 
+			ImVec2( Position.x, VerticalPositionTop + 170.0f * Magnitude ),
 			ImVec2( Position.x + 40.0f, Position.y + 20.0f + 170.0f * Magnitude ), 
 			ImColor( 0.0f, 0.0f, 0.0f, 0.125f )
 		);
@@ -916,22 +928,22 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		const float Decibels = AmplitudeTodB( 1.0f - Magnitude );
 		const auto DecibelString = std::to_string( StaticCast<int>( Decibels ) );
 		DrawList->AddText(
-			ImVec2( Position.x, Position.y + 20.0f + 170.0f * Magnitude ),
+			ImVec2( Position.x, VerticalPositionTop + 170.0f * Magnitude ),
 			ImColor( 0.0f, 0.0f, 0.0f, 0.25f ),
 			DecibelString.c_str()
 		);
 	}
 
 	DrawList->AddLine(
-		ImVec2( Position.x, Position.y + 20.0f + 170.0f * ( 1.0f - Information.PeakLeft ) ),
-		ImVec2( Position.x + 20.0f, Position.y + 20.0f + 170.0f * ( 1.0f - Information.PeakLeft ) ),
+		ImVec2( Position.x, VerticalPositionTop + 170.0f * ( 1.0f - Information.PeakLeft ) ),
+		ImVec2( HorizontalPosition, VerticalPositionTop + 170.0f * ( 1.0f - Information.PeakLeft ) ),
 		ImColor( Information.PeakLeft, 0.0f, 2.0f - Information.PeakLeft * 2.0f, Information.PeakLeft ),
 		3.0f
 	);
 
 	DrawList->AddLine(
-		ImVec2( Position.x + 20.0f, Position.y + 20.0f + 170.0f * ( 1.0f - Information.PeakRight ) ),
-		ImVec2( Position.x + 40.0f, Position.y + 20.0f + 170.0f * ( 1.0f - Information.PeakRight ) ),
+		ImVec2( HorizontalPosition, VerticalPositionTop + 170.0f * ( 1.0f - Information.PeakRight ) ),
+		ImVec2( HorizontalPositionDouble, VerticalPositionTop + 170.0f * ( 1.0f - Information.PeakRight ) ),
 		ImColor( Information.PeakRight, 0.0f, 2.0f - Information.PeakRight * 2.0f, Information.PeakRight ),
 		3.0f
 	);
