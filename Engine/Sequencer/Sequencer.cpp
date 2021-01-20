@@ -17,7 +17,6 @@
 
 #include <ThirdParty/imgui-1.70/imgui.h>
 
-static const Timecode Timebase = 96;
 static bool TimelineCamera = true;
 static CCamera* ActiveTimelineCamera = nullptr;
 static double TimelineStartTime = 0.0f;
@@ -40,65 +39,6 @@ enum class ESequenceStatus : uint8_t
 	Stopped = 0,
 	Paused,
 	Playing
-};
-
-struct FTrackEvent
-{
-	virtual void Evaluate( const Timecode& Marker ) = 0;
-	virtual void Execute() = 0;
-	virtual void Reset() = 0;
-	virtual void Context() = 0;
-
-	template<typename T>
-	static T* Create()
-	{
-		T* Event = new T();
-		return Event;
-	}
-
-	virtual const char* GetName() = 0;
-	virtual const char* GetType() = 0;
-
-	Timecode Start = 0;
-	Timecode Length = 0;
-
-	// The marker position relative to the event.
-	Timecode Offset = 0;
-	Timecode PreviousOffset = 0;
-
-	void UpdateInternalMarkers( const Timecode& Marker )
-	{
-		if( Scrobbling )
-		{
-			PreviousOffset = 0;
-		}
-		else
-		{
-			PreviousOffset = Offset;
-		}
-		
-		Offset = Math::Clamp( Marker - Start, StaticCast<Timecode>( 0 ), Length );
-	}
-
-	bool Frozen() const
-	{
-		return PreviousOffset == Offset;
-	}
-
-	virtual void Export( CData& Data );
-	virtual void Import( CData& Data );
-
-	friend CData& operator<<( CData& Data, FTrackEvent* Track )
-	{
-		Track->Export( Data );
-		return Data;
-	}
-
-	friend CData& operator>>( CData& Data, FTrackEvent* Track )
-	{
-		Track->Import( Data );
-		return Data;
-	}
 };
 
 struct FEventAudio : FTrackEvent
@@ -348,14 +288,6 @@ struct FEventCamera : FTrackEvent
 		BlendResult.Update();
 	}
 	
-	virtual void Evaluate( const Timecode& Marker ) override
-	{
-		if( Marker >= Start && Marker < ( Start + Length ) )
-		{
-			Execute();
-		}
-	}
-
 	virtual void Execute() override
 	{
 		auto* World = CWorld::GetPrimaryWorld();
@@ -505,14 +437,6 @@ struct FEventCamera : FTrackEvent
 
 struct FEventRenderable : FTrackEvent
 {
-	virtual void Evaluate( const Timecode& Marker ) override
-	{
-		if( Marker >= Start && Marker < ( Start + Length ) )
-		{
-			Execute();
-		}
-	}
-
 	virtual void Execute() override
 	{
 		CWindow::Get().GetRenderer().QueueRenderable( &Renderable );
@@ -631,18 +555,54 @@ struct FEventRenderable : FTrackEvent
 	}
 };
 
-template<typename T>
-FTrackEvent* CreateTrack()
-{
-	return FTrackEvent::Create<T>();
-}
-
 static std::map<std::string, std::function<FTrackEvent*()>> EventTypes
 {
 	std::make_pair( "Audio", CreateTrack<FEventAudio> ),
 	std::make_pair( "Camera", CreateTrack<FEventCamera> ),
 	std::make_pair( "Mesh", CreateTrack<FEventRenderable> )
 };
+
+void FTrackEvent::Evaluate( const Timecode& Marker )
+{
+	if( Marker >= Start && Marker < ( Start + Length ) )
+	{
+		Execute();
+	}
+}
+
+void FTrackEvent::Context()
+{
+	ImGui::Text( "%s", GetName() );
+
+	ImGui::Separator();
+	int InputLength = StaticCast<int>( Length );
+	if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
+	{
+		Length = static_cast<Timecode>( InputLength );
+	}
+}
+
+void FTrackEvent::AddType( const std::string& Name, const std::function<FTrackEvent*()>& Generator )
+{
+	if( EventTypes.find( Name ) == EventTypes.end() )
+	{
+		EventTypes.insert_or_assign( Name, Generator );
+	}
+}
+
+void FTrackEvent::UpdateInternalMarkers( const Timecode& Marker )
+{
+	if( Scrobbling )
+	{
+		PreviousOffset = 0;
+	}
+	else
+	{
+		PreviousOffset = Offset;
+	}
+
+	Offset = Math::Clamp( Marker - Start, StaticCast<Timecode>( 0 ), Length );
+}
 
 void FTrackEvent::Export( CData& Data )
 {
