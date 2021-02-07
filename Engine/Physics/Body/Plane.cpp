@@ -21,21 +21,15 @@ void CPlaneBody::PreCollision()
 	if( Ghost || !Owner )
 		return;
 
-	const auto Transform = Owner->GetTransform();
+	auto Transform = Owner->GetTransform();
 	CalculateBounds();
 
 	// Configure a point on the plane.
 	PlaneOrigin = Transform.GetPosition();
 
 	// Calculate the plane normal.
-	const auto ForwardVector = Math::EulerToDirection( Transform.GetOrientation() );
-	const auto RightVector = ForwardVector.Cross( WorldUp );
-	PlaneNormal = RightVector.Cross( ForwardVector );
-
-	if( PlaneNormal.LengthSquared() < 0.01f )
-	{
-		PlaneNormal = WorldRight.Cross( ForwardVector );
-	}
+	PlaneNormal = Transform.Rotate( Vector3D( 0.0f, 0.0f, 1.0f ) );
+	PlaneNormal.Normalize();
 }
 
 bool CPlaneBody::Collision( CBody* Body )
@@ -46,7 +40,7 @@ bool CPlaneBody::Collision( CBody* Body )
 	if( Ghost || !Owner )
 		return Collided;
 
-	if( !Body->Block )
+	if( !Body->Block || Body->Static )
 		return Collided;
 
 	if( ShouldIgnoreBody( Body ) )
@@ -55,7 +49,7 @@ bool CPlaneBody::Collision( CBody* Body )
 	const FBounds& BoundsA = Body->GetBounds();
 	const FBounds& BoundsB = GetBounds();
 	if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
-		return Collided;
+	 	return Collided;
 
 	const auto Bounds = Body->GetBounds();
 	const auto Center = ( Bounds.Maximum + Bounds.Minimum ) * 0.5f;
@@ -78,43 +72,52 @@ bool CPlaneBody::Collision( CBody* Body )
 	// Multiply the plane normal with the sign value to ensure we can handle scenarios where the other body approaches the plane from its backside.
 	const auto SignedNormal = PlaneNormal * Sign;
 
+	const auto InvertedNormal = Vector3D( 1.0f - PlaneNormal.X, 1.0f - PlaneNormal.Y, 1.0f - PlaneNormal.Z );
+	const auto Extent = ( Bounds.Maximum - Bounds.Minimum );
+	if( ( Distance * Distance ) > Extent.LengthSquared() )
+		return Collided;
+
 	// Project a vector along the plane towards the interacting body.
 	const auto Tangent = SignedNormal.Cross( Delta );
 	const auto ProjectedNormal = Tangent.Cross( SignedNormal );
 	const auto ProjectedPosition = PlaneOrigin + ProjectedNormal;
 
-	auto ProjectedVector = Bounds.Maximum - ProjectedPosition;
-	ProjectedVector = Math::ProjectOnVector( ProjectedVector, SignedNormal );
-	const auto DistanceToMaximum = ProjectedVector.Length();
+	auto ProjectedVectorMaximum = Bounds.Maximum - ProjectedPosition;
+	ProjectedVectorMaximum = Math::ProjectOnVector( ProjectedVectorMaximum, SignedNormal );
+	const auto DistanceToMaximum = ProjectedVectorMaximum.Length();
 
-	ProjectedVector = Bounds.Minimum - ProjectedPosition;
-	ProjectedVector = Math::ProjectOnVector( ProjectedVector, SignedNormal );
-	const auto DistanceToMinimum = ProjectedVector.Length();
+	auto ProjectedVectorMinimum = Bounds.Minimum - ProjectedPosition;
+	ProjectedVectorMinimum = Math::ProjectOnVector( ProjectedVectorMinimum, SignedNormal );
+	const auto DistanceToMinimum = ProjectedVectorMinimum.Length();
 	const bool MaximumClosest = DistanceToMaximum < DistanceToMinimum;
+
+	const auto ProjectedVector = MaximumClosest ? ProjectedVectorMaximum : ProjectedVectorMinimum;
+	const float ProjectedProduct = Math::Max( 0.0f, ProjectedVector.Normalized().Dot( SignedNormal ) * -1.0f );
 
 	float ProjectedDistance = MaximumClosest ? DistanceToMaximum : DistanceToMinimum;
 	const auto ClosestPosition = MaximumClosest ? Bounds.Maximum : Bounds.Minimum;
+	ProjectedDistance = Math::Clamp( ProjectedDistance, 0.0f, 1.0f ) * ProjectedProduct;
 
-	Body->Depenetration -= SignedNormal * ProjectedDistance;
-
-	if( ProjectedDistance > 0.001f )
+	if( ProjectedDistance > 0.00001f )
 	{
+		Body->Depenetration -= SignedNormal * ProjectedDistance;
 		Body->Contacts++;
 		Collided = true;
 	}
 
-	// UI::AddLine( PlaneOrigin, PlaneOrigin + Delta, Color::Green );
+	// UI::AddLine( PlaneOrigin, PlaneOrigin + Delta, Color::Green, 0.25 );
 	// UI::AddLine( PlaneOrigin, ProjectedPosition, Color::Blue );
 	// UI::AddLine( ProjectedPosition, ProjectedPosition - ProjectedDistance * PlaneNormal, Color::Red );
 	// UI::AddCircle( Center, 3.0f, Color::Red );
 	// UI::AddCircle( PlaneOrigin, 3.0f, Color::Blue );
 	// UI::AddCircle( ProjectedPosition, 3.0f, Color::Green );
 	// UI::AddCircle( ClosestPosition, 3.0f, Color::White );
-	// UI::AddAABB( Bounds.Minimum, Bounds.Maximum, Color::Green );
-	// UI::AddAABB( Bounds.Minimum - Body->Depenetration, Bounds.Maximum - Body->Depenetration, Color::Red );
+	// UI::AddAABB( Bounds.Minimum, Bounds.Maximum, Color::Green, 0.25 );
+	// UI::AddAABB( Bounds.Minimum - Body->Depenetration, Bounds.Maximum - Body->Depenetration, Color::Red, 0.25 );
+	// UI::AddAABB( BoundsB.Minimum, BoundsB.Maximum - Body->Depenetration, Color::Red, 0.25 );
 
-	// UI::AddLine( PlaneOrigin, PlaneOrigin + ProjectedNormal, Color::Blue );
-	// UI::AddLine( PlaneOrigin, PlaneOrigin + SignedNormal, Color( 255, 255, 0 ) );
+	// UI::AddLine( PlaneOrigin, PlaneOrigin + Tangent, Color( 255, 0, 255 ) );
+	// UI::AddLine( PlaneOrigin, PlaneOrigin + PlaneNormal, Color::Blue );
 
 	return Collided;
 }
