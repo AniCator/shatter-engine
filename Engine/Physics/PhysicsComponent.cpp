@@ -234,7 +234,7 @@ CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex
 	}
 
 	// Response.Normal = FaceB.Cross( FaceA );
-	Response.Normal -= A.Normal + B.Normal + C.Normal;
+	Response.Normal += A.Normal + B.Normal + C.Normal;
 	Response.Distance = fabs( Response.Normal.Dot( A.Normal ) );
 	Response.Normal = Response.Normal.Normalized();
 
@@ -307,7 +307,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 		if( !Tree->Upper || !Tree->Lower )
 		{
 #if DrawDebugLines == 1
-			// VisualizeBounds( Tree, &BodyTransform, Color::Red );
+			VisualizeBounds( Tree, &BodyTransform, Color::Red );
 #endif
 
 			for( unsigned int Index = 0; Index < Tree->Vertices.size(); )
@@ -433,6 +433,7 @@ void CBody::Construct( CPhysics* Physics )
 	Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
 
 	auto Transform = GetTransform();
+
 	if( Owner && ( Owner->IsStatic() || Owner->IsStationary() ) && TriangleMesh )
 	{
 		auto* Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
@@ -501,26 +502,25 @@ bool CBody::Collision( CBody* Body )
 
 	bool DebugUsingTree = false;
 	// Dynamic interaction with static geometry.
-	if( !Static && Body->Static )
+	if( Static && !Body->Static )
 	{
-		if( Body->Owner && Body->Tree && Body->TriangleMesh && !Stationary )
+		if( Owner && Tree && TriangleMesh && !Body->Stationary )
 		{
-			Response = CollisionResponseTreeAABB( Body->Tree, WorldBounds, Body->PreviousTransform );
-			// Response.Distance = Response.Distance;
+			Response = CollisionResponseTreeAABB( Tree, WorldBounds, PreviousTransform );
 			DebugUsingTree = true;
 
 		}
 		else
 		{
-			Response = CollisionResponseAABBAABB( WorldBounds, Body->WorldBounds );
+			Response = CollisionResponseAABBAABB( Body->WorldBounds, WorldBounds );
 		}
 	}
 	else
 	{
-		Response = CollisionResponseAABBAABB( WorldBounds, Body->WorldBounds );
+		Response = CollisionResponseAABBAABB( Body->WorldBounds, WorldBounds );
 	}
 	
-	const Vector3D RelativeVelocity = Body->Velocity - Velocity;
+	const Vector3D RelativeVelocity = Velocity - Body->Velocity;
 	float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass;
 
 	bool Collided = false;
@@ -535,26 +535,21 @@ bool CBody::Collision( CBody* Body )
 
 		Normal += Response.Normal;
 
-		if( Response.Distance > 0.0f && !Static && !Stationary )
+		if( Response.Distance > 0.0f && !Body->Static && !Body->Stationary )
 		{
-			auto Penetration = ( Response.Normal * Response.Distance );
-			if( Body->TriangleMesh )
-			{
-				Depenetration += Penetration;
-			}
-			else
-			{
-				Depenetration += Penetration;
-			}
+			auto Penetration = ( Response.Normal * VelocityAlongNormal );
+			Body->Depenetration -= Penetration;
 		}
 		else
 		{
-			Velocity -= InverseMass * Impulse;
+			// Velocity -= InverseMass * Impulse;
 			// Body->Velocity -= Body->InverseMass * Impulse;
 		}
 
 #if DrawNormalAndDistance == 1
-		UI::AddLine( Transform.GetPosition(), Transform.GetPosition() + Response.Normal * Response.Distance, Color( 255, 0, 255 ) );
+		const auto BodyTransform = Body->GetTransform();
+		// UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Response.Normal * Response.Distance, Color( 255, 0, 255 ) );
+		UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Body->Depenetration, Color( 255, 0, 255 ) );
 #endif
 
 #if DrawDebugLines == 1
@@ -903,7 +898,7 @@ void CBody::Tick()
 {
 	Handled = false;
 
-	auto Transform = GetTransform();
+	auto Transform = GetTransform();	
 	if( Static )
 		return;
 

@@ -36,11 +36,6 @@ public:
 		CalculateBounds();
 	}
 
-	~CTriggerBody()
-	{
-
-	};
-
 	virtual void PreCollision() override
 	{
 		Block = false;
