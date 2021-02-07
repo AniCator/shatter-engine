@@ -10,6 +10,8 @@
 
 #include <Engine/Display/UserInterface.h>
 
+#include <Game/Game.h>
+
 class CPhysicsScene
 {
 public:
@@ -49,33 +51,37 @@ public:
 	{
 		for( auto* BodyA : Bodies )
 		{
-			if( BodyA )
+			if( !BodyA )
+				continue;
+			
+			BodyA->PreCollision();
+		}
+		
+		for( auto* BodyA : Bodies )
+		{
+			if( !BodyA )
+				continue;
+			
+			// Simulate environmental factors. (gravity etc.)
+			BodyA->Simulate();
+
+			for( auto* BodyB : Bodies )
 			{
-				BodyA->PreCollision();
-
-				// Simulate environmental factors. (gravity etc.)
-				BodyA->Simulate();
-
-				for( auto* BodyB : Bodies )
+				if( BodyB && BodyB != BodyA && BodyB->Owner != BodyA->Owner )
 				{
-					if( BodyB && BodyB != BodyA && BodyB->Owner != BodyA->Owner )
-					{
-						BodyB->Collision( BodyA );
-						BodyA->Collision( BodyB );
-					}
+					BodyB->Collision( BodyA );
 				}
-
-				BodyA->Tick();
 			}
+
+			BodyA->Tick();
 		}
 	}
 
 	CBody* Cast( const Vector3D& Start, const Vector3D& End )
 	{
-		for( auto ComponentA : Bodies )
+		for( auto* ComponentA : Bodies )
 		{
 			FBounds BoundsA = ComponentA->GetBounds();
-
 		}
 
 		return nullptr;
@@ -98,7 +104,7 @@ CPhysics::~CPhysics()
 
 void CPhysics::Construct()
 {
-
+	
 }
 
 void CPhysics::Tick()
