@@ -82,6 +82,8 @@ public:
 	const EDepthMask::Type& GetDepthMask() const;
 	const EDepthTest::Type& GetDepthTest() const;
 
+	void AutoReload( const bool& Enable );
+
 private:
 	std::string Process( const CFile& File );
 	GLuint Link();
@@ -96,5 +98,6 @@ private:
 	EDepthTest::Type DepthTest;
 
 	time_t ModificationTime;
+	bool ShouldAutoReload = false;
 
 };

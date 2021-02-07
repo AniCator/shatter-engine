@@ -4,7 +4,7 @@
 
 #include <sstream>
 
-#define AutoReload 0
+#define EnableAutoReload 0
 
 CShader::CShader()
 {
@@ -12,6 +12,10 @@ CShader::CShader()
 	DepthMask = EDepthMask::Write;
 	DepthTest = EDepthTest::Less;
 	ModificationTime = time( nullptr );
+
+#if EnableAutoReload == 1
+	ShouldAutoReload = true;
+#endif
 }
 
 CShader::~CShader()
@@ -131,15 +135,16 @@ bool CShader::Reload()
 
 GLuint CShader::Activate()
 {
-#if AutoReload == 1
-	CFile VertexShader( VertexLocation.c_str() );
-	CFile FragmentShader( FragmentLocation.c_str() );
-
-	if( VertexShader.ModificationDate() > ModificationTime || FragmentShader.ModificationDate() > ModificationTime )
+	if( ShouldAutoReload )
 	{
-		Reload();
+		const CFile VertexShader( VertexLocation.c_str() );
+		const CFile FragmentShader( FragmentLocation.c_str() );
+
+		if( VertexShader.ModificationDate() > ModificationTime || FragmentShader.ModificationDate() > ModificationTime )
+		{
+			Reload();
+		}
 	}
-#endif
 
 	glUseProgram( Handles.Program );
 
@@ -164,6 +169,11 @@ const EDepthMask::Type& CShader::GetDepthMask() const
 const EDepthTest::Type& CShader::GetDepthTest() const
 {
 	return DepthTest;
+}
+
+void CShader::AutoReload(const bool& Enable)
+{
+	ShouldAutoReload = Enable;
 }
 
 bool LogShaderCompilationErrors( GLuint v )
