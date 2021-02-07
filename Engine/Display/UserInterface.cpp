@@ -12,6 +12,8 @@
 #include <Engine/Resource/Assets.h>
 #include <Engine/World/World.h>
 
+#include <Game/Game.h>
+
 #include <ThirdParty/imgui-1.70/imgui.h>
 #include <Engine/Display/imgui_impl_opengl3.h>
 
@@ -36,16 +38,20 @@ namespace UI
 
 	struct DrawLine
 	{
-		DrawLine( const Vector3D& Start, const Vector3D& End, const Color& Color )
+		DrawLine( const Vector3D& Start, const Vector3D& End, const Color& Color, const double Duration = 0.0 )
 		{
 			this->Start = Start;
 			this->End = End;
 			this->Color = Color;
+			this->StartTime = GameLayersInstance->GetCurrentTime();
+			this->Duration = Duration;
 		}
 
-		Vector3D Start;
-		Vector3D End;
-		Color Color;
+		Vector3D Start = Vector3D::Zero;
+		Vector3D End = Vector3D::One;
+		Color Color = Color::White;
+		double StartTime = 0.0;
+		double Duration = 0.0;
 	};
 
 	std::vector<DrawLine> Lines;
@@ -358,9 +364,9 @@ namespace UI
 		}
 	}
 
-	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color )
+	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color, const double Duration )
 	{
-		DrawLine Line( Start, End, Color );
+		DrawLine Line( Start, End, Color, Duration );
 		Lines.emplace_back( Line );
 	}
 
@@ -505,32 +511,32 @@ namespace UI
 		Images.emplace_back( Image );
 	}
 
-	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color )
+	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color, const double Duration )
 	{
 		Vector3D BottomNW = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
 		Vector3D BottomNE = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
 		Vector3D BottomSE = Vector3D( Maximum.X, Minimum.Y, Minimum.Z );
 		Vector3D BottomSW = Vector3D( Minimum.X, Minimum.Y, Minimum.Z );
 
-		AddLine( BottomNW, BottomNE, Color );
-		AddLine( BottomNE, BottomSE, Color );
-		AddLine( BottomSE, BottomSW, Color );
-		AddLine( BottomSW, BottomNW, Color );
+		AddLine( BottomNW, BottomNE, Color, Duration );
+		AddLine( BottomNE, BottomSE, Color, Duration );
+		AddLine( BottomSE, BottomSW, Color, Duration );
+		AddLine( BottomSW, BottomNW, Color, Duration );
 
 		Vector3D TopNW = Vector3D( Minimum.X, Maximum.Y, Maximum.Z );
 		Vector3D TopNE = Vector3D( Maximum.X, Maximum.Y, Maximum.Z );
 		Vector3D TopSE = Vector3D( Maximum.X, Minimum.Y, Maximum.Z );
 		Vector3D TopSW = Vector3D( Minimum.X, Minimum.Y, Maximum.Z );
 
-		AddLine( TopNW, TopNE, Color );
-		AddLine( TopNE, TopSE, Color );
-		AddLine( TopSE, TopSW, Color );
-		AddLine( TopSW, TopNW, Color );
+		AddLine( TopNW, TopNE, Color, Duration );
+		AddLine( TopNE, TopSE, Color, Duration );
+		AddLine( TopSE, TopSW, Color, Duration );
+		AddLine( TopSW, TopNW, Color, Duration );
 
-		AddLine( TopNW, BottomNW, Color );
-		AddLine( TopNE, BottomNE, Color );
-		AddLine( TopSE, BottomSE, Color );
-		AddLine( TopSW, BottomSW, Color );
+		AddLine( TopNW, BottomNW, Color, Duration );
+		AddLine( TopNE, BottomNE, Color, Duration );
+		AddLine( TopSE, BottomSE, Color, Duration );
+		AddLine( TopSW, BottomSW, Color, Duration );
 	}
 
 	void AddBox( const Vector3D& Center, const Vector3D& Size, const Color& Color )
@@ -573,7 +579,23 @@ namespace UI
 
 	void Refresh()
 	{
-		Lines.clear();
+		const auto CurrentTime = GameLayersInstance->GetCurrentTime();
+		for( auto LineIterator = Lines.begin(); LineIterator != Lines.end(); )
+		{
+			const auto& Line = *LineIterator;
+			const auto EndTime = Line.StartTime + Line.Duration;
+			if( CurrentTime > EndTime )
+			{
+				Lines.erase( LineIterator );
+			}
+			else
+			{
+				++LineIterator;
+			}
+		}
+		
+		// Lines.clear();
+		
 		Circles.clear();
 		CirclesScreen.clear();
 		Images.clear();
@@ -783,7 +805,14 @@ namespace UI
 			LinePass.ViewportWidth = Window.GetWidth();
 			LinePass.ViewportHeight = Window.GetHeight();
 
-			Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Standard );
+			if( Window.GetRenderer().ForceWireFrame )
+			{
+				Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Standard );
+			}
+			else
+			{
+				Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Scene );
+			}
 		}
 
 		for( const auto& Circle : Circles )
