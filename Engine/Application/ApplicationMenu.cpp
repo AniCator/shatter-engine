@@ -790,6 +790,12 @@ bool* DisplayMixer()
 	return &ShowMixer;
 }
 
+static bool ShowShaderToy = false;
+bool* DisplayShaderToy()
+{
+	return &ShowShaderToy;
+}
+
 //float AmplitudeTodB( const float& Amplitude )
 //{
 //	static const float Reference = std::powf( 10.0f, -5.0f );
@@ -1011,6 +1017,90 @@ void MixerUI()
 	ImGui::End();
 }
 
+static CRenderTexture ShaderToyTexture;
+static CShader* ShaderToyShader = nullptr;
+class CRenderPassShaderToy : public CRenderPass
+{
+public:
+	CRenderPassShaderToy( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true ) : CRenderPass( "ShaderToy", Width, Height, Camera, AlwaysClear )
+	{
+		
+	}
+
+	virtual uint32_t Render( const UniformMap& Uniforms ) override
+	{
+		auto& Assets = CAssets::Get();
+		auto* Shader = Assets.FindShader( "shadertoy" );
+		if( !Shader )
+			return 0;
+
+		CRenderable ShaderToyRenderable;
+		ShaderToyRenderable.SetMesh( Assets.FindMesh( "square" ) );
+		ShaderToyRenderable.SetShader( Shader );
+
+		return RenderRenderable( &ShaderToyRenderable, Uniforms );
+	}
+};
+
+void ShaderToyUI()
+{
+	if( !ShowShaderToy )
+		return;
+
+	const ImGuiWindowFlags Flags = 0;
+	if( ImGui::Begin( "Shader Toy", &ShowMixer, ImVec2( 950.0f, 1000.0f ), -1, Flags ) )
+	{
+		if( ImGui::Button( "..." ) )
+		{
+			DialogFormats Formats;
+			Formats.insert_or_assign( L"Shader", L"*.fs;" );
+			const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
+			const CFile File( Path.c_str() );
+			if( File.Exists() )
+			{
+				auto* Shader = CAssets::Get().CreateNamedShader( "shadertoy", "Shaders/FullScreenQuad", File.Location( false ).c_str() );
+				if( Shader )
+				{
+					Shader->Load( "Shaders/FullScreenQuad", File.Location( false ).c_str() );
+					Shader->AutoReload( true );
+					ShaderToyShader = Shader;
+				}
+			}
+		}
+
+		if( ShaderToyShader )
+		{
+			ImGui::SameLine();
+			if( ImGui::Button( "Recompile" ) )
+			{
+				ShaderToyShader->Reload();
+			}
+		}
+
+		auto* Handle = reinterpret_cast<ImTextureID>( ShaderToyTexture.GetHandle() );
+		ImGui::Image( Handle, ImVec2( 950.0f, 950.0f ), ImVec2( 0, 1 ), ImVec2( 1, 0 ) );
+	}
+
+	ImGui::End();
+
+	if( !ShaderToyTexture.Ready() )
+	{
+		RenderTextureConfiguration Configuration;
+		Configuration.Width = 1000;
+		Configuration.Height = 1000;
+		Configuration.Format = EImageFormat::RGB8;
+		
+		ShaderToyTexture = CRenderTexture( "ShaderToy", Configuration );
+	}
+
+	if( !ShaderToyShader )
+		return;
+
+	static CRenderPassShaderToy ShaderToyPass( 1000, 1000, CCamera() );
+	ShaderToyPass.Target = &ShaderToyTexture;
+	CWindow::Get().GetRenderer().AddRenderPass( &ShaderToyPass, ERenderPassLocation::PreScene );
+}
+
 void RenderMenuItems()
 {
 	if( MenuItem( "Assets", DisplayAssets() ) )
@@ -1020,15 +1110,15 @@ void RenderMenuItems()
 
 	MenuItem( "Strings", DisplayStrings() );
 	MenuItem( "Mixer", DisplayMixer() );
+	MenuItem( "Shader Toy", DisplayShaderToy() );
 }
 
 void RenderMenuPanels()
 {
-	ShowMixer = true;
-	
 	AssetUI();
 	StringUI();
 	MixerUI();
+	ShaderToyUI();
 }
 
 #if defined(_WIN32)
