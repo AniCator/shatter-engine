@@ -586,7 +586,7 @@ namespace UI
 			const auto EndTime = Line.StartTime + Line.Duration;
 			if( CurrentTime > EndTime )
 			{
-				Lines.erase( LineIterator );
+				LineIterator = Lines.erase( LineIterator );
 			}
 			else
 			{
