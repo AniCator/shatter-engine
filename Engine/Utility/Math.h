@@ -484,6 +484,32 @@ namespace Math
 		return TransformedAABB;
 	}
 
+	inline FBounds AABB( const FBounds& AABB, Matrix4D& Matrix )
+	{
+		const auto& Minimum = AABB.Minimum;
+		const auto& Maximum = AABB.Maximum;
+
+		Vector3D Positions[8];
+		Positions[0] = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
+		Positions[1] = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
+		Positions[2] = Vector3D( Maximum.X, Minimum.Y, Minimum.Z );
+		Positions[3] = Vector3D( Minimum.X, Minimum.Y, Minimum.Z );
+
+		Positions[4] = Vector3D( Minimum.X, Maximum.Y, Maximum.Z );
+		Positions[5] = Vector3D( Maximum.X, Maximum.Y, Maximum.Z );
+		Positions[6] = Vector3D( Maximum.X, Minimum.Y, Maximum.Z );
+		Positions[7] = Vector3D( Minimum.X, Minimum.Y, Maximum.Z );
+
+		Vector3D TransformedPositions[8];
+		for( size_t PositionIndex = 0; PositionIndex < 8; PositionIndex++ )
+		{
+			TransformedPositions[PositionIndex] = Matrix.Transform( Positions[PositionIndex] );
+		}
+
+		FBounds TransformedAABB = Math::AABB( TransformedPositions, 8 );
+		return TransformedAABB;
+	}
+
 	inline bool PointInBoundingBox( const glm::vec3& Vector, const glm::vec3& Minimum, const glm::vec3& Maximum )
 	{
 		if( Vector[0] > Minimum[0] && Vector[1] > Minimum[1] && Vector[2] > Minimum[2] &&
