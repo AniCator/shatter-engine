@@ -168,7 +168,7 @@ const FCameraSetup& CWorld::GetActiveCameraSetup() const
 	return DummySetup;
 }
 
-CPhysics* CWorld::GetPhysics()
+CPhysics* CWorld::GetPhysics() const
 {
 	return Physics;
 }

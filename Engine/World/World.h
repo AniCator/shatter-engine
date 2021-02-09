@@ -104,7 +104,7 @@ public:
 	CCamera* GetActiveCamera() const;
 	const FCameraSetup& GetActiveCameraSetup() const;
 
-	CPhysics* GetPhysics();
+	CPhysics* GetPhysics() const;
 
 	void MakePrimary();
 	static CWorld* GetPrimaryWorld();
