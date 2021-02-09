@@ -60,6 +60,7 @@ public:
 	std::string MeshName;
 	std::string CollisionMeshName;
 	BodyType CollisionType = BodyType::AABB;
+	bool ShouldProject = false;
 	std::string ShaderName;
 	std::vector<std::string> TextureNames;
 

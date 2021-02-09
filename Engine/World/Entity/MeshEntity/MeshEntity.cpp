@@ -100,7 +100,10 @@ void CMeshEntity::Construct()
 				{
 					if( CollisionType == BodyType::Plane )
 					{
-						PhysicsBody = new CPlaneBody();
+						auto* PlaneBody = new CPlaneBody();
+						PlaneBody->TwoSidedCollision = true;
+						PlaneBody->ProjectToSurface = ShouldProject;
+						PhysicsBody = PlaneBody;
 					}
 					else if( CollisionType == BodyType::AABB )
 					{
@@ -109,7 +112,7 @@ void CMeshEntity::Construct()
 					else
 					{
 						PhysicsBody = new CBody();
-						// PhysicsBody->TriangleMesh = true;
+						PhysicsBody->TriangleMesh = true;
 					}
 
 					PhysicsBody->Owner = this;
@@ -371,6 +374,10 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "collisiontype" )
 		{
 			CollisionType = ToBodyType( Property->Value );
+		}
+		else if( Property->Key == "project" )
+		{
+			ShouldProject = Property->Value == "0" ? false : true;
 		}
 		else if( Property->Key == "shader" )
 		{
