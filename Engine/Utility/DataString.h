@@ -26,7 +26,7 @@ struct DataMarker
 			if( Extracted != Identifier[Index] )
 			{
 				// Reset the read position if we didn't find the marker.
-				Data.ReadPosition( ReadPosition );
+				Data.ReadPosition( static_cast<int32_t>( ReadPosition ) );
 				return false;
 			}
 		}
