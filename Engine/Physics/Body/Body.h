@@ -6,6 +6,13 @@
 #include <Engine/Physics/Body/Shared.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
+struct CollisionResponse
+{
+	Vector3D Point{ 0.0f, 0.0f, 0.0f };
+	Vector3D Normal{ 0.0f, 0.0f, 0.0f };
+	float Distance = 0.0f;
+};
+
 class CBody
 {
 public:
@@ -66,6 +73,10 @@ public:
 
 	// Determines whether triangle mesh tests should be done for this object.
 	bool TriangleMesh = false;
+
+	// This body hasn't moved for a while.
+	bool Sleeping = false;
+	double LastActivity = -1.0;
 
 	bool Contact = false;
 	FTransform PreviousTransform;
