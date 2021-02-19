@@ -74,7 +74,8 @@ bool CPlaneBody::Collision( CBody* Body )
 
 	const auto InvertedNormal = Vector3D( 1.0f - PlaneNormal.X, 1.0f - PlaneNormal.Y, 1.0f - PlaneNormal.Z );
 	const auto Extent = ( Bounds.Maximum - Bounds.Minimum );
-	if( ( Distance * Distance ) > Extent.LengthSquared() )
+	const auto AbsoluteDistance = Math::Abs( Distance );
+	if( ( AbsoluteDistance * AbsoluteDistance ) > Extent.LengthSquared() )
 		return Collided;
 
 	// Project a vector along the plane towards the interacting body.
@@ -100,6 +101,10 @@ bool CPlaneBody::Collision( CBody* Body )
 
 	if( ProjectedDistance > 0.00001f )
 	{
+		const Vector3D RelativeVelocity = Velocity - Body->Velocity;
+		const float VelocityAlongNormal = RelativeVelocity.Dot( SignedNormal ) + ProjectedDistance * InverseMass;
+		const float Scale = VelocityAlongNormal / ( InverseMass + Body->InverseMass );
+		
 		Body->Depenetration -= SignedNormal * ProjectedDistance;
 		Body->Contacts++;
 		Collided = true;
@@ -115,7 +120,6 @@ bool CPlaneBody::Collision( CBody* Body )
 	// UI::AddAABB( Bounds.Minimum, Bounds.Maximum, Color::Green, 0.25 );
 	// UI::AddAABB( Bounds.Minimum - Body->Depenetration, Bounds.Maximum - Body->Depenetration, Color::Red, 0.25 );
 	// UI::AddAABB( BoundsB.Minimum, BoundsB.Maximum - Body->Depenetration, Color::Red, 0.25 );
-
 	// UI::AddLine( PlaneOrigin, PlaneOrigin + Tangent, Color( 255, 0, 255 ) );
 	// UI::AddLine( PlaneOrigin, PlaneOrigin + PlaneNormal, Color::Blue );
 
