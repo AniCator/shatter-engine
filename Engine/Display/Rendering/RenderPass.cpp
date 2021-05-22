@@ -62,7 +62,7 @@ uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable )
 	return Calls;
 }
 
-uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable, const std::unordered_map<std::string, FUniform>& Uniforms )
+uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable, const std::unordered_map<std::string, Uniform>& Uniforms )
 {
 	if( !Renderable )
 		return 0;
@@ -99,7 +99,7 @@ uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables )
 	return Calls;
 }
 
-uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, const std::unordered_map<std::string, FUniform>& Uniforms )
+uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, const std::unordered_map<std::string, Uniform>& Uniforms )
 {
 	if( Renderables.size() < 1 )
 		return 0;
@@ -121,7 +121,7 @@ uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, cons
 	return Calls;
 }
 
-uint32_t CRenderPass::Render( const std::unordered_map<std::string, FUniform>& Uniforms )
+uint32_t CRenderPass::Render( const std::unordered_map<std::string, Uniform>& Uniforms )
 {
 	Log::Event( Log::Warning, "CRenderPass doesn't have a Render() implementation.\n" );
 	return 0;
@@ -193,7 +193,7 @@ void CRenderPass::End()
 #endif
 }
 
-void CRenderPass::Setup( CRenderable* Renderable, const std::unordered_map<std::string, FUniform>& Uniforms )
+void CRenderPass::Setup( CRenderable* Renderable, const std::unordered_map<std::string, Uniform>& Uniforms )
 {
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 	if( !RenderData.ShouldRender )
@@ -209,24 +209,9 @@ void CRenderPass::Setup( CRenderable* Renderable, const std::unordered_map<std::
 
 			RenderData.ShaderProgram = ShaderProgramHandle;
 
-			for( auto& UniformBuffer : Uniforms )
+			for( const auto& UniformBuffer : Uniforms )
 			{
-				const GLint UniformBufferLocation = glGetUniformLocation( RenderData.ShaderProgram, UniformBuffer.first.c_str() );
-				if( UniformBufferLocation > -1 )
-				{
-					if( UniformBuffer.second.Type == FUniform::Component4 )
-					{
-						glUniform4fv( UniformBufferLocation, 1, UniformBuffer.second.Uniform4.Base() );
-					}
-					else if( UniformBuffer.second.Type == FUniform::Component3 )
-					{
-						glUniform3fv( UniformBufferLocation, 1, UniformBuffer.second.Uniform3.Base() );
-					}
-					else if( UniformBuffer.second.Type == FUniform::Component4x4 )
-					{
-						glUniformMatrix4fv( UniformBufferLocation, 1, GL_FALSE, &UniformBuffer.second.Uniform4x4[0][0] );
-					}
-				}
+				UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
 			}
 
 			const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
@@ -371,15 +356,13 @@ void CRenderPass::ConfigureDepthTest( CShader* Shader )
 
 void PointCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
-	return;
-	
 	const auto& Frustum = Camera.GetFrustum();
-	for( auto& Renderable : Renderables )
+	for( auto* Renderable : Renderables )
 	{
 		Renderable->GetRenderData().ShouldRender = false;
 
 		const auto& Bounds = Renderable->GetMesh()->GetBounds();
-		const float Radius = Bounds.Minimum.Distance( Bounds.Maximum );
+		const float Radius = Bounds.Minimum.Distance( Bounds.Maximum ) * 0.5f;
 		Vector3D Position3D = Renderable->GetRenderData().Transform.GetPosition();
 		if( Frustum.Contains( Position3D, Radius ) )
 		{
@@ -472,7 +455,7 @@ void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
 	// SphereCull( Camera, Renderables );
-	PointCull( Camera, Renderables );
+	// PointCull( Camera, Renderables );
 }
 
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )

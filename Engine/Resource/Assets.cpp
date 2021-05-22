@@ -24,7 +24,7 @@ static bool ExportOBJToLM = false;
 
 CAssets::CAssets()
 {
-	ExportOBJToLM = CConfiguration::Get().GetInteger( "ExportOBJToLM", 1 ) > 0;
+	ExportOBJToLM = CConfiguration::Get().GetInteger( "ExportOBJToLM", 0 ) > 0;
 }
 
 void CAssets::Create( const std::string& Name, CMesh* NewMesh )
@@ -88,8 +88,8 @@ void ParsePayload(FPrimitivePayload* Payload )
 		}
 		else
 		{
-			Skeleton Skeleton;
-			MeshBuilder::ASSIMP( Payload->Primitive, Skeleton, File );
+			AnimationSet Set;
+			MeshBuilder::ASSIMP( Payload->Primitive, Set, File );
 		}
 	}
 }
@@ -138,6 +138,16 @@ static const std::map<EImageFormat, std::string> StringToImageFormat = {
 	std::make_pair( EImageFormat::RGBA32F, "rgba32f" ),
 };
 
+void UpdateAnimationSet( CMesh* Mesh, const std::string& Path )
+{
+	auto Set = AnimationSet::Generate( Path );
+	const auto& MeshSet = Mesh->GetAnimationSet();
+
+	// TODO: This is an extra copy for no temporary reasons.
+	Set.Skeleton = MeshSet.Skeleton;
+	Mesh->SetAnimationSet( Set );
+}
+
 void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
 {
 	CTimer LoadTimer;
@@ -165,6 +175,7 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 			if( Mesh )
 			{
 				Mesh->SetLocation( Payload.Locations[0] );
+				UpdateAnimationSet( Mesh, Payload.Locations[1] );
 			}
 		}
 		else if( Payload.Type == EAsset::Shader )
@@ -232,6 +243,7 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 			if( Mesh )
 			{
 				Mesh->SetLocation( Payload.Location );
+				UpdateAnimationSet( Mesh, Payload.UserData );				
 			}
 		}
 		else if( !Payload.Native )
@@ -242,6 +254,7 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 			if( Mesh )
 			{
 				Mesh->SetLocation( Payload.Location );
+				UpdateAnimationSet( Mesh, Payload.UserData );
 			}
 		}
 	}
@@ -282,23 +295,36 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 	{
 		std::string Extension = File.Extension();
 		FPrimitive Primitive;
-		Skeleton Skeleton;
+		AnimationSet Set;
 
 		if( ShouldLoad )
 		{
-			if( Extension == "obj" && false )
+			bool LoadASSIMP = true;
+			
+			if( Extension == "lm" )
 			{
-				File.Load();
-				MeshBuilder::OBJ( Primitive, File );
-			}
-			else if( Extension == "lm" )
-			{
+				LoadASSIMP = false;
 				File.Load( true );
 				MeshBuilder::LM( Primitive, File );
 			}
-			else
+			else if ( Extension == "ses" ) // Animation set
 			{
-				MeshBuilder::ASSIMP( Primitive, Skeleton, File );
+				File.Load();
+				const auto SetData = JSON::GenerateTree( File );
+				const auto& MeshLocation = JSON::Find( SetData.Tree, "path" );
+				if( MeshLocation && CFile::Exists( MeshLocation->Value.c_str() ) )
+				{
+					// Update the accessed file so that ASSIMP can load it.
+					File = CFile( MeshLocation->Value.c_str() );
+
+					// Load the animation set lookup table.
+					Set = AnimationSet::Generate( JSON::Find( SetData.Tree, "animations" ) );
+				}				
+			}
+
+			if( LoadASSIMP )
+			{
+				MeshBuilder::ASSIMP( Primitive, Set, File );
 
 				if( Primitive.VertexCount == 0 )
 				{
@@ -327,9 +353,9 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 				Mesh->SetLocation( FileLocation );
 			}
 
-			if( Skeleton.Bones.size() > 0 )
+			if( !Set.Skeleton.Bones.empty() )
 			{
-				Mesh->SetSkeleton( Skeleton );
+				Mesh->SetAnimationSet( Set );
 			}
 
 			// Automatically export an LM file if the extension was OBJ.
@@ -396,7 +422,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 	return nullptr;
 }
 
-CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation )
+CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation, const EShaderType& Type )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
@@ -412,7 +438,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation 
 	}
 
 	CShader* NewShader = new CShader();
-	const bool bSuccessfulCreation = NewShader->Load( FileLocation );
+	const bool bSuccessfulCreation = NewShader->Load( FileLocation, true, Type );
 
 	if( bSuccessfulCreation )
 	{
@@ -534,6 +560,42 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 		Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
 
 		return NewTexture;
+	}
+	else
+	{
+		return FindTexture( "error" );
+	}
+
+	// This should never happen because we check for existing textures before creating new ones, but you never know.
+	return nullptr;
+}
+
+CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
+{
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the mesh exists
+	/*if( CTexture* ExistingTexture = Find<CTexture>( NameString, Textures ) )
+	{
+		return ExistingTexture;
+	}*/
+
+	if( Texture )
+	{
+		Create( NameString, Texture );
+
+		CProfiler& Profiler = CProfiler::Get();
+		const int64_t TextureCount = 1;
+		Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", TextureCount ), false );
+
+		Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
+
+		return Texture;
 	}
 	else
 	{
@@ -805,6 +867,9 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 		// Texture format storage
 		std::string ImageFormat;
 
+		// TODO: Give this a better name.
+		std::string UserData;
+
 		for( const auto* Property : Asset->Objects )
 		{
 			if( Property->Key == "type" )
@@ -864,6 +929,11 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 			{
 				ImageFormat = Property->Value;
 			}
+			else if( Property->Key == "set" )
+			{
+				// Path to animation set.
+				UserData = Property->Value;
+			}
 		}
 
 		if( Name.length() > 0 && ( !Paths.empty() || ( !VertexPath.empty() && !FragmentPath.empty() ) ) )
@@ -875,6 +945,7 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 					FPrimitivePayload Payload;
 					Payload.Name = Name;
 					Payload.Location = Path;
+					Payload.UserData = UserData;
 					MeshList.emplace_back( Payload );
 				}
 			}

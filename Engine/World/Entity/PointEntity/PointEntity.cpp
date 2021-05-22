@@ -84,30 +84,15 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 	{
 		if( Property->Key == "position" )
 		{
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
-			if( OutTokenCount == 3 )
-			{
-				Position = { Coordinates[0], Coordinates[1], Coordinates[2] };
-			}
+			Extract( Property->Value.c_str(), Position );
 		}
 		else if( Property->Key == "rotation" )
 		{
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
-			if( OutTokenCount == 3 )
-			{
-				Orientation = { Coordinates[0], Coordinates[1], Coordinates[2] };
-			}
+			Extract( Property->Value.c_str(), Orientation );
 		}
 		else if( Property->Key == "scale" )
 		{
-			size_t OutTokenCount = 0;
-			auto Coordinates = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 3 );
-			if( OutTokenCount == 3 )
-			{
-				Size = { Coordinates[0], Coordinates[1], Coordinates[2] };
-			}
+			Extract( Property->Value.c_str(), Size );
 		}
 	}
 

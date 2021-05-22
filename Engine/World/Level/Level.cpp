@@ -237,24 +237,9 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 								}
 								else if ( LevelPath.length() > 0 )
 								{
-									size_t OutTokenCount = 0;
-									auto Coordinates = ExtractTokensFloat( LevelPositionString.c_str(), ' ', OutTokenCount, 3 );
-									if( OutTokenCount == 3 )
-									{
-										LevelPosition = { Coordinates[0], Coordinates[1], Coordinates[2] };
-									}
-
-									Coordinates = ExtractTokensFloat( LevelOrientationString.c_str(), ' ', OutTokenCount, 3 );
-									if( OutTokenCount == 3 )
-									{
-										LevelOrientation = { Coordinates[0], Coordinates[1], Coordinates[2] };
-									}
-
-									Coordinates = ExtractTokensFloat( LevelSizeString.c_str(), ' ', OutTokenCount, 3 );
-									if( OutTokenCount == 3 )
-									{
-										LevelSize = { Coordinates[0], Coordinates[1], Coordinates[2] };
-									}
+									Extract( LevelPositionString.c_str(), LevelPosition );
+									Extract( LevelOrientationString.c_str(), LevelOrientation );
+									Extract(LevelSizeString.c_str(), LevelSize );
 
 									CFile File( LevelPath.c_str() );
 									if( File.Exists() )
@@ -342,6 +327,14 @@ void CLevel::Remove( CEntity* MarkEntity )
 			}
 		}
 	}
+}
+
+template<typename T>
+void QuickSearch( const std::vector<T> Vector, const std::string& Name )
+{
+	const auto Begin = Vector.begin();
+	const auto End = Vector.end();
+	const auto Offset = Vector.size() / 2;
 }
 
 CEntity* CLevel::Find( const std::string& Name ) const

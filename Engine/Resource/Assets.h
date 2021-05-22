@@ -5,6 +5,7 @@
 #include <ThirdParty/glm/glm.hpp>
 
 #include <Engine/Display/Rendering/TextureEnumerators.h>
+#include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Primitive.h>
 #include <Engine/Utility/Structures/JSON.h>
@@ -20,6 +21,7 @@ struct FPrimitivePayload
 {
 	std::string Name;
 	std::string Location;
+	std::string UserData;
 	FPrimitive Primitive;
 	bool Native;
 };
@@ -58,10 +60,11 @@ public:
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
-	CShader* CreateNamedShader( const char* Name, const char* FileLocation );
+	CShader* CreateNamedShader( const char* Name, const char* FileLocation, const EShaderType& Type = EShaderType::Fragment );
 	CShader* CreateNamedShader( const char* Name, const char* VertexLocation, const char* FragmentLocation );
 	CTexture* CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8 );
 	CTexture* CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8 );
+	CTexture* CreateNamedTexture( const char* Name, CTexture* Texture );
 	CSound* CreateNamedSound( const char* Name, const char* FileLocation );
 	CSound* CreateNamedSound( const char* Name );
 
@@ -74,6 +77,9 @@ public:
 	template<class T>
 	T* CreateNamedAsset( const char* Name )
 	{
+		// Check if we can cast from T to CAsset.
+		static_assert( std::is_convertible<T, CAsset>(), "Trying to create asset that doesn't derive from CAsset." );
+		
 		// Transform given name into lower case string
 		std::string NameString = Name;
 		std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );

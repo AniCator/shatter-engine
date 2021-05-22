@@ -212,6 +212,8 @@
     <ClCompile Include="Engine\Display\Rendering\Camera.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Framebuffer.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Particle\Particle.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Particle\ParticleEmitter.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\BloomPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\CopyPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\DownsamplePass.cpp" />
@@ -224,6 +226,7 @@
     <ClCompile Include="Engine\Display\Rendering\Shader.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Texture.cpp" />
     <ClCompile Include="Engine\Display\Rendering\TextureEnumeratorsGL.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Uniform.cpp" />
     <ClCompile Include="Engine\Display\UserInterface.cpp" />
     <ClCompile Include="Engine\Display\Window.cpp" />
     <ClCompile Include="Engine\Input\Input.cpp" />
@@ -235,6 +238,7 @@
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
     <ClCompile Include="Engine\Resource\Assets.cpp" />
+    <ClCompile Include="Engine\Sequencer\Events\ImageEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Sequencer.cpp" />
     <ClCompile Include="Engine\Utility\Chunk.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
@@ -275,18 +279,25 @@
     <ClCompile Include="ThirdParty\imgui-1.70\imgui_widgets.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Engine\Animation\AnimationSet.h" />
     <ClInclude Include="Engine\Animation\Skeleton.h" />
     <ClInclude Include="Engine\Application\Application.h" />
     <ClInclude Include="Engine\Application\ApplicationMenu.h" />
     <ClInclude Include="Engine\Audio\SimpleSound.h" />
     <ClInclude Include="Engine\Audio\SoLoudSound.h" />
+    <ClInclude Include="Engine\Audio\SoLoud\Bus.h" />
+    <ClInclude Include="Engine\Audio\SoLoud\Effect.h" />
+    <ClInclude Include="Engine\Audio\SoLoud\EffectStack.h" />
     <ClInclude Include="Engine\Audio\Sound.h" />
+    <ClInclude Include="Engine\Audio\SoundInstance.h" />
     <ClInclude Include="Engine\Configuration\Configuration.h" />
     <ClInclude Include="Engine\Display\imgui_impl_glfw.h" />
     <ClInclude Include="Engine\Display\imgui_impl_opengl3.h" />
     <ClInclude Include="Engine\Display\Rendering\Camera.h" />
     <ClInclude Include="Engine\Display\Rendering\Framebuffer.h" />
     <ClInclude Include="Engine\Display\Rendering\Mesh.h" />
+    <ClInclude Include="Engine\Display\Rendering\Particle\Particle.h" />
+    <ClInclude Include="Engine\Display\Rendering\Particle\ParticleEmitter.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\BloomPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\CopyPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\DownsamplePass.h" />
@@ -297,6 +308,7 @@
     <ClInclude Include="Engine\Display\Rendering\RenderPass.h" />
     <ClInclude Include="Engine\Display\Rendering\RenderTexture.h" />
     <ClInclude Include="Engine\Display\Rendering\Shader.h" />
+    <ClInclude Include="Engine\Display\Rendering\StorageBuffer.h" />
     <ClInclude Include="Engine\Display\Rendering\Texture.h" />
     <ClInclude Include="Engine\Display\Rendering\TextureEnumerators.h" />
     <ClInclude Include="Engine\Display\Rendering\TextureEnumeratorsGL.h" />
@@ -318,11 +330,14 @@
     <ClInclude Include="Engine\Profiling\Profiling.h" />
     <ClInclude Include="Engine\Resource\Asset.h" />
     <ClInclude Include="Engine\Resource\Assets.h" />
+    <ClInclude Include="Engine\Sequencer\Events\ImageEvent.h" />
     <ClInclude Include="Engine\Sequencer\Sequencer.h" />
     <ClInclude Include="Engine\Utility\Chunk.h" />
     <ClInclude Include="Engine\Utility\Data.h" />
     <ClInclude Include="Engine\Utility\DataString.h" />
     <ClInclude Include="Engine\Utility\File.h" />
+    <ClInclude Include="Engine\Utility\Geometry.h" />
+    <ClInclude Include="Engine\Utility\Iterate.h" />
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />
     <ClInclude Include="Engine\Utility\Math.h" />

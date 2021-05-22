@@ -2,6 +2,7 @@
 #include "Sound.h"
 
 #include <Engine/Audio/SoLoudSound.h>
+#include <Engine/Audio/SoundInstance.h>
 #include <Engine/Utility/Math.h>
 
 SoundInstance::SoundInstance( CSound* Sound )

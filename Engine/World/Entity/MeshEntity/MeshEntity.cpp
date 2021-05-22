@@ -137,10 +137,7 @@ void CMeshEntity::Tick()
 	{
 		if( Mesh )
 		{
-			FBounds TransformedAABB = Math::AABB( Mesh->GetBounds(), Transform );
-
-			WorldBounds.Minimum = TransformedAABB.Minimum;
-			WorldBounds.Maximum = TransformedAABB.Maximum;
+			WorldBounds = Math::AABB( Mesh->GetBounds(), Transform );
 		}
 	}
 
@@ -151,6 +148,8 @@ void CMeshEntity::Tick()
 			GetTransform();
 		}
 
+		TickAnimation();
+
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
 		RenderData.Color = Color;
@@ -159,7 +158,21 @@ void CMeshEntity::Tick()
 	}
 }
 
-const float Duration = 4.8f;
+void PrintColumn( const Vector4D& Column )
+{
+	Log::Event( "%.3f %.3f %.3f %.3f\n", Column.X, Column.Y, Column.Z, Column.W );
+}
+
+void PrintMatrix( const std::string& Name, const Matrix4D& Matrix )
+{
+	Log::Event( "%s\n", Name.c_str() );
+	PrintColumn( Matrix.Columns[0] );
+	PrintColumn( Matrix.Columns[1] );
+	PrintColumn( Matrix.Columns[2] );
+	PrintColumn( Matrix.Columns[3] );
+}
+
+const float Duration = 1.0f;
 void TransformBones( const float& Time, const Skeleton& Skeleton, const Animation& Animation, const Bone* Bone, std::vector<::Bone>& Result )
 {
 	if( !Bone )
@@ -167,61 +180,78 @@ void TransformBones( const float& Time, const Skeleton& Skeleton, const Animatio
 		return;
 	}
 
-	Matrix4D TranslationMatrix, RotationMatrix, ScaleMatrix;
-	for( auto& Key : Animation.PositionKeys )
+	Matrix4D TranslationMatrix = Matrix4D();
+	Matrix4D RotationMatrix = Matrix4D();
+	Matrix4D ScaleMatrix = Matrix4D();
+	
+	for( const auto& Key : Animation.PositionKeys )
 	{
 		if( Key.BoneIndex != Bone->Index )
 			continue;
 
-		float RelativeTime = ( Key.Time / Animation.Duration ) * Duration;
+		const float RelativeTime = ( Key.Time / Animation.Duration ) * Animation.Duration;
 		if( RelativeTime < Time )
 		{
 			auto Position = glm::mat4();
-			glm::translate( Position, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
+			Position = glm::translate( Position, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
 			TranslationMatrix = Math::FromGLM( Position );
 		}
 	}
 
-	for( auto& Key : Animation.RotationKeys )
+	for( const auto& Key : Animation.RotationKeys )
 	{
 		if( Key.BoneIndex != Bone->Index )
 			continue;
 
-		float RelativeTime = ( Key.Time / Animation.Duration ) * Duration;
+		const float RelativeTime = ( Key.Time / Animation.Duration ) * Animation.Duration;
 		if( RelativeTime < Time )
 		{
-			auto Quaternion = glm::quat( Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
+			const auto Quaternion = glm::quat( Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
 			RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
 		}
 	}
 
-	for( auto& Key : Animation.ScalingKeys )
+	for( const auto& Key : Animation.ScalingKeys )
 	{
 		if( Key.BoneIndex != Bone->Index )
 			continue;
 
-		float RelativeTime = ( Key.Time / Animation.Duration ) * Duration;
+		const float RelativeTime = ( Key.Time / Animation.Duration ) * Animation.Duration;
 		if( RelativeTime < Time )
 		{
 			auto Scale = glm::mat4();
-			glm::scale( Scale, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
+			Scale = glm::scale( Scale, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
 			ScaleMatrix = Math::FromGLM( Scale );
 		}
 	}
 
-	auto BoneMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
+	// Concatenate all the keyframe transformations.
+	auto LocalTransform = TranslationMatrix * RotationMatrix * ScaleMatrix;
+
+	// Identity for debugging.
+	LocalTransform = Matrix4D();
+
+	// Look up the parent matrix.
+	auto ParentMatrix = Matrix4D();
 	if( Bone->ParentIndex > -1 )
 	{
-		BoneMatrix = Skeleton.Bones[Bone->ParentIndex].Matrix * BoneMatrix;
+		ParentMatrix = Result[Bone->ParentIndex].GlobalTransform;
 	}
 
-	Result[Bone->Index].Matrix = Skeleton.GlobalMatrixInverse * Skeleton.GlobalMatrix * BoneMatrix;
+	const auto& LocalMatrix = Bone->Matrix;
+	const auto& ModelMatrix = Bone->ModelMatrix;
+	const auto& InverseModelMatrix = Bone->InverseModelMatrix;
+	
+	// NOTE: This only assigns a matrix value to the bone. All other data isn't transferred.
+	const auto& GlobalTransform = ParentMatrix * LocalTransform;
+	Result[Bone->Index].GlobalTransform = GlobalTransform;
+	Result[Bone->Index].FinalMatrix = LocalMatrix * GlobalTransform * Skeleton.GlobalMatrixInverse;
 
-	for( size_t ChildIndex = 0; ChildIndex < Bone->Children.size(); ChildIndex++ )
+	for( const int& ChildIndex : Bone->Children )
 	{
-		if( Bone->Children[ChildIndex] > -1 && Bone->Children[ChildIndex] < Result.size() )
+		if( ChildIndex > -1 && ChildIndex < Result.size() )
 		{
-			TransformBones( Time, Skeleton, Animation, &Skeleton.Bones[Bone->Children[ChildIndex]], Result );
+			TransformBones( Time, Skeleton, Animation, &Skeleton.Bones[ChildIndex], Result );
 		}
 	}
 };
@@ -233,7 +263,8 @@ void CMeshEntity::TickAnimation()
 		return;
 	}
 
-	auto& Skeleton = Mesh->GetSkeleton();
+	const auto& Set = Mesh->GetAnimationSet();
+	const auto& Skeleton = Set.Skeleton;
 	if( Skeleton.Bones.empty() )
 	{
 		return;
@@ -246,40 +277,78 @@ void CMeshEntity::TickAnimation()
 
 	Profile( "Animation" );
 
-	CurrentAnimation = "BoyRig|Idle";
-	const auto& Iterator = Skeleton.Animations.find( CurrentAnimation );
-	if( Iterator == Skeleton.Animations.end() )
+	Animation Animation;
+	if( !Set.Lookup( CurrentAnimation, Animation ) )
 	{
 		return;
 	}
 
-	// UI::AddText( Transform.GetPosition(), std::to_string( ModulatedTime ).c_str() );
-
-	auto& Pair = *Iterator;
-	auto& Animation = Pair.second;
-
 	const float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() );
-	const float ModulatedTime = fmod( Time, Duration );
+	const float ModulatedTime = fmod( Time, Animation.Duration );
+	UI::AddText( Transform.GetPosition(), std::to_string( ModulatedTime ).c_str() );
 
+	Bones.clear();
 	Bones.resize( Skeleton.Bones.size() );
-	TransformBones( ModulatedTime, Skeleton, Animation, &Skeleton.Bones[Skeleton.RootIndex], Bones );
+
+	// Reset the matrices.
+	for( auto& Bone : Bones )
+	{
+		Bone.FinalMatrix = Matrix4D();
+		Bone.GlobalTransform = Matrix4D();
+	}
+
+	// Collect the root bones since it's possible for multiple bones to be disconnected.
+	std::vector<const Bone*> RootBones;
+	for( const auto& Bone : Skeleton.Bones )
+	{
+		if( Bone.ParentIndex < 0 )
+		{
+			RootBones.emplace_back( &Bone );
+		}
+	}
+
+	// Transform all of the bones in the skeletal hierarchy.
+	for( const auto* Bone : RootBones )
+	{
+		TransformBones( ModulatedTime, Skeleton, Animation, Bone, Bones );
+	}
+
+	// Set global transform
+	// Bones[Skeleton.RootIndex].Matrix = WorldTransform.GetTransformationMatrix() * Skeleton.Bones[Skeleton.RootIndex].Matrix;
 
 	const std::string BoneLocationNamePrefix = "Bones[";
 
 	auto WorldTransform = GetTransform();
 	for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
 	{
-		auto& Matrix = Bones[MatrixIndex].Matrix;
+		auto& Matrix = Bones[MatrixIndex].FinalMatrix;
 		glm::mat4 GLMMatrix = Math::ToGLM( Matrix );
 		auto WorldMatrix = Math::FromGLM( glm::inverse( GLMMatrix ) );
-		Vector3D PointA = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) ) );
-		Vector3D PointB = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -0.5f ) ) );
-		Vector3D PointC = WorldTransform.Transform( WorldMatrix.Transform( Vector3D( 0.0f, 0.0f, -1.0f ) ) );
+		Vector3D BoneX = Matrix.Transform( Vector3D( 1.0f, 0.0f, 0.0f ) );
+		Vector3D BoneY = Matrix.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) );
+		Vector3D BoneZ = Matrix.Transform( Vector3D( 0.0f, 0.0f, 1.0f ) );
+
+		if( MatrixIndex == 3 || true )
+		{
+			const auto Origin = Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+			Vector3D PointA = WorldTransform.Transform( Origin );
+			Vector3D PointB = WorldTransform.Transform( Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.5f ) ) );
+			Vector3D PointC = WorldTransform.Transform( Matrix.Transform( Vector3D( 0.0f, 0.0f, 1.0f ) ) );
+
+		FBounds AABB( ( Vector3D::One * -1.0f ), Vector3D::One );
+		AABB = Math::AABB( AABB, Matrix );
+		UI::AddAABB( AABB.Minimum, AABB.Maximum );
+		
 		UI::AddCircle( PointA, 3.0f, ::Color( 0, 0, 255 ) );
-		UI::AddLine( PointA, PointB, ::Color( 0, 0, 255 ) );
-		UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ) );
+		UI::AddLine( PointA, PointB, ::Color( 0, 0, 255 ), 0.5f );
+		UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ), 0.5f );
 		UI::AddCircle( PointC, 3.0f, ::Color( 255, 0, 0 ) );
-		UI::AddText( PointC, Skeleton.MatrixNames[MatrixIndex].c_str() );
+		UI::AddText( PointA, Skeleton.MatrixNames[MatrixIndex].c_str() );
+		// 
+		// int TextIndex = MatrixIndex * 1;
+		// const std::string MatrixName = Skeleton.MatrixNames[MatrixIndex] + "[" + std::to_string( Skeleton.Bones[MatrixIndex].Index ) + "]";
+		// UI::AddText( Vector2D( 30.0f, 30.0f + ( TextIndex + 0 ) * 20.0f ), MatrixName, Origin );
+		}
 
 		// Bones[Bones[MatrixIndex].ParentIndex]
 
@@ -287,7 +356,7 @@ void CMeshEntity::TickAnimation()
 
 		if( Renderable )
 		{
-			std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
+			const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
 			Renderable->SetUniform( BoneLocationName, Matrix );
 		}
 	}
@@ -295,17 +364,17 @@ void CMeshEntity::TickAnimation()
 
 void CMeshEntity::Frame()
 {
-	if( Renderable && IsVisible() )
+	/*if( Renderable && IsVisible() )
 	{
 		TickAnimation();
-	}
+	}*/
 }
 
 void CMeshEntity::Destroy()
 {
 	if( PhysicsBody )
 	{
-		PhysicsBody->Destroy( GetWorld()->GetPhysics() );
+		PhysicsBody->Destroy();
 		delete PhysicsBody;
 		PhysicsBody = nullptr;
 	}
@@ -445,6 +514,21 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 				Stationary = true;
 			}
 		}
+		else if( Property->Key == "visible" )
+		{
+			if( Property->Value == "0" )
+			{
+				Visible = false;
+			}
+			else
+			{
+				Visible = true;
+			}
+		}
+		else if( Property->Key == "animation" && Property->Value.length() > 0 )
+		{
+			CurrentAnimation = Property->Value;
+		}
 	}
 
 	if( TextureNames.size() == 0 )
@@ -561,6 +645,29 @@ FBounds CMeshEntity::GetWorldBounds() const
 CBody* CMeshEntity::GetBody() const
 {
 	return PhysicsBody;
+}
+
+const FTransform& CMeshEntity::GetTransform()
+{
+	const bool UpdateBounds = ShouldUpdateTransform;
+	CPointEntity::GetTransform();
+	
+	if( UpdateBounds && Mesh )
+	{
+		WorldBounds = Math::AABB( Mesh->GetBounds(), Transform );
+	}
+	
+	return WorldTransform;
+}
+
+void CMeshEntity::SetAnimation( const std::string& Name )
+{
+	CurrentAnimation = Name;
+}
+
+const std::string& CMeshEntity::GetAnimation() const
+{
+	return CurrentAnimation;
 }
 
 void CMeshEntity::QueueRenderable( CRenderable* Renderable )

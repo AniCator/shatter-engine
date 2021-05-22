@@ -17,7 +17,7 @@
 
 static const auto Gravity = Vector3D( 0.0f, 0.0f, 9.81f );
 
-#define DrawDebugLines 1
+#define DrawDebugLines 0
 #define DrawCollisionResponseAABBAABB 0
 #define DrawNormalAndDistance 0
 
@@ -142,70 +142,75 @@ CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex
 	const Vector3D VertexB = B.Position - Center;
 	const Vector3D VertexC = C.Position - Center;
 
-	const Vector3D FaceA = VertexB - VertexA;
-	const Vector3D FaceB = VertexC - VertexB;
-	const Vector3D FaceC = VertexA - VertexC;
+	// Direction vector pointing from B to A.
+	const Vector3D EdgeA = VertexB - VertexA;
 
-	Vector3D A00 = Vector3D( 0.0f, -FaceA.Z, FaceA.Y );
+	// Direction vector pointing from C to B.
+	const Vector3D EdgeB = VertexC - VertexB;
+
+	// Direction vector pointing from A to C.
+	const Vector3D EdgeC = VertexA - VertexC;
+
+	Vector3D A00 = Vector3D( 0.0f, -EdgeA.Z, EdgeA.Y );
 	const float PointA = VertexA.Z * VertexB.Y - VertexA.Y * VertexB.Z;
 	const float PointC = VertexC.Z * ( VertexB.Y - VertexA.Z ) - VertexC.Z * ( VertexB.Z - VertexA.Z );
-	const float RadiusA00 = Extent.Y * Math::Abs( FaceA.Z ) + Extent.Z * Math::Abs( FaceA.Y );
+	const float RadiusA00 = Extent.Y * Math::Abs( EdgeA.Z ) + Extent.Z * Math::Abs( EdgeA.Y );
 	if( Math::Max( -Math::Max( PointA, PointC ), Math::Min( PointA, PointC ) ) > RadiusA00 )
 	{
 		return Response;
 	}
 
-	Vector3D A01 = Vector3D( 0.0f, -FaceB.Z, FaceB.Y );
-	const float RadiusA01 = Extent.Y * Math::Abs( FaceB.Z ) + Extent.Z * Math::Abs( FaceB.Y );
+	Vector3D A01 = Vector3D( 0.0f, -EdgeB.Z, EdgeB.Y );
+	const float RadiusA01 = Extent.Y * Math::Abs( EdgeB.Z ) + Extent.Z * Math::Abs( EdgeB.Y );
 	if( AxisTest( A01, VertexA, VertexB, VertexC, RadiusA01 ) )
 	{
 		return Response;
 	}
 
-	Vector3D A02 = Vector3D( 0.0f, -FaceC.Z, FaceC.Y );
-	const float RadiusA02 = Extent.Y * Math::Abs( FaceC.Z ) + Extent.Z * Math::Abs( FaceC.Y );
+	Vector3D A02 = Vector3D( 0.0f, -EdgeC.Z, EdgeC.Y );
+	const float RadiusA02 = Extent.Y * Math::Abs( EdgeC.Z ) + Extent.Z * Math::Abs( EdgeC.Y );
 	if( AxisTest( A02, VertexA, VertexB, VertexC, RadiusA02 ) )
 	{
 		return Response;
 	}
 
-	Vector3D A10 = Vector3D( FaceA.Z, 0.0f, -FaceA.X );
-	const float RadiusA10 = Extent.X * Math::Abs( FaceA.Z ) + Extent.Z * Math::Abs( FaceA.X );
+	Vector3D A10 = Vector3D( EdgeA.Z, 0.0f, -EdgeA.X );
+	const float RadiusA10 = Extent.X * Math::Abs( EdgeA.Z ) + Extent.Z * Math::Abs( EdgeA.X );
 	if( AxisTest( A10, VertexA, VertexB, VertexC, RadiusA10 ) )
 	{
 		return Response;
 	}
 
-	Vector3D A11 = Vector3D( FaceB.Z, 0.0f, -FaceB.X );
-	const float RadiusA11 = Extent.X * Math::Abs( FaceB.Z ) + Extent.Z * Math::Abs( FaceB.X );
+	Vector3D A11 = Vector3D( EdgeB.Z, 0.0f, -EdgeB.X );
+	const float RadiusA11 = Extent.X * Math::Abs( EdgeB.Z ) + Extent.Z * Math::Abs( EdgeB.X );
 	if( AxisTest( A11, VertexA, VertexB, VertexC, RadiusA11 ) )
 	{
 		return Response;
 	}
 
-	Vector3D A12 = Vector3D( FaceC.Z, 0.0f, -FaceC.X );
-	const float RadiusA12 = Extent.X * Math::Abs( FaceC.Z ) + Extent.Z * Math::Abs( FaceC.X );
+	Vector3D A12 = Vector3D( EdgeC.Z, 0.0f, -EdgeC.X );
+	const float RadiusA12 = Extent.X * Math::Abs( EdgeC.Z ) + Extent.Z * Math::Abs( EdgeC.X );
 	if( AxisTest( A12, VertexA, VertexB, VertexC, RadiusA12 ) )
 	{
 		return Response;
 	}
 
-	Vector3D A20 = Vector3D( -FaceA.Y, FaceA.X, 0.0f );
-	const float RadiusA20 = Extent.X * Math::Abs( FaceA.Y ) + Extent.Z * Math::Abs( FaceA.X );
+	Vector3D A20 = Vector3D( -EdgeA.Y, EdgeA.X, 0.0f );
+	const float RadiusA20 = Extent.X * Math::Abs( EdgeA.Y ) + Extent.Z * Math::Abs( EdgeA.X );
 	if( AxisTest( A20, VertexA, VertexB, VertexC, RadiusA20 ) )
 	{
 		return Response;
 	}
 
-	Vector3D A21 = Vector3D( -FaceB.Y, FaceB.X, 0.0f );
-	const float RadiusA21 = Extent.X * Math::Abs( FaceB.Y ) + Extent.Z * Math::Abs( FaceB.X );
+	Vector3D A21 = Vector3D( -EdgeB.Y, EdgeB.X, 0.0f );
+	const float RadiusA21 = Extent.X * Math::Abs( EdgeB.Y ) + Extent.Z * Math::Abs( EdgeB.X );
 	if( AxisTest( A21, VertexA, VertexB, VertexC, RadiusA21 ) )
 	{
 		return Response;
 	}
 
-	Vector3D A22 = Vector3D( -FaceC.Y, FaceC.X, 0.0f );
-	const float RadiusA22 = Extent.X * Math::Abs( FaceC.Y ) + Extent.Z * Math::Abs( FaceC.X );
+	Vector3D A22 = Vector3D( -EdgeC.Y, EdgeC.X, 0.0f );
+	const float RadiusA22 = Extent.X * Math::Abs( EdgeC.Y ) + Extent.Z * Math::Abs( EdgeC.X );
 	if( AxisTest( A22, VertexA, VertexB, VertexC, RadiusA22 ) )
 	{
 		return Response;
@@ -226,14 +231,13 @@ CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex
 		return Response;
 	}
 
-	Response.Normal = FaceA.Cross( FaceB );
+	Response.Normal = EdgeB.Cross( EdgeA );
 	// Response.Normal -= A.Normal + B.Normal + C.Normal;
 	Response.Distance = Math::Abs( Response.Normal.Dot( VertexA ) );
-	Response.Normal = Response.Normal.Normalized() * -1.0f;
 
 	const float Radius = Extent.X * Math::Abs( Response.Normal.X ) + Extent.Y * Math::Abs( Response.Normal.Y ) + Extent.Z * Math::Abs( Response.Normal.Z );
 	const float DistanceFromCenter = Response.Normal.Dot( Extent ) - Response.Distance;
-	Response.Distance = Radius;
+	Response.Distance = Radius * DistanceFromCenter;
 
 	return Response;
 }
@@ -285,6 +289,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 
 	if( ( Intersects > 1 ) || Math::BoundingBoxIntersection( LocalBounds.Minimum, LocalBounds.Maximum, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
 	{
+		Response.Distance = -1.0f;
 		if( !Tree->Upper || !Tree->Lower )
 		{
 #if DrawDebugLines == 1
@@ -298,7 +303,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 				const FVertex& VertexC = Tree->Vertices[Index + 2];
 
 				CollisionResponse TriangleResponse = CollisionResponseTriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
-				if( Math::Abs( TriangleResponse.Distance ) > Math::Abs( Response.Distance ) )
+				if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
 				{
 					Response.Normal = TriangleResponse.Normal;
 					Response.Distance = TriangleResponse.Distance;
@@ -327,7 +332,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 		if( Tree->Upper )
 		{
 			ResponseA = CollisionResponseTreeAABB( Tree->Upper, WorldBounds, Transform, OtherTransform );
-			if( Math::Abs( ResponseA.Distance ) > Math::Abs( Response.Distance ) )
+			if( Math::Abs( ResponseA.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
 			{
 				Response.Normal = ResponseA.Normal;
 				Response.Distance = ResponseA.Distance;
@@ -337,7 +342,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 		if( Tree->Lower )
 		{
 			ResponseB = CollisionResponseTreeAABB( Tree->Lower, WorldBounds, Transform, OtherTransform );
-			if( Math::Abs( ResponseB.Distance ) > Math::Abs( Response.Distance ) )
+			if( Math::Abs( ResponseB.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
 			{
 				Response.Normal = ResponseB.Normal;
 				Response.Distance = ResponseB.Distance;
@@ -345,7 +350,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& 
 		}
 	}
 
-	Response.Normal = Transform.Transform( Response.Normal );
+	// Response.Normal = Transform.Transform( Response.Normal );
 	
 	// UI::AddLine( WorldCenter, WorldCenter + Response.Normal );
 
@@ -374,6 +379,7 @@ CBody::CBody()
 
 CBody::~CBody()
 {
+	Destroy();
 	delete Tree;
 }
 
@@ -405,6 +411,7 @@ void CBody::Construct()
 
 void CBody::Construct( CPhysics* Physics )
 {
+	this->Physics = Physics;
 	Physics->Register( this );
 	CalculateBounds();
 
@@ -522,7 +529,11 @@ bool CBody::Collision( CBody* Body )
 
 		Normal += Response.Normal;
 		// Velocity -= InverseMass * Impulse;
-		// Body->Velocity -= Body->InverseMass * Impulse;
+
+		if( TriangleMesh )
+		{
+			Body->Velocity -= Body->InverseMass * Impulse;
+		}
 
 #if DrawNormalAndDistance == 1
 		const auto BodyTransform = Body->GetTransform();
@@ -959,8 +970,11 @@ void CBody::Tick()
 	TextPosition = 0;
 }
 
-void CBody::Destroy( CPhysics* Physics )
+void CBody::Destroy()
 {
+	if( !Physics )
+		return;
+	
 	Physics->Unregister( this );
 }
 

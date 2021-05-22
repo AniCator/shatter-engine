@@ -17,8 +17,6 @@ CMesh::CMesh( EMeshType InMeshType )
 	IndexData = FIndexData();
 
 	Location = GeneratedMesh;
-
-	Skeleton = ::Skeleton();
 }
 
 CMesh::~CMesh()
@@ -148,12 +146,22 @@ void CMesh::SetLocation( const std::string& FileLocation )
 
 const Skeleton& CMesh::GetSkeleton() const
 {
-	return Skeleton;
+	return Set.Skeleton;
 }
 
 void CMesh::SetSkeleton( const ::Skeleton& SkeletonIn )
 {
-	Skeleton = SkeletonIn;
+	Set.Skeleton = SkeletonIn;
+}
+
+const AnimationSet& CMesh::GetAnimationSet() const
+{
+	return Set;
+}
+
+void CMesh::SetAnimationSet( const AnimationSet& Set )
+{
+	this->Set = Set;
 }
 
 bool CMesh::CreateVertexArrayObject()

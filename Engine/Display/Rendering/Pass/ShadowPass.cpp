@@ -8,7 +8,7 @@
 CRenderPassShadow::CRenderPassShadow( int Width, int Height, const CCamera& Camera, const bool AlwaysClear ) : CRenderPass( "Shadow", Width, Height, Camera, AlwaysClear )
 {
 	auto& Assets = CAssets::Get();
-	ShadowShader = Assets.CreateNamedShader( "Shadow", "Shaders/Shadow" );
+	ShadowShader = Assets.CreateNamedShader( "Shadow", "Shaders/Shadow", EShaderType::Vertex );
 	ShadowMap = nullptr;
 
 	SendQueuedRenderables = true;
@@ -84,7 +84,7 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 
 	Target = ShadowMap;
 
-	FrustumCull( Camera, Renderables );
+	// FrustumCull( Camera, Renderables );
 
 	ProjectionView = Camera.GetProjectionMatrix() * Camera.GetViewMatrix();
 

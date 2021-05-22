@@ -21,6 +21,7 @@ public:
 	virtual void Tick() override;
 
 	virtual bool IsKeyDown( EKey KeyInput ) const override;
+	virtual bool IsMouseDown( EMouse MouseInput ) const override;
 	virtual bool IsAnyKeyDown() const override;
 	virtual FFixedPosition2D GetMousePosition() const override;
 	virtual void SetMousePosition( const FFixedPosition2D& Position ) override;

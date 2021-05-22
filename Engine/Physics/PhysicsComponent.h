@@ -6,6 +6,7 @@
 
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Physics/Body/Body.h>
+#include <Engine/Physics/Physics.h>
 
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
@@ -48,27 +49,6 @@ public:
 
 	virtual bool Collision( CBody* Body ) override
 	{
-		if( !Body->Block )
-			return false;
-
-		if( Body->GetType() == BodyType::Plane )
-			return false;
-
-		const FBounds& BoundsA = Body->GetBounds();
-		const FBounds& BoundsB = GetBounds();		
-		if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
-			return false;
-
-		CEntity* Target = Body->Owner ? Body->Owner : Body->Ghost;
-		TriggerType Collider = dynamic_cast<TriggerType>( Target );
-		if( Collider )
-		{
-			Entities.insert( Collider );
-			Contacts++;
-
-			return true;
-		}
-
 		return false;
 	}
 
@@ -79,7 +59,24 @@ public:
 
 	virtual void Tick() override
 	{
-		// Override the base implementation to prevent it from interfering with the light nature of the trigger bodies.
+		if( !Physics )
+			return;
+
+		const auto BoundsB = GetBounds();
+		auto Bodies = Physics->Query( BoundsB );
+		for( auto* Body : Bodies )
+		{
+			const FBounds& BoundsA = Body->GetBounds();
+			if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
+				return;
+
+			CEntity* Target = Body->Owner ? Body->Owner : Body->Ghost;
+			TriggerType Collider = dynamic_cast<TriggerType>( Target );
+			if( Collider )
+			{
+				Entities.insert( Collider );
+			}
+		}
 	}
 
 	std::set<TriggerType> Entities;

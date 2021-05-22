@@ -37,27 +37,27 @@ bool PlaneTest( const Plane& Plane, const Vector3D& Point )
 bool SphereTest( const Plane& Plane, const Vector3D& Point, const float& Radius )
 {
 	const auto Difference = ( Point - Plane.Point );
-	return Difference.Dot( Plane.Normal ) + Plane.Distance < Radius;
+	return Point.Dot( Plane.Normal ) + Plane.Distance + Radius * Radius <= 0.0f;
 }
 
 bool Frustum::Contains( const Vector3D& Point, const float Radius ) const
 {
-	if( !PlaneTest( Plane[Top], Point ) )
+	if( !SphereTest( Plane[Top], Point, Radius ) )
 		return false;
 
-	if( !PlaneTest( Plane[Bottom], Point ) )
+	if( !SphereTest( Plane[Bottom], Point, Radius ) )
 		return false;
 
-	if( !PlaneTest( Plane[Left], Point ) )
+	if( !SphereTest( Plane[Left], Point, Radius ) )
 		return false;
 
-	if( !PlaneTest( Plane[Right], Point ) )
+	if( !SphereTest( Plane[Right], Point, Radius ) )
 		return false;
 
-	if( !PlaneTest( Plane[Near], Point ) )
-		return false;
+	// if( !SphereTest( Plane[Near], Point, Radius ) )
+	// 	return false;
 
-	if( !PlaneTest( Plane[Far], Point ) )
+	if( !SphereTest( Plane[Far], Point, Radius ) )
 		return false;
 
 	return true;
@@ -182,14 +182,14 @@ void CCamera::DrawFrustum() const
 
 	const Color FrustumPlaneColor = Color( 255, 0, 255 );
 	const Color FrustumClipPlaneColor = Color( 0, 255, 255 );
-	UI::AddLine( Frustum.Plane[Frustum::Top].Point, Frustum.Plane[Frustum::Top].Point + Frustum.Plane[Frustum::Top].Normal, FrustumPlaneColor );
-	UI::AddLine( Frustum.Plane[Frustum::Bottom].Point, Frustum.Plane[Frustum::Bottom].Point + Frustum.Plane[Frustum::Bottom].Normal, FrustumPlaneColor );
-
-	UI::AddLine( Frustum.Plane[Frustum::Left].Point, Frustum.Plane[Frustum::Left].Point + Frustum.Plane[Frustum::Left].Normal, FrustumPlaneColor );
-	UI::AddLine( Frustum.Plane[Frustum::Right].Point, Frustum.Plane[Frustum::Right].Point + Frustum.Plane[Frustum::Right].Normal, FrustumPlaneColor );
-
-	UI::AddLine( Frustum.Plane[Frustum::Near].Point, Frustum.Plane[Frustum::Near].Point + Frustum.Plane[Frustum::Near].Normal, FrustumClipPlaneColor );
-	UI::AddLine( Frustum.Plane[Frustum::Far].Point, Frustum.Plane[Frustum::Far].Point + Frustum.Plane[Frustum::Far].Normal, FrustumClipPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Top].Point, Frustum.Plane[Frustum::Top].Point + Frustum.Plane[Frustum::Top].Normal, FrustumPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Bottom].Point, Frustum.Plane[Frustum::Bottom].Point + Frustum.Plane[Frustum::Bottom].Normal, FrustumPlaneColor );
+	// 
+	// UI::AddLine( Frustum.Plane[Frustum::Left].Point, Frustum.Plane[Frustum::Left].Point + Frustum.Plane[Frustum::Left].Normal, FrustumPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Right].Point, Frustum.Plane[Frustum::Right].Point + Frustum.Plane[Frustum::Right].Normal, FrustumPlaneColor );
+	// 
+	// UI::AddLine( Frustum.Plane[Frustum::Near].Point, Frustum.Plane[Frustum::Near].Point + Frustum.Plane[Frustum::Near].Normal, FrustumClipPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Far].Point, Frustum.Plane[Frustum::Far].Point + Frustum.Plane[Frustum::Far].Normal, FrustumClipPlaneColor );
 
 	UI::AddCircle( Frustum.Plane[Frustum::Top].Point, 2.0f, Color::White );
 	UI::AddCircle( Frustum.Plane[Frustum::Bottom].Point, 2.0f, Color::White );

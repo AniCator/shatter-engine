@@ -100,7 +100,7 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	if( Pixels )
 	{
 		// Delete old data.
-		auto ImageData = GetImageData();
+		auto* ImageData = GetImageData();
 		if( ImageData )
 		{
 			stbi_image_free( ImageData );

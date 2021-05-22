@@ -62,6 +62,11 @@ bool CNullInput::IsKeyDown( EKey KeyInput ) const
 	return false;
 }
 
+bool CNullInput::IsMouseDown( EMouse MouseInput ) const
+{
+	return false;
+}
+
 bool CNullInput::IsAnyKeyDown() const
 {
 	return false;

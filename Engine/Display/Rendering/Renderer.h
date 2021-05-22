@@ -76,7 +76,7 @@ protected:
 	void RefreshShaderHandle( CRenderable* Renderable );
 
 private:
-	void DrawPasses( const ERenderPassLocation::Type& Location );
+	void DrawPasses( const ERenderPassLocation::Type& Location, CRenderTexture* Target = nullptr );
 	void UpdateQueue();
 
 	int64_t DrawCalls = 0;

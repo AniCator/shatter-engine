@@ -86,17 +86,6 @@ namespace Math
 		return Vector3D( ToDegrees( Radians.X ), ToDegrees( Radians.Y ), ToDegrees( Radians.Z ) );
 	}
 
-	inline glm::vec3 EulerToDirection( const glm::vec3& Euler )
-	{
-		glm::vec3 Direction;
-		Direction[0] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[1] ) );
-		Direction[2] = sin( glm::radians( Euler[0] ) );
-		Direction[1] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[1] ) );
-		Direction = glm::normalize( Direction );
-
-		return Direction;
-	}
-
 	inline Vector3D EulerToDirectionX( const Vector3D& Euler )
 	{
 		Vector3D Direction;
@@ -275,14 +264,34 @@ namespace Math
 	template<typename T>
 	inline T Max( const T& A, const T& B )
 	{
-		return std::max( A, B );
+		return A > B ? A : B;
+	}
+
+	// Returns the largest.
+	inline Vector3D Max( const Vector3D& A, const Vector3D& B )
+	{
+		return Vector3D(
+			Max( A.X, B.X ),
+			Max( A.Y, B.Y ),
+			Max( A.Z, B.Z )
+		);
 	}
 
 	// Returns the smallest.
 	template<typename T>
 	inline T Min( const T& A, const T& B )
 	{
-		return std::min( A, B );
+		return A < B ? A : B;
+	}
+
+	// Returns the smallest.
+	inline Vector3D Min( const Vector3D& A, const Vector3D& B )
+	{
+		return Vector3D(
+			Min( A.X, B.X ),
+			Min( A.Y, B.Y ),
+			Min( A.Z, B.Z )
+		);
 	}
 
 	template<typename T>
@@ -314,13 +323,13 @@ namespace Math
 	template<typename T>
 	inline float Float( const T& X )
 	{
-		return static_cast<float>( X );
+		return StaticCast<float>( X );
 	}
 
 	template<typename T>
 	inline int Integer( const T& X )
 	{
-		return static_cast<int>( X );
+		return StaticCast<int>( X );
 	}
 
 	inline float Float( const char* X )
@@ -409,6 +418,16 @@ namespace Math
 	inline float VectorMin( const float& A, const float& B, const float& C )
 	{
 		return Min( Min( A, C ), B );
+	}
+
+	inline float Max( const Vector3D& Vector )
+	{
+		return VectorMax( Vector.X, Vector.Y, Vector.Z );
+	}
+
+	inline float Min( const Vector3D& Vector )
+	{
+		return VectorMin( Vector.X, Vector.Y, Vector.Z );
 	}
 
 	inline FBounds AABB( const Vector3D* Positions, uint32_t Count )
@@ -565,7 +584,7 @@ namespace Math
 		return Start + ProjectOnVector( Point - Start, End - Start );
 	}
 
-	// TODO: Not finished.
+	// TODO: Implement line segment in box.
 	inline bool LineInBoundingBox( const Vector3D& Start, const Vector3D& End, const Vector3D& Minimum, const Vector3D& Maximum )
 	{
 		return false;

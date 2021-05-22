@@ -2,10 +2,10 @@
 #pragma once
 
 template<typename T, size_t BufferSize>
-class CRingBuffer
+class RingBuffer
 {
 public:
-	CRingBuffer()
+	RingBuffer()
 	{
 		WritePosition = 0;
 
@@ -16,7 +16,7 @@ public:
 
 	}
 
-	~CRingBuffer()
+	~RingBuffer()
 	{
 
 	}

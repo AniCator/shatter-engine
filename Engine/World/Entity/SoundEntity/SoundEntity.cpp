@@ -1,7 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "SoundEntity.h"
 
-#include <Engine/Audio/Sound.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/World/World.h>
@@ -11,7 +10,7 @@ static CEntityFactory<CSoundEntity> Factory( "sound" );
 CSoundEntity::CSoundEntity() : CPointEntity()
 {
 	Falloff = EFalloff::None;
-	Radius = 0.0f;
+	Radius = 5.0f;
 	Volume = 100.0f;
 	FadeIn = -1.0f;
 	FadeOut = -1.0f;
@@ -80,19 +79,23 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "radius" )
 		{
-			ExtractFloat( Property->Value.c_str(), Radius );
+			Extract( Property->Value.c_str(), Radius );
+		}
+		else if( Property->Key == "rate" )
+		{
+			Extract( Property->Value.c_str(), Rate );
 		}
 		else if( Property->Key == "volume" )
 		{
-			ExtractFloat( Property->Value.c_str(), Volume );
+			Extract( Property->Value.c_str(), Volume );
 		}
 		else if( Property->Key == "fadein" )
 		{
-			ExtractFloat( Property->Value.c_str(), FadeIn );
+			Extract( Property->Value.c_str(), FadeIn );
 		}
 		else if( Property->Key == "fadeout" )
 		{
-			ExtractFloat( Property->Value.c_str(), FadeOut );
+			Extract( Property->Value.c_str(), FadeOut );
 		}
 		else if( Property->Key == "autoplay" )
 		{
@@ -158,7 +161,9 @@ void CSoundEntity::Play()
 		Information.FadeIn = FadeIn;
 
 		// Start at volume 0 to avoid sounds from blasting loudly on the first tick.
-		Information.Volume = 0.0f;
+		Information.Volume = Volume;
+
+		Information.Rate = Rate;
 		
 		Sound.Start( Information );
 	}
@@ -219,6 +224,7 @@ void CSoundEntity::UpdateSound()
 	else
 	{
 		OutOfRange = false;
+		Length = 1.0f;
 	}
 
 	Range = Length;
@@ -260,6 +266,7 @@ void CSoundEntity::Import( CData& Data )
 
 	Data >> Falloff;
 	Data >> Radius;
+	Data >> Rate;
 	Data >> Volume;
 	Data >> AutoPlay;
 	Data >> Loop;
@@ -272,6 +279,7 @@ void CSoundEntity::Export( CData& Data )
 	DataString::Encode( Data, SoundName.String() );
 	Data << Falloff;
 	Data << Radius;
+	Data << Rate;
 	Data << Volume;
 	Data << AutoPlay;
 	Data << Loop;

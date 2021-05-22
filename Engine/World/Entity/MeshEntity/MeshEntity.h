@@ -48,6 +48,11 @@ public:
 	virtual FBounds GetWorldBounds() const;
 	virtual CBody* GetBody() const;
 
+	virtual const FTransform& GetTransform() override;
+
+	void SetAnimation( const std::string& Name );
+	const std::string& GetAnimation() const;
+
 public:
 	CMesh* Mesh;
 	CMesh* CollisionMesh;

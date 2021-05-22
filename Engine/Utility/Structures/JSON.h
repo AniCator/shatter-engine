@@ -130,6 +130,43 @@ namespace JSON
 		return nullptr;
 	}
 
+	// Casts and assigns an object value if it exists.
+	inline void Assign( const Vector& Objects, const std::string& Search, std::string& Target )
+	{
+		const auto* Object = JSON::Find( Objects, Search );
+		if( Object )
+		{
+			Target = Object->Value;
+		}
+	}
+
+	inline void Assign( const Vector& Objects, const std::string& Search, bool& Target )
+	{
+		const auto* Object = JSON::Find( Objects, Search );
+		if( Object )
+		{
+			Target = Object->Value != "0";
+		}
+	}
+
+	inline void Assign( const Vector& Objects, const std::string& Search, int& Target )
+	{
+		const auto* Object = JSON::Find( Objects, Search );
+		if( Object )
+		{
+			Target = std::stoi( Object->Value );
+		}
+	}
+
+	inline void Assign( const Vector& Objects, const std::string& Search, float& Target )
+	{
+		const auto* Object = JSON::Find( Objects, Search );
+		if( Object )
+		{
+			Target = std::stof( Object->Value );
+		}
+	}
+
 	struct Container
 	{
 		std::list<Object> Objects;

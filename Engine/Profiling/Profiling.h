@@ -75,7 +75,7 @@ public:
 	void SetEnabled( const bool EnabledIn );
 
 private:
-	std::map<FName, CRingBuffer<FProfileTimeEntry, TimeWindow>> TimeEntries;
+	std::map<FName, RingBuffer<FProfileTimeEntry, TimeWindow>> TimeEntries;
 
 	std::map<FName, int64_t> TimeCounters;
 	std::map<FName, int64_t> TimeCountersFrame;

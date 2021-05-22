@@ -3,6 +3,8 @@
 
 #include <Engine/Application/Application.h>
 #include <Engine/Audio/Sound.h>
+#include <Engine/Audio/SoundInstance.h>
+#include <Engine/Audio/SoLoud/EffectStack.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Camera.h>
 #include <Engine/Display/Rendering/Renderable.h>
@@ -12,6 +14,7 @@
 #include <Engine/Resource/Asset.h>
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/World/World.h>
+#include <Engine/Utility/TranslationTable.h>
 
 #include <Game/Game.h>
 
@@ -300,7 +303,7 @@ void ContentBrowserUI()
 				auto ImageSize = ImVec2( 64, 64 );
 
 				auto* TextureID = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
-				if( ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1 ) )
+				if( ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1, ImVec4( 0, 0, 0, 0 ) ) )
 				{
 					PreviewName = Pair.first;
 					PreviewTexture = Texture;
@@ -790,11 +793,38 @@ bool* DisplayMixer()
 	return &ShowMixer;
 }
 
+static bool ShowAudioPlayer = false;
+bool* DisplayAudioPlayer()
+{
+	return &ShowAudioPlayer;
+}
+
 static bool ShowShaderToy = false;
 bool* DisplayShaderToy()
 {
 	return &ShowShaderToy;
 }
+
+static auto TranslateBus = Translate<std::string, Bus::Type>( {
+		{"Master", Bus::Master},
+		{"SFX", Bus::SFX},
+		{"Music", Bus::Music},
+		{"UI", Bus::UI},
+		{"Dialogue", Bus::Dialogue},
+		{"AUX3", Bus::Auxilery3},
+		{"AUX4", Bus::Auxilery4},
+		{"AUX5", Bus::Auxilery5},
+		{"AUX6", Bus::Auxilery6},
+		{"AUX7", Bus::Auxilery7},
+		{"AUX8", Bus::Auxilery8}
+	}
+);
+
+std::vector<std::string> EffectNames = {
+	"Reverb",
+	"Echo",
+	"Limiter"
+};
 
 //float AmplitudeTodB( const float& Amplitude )
 //{
@@ -984,6 +1014,43 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		CSoLoudSound::Volume( Bus, CSoLoudSound::Volume( Bus ) > 0.001f ? 0.0f : 1.0f );
 	}
 
+	ImGui::SetCursorScreenPos( ImVec2( Position.x + 5.0f, Position.y + 225.0f ) );
+
+	auto& Stack = CSoLoudSound::GetBusStack( Bus );
+	const auto& Effects = Stack.Get();
+
+	const Effect* MarkedEffect = nullptr;
+
+	const auto FXText = "##FX" + Name;
+	ImGui::SetNextItemWidth( HorizontalMargin * 2.0f );
+	if( ImGui::ListBoxHeader( FXText.c_str(), Effects.size(), 8 ) )
+	{
+		for( auto& Effect : Effects )
+		{
+			const std::string EffectName = Effect.Name.length() > 0 ? Effect.Name : "Unnamed Effect";
+			ImGui::Selectable( EffectName.c_str() );
+
+			if( ImGui::IsItemHovered() )
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text( "%s", EffectName.c_str() );
+				ImGui::EndTooltip();
+			}
+
+			if( ImGui::IsItemClicked( 1 ) )
+			{
+				MarkedEffect = &Effect;
+			}
+		}
+		
+		ImGui::ListBoxFooter();
+	}
+
+	if( MarkedEffect )
+	{
+		Stack.Remove( MarkedEffect );
+	}
+
 	ImGui::SetCursorScreenPos( NewPosition );
 }
 
@@ -1017,8 +1084,164 @@ void MixerUI()
 	ImGui::End();
 }
 
+std::string AudioPlayerLocation;
+SoundInstance AudioPlayerInstance;
+Spatial AudioPlayerSpatial = Spatial::Create();
+bool AudioPlayerLoop = false;
+
+float PlayPosition = 0.0f;
+float LastPlayPosition = 0.0f;
+float ActualPosition = 0.0f;
+
+bool AudioPlayerFirstOpen = true;
+
+void AudioPlayerUI()
+{
+	if( !ShowAudioPlayer )
+		return;
+
+	if( AudioPlayerFirstOpen )
+	{
+		// Set values we want the user to be able to modify later.
+		AudioPlayerSpatial.Bus = Bus::Auxilery8;
+		AudioPlayerSpatial.Volume = 25.0f;
+		AudioPlayerFirstOpen = false;
+	}
+
+	const ImGuiWindowFlags Flags = 0;
+	if( ImGui::Begin( "Audio Player", &ShowAudioPlayer, ImVec2( 1000.0f, 700.0f ), -1, Flags ) )
+	{
+		ImGui::Text( "Playing \"%s\"", AudioPlayerLocation.c_str() );
+		ImGui::SameLine();
+		if( ImGui::Button( "..." ) )
+		{
+			DialogFormats Formats;
+			Formats.insert_or_assign( L"Audio", L"*.ogg;*.flac;*.wav;" );
+			const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
+			AudioPlayerLocation = Path;
+
+			static std::string AudioPlayerAssetPrefix = "audio_player_asset";
+			static uint64_t AudioPlayerAssetIndex = 0;
+			auto* Sound = CAssets::Get().CreateNamedSound( 
+				( 
+					AudioPlayerAssetPrefix + std::to_string( AudioPlayerAssetIndex++ )
+					).c_str()
+			);
+			
+			Sound->Load( Path.c_str() );
+
+			PlayPosition = 0.0f;
+			LastPlayPosition = 0.0f;
+			ActualPosition = 0.0f;
+
+			AudioPlayerInstance.Stop( 0.01f );
+			AudioPlayerInstance = SoundInstance( Sound );
+		}
+
+		ImGui::Columns( 2 );
+
+		if( ImGui::Button( "Play" ) )
+		{
+			AudioPlayerInstance.Stop( 0.01f );
+			AudioPlayerInstance.Start( AudioPlayerSpatial );
+			AudioPlayerInstance.Loop( AudioPlayerLoop );
+
+			PlayPosition = 0.0f;
+			LastPlayPosition = 0.0f;
+			ActualPosition = 0.0f;
+		}
+
+		ImGui::SameLine();
+
+		if( ImGui::Button( "Stop" ) )
+		{
+			AudioPlayerInstance.Stop( 0.01f );
+
+			PlayPosition = 0.0f;
+			LastPlayPosition = 0.0f;
+			ActualPosition = 0.0f;
+		}
+
+		ImGui::SameLine();
+
+		if( ImGui::Checkbox( "Loop", &AudioPlayerLoop ) )
+		{
+			AudioPlayerInstance.Loop( AudioPlayerLoop );
+		}
+
+		ImGui::NextColumn();
+
+		if( ImGui::SliderFloat( "Volume", &AudioPlayerSpatial.Volume, 0.0f, 300.0f, "%.0f" ) )
+		{
+			AudioPlayerInstance.Volume( AudioPlayerSpatial.Volume );
+			
+		}
+
+		if( ImGui::SliderFloat( "Rate", &AudioPlayerSpatial.Rate, 0.0f, 5.0f, "%.1f" ) )
+		{
+			AudioPlayerInstance.Rate( AudioPlayerSpatial.Rate );
+		}
+
+		const auto& CurrentBus = TranslateBus.From( AudioPlayerSpatial.Bus );
+		Bus::Type NewBus = AudioPlayerSpatial.Bus;
+		if( ImGui::BeginCombo( "Bus", CurrentBus.c_str() ) )
+		{
+			const auto& Keys = TranslateBus.Keys();
+			const auto& Values = TranslateBus.Values();
+
+			for( size_t Index = 0; Index < Keys.size(); Index++ )
+			{
+				if( ImGui::Selectable( Keys[Index].c_str() ) )
+				{
+					NewBus = Values[Index];
+				}
+			}
+			
+			ImGui::EndCombo();
+		}
+
+		if( NewBus != AudioPlayerSpatial.Bus )
+		{
+			AudioPlayerSpatial.Bus = NewBus;
+		}
+
+		ImGui::Columns( 1 );
+
+		const bool Playing = AudioPlayerInstance.Playing();
+
+		if( ImGui::SliderFloat( "Time", &ActualPosition, 0.0f, AudioPlayerInstance.Length(), "%.1f" ) )
+		{
+			if( Playing )
+			{
+				AudioPlayerInstance.Stop();
+				AudioPlayerInstance.Start( AudioPlayerSpatial );
+				AudioPlayerInstance.Loop( AudioPlayerLoop );
+				AudioPlayerInstance.Offset( std::fmod( ActualPosition, AudioPlayerInstance.Length() ) / AudioPlayerSpatial.Rate );
+			}
+			
+			PlayPosition = 0.0f;
+			LastPlayPosition = 0.0f;
+		}
+		else if ( Playing )
+		{
+			PlayPosition = AudioPlayerInstance.Time();
+
+			const float PlayDelta = PlayPosition - LastPlayPosition;
+			ActualPosition = ActualPosition + PlayDelta * AudioPlayerSpatial.Rate;
+			ActualPosition = std::fmod( ActualPosition, AudioPlayerInstance.Length() );
+
+			LastPlayPosition = PlayPosition;
+		}
+	}
+
+	ImGui::End();
+}
+
 static CRenderTexture ShaderToyTexture;
 static CShader* ShaderToyShader = nullptr;
+static CTexture* Slot0 = nullptr;
+static CTexture* Slot1 = nullptr;
+static CTexture* Slot2 = nullptr;
 class CRenderPassShaderToy : public CRenderPass
 {
 public:
@@ -1038,6 +1261,21 @@ public:
 		ShaderToyRenderable.SetMesh( Assets.FindMesh( "square" ) );
 		ShaderToyRenderable.SetShader( Shader );
 
+		if( Slot0 )
+		{
+			ShaderToyRenderable.SetTexture( Slot0, ETextureSlot::Slot0 );
+		}
+
+		if( Slot1 )
+		{
+			ShaderToyRenderable.SetTexture( Slot1, ETextureSlot::Slot1 );
+		}
+
+		if( Slot2 )
+		{
+			ShaderToyRenderable.SetTexture( Slot2, ETextureSlot::Slot2 );
+		}
+
 		return RenderRenderable( &ShaderToyRenderable, Uniforms );
 	}
 };
@@ -1048,7 +1286,7 @@ void ShaderToyUI()
 		return;
 
 	const ImGuiWindowFlags Flags = 0;
-	if( ImGui::Begin( "Shader Toy", &ShowMixer, ImVec2( 950.0f, 1000.0f ), -1, Flags ) )
+	if( ImGui::Begin( "Shader Toy", &ShowShaderToy, ImVec2( 950.0f, 1000.0f ), -1, Flags ) )
 	{
 		if( ImGui::Button( "..." ) )
 		{
@@ -1074,6 +1312,54 @@ void ShaderToyUI()
 			if( ImGui::Button( "Recompile" ) )
 			{
 				ShaderToyShader->Reload();
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Slot 0" ) )
+			{
+				DialogFormats Formats;
+				Formats.insert_or_assign( L"Texture", L"*.png;*.jpg;*.tga;" );
+				const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
+				const CFile File( Path.c_str() );
+				if( File.Exists() )
+				{
+					delete Slot0;
+					Slot0 = new CTexture( Path.c_str() );
+					Slot0->Load();
+					CAssets::Get().CreateNamedTexture( "shadertoy_slot0", Slot0 );
+				}
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Slot 1" ) )
+			{
+				DialogFormats Formats;
+				Formats.insert_or_assign( L"Texture", L"*.png;*.jpg;*.tga;" );
+				const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
+				const CFile File( Path.c_str() );
+				if( File.Exists() )
+				{
+					delete Slot1;
+					Slot1 = new CTexture( Path.c_str() );
+					Slot1->Load();
+					CAssets::Get().CreateNamedTexture( "shadertoy_slot1", Slot1 );
+				}
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Slot 2" ) )
+			{
+				DialogFormats Formats;
+				Formats.insert_or_assign( L"Texture", L"*.png;*.jpg;*.tga;" );
+				const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
+				const CFile File( Path.c_str() );
+				if( File.Exists() )
+				{
+					delete Slot2;
+					Slot2 = new CTexture( Path.c_str() );
+					Slot2->Load();
+					CAssets::Get().CreateNamedTexture( "shadertoy_slot2", Slot2 );
+				}
 			}
 		}
 
@@ -1110,6 +1396,7 @@ void RenderMenuItems()
 
 	MenuItem( "Strings", DisplayStrings() );
 	MenuItem( "Mixer", DisplayMixer() );
+	MenuItem( "Audio Player", DisplayAudioPlayer() );
 	MenuItem( "Shader Toy", DisplayShaderToy() );
 }
 
@@ -1118,6 +1405,7 @@ void RenderMenuPanels()
 	AssetUI();
 	StringUI();
 	MixerUI();
+	AudioPlayerUI();
 	ShaderToyUI();
 }
 

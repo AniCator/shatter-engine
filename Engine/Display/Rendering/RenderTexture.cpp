@@ -110,6 +110,8 @@ void CRenderTexture::Initialize()
 	{
 		glGenTextures( 1, &Handle );
 		glBindTexture( GL_TEXTURE_2D, Handle );
+
+		glObjectLabel( GL_TEXTURE, Handle, -1, Name.String().c_str() );
 		
 		glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, Channels, Type, nullptr );
 

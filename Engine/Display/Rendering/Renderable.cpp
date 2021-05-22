@@ -74,14 +74,14 @@ void CRenderable::SetTexture( CTexture* Texture, ETextureSlot Slot )
 	}
 }
 
-void CRenderable::SetUniform( const std::string& Name, const FUniform& Uniform )
+void CRenderable::SetUniform( const std::string& Name, const Uniform& Uniform )
 {
 	Uniforms.insert_or_assign( Name, Uniform );
 }
 
 void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride )
 {
-	if( Mesh && RenderData.ShouldRender )
+	if( RenderData.ShouldRender )
 	{
 		const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
 		Prepare( RenderData );
@@ -92,17 +92,20 @@ void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRend
 			glUniform3fv( ObjectPositionLocation, 1, RenderData.Transform.GetPosition().Base() );
 		}
 
-		auto& AABB = Mesh->GetBounds();
-		const GLint ObjectBoundsMinimumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMinimum" );
-		if( ObjectBoundsMinimumLocation > -1 )
+		if( Mesh )
 		{
-			glUniform3fv( ObjectBoundsMinimumLocation, 1, AABB.Minimum.Base() );
-		}
+			auto& AABB = Mesh->GetBounds();
+			const GLint ObjectBoundsMinimumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMinimum" );
+			if( ObjectBoundsMinimumLocation > -1 )
+			{
+				glUniform3fv( ObjectBoundsMinimumLocation, 1, AABB.Minimum.Base() );
+			}
 
-		const GLint ObjectBoundsMaximumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMaximum" );
-		if( ObjectBoundsMaximumLocation > -1 )
-		{
-			glUniform3fv( ObjectBoundsMaximumLocation, 1, AABB.Maximum.Base() );
+			const GLint ObjectBoundsMaximumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMaximum" );
+			if( ObjectBoundsMaximumLocation > -1 )
+			{
+				glUniform3fv( ObjectBoundsMaximumLocation, 1, AABB.Maximum.Base() );
+			}
 		}
 
 		const auto ModelMatrix = RenderData.Transform.GetTransformationMatrix();
@@ -112,34 +115,22 @@ void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRend
 		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
 		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
 
-		for( auto& UniformBuffer : Uniforms )
+		for( const auto& UniformBuffer : Uniforms )
 		{
-			const GLint UniformBufferLocation = glGetUniformLocation( RenderData.ShaderProgram, UniformBuffer.first.c_str() );
-			if( UniformBufferLocation > -1 )
+			UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
+		}
+
+		if( Mesh )
+		{
+			const FVertexBufferData& Data = Mesh->GetVertexBufferData();
+			const bool BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
+			if( BindBuffers )
 			{
-				if( UniformBuffer.second.Type == FUniform::Component4 )
-				{
-					glUniform4fv( UniformBufferLocation, 1, UniformBuffer.second.Uniform4.Base() );
-				}
-				else if( UniformBuffer.second.Type == FUniform::Component3 )
-				{
-					glUniform3fv( UniformBufferLocation, 1, UniformBuffer.second.Uniform3.Base() );
-				}
-				else if( UniformBuffer.second.Type == FUniform::Component4x4 )
-				{
-					glUniformMatrix4fv( UniformBufferLocation, 1, GL_FALSE, &UniformBuffer.second.Uniform4x4[0][0] );
-				}
+				Mesh->Prepare( DrawMode );
 			}
-		}
 
-		const FVertexBufferData& Data = Mesh->GetVertexBufferData();
-		const bool BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
-		if( BindBuffers )
-		{
-			Mesh->Prepare( DrawMode );
+			Mesh->Draw( DrawMode );
 		}
-
-		Mesh->Draw( DrawMode );
 	}
 }
 

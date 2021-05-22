@@ -975,7 +975,7 @@ const std::wstring& CApplication::GetDirectoryName()
 {
 	if( DirectoryName.length() == 0 )
 	{
-		static const auto UnnamedProject = L"UnnamedShatterGame";
+		static const std::wstring UnnamedProject = L"UnnamedShatterGame";
 		return UnnamedProject;
 	}
 	
@@ -1010,7 +1010,10 @@ const std::wstring& CApplication::GetAppDataDirectory()
 
 const std::wstring& CApplication::GetUserSettingsDirectory()
 {
-	static const std::wstring UserSettingsDirectory = GetAppDataDirectory() + L"/" + GetDirectoryName() + L"/";
+	static const std::wstring Separator = L"/";
+	static const std::wstring Directory = GetDirectoryName() + Separator;
+	static const std::wstring AppData = GetAppDataDirectory() + Separator;
+	static const std::wstring UserSettingsDirectory = AppData + Directory;
 	return UserSettingsDirectory;
 }
 
@@ -1345,11 +1348,11 @@ void CApplication::Initialize()
 	ImGui_ImplGlfw_Shutdown();
 #endif
 
-	unsigned char EndianTest[2] = { 1, 0 };
-	short CastShort;
-
-	CastShort = *reinterpret_cast<short*>( EndianTest );
-	if( CastShort != 0 )
+	const int EndianValue{ 0x01 };
+	const auto* Address = static_cast<const void*>( &EndianValue );
+	const auto* LeastSignificantAddress = static_cast<const unsigned char*>( Address );
+	const bool LittleEndian = ( *LeastSignificantAddress == 0x01 );
+	if( LittleEndian )
 	{
 		Log::Event( "Byte order: Little endian.\n" );
 	}

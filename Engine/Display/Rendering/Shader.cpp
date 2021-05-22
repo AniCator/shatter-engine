@@ -6,11 +6,21 @@
 
 #define EnableAutoReload 0
 
+// Compares the input file's modification date to that of the provided reference time.
+// Returns true when the file is newer than the given time.
+bool IsModified( const std::string& Location, const time_t& Time )
+{
+	const CFile File( Location.c_str() );
+	if( File.Exists() && File.ModificationDate() > Time )
+	{
+		return true;
+	}
+
+	return false;
+}
+
 CShader::CShader()
 {
-	BlendMode = EBlendMode::Opaque;
-	DepthMask = EDepthMask::Write;
-	DepthTest = EDepthTest::Less;
 	ModificationTime = time( nullptr );
 
 #if EnableAutoReload == 1
@@ -18,74 +28,97 @@ CShader::CShader()
 #endif
 }
 
-CShader::~CShader()
+bool CShader::Load( const bool& ShouldLink )
 {
+	const bool BuildGeometryShader = ShaderType == EShaderType::Geometry;
+	const bool BuildVertexShader = ShaderType == EShaderType::Vertex || ShaderType == EShaderType::Fragment || BuildGeometryShader;
+	const bool BuildFragmentShader = ShaderType == EShaderType::Fragment || BuildGeometryShader;
+	const bool BuildComputeShader = ShaderType == EShaderType::Compute;
 
-}
-
-bool CShader::Load( bool ShouldLink )
-{
-	if( VertexLocation.length() > 0 && FragmentLocation.length() > 0 )
+	bool CanLink = true;
+	if( BuildGeometryShader )
 	{
-		const bool LoadedVertexShader = Load( VertexLocation.c_str(), Handles.VertexShader, EShaderType::Vertex );
-		const bool LoadedFragmentShader = Load( FragmentLocation.c_str(), Handles.FragmentShader, EShaderType::Fragment );
-
-		if( LoadedVertexShader && LoadedFragmentShader && ShouldLink )
+		Log::Event( "Building geometry shader.\n" );
+		if( !Load( GeometryLocation, Handles.GeometryShader, EShaderType::Geometry ) )
 		{
-			Link();
-
-			return Handles.Program != 0;
+			CanLink = false;
+		}
+	}
+	
+	if( BuildVertexShader )
+	{
+		Log::Event( "Building vertex shader.\n" );
+		if( !Load( VertexLocation, Handles.VertexShader, EShaderType::Vertex ) )
+		{
+			CanLink = false;
 		}
 	}
 
+	if( BuildFragmentShader )
+	{
+		Log::Event( "Building fragment shader.\n" );
+		if( !Load( FragmentLocation, Handles.FragmentShader, EShaderType::Fragment ) )
+		{
+			CanLink = false;
+		}
+	}
+
+	if( BuildComputeShader )
+	{
+		Log::Event( "Building compute shader.\n" );
+		if( !Load( ComputeLocation, Handles.ComputeShader, EShaderType::Compute ) )
+		{
+			CanLink = false;
+		}
+	}
+	
+	if( CanLink && ShouldLink )
+	{
+		Link();
+		return Handles.Program != 0;
+	}
+
 	return false;
 }
 
-bool CShader::Load( const char* FileLocation, bool ShouldLink )
+bool CShader::Load( const char* FileLocation, const bool& ShouldLink, const EShaderType& Type )
 {
+	ShaderType = Type;
+	Location = FileLocation;
+
+	// Append the required file extensions.
 	VertexLocation = FileLocation;
+	VertexLocation += ".vs";
+	GeometryLocation = FileLocation;
+	GeometryLocation += ".gs";
 	FragmentLocation = FileLocation;
+	FragmentLocation += ".fs";
+	ComputeLocation = FileLocation;
+	ComputeLocation += ".cs";
 
-	std::stringstream VertexPath;
-	std::stringstream FragmentPath;
-
-	VertexPath << VertexLocation << ".vs";
-	FragmentPath << FragmentLocation << ".fs";
-
-	VertexLocation = VertexPath.str();
-	FragmentLocation = FragmentPath.str();
-
-	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), Handles.VertexShader, EShaderType::Vertex );
-	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), Handles.FragmentShader, EShaderType::Fragment );
-
-	if( LoadedVertexShader && LoadedFragmentShader && ShouldLink )
-	{
-		Link();
-
-		return Handles.Program != 0;
-	}
-
-	return false;
+	return Load();
 }
 
-bool CShader::Load( const char* VertexLocationIn, const char* FragmentLocationIn, bool ShouldLink )
+bool CShader::Load( const char* VertexLocationIn, const char* FragmentLocationIn, const bool& ShouldLink )
 {
+	// Append the required file extensions.
 	VertexLocation = VertexLocationIn;
+	VertexLocation += ".vs";
 	FragmentLocation = FragmentLocationIn;
+	FragmentLocation += ".fs";
 
-	std::stringstream VertexPath;
-	std::stringstream FragmentPath;
+	bool CanLink = true;
+	if( !Load( VertexLocation, Handles.VertexShader, EShaderType::Vertex ) )
+	{
+		CanLink = false;
+	}
 
-	VertexPath << VertexLocation << ".vs";
-	FragmentPath << FragmentLocation << ".fs";
+	if( !Load( FragmentLocation, Handles.FragmentShader, EShaderType::Fragment ) )
+	{
+		CanLink = false;
+	}
 
-	VertexLocation = VertexPath.str();
-	FragmentLocation = FragmentPath.str();
-
-	const bool LoadedVertexShader = Load( VertexPath.str().c_str(), Handles.VertexShader, EShaderType::Vertex );
-	const bool LoadedFragmentShader = Load( FragmentPath.str().c_str(), Handles.FragmentShader, EShaderType::Fragment );
-
-	if( LoadedVertexShader && LoadedFragmentShader && ShouldLink )
+	if( CanLink && ShouldLink )
 	{
 		Link();
 
@@ -95,31 +128,34 @@ bool CShader::Load( const char* VertexLocationIn, const char* FragmentLocationIn
 	return false;
 }
 
-bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType ShaderType )
+bool CShader::Load( const std::string& FileLocation, GLuint& HandleIn, const EShaderType& Type )
 {
-	CFile ShaderSource( FileLocation );
+	CFile ShaderSource( FileLocation.c_str() );
+	if( !ShaderSource.Exists() )
+		return false;
+	
 	const bool Loaded = ShaderSource.Load();
 
 	ModificationTime = ShaderSource.ModificationDate() > ModificationTime ? ShaderSource.ModificationDate() : ModificationTime;
 
 	if( Loaded )
 	{
-		std::string Data = Process( ShaderSource );
+		const std::string Data = Process( ShaderSource );
 		const char* ShaderData = Data.c_str();
 		if( ShaderData )
 		{
-			GLuint ShaderTypeGL = static_cast<GLuint>( ShaderType );
+			const auto ShaderTypeGL = static_cast<GLuint>( Type );
 
 			HandleIn = glCreateShader( ShaderTypeGL );
 			if( HandleIn > 0 )
 			{
-				glShaderSource( HandleIn, 1, &ShaderData, NULL );
+				glShaderSource( HandleIn, 1, &ShaderData, nullptr );
 
 				return true;
 			}
 			else
 			{
-				Log::Event( Log::Error, "Failed to create shader \"%s\".\n", FileLocation );
+				Log::Event( Log::Error, "Failed to create shader \"%s\".\n", FileLocation.c_str() );
 			}
 		}
 	}
@@ -129,7 +165,7 @@ bool CShader::Load( const char* FileLocation, GLuint& HandleIn, EShaderType Shad
 
 bool CShader::Reload()
 {
-	Log::Event( "Recompiling \"%s\"...\n", FragmentLocation.c_str() );
+	Log::Event( "Recompiling \"%s\"...\n", Location.c_str() );
 	return Load();
 }
 
@@ -137,10 +173,33 @@ GLuint CShader::Activate()
 {
 	if( ShouldAutoReload )
 	{
-		const CFile VertexShader( VertexLocation.c_str() );
-		const CFile FragmentShader( FragmentLocation.c_str() );
+		const bool UsingGeometryShader = ShaderType == EShaderType::Geometry;
+		const bool UsingVertexShader = ShaderType == EShaderType::Vertex || ShaderType == EShaderType::Fragment;
+		const bool UsingFragmentShader = ShaderType == EShaderType::Fragment;
+		const bool UsingComputeShader = ShaderType == EShaderType::Compute;
 
-		if( VertexShader.ModificationDate() > ModificationTime || FragmentShader.ModificationDate() > ModificationTime )
+		bool Modified = false;
+		if( UsingGeometryShader && IsModified( GeometryLocation, ModificationTime ) )
+		{
+			Modified = true;
+		}
+		
+		if( UsingVertexShader && IsModified( VertexLocation, ModificationTime ) )
+		{
+			Modified = true;
+		}
+
+		if( UsingFragmentShader && IsModified( FragmentLocation, ModificationTime ) )
+		{
+			Modified = true;
+		}
+
+		if( UsingComputeShader && IsModified( ComputeLocation, ModificationTime ) )
+		{
+			Modified = true;
+		}
+
+		if( Modified )
 		{
 			Reload();
 		}
@@ -223,6 +282,9 @@ bool LogProgramCompilationErrors( GLuint v )
 std::string CShader::Process(const CFile& File)
 {
 	const char* ShaderData = File.Fetch<char>();
+	if( ShaderData == nullptr )
+		return "";
+	
 	std::stringstream StringStream;
 	StringStream << ShaderData;
 
@@ -344,18 +406,42 @@ std::string CShader::Process(const CFile& File)
 
 GLuint CShader::Link()
 {
-	if( Handles.VertexShader == 0 || Handles.FragmentShader == 0 )
+	const bool NeedsGeometryShader = ShaderType == EShaderType::Geometry;
+	const bool NeedsVertexShader = ShaderType == EShaderType::Vertex || ShaderType == EShaderType::Fragment || NeedsGeometryShader;
+	const bool NeedsFragmentShader = ShaderType == EShaderType::Fragment || NeedsGeometryShader;
+	const bool NeedsComputeShader = ShaderType == EShaderType::Compute;
+
+	if( NeedsGeometryShader && Handles.GeometryShader == 0 )
 	{
-		Log::Event( Log::Error, "Shader doesn't have vertex shader nor fragment shader.\n" );
+		Log::Event( Log::Error, "Shader doesn't have a vertex shader but requires it.\n" );
+		return 0;
+	}
+	
+	if( NeedsVertexShader && Handles.VertexShader == 0 )
+	{
+		Log::Event( Log::Error, "Shader doesn't have a vertex shader but requires it.\n" );
+		return 0;
+	}
+
+	if( NeedsFragmentShader && Handles.FragmentShader == 0 )
+	{
+		Log::Event( Log::Error, "Shader doesn't have a fragment shader but requires it.\n" );
+		return 0;
+	}
+
+	if( NeedsComputeShader && Handles.ComputeShader == 0 )
+	{
+		Log::Event( Log::Error, "Shader doesn't have a compute shader but requires it.\n" );
 		return 0;
 	}
 
 	// Compile all shaders
 	bool ShaderCompiled = false;
-	bool Debugger = false;
-
+	
 #ifdef WIN32
-	Debugger = IsDebuggerPresent() > 0;
+	const bool Debugger = IsDebuggerPresent() > 0;
+#else
+	const bool Debugger = false;
 #endif
 
 	int Attempts = 0;
@@ -368,11 +454,44 @@ GLuint CShader::Link()
 			return 0;
 		}
 
-		glCompileShader( Handles.VertexShader );
-		const bool HasErrorsVS = LogShaderCompilationErrors( Handles.VertexShader );
-		glCompileShader( Handles.FragmentShader );
-		const bool HasErrorsFS = LogShaderCompilationErrors( Handles.FragmentShader );
-		ShaderCompiled = !HasErrorsVS && !HasErrorsFS;
+		bool HasNoErrors = true;
+		if( NeedsGeometryShader )
+		{
+			glCompileShader( Handles.GeometryShader );
+			if( LogShaderCompilationErrors( Handles.GeometryShader ) )
+			{
+				HasNoErrors = false;
+			}
+		}
+		
+		if( NeedsVertexShader )
+		{
+			glCompileShader( Handles.VertexShader );
+			if( LogShaderCompilationErrors( Handles.VertexShader ) )
+			{
+				HasNoErrors = false;
+			}
+		}
+
+		if( NeedsFragmentShader )
+		{
+			glCompileShader( Handles.FragmentShader );
+			if( LogShaderCompilationErrors( Handles.FragmentShader ) )
+			{
+				HasNoErrors = false;
+			}
+		}
+
+		if( NeedsComputeShader )
+		{
+			glCompileShader( Handles.ComputeShader );
+			if( LogShaderCompilationErrors( Handles.ComputeShader ) )
+			{
+				HasNoErrors = false;
+			}
+		}
+		
+		ShaderCompiled = HasNoErrors;
 
 		if( !ShaderCompiled )
 		{
@@ -383,19 +502,53 @@ GLuint CShader::Link()
 	}
 
 	// Create the program
-	GLuint ProgramHandle = glCreateProgram();
+	const GLuint ProgramHandle = glCreateProgram();
 
 	// Attach shaders to program
-	glAttachShader( ProgramHandle, Handles.VertexShader );
-	glAttachShader( ProgramHandle, Handles.FragmentShader );
+	if( NeedsVertexShader )
+	{
+		glAttachShader( ProgramHandle, Handles.VertexShader );
+	}
+
+	if( NeedsGeometryShader )
+	{
+		glAttachShader( ProgramHandle, Handles.GeometryShader );
+	}
+	
+	if( NeedsFragmentShader )
+	{
+		glAttachShader( ProgramHandle, Handles.FragmentShader );
+	}
+
+	if( NeedsComputeShader )
+	{
+		glAttachShader( ProgramHandle, Handles.ComputeShader );
+	}
 
 	// Link and set program to use
 	glLinkProgram( ProgramHandle );
 
 	const bool HasErrorsProgram = LogProgramCompilationErrors( ProgramHandle );
 
-	glDeleteShader( Handles.VertexShader );
-	glDeleteShader( Handles.FragmentShader );
+	if( NeedsVertexShader )
+	{
+		glDeleteShader( Handles.VertexShader );
+	}
+
+	if( NeedsGeometryShader )
+	{
+		glDeleteShader( Handles.GeometryShader );
+	}
+
+	if( NeedsFragmentShader )
+	{
+		glDeleteShader( Handles.FragmentShader );
+	}
+
+	if( NeedsComputeShader )
+	{
+		glDeleteShader( Handles.ComputeShader );
+	}
 
 	if( HasErrorsProgram )
 	{

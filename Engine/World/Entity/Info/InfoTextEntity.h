@@ -16,5 +16,21 @@ public:
 	void Export( CData& Data ) override;
 
 protected:
+	float Distance = 10.0f;
+	std::string Title;
 	std::string Text;
+
+	// Should we only show the text once?
+	bool Once = false;
+
+	// Indicates whether we have displayed the text.
+	bool Expired = false;
+
+	enum Mode
+	{
+		World,
+		Screen
+	};
+
+	Mode Style = World;
 };

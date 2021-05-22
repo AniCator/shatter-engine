@@ -28,7 +28,7 @@ void CProfiler::AddTimeEntry( const FProfileTimeEntry& TimeEntry )
 	auto Iterator = TimeEntries.find( TimeEntry.Name );
 	if( Iterator == TimeEntries.end() )
 	{
-		CRingBuffer<FProfileTimeEntry, TimeWindow> Buffer;
+		RingBuffer<FProfileTimeEntry, TimeWindow> Buffer;
 		Buffer.Insert( TimeEntry );
 		TimeEntries.insert_or_assign( Iterator, TimeEntry.Name, Buffer );
 	}
@@ -133,7 +133,7 @@ void CProfiler::PlotPerformance()
 		DrawList->PushClipRect( Position, ImVec2( Position.x + Size.x, Position.y + Size.y ) );
 
 		const auto CurrentTime = std::chrono::duration_cast<std::chrono::nanoseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
-		std::vector<CRingBuffer<FProfileTimeEntry, TimeWindow>*> PlottableEntries;
+		std::vector<RingBuffer<FProfileTimeEntry, TimeWindow>*> PlottableEntries;
 		for( auto& Pair : TimeEntries )
 		{
 			auto& Buffer = Pair.second;
@@ -145,7 +145,7 @@ void CProfiler::PlotPerformance()
 			PlottableEntries.emplace_back( &Buffer );
 		}
 
-		auto SortEntries = [&] ( CRingBuffer<FProfileTimeEntry, TimeWindow>* A, CRingBuffer<FProfileTimeEntry, TimeWindow>* B ) {
+		auto SortEntries = [&] ( RingBuffer<FProfileTimeEntry, TimeWindow>* A, RingBuffer<FProfileTimeEntry, TimeWindow>* B ) {
 			const auto& TimeEntryA = A->Get( A->Offset( -1 ) );
 			const auto& TimeEntryB = B->Get( B->Offset( -1 ) );
 			return ExclusiveComparison( TimeEntryA.StartTime, TimeEntryB.StartTime ) && ExclusiveComparison( TimeEntryA.Depth, TimeEntryB.Depth );
@@ -240,7 +240,7 @@ void CProfiler::Display()
 			{
 				const bool Frametime = TimeEntry.first == "Frametime";
 				const char* TimeEntryName = TimeEntry.first.String().c_str();
-				CRingBuffer<FProfileTimeEntry, TimeWindow>& Buffer = TimeEntry.second;
+				RingBuffer<FProfileTimeEntry, TimeWindow>& Buffer = TimeEntry.second;
 
 				float TimeValues[TimeWindow];
 				for( size_t j = 0; j < TimeWindow; j++ )

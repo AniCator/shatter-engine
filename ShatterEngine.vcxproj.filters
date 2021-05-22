@@ -141,6 +141,15 @@
     <Filter Include="Source Files\Engine\Physics\Body">
       <UniqueIdentifier>{f9a02aab-c9ff-4e75-9b9b-3b7229b39c0d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Sequencer\Events">
+      <UniqueIdentifier>{75b04f51-d5f8-436d-b7d5-c41b4d23778f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Display\Rendering\Particle">
+      <UniqueIdentifier>{17462ad7-e1e7-40fd-b424-7ddf70985e0c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\Audio\SoLoud">
+      <UniqueIdentifier>{0c4f1827-5b49-42f3-8f08-06db6548e6c6}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -361,6 +370,18 @@
     </ClCompile>
     <ClCompile Include="Engine\Application\ApplicationMenu.cpp">
       <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Sequencer\Events\ImageEvent.cpp">
+      <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Particle\Particle.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Particle\ParticleEmitter.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Particle</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Uniform.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -660,6 +681,39 @@
     </ClInclude>
     <ClInclude Include="Engine\Application\ApplicationMenu.h">
       <Filter>Source Files\Engine\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Iterate.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Geometry.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sequencer\Events\ImageEvent.h">
+      <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\SoundInstance.h">
+      <Filter>Source Files\Engine\Audio</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Animation\AnimationSet.h">
+      <Filter>Source Files\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Particle\Particle.h">
+      <Filter>Source Files\Engine\Display\Rendering\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Particle\ParticleEmitter.h">
+      <Filter>Source Files\Engine\Display\Rendering\Particle</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\StorageBuffer.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\SoLoud\Effect.h">
+      <Filter>Source Files\Engine\Audio\SoLoud</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\SoLoud\EffectStack.h">
+      <Filter>Source Files\Engine\Audio\SoLoud</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Audio\SoLoud\Bus.h">
+      <Filter>Source Files\Engine\Audio\SoLoud</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -38,6 +38,38 @@ struct Translate
 		return Value();
 	}
 
+	size_t Size() const
+	{
+		return FromKey.size();
+	}
+
+	std::vector<Key> Keys() const
+	{
+		std::vector<Key> Result;
+		Result.reserve( Size() );
+		
+		for( auto& KeyValue : FromKey )
+		{
+			Result.emplace_back( KeyValue.first );
+		}
+
+		return Result;
+	}
+
+	std::vector<Value> Values() const
+	{
+		std::vector<Value> Result;
+		Result.reserve( Size() );
+
+		for( auto& KeyValue : FromKey )
+		{
+			Result.emplace_back( KeyValue.second );
+		}
+
+		return Result;
+	}
+
+private:
 	std::unordered_map<Key, Value> FromKey;
 	std::unordered_map<Value, Key> ToKey;
 };

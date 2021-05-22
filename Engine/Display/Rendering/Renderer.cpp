@@ -248,6 +248,8 @@ void CRenderer::DrawQueuedRenderables()
 			
 			Framebuffer = CRenderTexture( "Framebuffer", Configuration );
 			Framebuffer.Initialize();
+
+			CAssets::Get().CreateNamedTexture( "rt_framebuffer", &Framebuffer );
 		}
 	}
 
@@ -387,7 +389,7 @@ void CRenderer::DrawQueuedRenderables()
 			
 			if( BufferA.Ready() && BufferB.Ready() )
 			{			
-				DrawPasses( ERenderPassLocation::PostProcess );
+				DrawPasses( ERenderPassLocation::PostProcess, &BufferA );
 				CopyTexture( &BufferA, &BufferB, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
 			}
 
@@ -447,19 +449,19 @@ void CRenderer::DrawQueuedRenderables()
 
 void CRenderer::SetUniformBuffer( const std::string& Name, const Vector4D& Value )
 {
-	FUniform Uniform( Value );
+	Uniform Uniform( Value );
 	GlobalUniformBuffers.insert_or_assign( Name, Uniform );
 }
 
 void CRenderer::SetUniformBuffer( const std::string& Name, const Vector3D& Value )
 {
-	FUniform Uniform( Value );
+	Uniform Uniform( Value );
 	GlobalUniformBuffers.insert_or_assign( Name, Uniform );
 }
 
 void CRenderer::SetUniformBuffer( const std::string& Name, const Matrix4D& Value )
 {
-	FUniform Uniform( Value );
+	Uniform Uniform( Value );
 	GlobalUniformBuffers.insert_or_assign( Name, Uniform );
 }
 
@@ -481,14 +483,25 @@ void CRenderer::SetViewport( int& Width, int& Height )
 
 Vector3D CRenderer::ScreenPositionToWorld( const Vector2D& ScreenPosition ) const
 {
+	//// NDC
+	//const auto NDCX = 2.0f * ScreenPosition.X / ViewportWidth - 1;
+	//const auto NDCY = 2.0f * ScreenPosition.Y / ViewportHeight - 1;
+
+	//// Homogenous
+	//const glm::vec4 ScreenPosition4 = glm::vec4( NDCX, -NDCY, -1.0f, 1.0f );
+	//
+	//const auto ViewProjectionInverse = Camera.GetViewProjectionInverse();
+	//const auto WorldPosition = ViewProjectionInverse * ScreenPosition4;
+	//return Vector3D( WorldPosition.x, WorldPosition.y, WorldPosition.z );
+	
 	const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
 	const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
 
-	glm::mat4& ProjectionInverse = glm::inverse( ProjectionMatrix );
-	glm::mat4& ViewInverse = glm::inverse( ViewMatrix );
+	const glm::mat4 ProjectionInverse = glm::inverse( ProjectionMatrix );
+	const glm::mat4 ViewInverse = glm::inverse( ViewMatrix );
 	const float NormalizedScreenPositionX = ( 2.0f * ScreenPosition[0] ) / ViewportWidth - 1.0f;
 	const float NormalizedScreenPositionY = 1.0f - ( 2.0f * ScreenPosition[1] ) / ViewportHeight;
-	glm::vec4 ScreenPositionClipSpace = glm::vec4( NormalizedScreenPositionX, NormalizedScreenPositionY, -1.0f, 1.0f );
+	const glm::vec4 ScreenPositionClipSpace = glm::vec4( NormalizedScreenPositionX, NormalizedScreenPositionY, -1.0f, 1.0f );
 	glm::vec4 ScreenPositionViewSpace = ProjectionInverse * ScreenPositionClipSpace;
 
 	ScreenPositionViewSpace[2] = -1.0f;
@@ -548,8 +561,10 @@ void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 	}
 }
 
-void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location )
+void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location, CRenderTexture* Target )
 {
+	CRenderTexture* PassTarget = Target ? Target : &Framebuffer;
+	
 	const bool RenderOnlyMainPass = SkipRenderPasses || ForceWireFrame;
 	for( auto& Pass : Passes )
 	{
@@ -557,7 +572,7 @@ void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location )
 		{
 			if( !RenderOnlyMainPass && !Pass.Pass->Target )
 			{
-				Pass.Pass->Target = &Framebuffer;
+				Pass.Pass->Target = PassTarget;
 			}
 
 			// Standard passes should be rendered directly to the window buffer.

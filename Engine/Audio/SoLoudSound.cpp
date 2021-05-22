@@ -11,13 +11,13 @@
 #include <ThirdParty/SoLoud/include/soloud_echofilter.h>
 #include <ThirdParty/SoLoud/include/soloud_limiter.h>
 
-#include <Engine/World/Entity/MeshEntity/MeshEntity.h>
-
+#include <Engine/Audio/SoLoud/EffectStack.h>
 #include <Engine/Physics/Body/Body.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
+#include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
 #undef GetCurrentTime
 #include <Game/Game.h>
@@ -53,84 +53,85 @@ struct DelayParameters
 	float Filter = 0.1f;
 };
 
-struct Effect
+void FilterStack::Add( SoLoud::Filter* Filter, const std::vector<float>& Parameters, const std::string& Name )
 {
-	SoLoud::Filter* Filter = nullptr;
-	std::vector<float> Parameters;
-};
+	Effect NewEffect;
+	NewEffect.Filter = Filter;
+	NewEffect.Parameters = Parameters;
+	NewEffect.Name = Name;
+	
+	Stack.emplace_back( NewEffect );
+}
 
-struct FilterStack
+void FilterStack::Remove( const Effect* Marked )
 {
-	FilterStack()
-	{
-		Stack.reserve( 8 );
-	}
+	if( !Marked )
+		return;
 	
-	void Add( SoLoud::Filter* Filter, const std::vector<float>& Parameters )
-	{
-		Effect NewEffect;
-		NewEffect.Filter = Filter;
-		NewEffect.Parameters = Parameters;
-		
-		Stack.emplace_back( NewEffect );
-	}
+	const auto Iterator = std::find_if( Stack.begin(), Stack.end(), [Marked] ( const Effect& Effect )
+		{
+			return &Effect == Marked;
+		}
+	);
+
+	Iterator->Filter = nullptr;
+	SetForBus( LatestBus );
+	Stack.erase( Iterator );
+}
+
+void FilterStack::SetForBus( const Bus::Type& Bus )
+{
+	LatestBus = Bus;
 	
-	void SetForBus( const Bus::Type& Bus )
+	if( Stack.empty() )
+		return;
+	
+	uint32_t FilterID = 1;
+	for( auto& Effect : Stack )
 	{
-		if( Stack.empty() )
-			return;
+		if( Bus == Bus::Maximum )
+		{
+			Engine.setGlobalFilter( FilterID, Effect.Filter );
+		}
+		else
+		{
+			Mixer[Bus].setFilter( FilterID, Effect.Filter );
+		}
 		
-		uint32_t FilterID = 1;
-		for( auto& Effect : Stack )
+		FilterID++;
+	}
+
+	UpdateForBus( Bus );
+}
+
+void FilterStack::UpdateForBus( const Bus::Type& Bus )
+{
+	if( Stack.empty() )
+		return;
+	
+	uint32_t FilterID = 1;
+	for( const auto& Effect : Stack )
+	{
+		uint32_t AttributeID = 0;
+		for( const auto& Parameter : Effect.Parameters )
 		{
 			if( Bus == Bus::Maximum )
 			{
-				Engine.setGlobalFilter( FilterID, Effect.Filter );
+				Engine.setFilterParameter( 0, FilterID, AttributeID, Parameter );
 			}
 			else
 			{
-				Mixer[Bus].setFilter( FilterID, Effect.Filter );
+				Engine.setFilterParameter( MixerHandles[Bus], FilterID, AttributeID, Parameter );
 			}
-			
-			FilterID++;
+
+			AttributeID++;
 		}
-
-		UpdateForBus( Bus );
-	}
-
-	void UpdateForBus( const Bus::Type& Bus )
-	{
-		if( Stack.empty() )
-			return;
 		
-		uint32_t FilterID = 1;
-		for( const auto& Effect : Stack )
-		{
-			uint32_t AttributeID = 0;
-			for( const auto& Parameter: Effect.Parameters )
-			{
-				if( Bus == Bus::Maximum )
-				{
-					Engine.setFilterParameter( 0, FilterID, AttributeID, Parameter );
-				}
-				else
-				{
-					Engine.setFilterParameter( MixerHandles[Bus], FilterID, AttributeID, Parameter );
-				}
-				
-				AttributeID++;
-			}
-			
-			FilterID++;
-		}
+		FilterID++;
 	}
+}
 
-private:
-	std::vector<Effect> Stack;
-};
-
-FilterStack EnvironmentStack;
-FilterStack GlobalStack;
+FilterStack Stacks[Bus::Maximum + 1];
 
 Spatial Spatial::Create( CMeshEntity* Entity )
 {
@@ -507,23 +508,35 @@ bool CSoLoudSound::Playing( StreamHandle Handle )
 
 void CSoLoudSound::Volume( SoundHandle Handle, const float Volume )
 {
+	if( Handle.Handle == InvalidHandle )
+		return;
+	
 	Sounds[Handle.Handle].Volume = Volume * 0.01f;
 	Engine.setVolume( Sounds[Handle.Handle].Voice, Volume * 0.01f );
 }
 
 void CSoLoudSound::Volume( StreamHandle Handle, const float Volume )
 {
+	if( Handle.Handle == InvalidHandle )
+		return;
+	
 	Streams[Handle.Handle].Volume = Volume * 0.01f;
 	Engine.setVolume( Streams[Handle.Handle].Stream, Volume * 0.01f );
 }
 
 void CSoLoudSound::Fade( SoundHandle Handle, const float Volume, const float Time )
 {
+	if( Handle.Handle == InvalidHandle )
+		return;
+	
 	Engine.fadeVolume( Sounds[Handle.Handle].Voice, Volume * 0.01f, Time );
 }
 
 void CSoLoudSound::Fade( StreamHandle Handle, const float Volume, const float Time )
 {
+	if( Handle.Handle == InvalidHandle )
+		return;
+	
 	Engine.fadeVolume( Streams[Handle.Handle].Stream, Volume * 0.01f, Time );
 }
 
@@ -630,6 +643,11 @@ void CSoLoudSound::Volume( const Bus::Type& Bus, const float& Volume )
 	Mixer[Bus].setVolume( Volume );
 }
 
+FilterStack& CSoLoudSound::GetBusStack( const Bus::Type& Bus )
+{
+	return Stacks[Bus];
+}
+
 void CSoLoudSound::Volume( const float GlobalVolumeIn )
 {
 	Engine.setGlobalVolume( GlobalVolumeIn * 0.01f );
@@ -706,41 +724,56 @@ void CSoLoudSound::Initialize()
 		Mixer[Handle].setVisualizationEnable( true );
 	}
 
-	EnvironmentStack.Add( &Echo, {
+	Stacks[Bus::SFX].Add( &Echo, {
 		0.12f, // Wet
 		0.343f, // Delay
 		0.25f, // Decay
 		0.1f, // Filter
-		} );
+		},
+		"Echo" );
 
-	EnvironmentStack.Add( &ReverbEarlyReflection, {
+	Stacks[Bus::SFX].Add( &ReverbEarlyReflection, {
 		0.03f, // Wet
 		0.0f, // Freeze
 		0.2f, // RoomSize
 		0.7f, // Dampening
 		0.5f, // Width
-		} );
+		},
+		"Reverb Early Reflection" );
 	
-	EnvironmentStack.Add( &ReverbTail, {
+	Stacks[Bus::SFX].Add( &ReverbTail, {
 		0.003f, // Wet
 		0.0f, // Freeze
 		1.0f, // RoomSize
 		0.0f, // Dampening
 		1.0f, // Width
-		} );
-	
-	EnvironmentStack.SetForBus( Bus::SFX );
+		},
+		"Reverb Tail" );
+
+	Stacks[Bus::Auxilery7].Add( &ReverbTail, {
+		0.75f, // Wet
+		0.0f, // Freeze
+		1.0f, // RoomSize
+		0.0f, // Dampening
+		1.0f, // Width
+		},
+		"Mega Tail" );
 
 	static SoLoud::Limiter Limiter;
-	GlobalStack.Add( &Limiter, {
+
+	Stacks[Bus::Master].Add( &Limiter, {
 		3.0f, // Pre-Gain
 		0.95f, // Post-Gain
 		0.01f, // Release
 		1.0f // Oof owie my ears clipper
-		} );
+		},
+		"Limiter" );
 
-	// Master Bus
-	GlobalStack.SetForBus( Bus::Master );
+	// Apply effects stack.
+	for( uint64_t Handle = 0; Handle <= Bus::Maximum; Handle++ )
+	{
+		Stacks[Handle].SetForBus( StaticCast<Bus::Type>( Handle ) );
+	}
 
 	StopAll();
 }

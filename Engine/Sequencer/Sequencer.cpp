@@ -13,19 +13,21 @@
 #include <Engine/Utility/DataString.h>
 #include <Engine/World/World.h>
 
+#include <Engine/Sequencer/Events/ImageEvent.h>
+
 #include <Game/Game.h>
 
 #include <ThirdParty/imgui-1.70/imgui.h>
 
 static bool TimelineCamera = true;
 static CCamera* ActiveTimelineCamera = nullptr;
-static double TimelineStartTime = 0.0f;
 
 // True if the mouse is held down while dragging on the timeline bar.
-static bool Scrobbling = false;
+static bool Scrubbing = false;
 
 double MarkerToTime( const Timecode& Marker )
 {
+	return StaticCast<double>( Marker ) / StaticCast<double>( Timebase );
 	return StaticCast<double>( Marker ) / StaticCast<double>( Timebase );
 }
 
@@ -70,7 +72,7 @@ struct FEventAudio : FTrackEvent
 
 			if( Triggered )
 			{
-				if( Scrobbling )
+				if( Scrubbing )
 				{
 					if( !Sound->Playing() )
 					{
@@ -120,7 +122,7 @@ struct FEventAudio : FTrackEvent
 			Sound->Start( Information );
 		}
 
-		if( Scrobbling )
+		if( Scrubbing )
 		{
 			Sound->Offset( MarkerToTime( Offset ) );
 		}
@@ -559,7 +561,8 @@ static std::map<std::string, std::function<FTrackEvent*()>> EventTypes
 {
 	std::make_pair( "Audio", CreateTrack<FEventAudio> ),
 	std::make_pair( "Camera", CreateTrack<FEventCamera> ),
-	std::make_pair( "Mesh", CreateTrack<FEventRenderable> )
+	std::make_pair( "Mesh", CreateTrack<FEventRenderable> ),
+	std::make_pair( "Image", CreateTrack<FEventImage> )
 };
 
 void FTrackEvent::Evaluate( const Timecode& Marker )
@@ -592,7 +595,7 @@ void FTrackEvent::AddType( const std::string& Name, const std::function<FTrackEv
 
 void FTrackEvent::UpdateInternalMarkers( const Timecode& Marker )
 {
-	if( Scrobbling )
+	if( Scrubbing )
 	{
 		PreviousOffset = 0;
 	}
@@ -763,13 +766,15 @@ public:
 		{
 			Status = ESequenceStatus::Playing;
 
-			Scrobbling = true;
+			Scrubbing = true;
 			for( auto& Track : Tracks )
 			{
 				Track.Reset();
 				Track.Evaluate( Marker );
 			}
-			Scrobbling = false;
+			Scrubbing = false;
+
+			StartTime = GameLayersInstance->GetRealTime() - MarkerToTime( Marker - StartMarker );
 			
 			return;
 		}
@@ -821,6 +826,16 @@ public:
 	void GoTo( const Timecode MarkerLocation )
 	{
 		Marker = MarkerLocation;
+		StartTime = GameLayersInstance->GetRealTime() - MarkerToTime( Marker - StartMarker );
+
+		const bool CachedScrubbingState = Scrubbing;
+		Scrubbing = true;		
+		for( auto& Track : Tracks )
+		{
+			Track.Reset();
+			Track.Evaluate( Marker );
+		}
+		Scrubbing = CachedScrubbingState;
 	}
 
 	Timecode CurrentMarker() const
@@ -849,8 +864,13 @@ public:
 	void Feed()
 	{
 		const auto RealTime = GameLayersInstance->GetRealTime();
+		const auto DebugTime = RealTime - StartTime;
+		const auto Drift = Math::Max( 0.0, DebugTime - Time() );
+		const auto StepDrift = StaticCast<uint64_t>( std::ceil( Drift * StaticCast<double>( Timebase ) ) );
 		const auto DeltaTime = RealTime - PreviousTime + Remainder;
-		const uint64_t Steps = StaticCast<uint64_t>( std::ceil( DeltaTime * StaticCast<double>( Timebase ) ) );
+		auto Steps = StaticCast<uint64_t>( std::floor( DeltaTime * StaticCast<double>( Timebase ) ) );
+		Steps += StepDrift;
+		
 		for( uint64_t StepIndex = 0; StepIndex < Steps; StepIndex++ )
 		{
 			if( Status == ESequenceStatus::Stopped )
@@ -859,16 +879,17 @@ public:
 			Step();
 		}
 
-		const auto DebugTime = RealTime - TimelineStartTime;
-		std::string DebugString =
+		
+		/*const std::string DebugString =
 			"Time Since Play        : " + std::to_string( DebugTime ) +
 			"\nReconstructed Time: " + std::to_string( Time() ) +
-			"\nDrift                  : " + std::to_string( Time() - DebugTime ) +
+			"\nDrift                  : " + std::to_string( Drift ) +
+			"\nStep Drift             : " + std::to_string( StepDrift ) +
 			"\nSteps                  : " + std::to_string( Steps )
 			;
 
 		UI::AddText( Vector2D( 51.0f, 201.0f ), DebugString.c_str(), nullptr, Color::Black );
-		UI::AddText( Vector2D( 50.0f, 200.0f ), DebugString.c_str() );
+		UI::AddText( Vector2D( 50.0f, 200.0f ), DebugString.c_str() );*/
 		
 		PreviousTime = RealTime;
 	}
@@ -887,7 +908,7 @@ public:
 			}
 		}
 		
-		Scrobbling = false;
+		Scrubbing = false;
 
 		// Always evaluate cameras if the timeline isn't drawn.
 		if( !DrawTimeline )
@@ -923,14 +944,14 @@ public:
 		if( ImGui::Begin(
 			"Timeline",
 			&DrawTimeline,
-			ImVec2( 1000.0f, 500.0f )
+			ImVec2( 1000.0f, 500.0f ), 0.45f
 		) )
 		{
 			static FTrack* ActiveTrack = nullptr;
 			static std::vector<FTrackEvent*> ActiveEvents;
 			static int SequenceLengthSeconds = 2;
 
-			const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
+			/*const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
 			if( ShouldPlayPause )
 			{
 				if( Status == ESequenceStatus::Stopped )
@@ -941,13 +962,13 @@ public:
 				{
 					Pause();
 				}
-			}
+			}*/
 
 			if( ImGui::Button( "Play" ) )
 			{
 				Play();
 
-				TimelineStartTime = GameLayersInstance->GetRealTime();
+				StartTime = GameLayersInstance->GetRealTime();
 			}
 
 			ImGui::SameLine();
@@ -983,8 +1004,6 @@ public:
 				File.Load( Data );
 				File.Save();
 			}
-
-			ImGui::SameLine();
 
 			if( ImGui::Button( "Create Track" ) )
 			{
@@ -1038,6 +1057,16 @@ public:
 
 				ImGui::EndCombo();
 			}
+
+			static float StretchFactor = 1.0f;
+			if( ImGui::Button( "Stretch Sequence" ) )
+			{
+				Stretch( StretchFactor );				
+			}
+
+			ImGui::SameLine();
+
+			ImGui::InputFloat( "##StretchFloat", &StretchFactor, 0.1f, 1.0f, "%.1f" );
 
 			ImGui::Separator();
 
@@ -1129,7 +1158,7 @@ public:
 				if( MouseOffset < 0.0f )
 					MouseOffset = 0.0f;
 
-				Marker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
+				GoTo( static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase ) );
 			}
 
 			Timecode GhostMarker = 0;
@@ -1143,8 +1172,8 @@ public:
 				GhostMarker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
 				if( ImGui::GetIO().MouseDown[0] )
 				{
-					Marker = GhostMarker;
-					Scrobbling = true;
+					GoTo( GhostMarker );
+					Scrubbing = true;
 
 					if( Status == ESequenceStatus::Stopped )
 					{
@@ -1413,6 +1442,24 @@ public:
 		Tracks.emplace_back( Track );
 	}
 
+	void Stretch( const float& Factor )
+	{
+		EndMarker *= Factor;
+		Marker *= Factor;
+
+		for( auto& Track : Tracks )
+		{
+			Track.Length *= Factor;
+			Track.Start *= Factor;
+			
+			for( auto& Event : Track.Events )
+			{
+				Event->Length *= Factor;
+				Event->Start *= Factor;
+			}
+		}
+	}
+
 	friend CData& operator<<( CData& Data, CTimeline& Timeline )
 	{
 		DataString::Encode( Data, Timeline.Location );
@@ -1437,10 +1484,10 @@ public:
 		return Data;
 	}
 
-private:
+protected:
 	bool DrawTimeline;
+	double StartTime = -1.0f;
 
-private:
 	std::string Location;
 	Timecode Marker;
 

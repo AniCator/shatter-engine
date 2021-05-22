@@ -63,7 +63,7 @@ uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )
 	Threshold.SetShader( BloomThreshold );
 	Threshold.SetTexture( Framebuffer, ETextureSlot::Slot0 );
 
-	auto& CreateRenderTexture = [&] ( CRenderTexture*& Texture, const std::string& Name, float Factor )
+	auto CreateRenderTexture = [&] ( CRenderTexture*& Texture, const std::string& Name, float Factor )
 	{
 		if( !Texture )
 		{
@@ -86,15 +86,15 @@ uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )
 
 	Calls += RenderRenderable( &Threshold, Uniforms );
 
-	Calls += DownsampleTexture( Target, HalfSizeX, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
-	Calls += DownsampleTexture( HalfSizeX, QuarterSizeX, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
-	Calls += DownsampleTexture( QuarterSizeX, EigthSizeX, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
-	Calls += DownsampleTexture( EigthSizeX, TinySizeX, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
+	Calls += DownsampleTexture( Target, HalfSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
+	Calls += DownsampleTexture( HalfSizeX, QuarterSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
+	Calls += DownsampleTexture( QuarterSizeX, EigthSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
+	Calls += DownsampleTexture( EigthSizeX, TinySizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 
 	CRenderable Blur;
 	Blur.SetMesh( Mesh );
 
-	auto& BlurPass = [&] ( CShader* Shader, CRenderTexture* SourceTarget, CRenderTexture* RenderTarget )
+	auto BlurPass = [&] ( CShader* Shader, CRenderTexture* SourceTarget, CRenderTexture* RenderTarget )
 	{
 		Blur.SetShader( Shader );
 
@@ -106,22 +106,22 @@ uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )
 	BlurPass( BlurX, TinySizeX, TinySizeY );
 	BlurPass( BlurY, TinySizeY, TinySizeX );
 
-	Calls += CopyTexture( TinySizeX, EigthSizeX, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
+	Calls += CopyTexture( TinySizeX, EigthSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 
 	BlurPass( BlurX, EigthSizeX, EigthSizeY );
 	BlurPass( BlurY, EigthSizeY, EigthSizeX );
 
-	Calls += CopyTexture( EigthSizeX, QuarterSizeX, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
+	Calls += CopyTexture( EigthSizeX, QuarterSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 
 	BlurPass( BlurX, QuarterSizeX, QuarterSizeY );
 	BlurPass( BlurY, QuarterSizeY, QuarterSizeX );
 
-	Calls += CopyTexture( QuarterSizeX, HalfSizeX, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
+	Calls += CopyTexture( QuarterSizeX, HalfSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 
 	BlurPass( BlurX, HalfSizeX, HalfSizeY );
 	BlurPass( BlurY, HalfSizeY, HalfSizeX );
 
-	Calls += CopyTexture( HalfSizeX, BloomA, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
+	Calls += CopyTexture( HalfSizeX, BloomA, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 
 	CRenderable Composite;
 	Composite.SetMesh( Mesh );
@@ -133,9 +133,12 @@ uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )
 	Target = BloomB;
 	Calls += RenderRenderable( &Composite, Uniforms );
 
-	Calls += CopyTexture( Target, Framebuffer, ViewportWidth, ViewportHeight, Camera, true, Uniforms );
+	Calls += CopyTexture( Target, Framebuffer, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 
 	SetPreviousCamera( Camera );
+
+	// Clear the target so it can be re-assigned when the pass is executed again.
+	Target = nullptr;
 
 	return Calls;
 }

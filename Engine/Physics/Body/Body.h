@@ -28,7 +28,7 @@ public:
 
 	virtual bool Collision( CBody* Body );
 	virtual void Tick();
-	void Destroy( class CPhysics* Physics );
+	void Destroy();
 
 	virtual void CalculateBounds();
 	FBounds GetBounds() const;
@@ -97,4 +97,5 @@ public:
 	TriangleTree* Tree = nullptr;
 
 	std::set<CMeshEntity*> IgnoredBodies;
+	class CPhysics* Physics = nullptr;
 };

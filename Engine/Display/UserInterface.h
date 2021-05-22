@@ -55,7 +55,7 @@ namespace UI
 	Vector2D WorldToScreenPosition( const Vector3D& WorldPosition, bool* IsInFront = nullptr );
 
 	void AddLine( const Vector2D& Start, const Vector2D& End, const Color& Color = Color::Green );
-	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color = Color::Green, const double Duration = 0.0 );
+	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color = Color::Green, const double Duration = -1.0 );
 	// void AddRect( const Vector2D& a, const Vector2D& b, uint32_t col, float rounding = 0.0f, int rounding_corners_flags = ~0, float thickness = 1.0f );   // a: upper-left, b: lower-right, rounding_corners_flags: 4-bits corresponding to which corner to round
 	// void AddRectFilled( const Vector2D& a, const Vector2D& b, uint32_t col, float rounding = 0.0f, int rounding_corners_flags = ~0 );                     // a: upper-left, b: lower-right
 	// void AddRectFilledMultiColor( const Vector2D& a, const Vector2D& b, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left );
@@ -84,7 +84,7 @@ namespace UI
 	// void AddConvexPolyFilled( const Vector2D* points, const int num_points, uint32_t col, bool anti_aliased );
 	// void AddBezierCurve( const Vector2D& pos0, const Vector2D& cp0, const Vector2D& cp1, const Vector2D& pos1, uint32_t col, float thickness, int num_segments = 0 );
 
-	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color = Color::Blue, const double Duration = 0.0 );
+	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color = Color::Blue, const double Duration = -1.0 );
 	void AddBox( const Vector3D& Center, const Vector3D& Size, const Color& Color = Color::Blue );
 
 	void Reset();

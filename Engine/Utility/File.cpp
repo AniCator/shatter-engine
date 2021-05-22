@@ -33,7 +33,11 @@ CFile::CFile( const char* FileLocationIn )
 
 CFile::~CFile()
 {
-	delete [] Data;
+	if( Data )
+	{
+		delete[] Data;
+		Data = nullptr;
+	}
 }
 
 bool CFile::Load( bool InBinary )
@@ -65,16 +69,19 @@ bool CFile::Load( bool InBinary )
 
 		FileStream.seekg( 0, std::ios::beg );
 
-		Data = new char[FileSize];
+		if( FileSize > 0 )
+		{
+			Data = new char[FileSize];
 
-		if( Binary )
-		{
-			FileStream.read( Data, FileSize );
-		}
-		else
-		{
-			FileStream.getline( Data, FileSize, '\0' );
-			Data[FileSize - 1] = '\0';
+			if( Binary )
+			{
+				FileStream.read( Data, FileSize );
+			}
+			else
+			{
+				FileStream.getline( Data, FileSize, '\0' );
+				Data[FileSize - 1] = '\0';
+			}
 		}
 
 		FileStream.close();
@@ -115,9 +122,12 @@ bool CFile::Load( const std::string& DataIn )
 	const size_t Characters = DataIn.length();
 
 	Binary = false;
-	Data = new char[Characters];
-	DataIn.copy( Data, Characters );
-	FileSize = Characters * sizeof(char);
+	FileSize = Characters * sizeof( char );
+	if( FileSize > 0 )
+	{
+		Data = new char[Characters];
+		DataIn.copy( Data, Characters );
+	}
 
 	return true;
 }
@@ -302,13 +312,38 @@ double ParseDouble( const char* p )
 	return s * acc;
 }
 
-void ExtractFloat( const char* Start, float& Out )
+float ParseFloat( const char* p )
+{
+	return StaticCast<float>( ParseDouble( p ) );
+}
+
+void Extract( const char* Start, float& Out )
 {
 	size_t OutTokenCount = 0;
-	auto TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 1 );
+	auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 1 );
 	if( OutTokenCount == 1 )
 	{
 		Out = TokenDistance[0];
+	}
+}
+
+void Extract( const char* Start, Vector3D& Out )
+{
+	size_t OutTokenCount = 0;
+	auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 3 );
+	if (OutTokenCount == 3)
+	{
+		Out = Vector3D( TokenDistance[0], TokenDistance[1], TokenDistance[2] );
+	}
+}
+
+void Extract( const char* Start, Vector4D& Out )
+{
+	size_t OutTokenCount = 0;
+	auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 4 );
+	if (OutTokenCount == 4)
+	{
+		Out = Vector4D( TokenDistance[0], TokenDistance[1], TokenDistance[2], TokenDistance[3] );
 	}
 }
 

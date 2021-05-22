@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 
+#include <Engine/Animation/AnimationSet.h>
 #include <Engine/Animation/Skeleton.h>
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
@@ -30,7 +31,7 @@ public:
 	static void Dragon( FPrimitive& Primitive, const float Radius );
 	static void Buddha( FPrimitive& Primitive, const float Radius );
 
-	static void ASSIMP( FPrimitive& Primitive, Skeleton& Skeleton, const CFile& File );
+	static void ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile& File );
 	static void OBJ( FPrimitive& Primitive, const CFile& File );
 	static void LM( FPrimitive& Primitive, const CFile& File );
 

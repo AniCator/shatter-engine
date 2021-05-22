@@ -8,22 +8,17 @@ CRenderPassPostProcess::CRenderPassPostProcess( int Width, int Height, const CCa
 {
 	auto& Assets = CAssets::Get();
 	Mesh = Assets.FindMesh( "square" );
-	Shader = Assets.CreateNamedShader( "SamplingTest", "Shaders/FullScreenQuad", "Shaders/SamplingTest" );
-
-	LensDirt = Assets.CreateNamedTexture( "LensDirt", "Textures/LensDirt.png" );
-}
-
-CRenderPassPostProcess::~CRenderPassPostProcess()
-{
-	
+	Shader = Assets.CreateNamedShader( "fullscreenquad", "Shaders/FullScreenQuad" );
 }
 
 uint32_t CRenderPassPostProcess::Render( const UniformMap& Uniforms )
 {
-	CRenderable Pass;
-	Pass.SetMesh( Mesh );
-	Pass.SetShader( Shader );
-	Pass.SetTexture( LensDirt, ETextureSlot::Slot0 );
+	if( !Shader || !Texture )
+		return 0;
+	
+	Renderable.SetMesh( Mesh );
+	Renderable.SetShader( Shader );
+	Renderable.SetTexture( Texture, ETextureSlot::Slot0 );
 
-	return RenderRenderable( &Pass, Uniforms );
+	return RenderRenderable( &Renderable, Uniforms );
 }

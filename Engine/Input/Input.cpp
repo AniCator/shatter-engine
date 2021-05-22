@@ -418,6 +418,11 @@ bool CInput::IsKeyDown( EKey KeyInput ) const
 	return KeyboardInput[static_cast<EKeyType>( KeyInput )].Action == EAction::Press;
 }
 
+bool CInput::IsMouseDown( EMouse Input ) const
+{
+	return MouseInput[static_cast<EMouseType>( Input )].Action == EAction::Press;
+}
+
 bool CInput::IsAnyKeyDown() const
 {
 	return AnyKey;

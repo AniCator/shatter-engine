@@ -22,6 +22,7 @@ public:
 	void Unregister( CBody* Body );
 
 	CBody* Cast( const Vector3D& Start, const Vector3D& End ) const;
+	CBody* Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const;
 	std::vector<CBody*> Query( const FBounds& AABB ) const;
 private:
 	CPhysicsScene* Scene;

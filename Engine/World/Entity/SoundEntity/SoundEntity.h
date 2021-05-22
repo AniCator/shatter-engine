@@ -2,6 +2,7 @@
 #pragma once
 
 #include <Engine/Audio/Sound.h>
+#include <Engine/Audio/SoundInstance.h>
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math.h>
 
@@ -34,6 +35,7 @@ public:
 
 	EFalloff::Type Falloff;
 	float Radius;
+	float Rate = 1.0f;
 	float Volume;
 	float FadeIn;
 	float FadeOut;

@@ -7,6 +7,7 @@
 #include <Engine/Physics/PhysicsComponent.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Math.h>
+#include <Engine/Utility/Geometry.h>
 
 #include <Engine/Display/UserInterface.h>
 
@@ -80,13 +81,53 @@ public:
 		}
 	}
 
-	CBody* Cast( const Vector3D& Start, const Vector3D& End ) const
+	CBody* Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>() ) const
 	{
-		for( auto* ComponentA : Bodies )
+		float ClosestDistance = FLT_MAX;
+		CBody* ClosestBody = nullptr;
+		Geometry::Result ClosestResult;
+		
+		for( auto* Body : Bodies )
 		{
-			FBounds BoundsA = ComponentA->GetBounds();
+			if( !Body )
+				continue;
+
+			if( !Body->Block )
+				continue;
+
+			bool Skip = false;
+			for( auto* Ignored : Ignore )
+			{
+				if( Body == Ignored )
+				{
+					Skip = true;
+					break;
+				}
+			}
+
+			// Don't test ignored bodies.
+			if( Skip )
+				continue;
+
+			const FBounds Bounds = Body->GetBounds();
+			const auto Result = Geometry::LineInBoundingBox( Start, End, Bounds.Minimum, Bounds.Maximum );
+			if( Result.Hit && Result.Distance < ClosestDistance )
+			{
+				ClosestDistance = Result.Distance;
+				ClosestBody = Body;
+				ClosestResult = Result;
+				UI::AddAABB( Bounds.Minimum, Bounds.Maximum );
+			}
 		}
 
+		if( ClosestBody )
+		{
+			UI::AddLine( Start, End, Color::Green );
+			UI::AddCircle( ClosestResult.Position, 5.0f, Color::Blue );
+			return ClosestBody;
+		}
+
+		UI::AddLine( Start, End, Color::Red );
 		return nullptr;
 	}
 
@@ -150,10 +191,18 @@ void CPhysics::Unregister( CBody* Body )
 
 CBody* CPhysics::Cast( const Vector3D& Start, const Vector3D& End ) const
 {
+	ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End );
+}
+
+CBody* CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const
+{
+	ProfileAlways( "Physics" );
+	return Scene->Cast( Start, End, Ignore );
 }
 
 std::vector<CBody*> CPhysics::Query( const FBounds& AABB ) const
 {
+	ProfileAlways( "Physics" );
 	return Scene->Query( AABB );
 }

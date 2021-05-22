@@ -5,6 +5,7 @@
 #include <ThirdParty/glfw-3.3.2.bin.WIN64/include/GLFW//glfw3.h>
 #include <ThirdParty/glm/glm.hpp>
 
+#include <Engine/Animation/AnimationSet.h>
 #include <Engine/Animation/Skeleton.h>
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
@@ -35,7 +36,7 @@ enum EDrawMode
 	TriangleStrip = GL_TRIANGLE_STRIP,
 	Lines = GL_LINES,
 	LineStrip = GL_LINE_STRIP,
-	LineLoop = GL_LINE_LOOP,
+	LineLoop = GL_LINE_LOOP
 };
 
 struct FVertexData
@@ -98,6 +99,9 @@ public:
 
 	const Skeleton& GetSkeleton() const;
 	void SetSkeleton( const Skeleton& Skeleton );
+
+	const AnimationSet& GetAnimationSet() const;
+	void SetAnimationSet( const AnimationSet& Set );
 private:
 	bool CreateVertexArrayObject();
 	bool CreateVertexBuffer();
@@ -120,7 +124,7 @@ private:
 
 	FBounds AABB;
 	FPrimitive Primitive;
-	Skeleton Skeleton;
+	AnimationSet Set;
 
 	std::string Location;
 };

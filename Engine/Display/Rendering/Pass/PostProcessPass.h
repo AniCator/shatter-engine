@@ -9,12 +9,22 @@ class CRenderPassPostProcess : public CRenderPass
 {
 public:
 	CRenderPassPostProcess( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
-	~CRenderPassPostProcess();
-
 	virtual uint32_t Render( const UniformMap& Uniforms ) override;
 
+	void SetShader( class CShader* ShaderIn )
+	{
+		Shader = ShaderIn;
+	}
+	
+	void SetTexture( class CTexture* TextureIn )
+	{
+		Texture = TextureIn;
+	}
+
+protected:
 	class CMesh* Mesh = nullptr;
 	class CShader* Shader = nullptr;
+	class CTexture* Texture = nullptr;
 
-	class CTexture* LensDirt = nullptr;
+	CRenderable Renderable;
 };

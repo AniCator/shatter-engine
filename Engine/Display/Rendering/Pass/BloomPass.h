@@ -8,7 +8,7 @@
 class CRenderPassBloom : public CRenderPass
 {
 public:
-	CRenderPassBloom( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
+	CRenderPassBloom( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = false );
 	~CRenderPassBloom();
 
 	virtual uint32_t Render( const UniformMap& Uniforms ) override;

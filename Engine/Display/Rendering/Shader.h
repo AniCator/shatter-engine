@@ -3,14 +3,18 @@
 
 #include "glad/glad.h"
 #include <string>
+#include <array>
 
 #include <Engine/Utility/File.h>
 
 enum class EShaderType : uint16_t
 {
 	Vertex = GL_VERTEX_SHADER,
+	Geometry = GL_GEOMETRY_SHADER,
 	Fragment = GL_FRAGMENT_SHADER,
-	Compute = GL_COMPUTE_SHADER
+	Compute = GL_COMPUTE_SHADER,
+	TesselationControl = GL_TESS_CONTROL_SHADER,
+	TesselationEvaluation = GL_TESS_EVALUATION_SHADER
 };
 
 namespace EBlendMode
@@ -51,28 +55,26 @@ namespace EDepthTest
 
 struct FProgramHandles
 {
-	FProgramHandles()
-	{
-		Program = 0;
-		VertexShader = 0;
-		FragmentShader = 0;
-	}
+	GLuint Program = 0;
 
-	GLuint Program;
-	GLuint VertexShader;
-	GLuint FragmentShader;
+	GLuint VertexShader = 0;
+	GLuint GeometryShader = 0;
+	GLuint FragmentShader = 0;
+	GLuint ComputeShader = 0;
+	GLuint TesselationControlShader = 0;
+	GLuint TesselationEvaluationShader = 0;
 };
 
 class CShader
 {
 public:
 	CShader();
-	~CShader();
+	~CShader() = default;
 
-	bool Load( bool ShouldLink = true );
-	bool Load( const char* FileLocation, bool ShouldLink = true );
-	bool Load( const char* VertexLocation, const char* FragmentLocation, bool ShouldLink = true );
-	bool Load( const char* FileLocation, GLuint& HandleIn, EShaderType ShaderType );
+	bool Load( const bool& ShouldLink = true );
+	bool Load( const char* FileLocation, const bool& ShouldLink = true, const EShaderType& ShaderType = EShaderType::Fragment );
+	bool Load( const char* VertexLocation, const char* FragmentLocation, const bool& ShouldLink = true );
+	bool Load( const std::string& FileLocation, GLuint& HandleIn, const EShaderType& ShaderType );
 
 	bool Reload();
 
@@ -90,12 +92,16 @@ private:
 
 	FProgramHandles Handles;
 
+	std::string Location;
+	std::string GeometryLocation;
 	std::string VertexLocation;
 	std::string FragmentLocation;
+	std::string ComputeLocation;
 
-	EBlendMode::Type BlendMode;
-	EDepthMask::Type DepthMask;
-	EDepthTest::Type DepthTest;
+	EShaderType ShaderType = EShaderType::Fragment;
+	EBlendMode::Type BlendMode = EBlendMode::Opaque;
+	EDepthMask::Type DepthMask = EDepthMask::Write;
+	EDepthTest::Type DepthTest = EDepthTest::Less;
 
 	time_t ModificationTime;
 	bool ShouldAutoReload = false;

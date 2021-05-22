@@ -70,7 +70,7 @@ void CWindow::Create( const char* Title )
 	const bool DebugContext = config.IsEnabled( "opengldebugcontext", false );
 	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, DebugContext ? 1 : 0 );
 
-	const int MajorVersion = config.GetInteger( "openglversionmajor", 3 );
+	const int MajorVersion = config.GetInteger( "openglversionmajor", 4 );
 	const int MinorVersion = config.GetInteger( "openglversionminor", 3 );
 
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, MajorVersion );
@@ -209,7 +209,7 @@ void CWindow::Fullscreen( const bool Enable )
 	{
 		GLFWmonitor* Monitor = GetTargetMonitor();
 		const GLFWvidmode* VideoMode = glfwGetVideoMode( Monitor );
-		auto Dimensions = ViewDimensions( VideoMode->width, VideoMode->height );
+		const auto Dimensions = ViewDimensions( VideoMode->width, VideoMode->height );
 
 		glfwSetWindowMonitor( WindowHandle, Monitor, 0, 0, Dimensions.Width, Dimensions.Height, VideoMode->refreshRate );
 		Resize( Dimensions );
@@ -220,7 +220,7 @@ void CWindow::Fullscreen( const bool Enable )
 	else
 	{
 		GLFWmonitor* Monitor = GetTargetMonitor();
-		auto Dimensions = GetMonitorDimensions( Monitor );
+		const auto Dimensions = GetMonitorDimensions( Monitor );
 
 		glfwSetWindowMonitor( WindowHandle, nullptr, 100, 100, Dimensions.Width, Dimensions.Height, GLFW_DONT_CARE );
 		CConfiguration::Get().Store( "fullscreen", 0 );

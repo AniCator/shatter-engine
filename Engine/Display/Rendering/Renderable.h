@@ -47,12 +47,12 @@ public:
 	CTexture* GetTexture( ETextureSlot Slot );
 	void SetTexture( CTexture* Texture, ETextureSlot Slot );
 
-	void SetUniform( const std::string& Name, const FUniform& Uniform );
+	void SetUniform( const std::string& Name, const Uniform& Uniform );
 
 	virtual void Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride = None );
 
 	FRenderDataInstanced& GetRenderData();
-private:
+protected:
 	CTexture* Textures[TextureSlots];
 	CShader* Shader;
 	CMesh* Mesh;

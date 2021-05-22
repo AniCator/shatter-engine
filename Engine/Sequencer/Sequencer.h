@@ -5,7 +5,7 @@
 #include <Engine/Utility/Data.h>
 
 typedef uint64_t Timecode;
-static const Timecode Timebase = 96;
+static const Timecode Timebase = 1536;
 
 struct FTrackEvent
 {

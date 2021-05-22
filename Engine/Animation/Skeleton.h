@@ -12,12 +12,12 @@
 static const char SkeletonIdentifier[5] = "LSKE";
 static const size_t SkeletonVersion = 1;
 
-static const uint32_t MaximumInfluences = 3;
+static const uint32_t MaximumInfluences = 4;
 
 struct VertexWeight
 {
-	uint32_t Index[MaximumInfluences];
-	float Weight[MaximumInfluences];
+	uint32_t Index[MaximumInfluences] {};
+	float Weight[MaximumInfluences] {};
 };
 
 namespace AnimationKey
@@ -59,7 +59,17 @@ struct Bone
 	int ParentIndex;
 	std::vector<int> Children;
 
+	// Stores the offset matrix.
 	Matrix4D Matrix;
+
+	// Stores the final transformation.
+	Matrix4D FinalMatrix;
+
+	Matrix4D ModelMatrix;
+	Matrix4D InverseModelMatrix;
+
+	Matrix4D LocalTransform;
+	Matrix4D GlobalTransform;
 };
 
 class Skeleton
@@ -94,7 +104,18 @@ public:
 		DataVector::Encode( Data, Skeleton.Weights );
 		DataVector::Encode( Data, Skeleton.Bones );
 		DataVector::Encode( Data, Skeleton.MatrixNames );
-		// DataVector::Encode( Data, Skeleton.Animations );
+
+		std::vector<std::string> AnimationNames;
+		std::vector<Animation> AnimationData;
+
+		for( const auto& Animation : Skeleton.Animations )
+		{
+			AnimationNames.emplace_back( Animation.first );
+			AnimationData.emplace_back( Animation.second );
+		}
+		
+		DataVector::Encode( Data, AnimationNames );
+		DataVector::Encode( Data, AnimationData );
 
 		return Data;
 	};
@@ -112,7 +133,16 @@ public:
 			DataVector::Decode( Data, Skeleton.Weights );
 			DataVector::Decode( Data, Skeleton.Bones );
 			DataVector::Decode( Data, Skeleton.MatrixNames );
-			// DataVector::Decode( Data, Skeleton.Animations );
+
+			std::vector<std::string> AnimationNames;
+			std::vector<Animation> AnimationData;
+			DataVector::Decode( Data, AnimationNames );
+			DataVector::Decode( Data, AnimationData );
+
+			for( size_t Index = 0; Index < AnimationNames.size(); Index++ )
+			{
+				Skeleton.Animations.insert_or_assign( AnimationNames[Index], AnimationData[Index] );
+			}
 		}
 		else
 		{
