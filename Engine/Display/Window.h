@@ -53,6 +53,8 @@ public:
 	void EnableCursor( bool Enabled );
 	bool IsCursorEnabled() const;
 
+	void SetIcon( class CTexture* Texture );
+
 	CRenderer& GetRenderer();
 
 	inline int GetWidth() const { return CurrentDimensions.Width; };
@@ -86,6 +88,9 @@ private:
 
 	bool RenderingFrame = false;
 	bool Windowless = false;
+
+	// Application icon
+	GLFWimage Icon;
 
 public:
 	static CWindow& Get()

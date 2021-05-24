@@ -50,6 +50,8 @@ void CWindow::Create( const char* Title )
 	CurrentDimensions.Width = config.GetInteger( "width", -1 );
 	CurrentDimensions.Height = config.GetInteger( "height", -1 );
 
+	Icon.pixels = nullptr;
+
 	// Make sure GLFW is terminated before initializing it in case the application is being re-initialized.
 	glfwTerminate();
 
@@ -325,6 +327,42 @@ void CWindow::EnableCursor( bool Enabled )
 bool CWindow::IsCursorEnabled() const
 {
 	return ShowCursor;
+}
+
+void CWindow::SetIcon( CTexture* Texture )
+{
+	if( !Texture )
+		return;
+
+	const auto Format = Texture->GetImageFormat();
+	if( Format != EImageFormat::RGBA8 )
+		return;
+	
+	auto* Data = Texture->GetImageData();
+	if( !Data )
+		return;
+
+	Icon.width = Texture->GetWidth();
+	Icon.height = Texture->GetHeight();
+
+	// Remove existing icon.
+	delete [] Icon.pixels;
+
+	auto* UnsignedData = StaticCast<unsigned char>( Data );
+	const size_t Size = Icon.width * Icon.height * 4;
+	
+	Icon.pixels = new unsigned char[Size];
+	for( size_t Index = 0; Index < Size; )
+	{
+		Icon.pixels[Index + 0] = UnsignedData[Index + 0];
+		Icon.pixels[Index + 1] = UnsignedData[Index + 1];
+		Icon.pixels[Index + 2] = UnsignedData[Index + 2];
+		Icon.pixels[Index + 3] = UnsignedData[Index + 3];
+
+		Index += 4;
+	}
+
+	glfwSetWindowIcon( WindowHandle, 1, &Icon );
 }
 
 CRenderer& CWindow::GetRenderer()
