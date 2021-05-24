@@ -9,6 +9,7 @@
 #include <ThirdParty/SoLoud/include/soloud_speech.h>
 #include <ThirdParty/SoLoud/include/soloud_freeverbfilter.h>
 #include <ThirdParty/SoLoud/include/soloud_echofilter.h>
+#include <ThirdParty/SoLoud/include/soloud_lofifilter.h>
 #include <ThirdParty/SoLoud/include/soloud_limiter.h>
 
 #include <Engine/Audio/SoLoud/EffectStack.h>
@@ -32,6 +33,7 @@ SoLoud::Soloud Engine;
 SoLoud::FreeverbFilter ReverbEarlyReflection;
 SoLoud::FreeverbFilter ReverbTail;
 SoLoud::EchoFilter Echo;
+SoLoud::LofiFilter Lofi;
 
 SoLoud::Bus Mixer[Bus::Maximum];
 SoLoud::handle MixerHandles[Bus::Maximum];
@@ -63,7 +65,7 @@ void FilterStack::Add( SoLoud::Filter* Filter, const std::vector<float>& Paramet
 	Stack.emplace_back( NewEffect );
 }
 
-void FilterStack::Remove( const Effect* Marked )
+void FilterStack::Toggle( const Effect* Marked )
 {
 	if( !Marked )
 		return;
@@ -74,9 +76,19 @@ void FilterStack::Remove( const Effect* Marked )
 		}
 	);
 
-	Iterator->Filter = nullptr;
+	if( Iterator->Filter )
+	{
+		Iterator->Inactive = Iterator->Filter;
+		Iterator->Filter = nullptr;
+	}
+	else if ( Iterator->Inactive )
+	{
+		Iterator->Filter = Iterator->Inactive;
+		Iterator->Inactive = nullptr;
+	}
+
 	SetForBus( LatestBus );
-	Stack.erase( Iterator );
+	// Stack.erase( Iterator );
 }
 
 void FilterStack::SetForBus( const Bus::Type& Bus )
@@ -359,6 +371,9 @@ void CSoLoudSound::Stop( StreamHandle Handle, const float FadeOut )
 		if( FadeOut < 0.0f )
 		{
 			Engine.stop( Streams[Handle.Handle].Stream );
+
+			// Invalidate the stream handle.
+			Streams[Handle.Handle].Stream = 0;
 		}
 		else
 		{
@@ -372,6 +387,9 @@ void CSoLoudSound::Stop( StreamHandle Handle, const float FadeOut )
 			Streams[Handle.Handle].StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 
 			Fade( Handle, 0.0f, FadeOut );
+
+			// Invalidate the stream handle.
+			Streams[Handle.Handle].Stream = 0;
 		}
 	}
 }
@@ -737,7 +755,7 @@ void CSoLoudSound::Initialize()
 		0.0f, // Freeze
 		0.2f, // RoomSize
 		0.7f, // Dampening
-		0.5f, // Width
+		0.5f // Width
 		},
 		"Reverb Early Reflection" );
 	
@@ -746,18 +764,25 @@ void CSoLoudSound::Initialize()
 		0.0f, // Freeze
 		1.0f, // RoomSize
 		0.0f, // Dampening
-		1.0f, // Width
+		1.0f // Width
 		},
 		"Reverb Tail" );
 
 	Stacks[Bus::Auxilery7].Add( &ReverbTail, {
-		0.75f, // Wet
+		0.314f, // Wet
 		0.0f, // Freeze
 		1.0f, // RoomSize
 		0.0f, // Dampening
-		1.0f, // Width
+		1.0f // Width
 		},
 		"Mega Tail" );
+
+	Stacks[Bus::Auxilery7].Add( &Lofi, {
+		0.85f, // Wet
+		2756.0f, // Sample Rate
+		16.0f // Bit Depth
+		},
+		"Lofi" );
 
 	static SoLoud::Limiter Limiter;
 

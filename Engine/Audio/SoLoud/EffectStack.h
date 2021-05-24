@@ -12,7 +12,7 @@ struct FilterStack
 	}
 
 	void Add( SoLoud::Filter* Filter, const std::vector<float>& Parameters, const std::string& Name = "" );
-	void Remove( const Effect* Effect );
+	void Toggle( const Effect* Effect );
 	void SetForBus( const Bus::Type& Bus );
 	void UpdateForBus( const Bus::Type& Bus );
 

@@ -11,6 +11,7 @@ namespace SoLoud
 struct Effect
 {
 	SoLoud::Filter* Filter = nullptr;
+	SoLoud::Filter* Inactive = nullptr;
 	std::vector<float> Parameters;
 	std::string Name;
 
