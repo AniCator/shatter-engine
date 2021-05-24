@@ -702,7 +702,15 @@ void AssetUI()
 				ImGui::NextColumn();
 
 				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				ImGui::Text( "Sound" ); ImGui::NextColumn();
+				if( Pair.second->GetSoundType() == ESoundType::Stream )
+				{
+					ImGui::Text( "Stream" ); ImGui::NextColumn();
+				}
+				else
+				{
+					ImGui::Text( "Sound" ); ImGui::NextColumn();
+				}
+				
 				ImGui::Separator();
 			}
 
@@ -1028,7 +1036,7 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		for( auto& Effect : Effects )
 		{
 			const std::string EffectName = Effect.Name.length() > 0 ? Effect.Name : "Unnamed Effect";
-			ImGui::Selectable( EffectName.c_str() );
+			ImGui::Selectable( EffectName.c_str(), Effect.Inactive == nullptr );
 
 			if( ImGui::IsItemHovered() )
 			{
@@ -1037,7 +1045,7 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 				ImGui::EndTooltip();
 			}
 
-			if( ImGui::IsItemClicked( 1 ) )
+			if( ImGui::IsItemClicked( 0 ) || ImGui::IsItemClicked( 1 ) )
 			{
 				MarkedEffect = &Effect;
 			}
@@ -1048,7 +1056,7 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 
 	if( MarkedEffect )
 	{
-		Stack.Remove( MarkedEffect );
+		Stack.Toggle( MarkedEffect );
 	}
 
 	ImGui::SetCursorScreenPos( NewPosition );
@@ -1111,38 +1119,47 @@ void AudioPlayerUI()
 	const ImGuiWindowFlags Flags = 0;
 	if( ImGui::Begin( "Audio Player", &ShowAudioPlayer, ImVec2( 1000.0f, 700.0f ), -1, Flags ) )
 	{
-		ImGui::Text( "Playing \"%s\"", AudioPlayerLocation.c_str() );
-		ImGui::SameLine();
 		if( ImGui::Button( "..." ) )
 		{
 			DialogFormats Formats;
 			Formats.insert_or_assign( L"Audio", L"*.ogg;*.flac;*.wav;" );
 			const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
-			AudioPlayerLocation = Path;
 
 			static std::string AudioPlayerAssetPrefix = "audio_player_asset";
 			static uint64_t AudioPlayerAssetIndex = 0;
-			auto* Sound = CAssets::Get().CreateNamedSound( 
-				( 
-					AudioPlayerAssetPrefix + std::to_string( AudioPlayerAssetIndex++ )
-					).c_str()
-			);
-			
-			Sound->Load( Path.c_str() );
 
-			PlayPosition = 0.0f;
-			LastPlayPosition = 0.0f;
-			ActualPosition = 0.0f;
+			if( Path.length() > 0 )
+			{
+				AudioPlayerLocation = Path;
+				
+				auto* Sound = CAssets::Get().CreateNamedStream(
+					(
+						AudioPlayerAssetPrefix + std::to_string( AudioPlayerAssetIndex++ )
+						).c_str()
+				);
 
-			AudioPlayerInstance.Stop( 0.01f );
-			AudioPlayerInstance = SoundInstance( Sound );
+				Sound->Load( Path.c_str() );
+
+				PlayPosition = 0.0f;
+				LastPlayPosition = 0.0f;
+				ActualPosition = 0.0f;
+
+				AudioPlayerInstance.Stop( 0.1f );
+				AudioPlayerInstance = SoundInstance( Sound );
+				AudioPlayerInstance.Start( AudioPlayerSpatial );
+				AudioPlayerInstance.Loop( AudioPlayerLoop );
+			}
 		}
+
+		ImGui::SameLine();
+		
+		ImGui::TextWrapped( "Playing \"%s\"", AudioPlayerLocation.c_str() );
 
 		ImGui::Columns( 2 );
 
 		if( ImGui::Button( "Play" ) )
 		{
-			AudioPlayerInstance.Stop( 0.01f );
+			AudioPlayerInstance.Stop( 0.1f );
 			AudioPlayerInstance.Start( AudioPlayerSpatial );
 			AudioPlayerInstance.Loop( AudioPlayerLoop );
 
@@ -1155,7 +1172,7 @@ void AudioPlayerUI()
 
 		if( ImGui::Button( "Stop" ) )
 		{
-			AudioPlayerInstance.Stop( 0.01f );
+			AudioPlayerInstance.Stop( 0.1f );
 
 			PlayPosition = 0.0f;
 			LastPlayPosition = 0.0f;
@@ -1440,6 +1457,10 @@ std::string OpenFileDialog( const DialogFormats& Formats )
 				rgSpec[FormatIndex].pszSpec = Format.second.c_str();
 				FormatIndex++;
 			}
+
+			/*DWORD dwFlags;
+			pFileOpen->GetOptions( &dwFlags );
+			pFileOpen->SetOptions( dwFlags | FOS_ALLOWMULTISELECT );*/
 			
 			hr = pFileOpen->SetFileTypes( 1, rgSpec );
 
