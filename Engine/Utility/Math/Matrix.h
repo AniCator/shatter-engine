@@ -65,6 +65,24 @@ public:
 		return Result;
 	}
 
+	Matrix3D Transpose() const
+	{
+		Matrix3D Transposed;
+		Transposed[0][0] = Columns[0][0];
+		Transposed[0][1] = Columns[1][0];
+		Transposed[0][2] = Columns[2][0];
+
+		Transposed[1][0] = Columns[0][1];
+		Transposed[1][1] = Columns[1][1];
+		Transposed[1][2] = Columns[2][1];
+
+		Transposed[2][0] = Columns[0][2];
+		Transposed[2][1] = Columns[1][2];
+		Transposed[2][2] = Columns[2][2];
+
+		return Transposed;
+	}
+
 	Matrix3D operator*( const Matrix3D& B ) const
 	{
 		Matrix3D Result;
@@ -82,6 +100,107 @@ public:
 	Vector3D& operator[]( uint32_t Column )
 	{
 		return Columns[Column];
+	}
+
+	// Takes in a normalized axis and the angle as radians.
+	static Matrix3D FromAxisAngle( const Vector3D& Axis, const float& Angle )
+	{
+		// Axis angle to matrix. (compact edition)
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+		const auto InvertedCosine = 1.0f - Cosine;
+
+		Matrix3D RotationMatrix;
+		RotationMatrix[0] = Vector3D( InvertedCosine * Axis.X * Axis.X + Cosine, InvertedCosine * Axis.X * Axis.Y - Axis.Z * Sine, InvertedCosine * Axis.X * Axis.Z + Axis.Y * Sine );
+		RotationMatrix[1] = Vector3D( InvertedCosine * Axis.X * Axis.Y + Axis.Z * Sine, InvertedCosine * Axis.Y * Axis.Y + Cosine, InvertedCosine * Axis.Y * Axis.Z - Axis.X * Sine );
+		RotationMatrix[2] = Vector3D( InvertedCosine * Axis.X * Axis.Z - Axis.Y * Sine, InvertedCosine * Axis.Y * Axis.Z + Axis.X * Sine, InvertedCosine * Axis.Z * Axis.Z + Cosine );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the X-axis (angle is in radians, clockwise).
+	static Matrix3D RotationX( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix3D RotationMatrix;
+		RotationMatrix[0] = Vector3D( 1.0f, 0.0f, 0.0f );
+		RotationMatrix[1] = Vector3D( 0.0f, Cosine, Sine );
+		RotationMatrix[2] = Vector3D( 0.0f, -Sine, Cosine );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the Y-axis (angle is in radians, clockwise).
+	static Matrix3D RotationY( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix3D RotationMatrix;
+		RotationMatrix[0] = Vector3D( Cosine, 0.0f, -Sine );
+		RotationMatrix[1] = Vector3D( 0.0f, 1.0f, 0.0f );
+		RotationMatrix[2] = Vector3D( Sine, 0.0f, Cosine );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the Z-axis (angle is in radians, clockwise).
+	static Matrix3D RotationZ( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto NegativeSine = -Sine;
+		const auto Cosine = cosf( Angle );
+
+		Matrix3D RotationMatrix;
+		RotationMatrix[0] = Vector3D( Cosine, Sine, NegativeSine );
+		RotationMatrix[1] = Vector3D( NegativeSine, Cosine, 0.0f );
+		RotationMatrix[2] = Vector3D( 0.0f, 0.0f, 1.0f );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the X-axis (angle is in radians, counter-clockwise).
+	static Matrix3D RotationXCCW( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix3D RotationMatrix;
+		RotationMatrix[0] = Vector3D( 1.0f, 0.0f, 0.0f );
+		RotationMatrix[1] = Vector3D( 0.0f, Cosine, -Sine );
+		RotationMatrix[2] = Vector3D( 0.0f, Sine, Cosine );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the Y-axis (angle is in radians, counter-clockwise).
+	static Matrix3D RotationYCCW( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix3D RotationMatrix;
+		RotationMatrix[0] = Vector3D( Cosine, 0.0f, Sine );
+		RotationMatrix[1] = Vector3D( 0.0f, 1.0f, 0.0f );
+		RotationMatrix[2] = Vector3D( -Sine, 0.0f, Cosine );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the Z-axis (angle is in radians, counter-clockwise).
+	static Matrix3D RotationZCCW( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix3D RotationMatrix;
+		RotationMatrix[0] = Vector3D( Cosine, -Sine, Sine );
+		RotationMatrix[1] = Vector3D( Sine, Cosine, 0.0f );
+		RotationMatrix[2] = Vector3D( 0.0f, 0.0f, 1.0f );
+
+		return RotationMatrix;
 	}
 
 	Vector3D Columns[3]{};
@@ -162,6 +281,32 @@ public:
 		return Result;
 	}
 
+	Matrix4D Transpose() const
+	{
+		Matrix4D Transposed;
+		Transposed[0][0] = Columns[0][0];
+		Transposed[0][1] = Columns[1][0];
+		Transposed[0][2] = Columns[2][0];
+		Transposed[0][3] = Columns[3][0];
+
+		Transposed[1][0] = Columns[0][1];
+		Transposed[1][1] = Columns[1][1];
+		Transposed[1][2] = Columns[2][1];
+		Transposed[1][3] = Columns[3][1];
+
+		Transposed[2][0] = Columns[0][2];
+		Transposed[2][1] = Columns[1][2];
+		Transposed[2][2] = Columns[2][2];
+		Transposed[2][3] = Columns[3][2];
+
+		Transposed[3][0] = Columns[0][3];
+		Transposed[3][1] = Columns[1][3];
+		Transposed[3][2] = Columns[2][3];
+		Transposed[3][3] = Columns[3][3];
+
+		return Transposed;
+	}
+
 	Matrix3D To3D() const
 	{
 		Matrix3D Matrix;
@@ -214,6 +359,107 @@ public:
 		Columns[W][W] = 1.0f;
 		
 		return *this;
+	}
+
+	// Takes in a normalized axis and the angle as radians.
+	static Matrix4D FromAxisAngle( const Vector3D& Axis, const float& Angle )
+	{
+		// Axis angle to matrix. (compact edition)
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+		const auto InvertedCosine = 1.0f - Cosine;
+
+		Matrix4D RotationMatrix;
+		RotationMatrix[0] = Vector4D( InvertedCosine * Axis.X * Axis.X + Cosine, InvertedCosine * Axis.X * Axis.Y - Axis.Z * Sine, InvertedCosine * Axis.X * Axis.Z + Axis.Y * Sine, 0.0f );
+		RotationMatrix[1] = Vector4D( InvertedCosine * Axis.X * Axis.Y + Axis.Z * Sine, InvertedCosine * Axis.Y * Axis.Y + Cosine, InvertedCosine * Axis.Y * Axis.Z - Axis.X * Sine, 0.0f );
+		RotationMatrix[2] = Vector4D( InvertedCosine * Axis.X * Axis.Z - Axis.Y * Sine, InvertedCosine * Axis.Y * Axis.Z + Axis.X * Sine, InvertedCosine * Axis.Z * Axis.Z + Cosine, 0.0f );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the X-axis (angle is in radians, clockwise).
+	static Matrix4D RotationX( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix4D RotationMatrix;
+		RotationMatrix[0] = Vector4D( 1.0f, 0.0f, 0.0f, 0.0f );
+		RotationMatrix[1] = Vector4D( 0.0f, Cosine, Sine, 0.0f );
+		RotationMatrix[2] = Vector4D( 0.0f, -Sine, Cosine, 0.0f );
+		
+		return RotationMatrix;
+	}
+
+	// Rotation around the Y-axis (angle is in radians, clockwise).
+	static Matrix4D RotationY( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix4D RotationMatrix;
+		RotationMatrix[0] = Vector4D( Cosine, 0.0f, -Sine, 0.0f );
+		RotationMatrix[1] = Vector4D( 0.0f, 1.0f, 0.0f, 0.0f );
+		RotationMatrix[2] = Vector4D( Sine, 0.0f, Cosine, 0.0f );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the Z-axis (angle is in radians, clockwise).
+	static Matrix4D RotationZ( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto NegativeSine = -Sine;
+		const auto Cosine = cosf( Angle );
+
+		Matrix4D RotationMatrix;
+		RotationMatrix[0] = Vector4D( Cosine, Sine, NegativeSine, 0.0f );
+		RotationMatrix[1] = Vector4D( NegativeSine, Cosine, 0.0f, 0.0f );
+		RotationMatrix[2] = Vector4D( 0.0f, 0.0f, 1.0f, 0.0f );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the X-axis (angle is in radians, counter-clockwise).
+	static Matrix4D RotationXCCW( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix4D RotationMatrix;
+		RotationMatrix[0] = Vector4D( 1.0f, 0.0f, 0.0f, 0.0f );
+		RotationMatrix[1] = Vector4D( 0.0f, Cosine, -Sine, 0.0f );
+		RotationMatrix[2] = Vector4D( 0.0f, Sine, Cosine, 0.0f );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the Y-axis (angle is in radians, counter-clockwise).
+	static Matrix4D RotationYCCW( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix4D RotationMatrix;
+		RotationMatrix[0] = Vector4D( Cosine, 0.0f, Sine, 0.0f );
+		RotationMatrix[1] = Vector4D( 0.0f, 1.0f, 0.0f, 0.0f );
+		RotationMatrix[2] = Vector4D( -Sine, 0.0f, Cosine, 0.0f );
+
+		return RotationMatrix;
+	}
+
+	// Rotation around the Z-axis (angle is in radians, counter-clockwise).
+	static Matrix4D RotationZCCW( const float& Angle )
+	{
+		const auto Sine = sinf( Angle );
+		const auto Cosine = cosf( Angle );
+
+		Matrix4D RotationMatrix;
+		RotationMatrix[0] = Vector4D( Cosine, -Sine, Sine, 0.0f );
+		RotationMatrix[1] = Vector4D( Sine, Cosine, 0.0f, 0.0f );
+		RotationMatrix[2] = Vector4D( 0.0f, 0.0f, 1.0f, 0.0f );
+
+		return RotationMatrix;
 	}
 
 	Vector4D Columns[4]{};
