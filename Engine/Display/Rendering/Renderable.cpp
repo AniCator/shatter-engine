@@ -109,10 +109,10 @@ void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRend
 		}
 
 		const auto ModelMatrix = RenderData.Transform.GetTransformationMatrix();
-		GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
+		const GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
 		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
 
-		GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
+		const GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
 		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
 
 		for( const auto& UniformBuffer : Uniforms )
