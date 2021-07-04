@@ -50,6 +50,13 @@ void CWindow::Create( const char* Title )
 	CurrentDimensions.Width = config.GetInteger( "width", -1 );
 	CurrentDimensions.Height = config.GetInteger( "height", -1 );
 
+	// Ignore tiny window dimensions.
+	if( CurrentDimensions.Width < 32 || CurrentDimensions.Height < 32 )
+	{
+		CurrentDimensions.Width = -1;
+		CurrentDimensions.Height = -1;
+	}
+
 	Icon.pixels = nullptr;
 
 	// Make sure GLFW is terminated before initializing it in case the application is being re-initialized.
@@ -179,7 +186,7 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 		return;
 
 	ViewDimensions NewDimensions;
-	if( Dimensions.Width > -1 && Dimensions.Height > -1 )
+	if( Dimensions.Width > 0 && Dimensions.Height > 0 )
 	{
 		NewDimensions = Dimensions;
 	}
@@ -412,7 +419,7 @@ ViewDimensions CWindow::GetMonitorDimensions( GLFWmonitor* Monitor )
 	Dimensions.Width = Configuration.GetInteger( "width", -1 );
 	Dimensions.Height = Configuration.GetInteger( "height", -1 );
 
-	if( Dimensions.Width == -1 && Dimensions.Height == -1 )
+	if( Dimensions.Width < 32 || Dimensions.Height < 32 )
 	{
 		auto VideoMode = glfwGetVideoMode( Monitor );
 		if( VideoMode )
