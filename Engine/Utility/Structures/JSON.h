@@ -113,7 +113,7 @@ namespace JSON
 	{
 		if( !Objects.empty() )
 		{
-			auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
+			const auto Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
 				{
 					return Item->Key == Search;
 				}
