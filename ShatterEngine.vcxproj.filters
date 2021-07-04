@@ -150,6 +150,9 @@
     <Filter Include="Source Files\Engine\Audio\SoLoud">
       <UniqueIdentifier>{0c4f1827-5b49-42f3-8f08-06db6548e6c6}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\ParticleEntity">
+      <UniqueIdentifier>{39ce6e86-9419-4f05-82a1-58a11307802c}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -382,6 +385,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Display\Rendering\Uniform.cpp">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\ParticleEntity\ParticleEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\ParticleEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -714,6 +720,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Audio\SoLoud\Bus.h">
       <Filter>Source Files\Engine\Audio\SoLoud</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\ParticleEntity\ParticleEntity.h">
+      <Filter>Source Files\Engine\World\Entity\ParticleEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

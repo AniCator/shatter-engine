@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "ParticleEmitter.h"
 
+#include <Engine/Audio/SoLoudSound.h>
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
@@ -52,10 +53,23 @@ public:
 	
 	void Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride ) override
 	{
-		if( !Emitter && Emitter->Render && VAO )
+		if( !Emitter || !Emitter->Render || !VAO )
 			return;
 
 		CRenderable::Draw( RenderData, PreviousRenderData, DrawModeOverride );
+
+		/*const auto* FFT = CSoLoudSound::GetBusFFT( Bus::Music );
+		std::memcpy( CurrentFFT, FFT, sizeof( float ) * 256 );
+
+		for( size_t Index = 0; Index < 256; Index++ )
+		{
+			CurrentFFT[Index] = Math::Lerp( PreviousFFT[Index], CurrentFFT[Index], Math::Saturate( GameLayersInstance->GetFrameTime() * 6.0f ) );
+		}
+		
+		std::memcpy( PreviousFFT, CurrentFFT, sizeof( float ) * 256 );
+		
+		const auto Frequencies = Uniform( Vector4D( CurrentFFT[5], CurrentFFT[64], CurrentFFT[96], CurrentFFT[128] ) );
+		Frequencies.Bind( Emitter->Render->GetHandles().Program, "Frequencies" );*/
 
 		// Emitter->Render->Activate();
 		glBindVertexArray( VAO );
@@ -66,6 +80,8 @@ public:
 	ParticleEmitter* Emitter = nullptr;
 	GLuint VAO = 0;
 	ShaderStorageBuffer<Particle> Buffer;
+	float CurrentFFT[256];
+	float PreviousFFT[256];
 };
 
 ParticleEmitter::ParticleEmitter()
@@ -73,19 +89,27 @@ ParticleEmitter::ParticleEmitter()
 	
 }
 
-void ParticleEmitter::Initialize()
+void ParticleEmitter::Initialize( CShader* ComputeIn, CShader* RenderIn, const size_t& CountIn )
 {
-	Compute = CAssets::Get().CreateNamedShader( "particle_compute", "Shaders/Particle/Particle", EShaderType::Compute );
-	Render = CAssets::Get().CreateNamedShader( "particle_render", "Shaders/Particle/Particle", EShaderType::Geometry );
+	if( ComputeIn && RenderIn )
+	{
+		Compute = ComputeIn;
+		Render = ComputeIn;
+	}
+	else
+	{
+		Compute = CAssets::Get().CreateNamedShader( "particle_generic_compute", "Shaders/Particle/GenericParticle", EShaderType::Compute );
+		Render = CAssets::Get().CreateNamedShader( "particle_generic_render", "Shaders/Particle/GenericParticle", EShaderType::Geometry );
+	}
 
-	Count = 2000000;
+	Count = CountIn > 0 ? CountIn : 1000;
 	
 	auto* Particles = new Particle[Count];
 	for( size_t Index = 0; Index < Count; Index++ )
 	{
-		const auto X = Math::RandomRange( -100.0f, 100.0f );
-		const auto Y = Math::RandomRange( -100.0f, 100.0f );
-		const auto Z = Math::RandomRange( -100.0f, 100.0f );
+		const auto X = Location.X + Math::RandomRange( -100.0f, 100.0f );
+		const auto Y = Location.Y + Math::RandomRange( -100.0f, 100.0f );
+		const auto Z = Location.Z + Math::RandomRange( -100.0f, 100.0f );
 		
 		Particles[Index].Position = glm::vec4( X, Y, Z, 1.0f );
 		Particles[Index].PreviousPosition = Particles[Index].Position;
@@ -96,6 +120,8 @@ void ParticleEmitter::Initialize()
 	Renderable = Particle;
 	
 	delete[] Particles;
+
+	Time = GameLayersInstance->GetCurrentTime();
 }
 
 void ParticleEmitter::Destroy()
@@ -110,7 +136,7 @@ void ParticleEmitter::Tick()
 
 	auto& RenderData = Renderable->GetRenderData();
 	RenderData.Transform = FTransform(
-		Vector3D::Zero,
+		Location,
 		Vector3D::Zero,
 		Vector3D::One
 	);
@@ -122,14 +148,18 @@ void ParticleEmitter::Tick()
 	const auto* Particle = Cast<ParticleRenderable>( Renderable );
 	Particle->Buffer.Bind();
 
-	const auto X = 0.0f + sinf( GameLayersInstance->GetCurrentTime() * 0.4f ) * 500.0f;
-	const auto Y = 0.0f + cosf( GameLayersInstance->GetCurrentTime() * 0.39f ) * 500.0f;
-	const auto Z = 400.0f + cosf( GameLayersInstance->GetCurrentTime() * 0.11f ) * 200.0f;
-	const auto W = sinf( GameLayersInstance->GetCurrentTime() * 13.0f ) * 0.5f + 0.5f;
+	const auto Volume = CSoLoudSound::GetBusOutput( Bus::Music );
+	const auto MaxVolume = Math::Max( Volume.Left, Volume.Right );
+
+	Time += GameLayersInstance->GetDeltaTime();// +std::powf( MaxVolume, 7.0f ) * 3.0f;
+	const auto X = 0.0f + sinf( Time * 0.4f ) * 500.0f;
+	const auto Y = 0.0f + cosf( Time * 0.39f ) * 500.0f;
+	const auto Z = 400.0f + cosf( Time * 0.11f ) * 200.0f;
+	const auto W = sinf( Time * 13.0f ) * 0.5f + 0.5f;
 
 	// UI::AddCircle( Vector3D( X, Y, Z ), 10.0f );
 
-	const auto Attractor = Uniform( Vector4D( X, Y, Z, W ) );
+	const auto Attractor = Uniform( Vector4D( X, Y, Z, MaxVolume ) );
 	Attractor.Bind( Program, "Attractor" );
 
 	const auto ParticleCount = Uniform( Count );
@@ -153,4 +183,13 @@ void ParticleEmitter::Frame()
 		return;
 
 	CWindow::Get().GetRenderer().QueueRenderable( Renderable );
+}
+
+void ParticleEmitter::SetShader( CShader* Compute, CShader* Render )
+{
+	if( !Compute || !Render )
+		return;
+	
+	this->Compute = Compute;
+	this->Render = Render;
 }
