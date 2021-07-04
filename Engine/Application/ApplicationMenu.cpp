@@ -156,6 +156,10 @@ void ShowTexture( CTexture* Texture )
 		return;
 	
 	auto ImageSize = ImVec2( Texture->GetWidth(), Texture->GetHeight() );
+
+	if( ImageSize.x < 0.01f || ImageSize.y < 0.01f )
+		return;
+	
 	auto ImageRatio = ImageSize.y / ImageSize.x;
 
 	auto ContentOffset = ImGui::GetContentRegionAvail();
@@ -580,7 +584,10 @@ void AssetUI()
 			ImGui::SameLine(); ImGui::Checkbox( "Textures", &ShowTextures );
 			ImGui::SameLine(); ImGui::Checkbox( "Sounds", &ShowSounds );
 			ImGui::SameLine(); ImGui::Checkbox( "Meshes", &ShowMeshes );
-			ImGui::InputText( "Filter", FilterText, 512 );
+
+			ImGui::PushItemWidth( -1.0f );
+			ImGui::InputText( "##AssetFilter", FilterText, 512 );
+			ImGui::PopItemWidth();
 
 			ImGui::BeginChild( "Asset List", ImVec2( ImGui::GetWindowContentRegionWidth() * 0.33f, ImGui::GetContentRegionAvail().y ) );
 			ImGui::Columns( 2 );
@@ -1199,23 +1206,7 @@ void AudioPlayerUI()
 			AudioPlayerInstance.Rate( AudioPlayerSpatial.Rate );
 		}
 
-		const auto& CurrentBus = TranslateBus.From( AudioPlayerSpatial.Bus );
-		Bus::Type NewBus = AudioPlayerSpatial.Bus;
-		if( ImGui::BeginCombo( "Bus", CurrentBus.c_str() ) )
-		{
-			const auto& Keys = TranslateBus.Keys();
-			const auto& Values = TranslateBus.Values();
-
-			for( size_t Index = 0; Index < Keys.size(); Index++ )
-			{
-				if( ImGui::Selectable( Keys[Index].c_str() ) )
-				{
-					NewBus = Values[Index];
-				}
-			}
-			
-			ImGui::EndCombo();
-		}
+		const auto NewBus = ImGui::BusSelector( AudioPlayerSpatial.Bus );
 
 		if( NewBus != AudioPlayerSpatial.Bus )
 		{
@@ -1281,6 +1272,10 @@ public:
 		if( Slot0 )
 		{
 			ShaderToyRenderable.SetTexture( Slot0, ETextureSlot::Slot0 );
+		}
+		else
+		{
+			ShaderToyRenderable.SetTexture( Assets.FindTexture( "rt_buffera" ), ETextureSlot::Slot0 );
 		}
 
 		if( Slot1 )
@@ -1380,8 +1375,12 @@ void ShaderToyUI()
 			}
 		}
 
+		auto ImageSize = ImGui::GetWindowSize();
+		ImageSize.x -= 20.0f;
+		ImageSize.y -= 60.0f;
+
 		auto* Handle = reinterpret_cast<ImTextureID>( ShaderToyTexture.GetHandle() );
-		ImGui::Image( Handle, ImVec2( 950.0f, 950.0f ), ImVec2( 0, 1 ), ImVec2( 1, 0 ) );
+		ImGui::Image( Handle, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ) );
 	}
 
 	ImGui::End();
@@ -1508,4 +1507,27 @@ std::string OpenFileDialog( const DialogFormats& Formats )
 #endif
 
 	return "";
+}
+
+Bus::Type ImGui::BusSelector( const Bus::Type& Bus )
+{
+	const auto& CurrentBus = TranslateBus.From( Bus );
+	Bus::Type NewBus = Bus;
+	if( BeginCombo( "Bus", CurrentBus.c_str() ) )
+	{
+		const auto& Keys = TranslateBus.Keys();
+		const auto& Values = TranslateBus.Values();
+
+		for( size_t Index = 0; Index < Keys.size(); Index++ )
+		{
+			if( Selectable( Keys[Index].c_str() ) )
+			{
+				NewBus = Values[Index];
+			}
+		}
+
+		EndCombo();
+	}
+
+	return NewBus;
 }
