@@ -66,6 +66,7 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 
 	GenerateNormals();
 
+	// TODO: Little bit ugly.
 	// Destroy the primitive, it's in the vertex data now.
 	this->Primitive = FPrimitive();
 
