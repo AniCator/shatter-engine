@@ -206,6 +206,8 @@ void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 
 void CRenderer::DrawQueuedRenderables()
 {
+	UI::SetCamera( Camera );
+	
 	int FramebufferWidth = ViewportWidth;
 	int FramebufferHeight = ViewportHeight;
 
@@ -248,8 +250,6 @@ void CRenderer::DrawQueuedRenderables()
 			
 			Framebuffer = CRenderTexture( "Framebuffer", Configuration );
 			Framebuffer.Initialize();
-
-			CAssets::Get().CreateNamedTexture( "rt_framebuffer", &Framebuffer );
 		}
 	}
 
@@ -352,6 +352,8 @@ void CRenderer::DrawQueuedRenderables()
 				{
 					BufferA = CRenderTexture( "BufferA", ViewportWidth, ViewportHeight );
 					BufferA.Initialize();
+
+					CAssets::Get().CreateNamedTexture( "rt_buffera", &BufferA );
 				}
 			}
 
@@ -370,7 +372,7 @@ void CRenderer::DrawQueuedRenderables()
 				AntiAliasingResolve.Target = &BufferA;
 				AntiAliasingResolve.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 				
-				CopyTexture( &BufferA, MainPass.Target, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
+				CopyTexture( &BufferA, MainPass.Target, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
 			}
 			else
 			{
@@ -384,13 +386,13 @@ void CRenderer::DrawQueuedRenderables()
 				ImageProcessingPass.Target = &BufferA;
 				ImageProcessingPass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 
-				CopyTexture( &BufferA, MainPass.Target, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
+				CopyTexture( &BufferA, MainPass.Target, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
 			}
 			
 			if( BufferA.Ready() && BufferB.Ready() )
 			{			
 				DrawPasses( ERenderPassLocation::PostProcess, &BufferA );
-				CopyTexture( &BufferA, &BufferB, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
+				CopyTexture( &BufferA, &BufferB, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
 			}
 
 			if( !BufferPrevious.Ready() )
@@ -404,7 +406,7 @@ void CRenderer::DrawQueuedRenderables()
 
 			if( BufferPrevious.Ready() && BufferB.Ready() )
 			{
-				CopyTexture( &BufferB, &BufferPrevious, ViewportWidth, ViewportHeight, Camera, true, GlobalUniformBuffers );
+				CopyTexture( &BufferB, &BufferPrevious, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
 			}
 
 			if( BufferB.Ready() && BufferA.Ready() )
@@ -413,6 +415,10 @@ void CRenderer::DrawQueuedRenderables()
 				FramebufferRenderable.SetTexture( &BufferB, ETextureSlot::Slot0 );
 
 				CRenderPass ResolveToViewport( "ResolveToViewport", ViewportWidth, ViewportHeight, Camera );
+				ResolveToViewport.Target = &BufferA;
+				DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+
+				ResolveToViewport.Target = nullptr;
 				DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 			}
 		}
@@ -437,8 +443,6 @@ void CRenderer::DrawQueuedRenderables()
 
 	const int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
-
-	UI::SetCamera( Camera );
 
 	// Clean up render passes.
 	Passes.clear();
