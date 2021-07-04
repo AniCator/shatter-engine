@@ -11,18 +11,6 @@ public:
 		Identity();
 	}
 
-	Matrix3D( const Vector2D& Translation )
-	{
-		Identity();
-		Translate( Translation );
-	}
-
-	Matrix3D( const Vector3D& Translation )
-	{
-		Identity();
-		Translate( Translation );
-	}
-
 	void Identity()
 	{
 		Columns[X] = { 1.0f, 0.0f ,0.0f };
@@ -30,17 +18,7 @@ public:
 		Columns[Z] = { 0.0f, 0.0f ,1.0f };
 	}
 
-	void Translate( const Vector2D& Translation )
-	{
-		Columns[Z] = Columns[X] * Translation.X + Columns[Y] * Translation.Y + Columns[Z];
-	}
-
-	void Translate( const Vector3D& Translation )
-	{
-		Columns[Z] = Columns[X] * Translation.X + Columns[Y] * Translation.Y + Columns[Z];
-	}
-
-	Vector2D Rotate( const Vector2D& Vector )
+	Vector2D Rotate( const Vector2D& Vector ) const
 	{
 		Vector2D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X;
@@ -48,7 +26,7 @@ public:
 		return Result;
 	}
 
-	Vector2D Transform( const Vector2D& Vector )
+	Vector2D Transform( const Vector2D& Vector ) const
 	{
 		Vector2D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X;
@@ -56,7 +34,7 @@ public:
 		return Result;
 	}
 
-	Vector3D Transform( const Vector3D& Vector )
+	Vector3D Transform( const Vector3D& Vector ) const
 	{
 		Vector3D Result;
 		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X * Vector.X;
@@ -111,9 +89,9 @@ public:
 		const auto InvertedCosine = 1.0f - Cosine;
 
 		Matrix3D RotationMatrix;
-		RotationMatrix[0] = Vector3D( InvertedCosine * Axis.X * Axis.X + Cosine, InvertedCosine * Axis.X * Axis.Y - Axis.Z * Sine, InvertedCosine * Axis.X * Axis.Z + Axis.Y * Sine );
-		RotationMatrix[1] = Vector3D( InvertedCosine * Axis.X * Axis.Y + Axis.Z * Sine, InvertedCosine * Axis.Y * Axis.Y + Cosine, InvertedCosine * Axis.Y * Axis.Z - Axis.X * Sine );
-		RotationMatrix[2] = Vector3D( InvertedCosine * Axis.X * Axis.Z - Axis.Y * Sine, InvertedCosine * Axis.Y * Axis.Z + Axis.X * Sine, InvertedCosine * Axis.Z * Axis.Z + Cosine );
+		RotationMatrix[X] = Vector3D( InvertedCosine * Axis.X * Axis.X + Cosine, InvertedCosine * Axis.X * Axis.Y - Axis.Z * Sine, InvertedCosine * Axis.X * Axis.Z + Axis.Y * Sine );
+		RotationMatrix[Y] = Vector3D( InvertedCosine * Axis.X * Axis.Y + Axis.Z * Sine, InvertedCosine * Axis.Y * Axis.Y + Cosine, InvertedCosine * Axis.Y * Axis.Z - Axis.X * Sine );
+		RotationMatrix[Z] = Vector3D( InvertedCosine * Axis.X * Axis.Z - Axis.Y * Sine, InvertedCosine * Axis.Y * Axis.Z + Axis.X * Sine, InvertedCosine * Axis.Z * Axis.Z + Cosine );
 
 		return RotationMatrix;
 	}
@@ -125,9 +103,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix3D RotationMatrix;
-		RotationMatrix[0] = Vector3D( 1.0f, 0.0f, 0.0f );
-		RotationMatrix[1] = Vector3D( 0.0f, Cosine, Sine );
-		RotationMatrix[2] = Vector3D( 0.0f, -Sine, Cosine );
+		RotationMatrix[X] = Vector3D( 1.0f, 0.0f, 0.0f );
+		RotationMatrix[Y] = Vector3D( 0.0f, Cosine, Sine );
+		RotationMatrix[Z] = Vector3D( 0.0f, -Sine, Cosine );
 
 		return RotationMatrix;
 	}
@@ -139,9 +117,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix3D RotationMatrix;
-		RotationMatrix[0] = Vector3D( Cosine, 0.0f, -Sine );
-		RotationMatrix[1] = Vector3D( 0.0f, 1.0f, 0.0f );
-		RotationMatrix[2] = Vector3D( Sine, 0.0f, Cosine );
+		RotationMatrix[X] = Vector3D( Cosine, 0.0f, -Sine );
+		RotationMatrix[Y] = Vector3D( 0.0f, 1.0f, 0.0f );
+		RotationMatrix[Z] = Vector3D( Sine, 0.0f, Cosine );
 
 		return RotationMatrix;
 	}
@@ -154,9 +132,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix3D RotationMatrix;
-		RotationMatrix[0] = Vector3D( Cosine, Sine, NegativeSine );
-		RotationMatrix[1] = Vector3D( NegativeSine, Cosine, 0.0f );
-		RotationMatrix[2] = Vector3D( 0.0f, 0.0f, 1.0f );
+		RotationMatrix[X] = Vector3D( Cosine, Sine, NegativeSine );
+		RotationMatrix[Y] = Vector3D( NegativeSine, Cosine, 0.0f );
+		RotationMatrix[Z] = Vector3D( 0.0f, 0.0f, 1.0f );
 
 		return RotationMatrix;
 	}
@@ -168,9 +146,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix3D RotationMatrix;
-		RotationMatrix[0] = Vector3D( 1.0f, 0.0f, 0.0f );
-		RotationMatrix[1] = Vector3D( 0.0f, Cosine, -Sine );
-		RotationMatrix[2] = Vector3D( 0.0f, Sine, Cosine );
+		RotationMatrix[X] = Vector3D( 1.0f, 0.0f, 0.0f );
+		RotationMatrix[Y] = Vector3D( 0.0f, Cosine, -Sine );
+		RotationMatrix[Z] = Vector3D( 0.0f, Sine, Cosine );
 
 		return RotationMatrix;
 	}
@@ -182,9 +160,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix3D RotationMatrix;
-		RotationMatrix[0] = Vector3D( Cosine, 0.0f, Sine );
-		RotationMatrix[1] = Vector3D( 0.0f, 1.0f, 0.0f );
-		RotationMatrix[2] = Vector3D( -Sine, 0.0f, Cosine );
+		RotationMatrix[X] = Vector3D( Cosine, 0.0f, Sine );
+		RotationMatrix[Y] = Vector3D( 0.0f, 1.0f, 0.0f );
+		RotationMatrix[Z] = Vector3D( -Sine, 0.0f, Cosine );
 
 		return RotationMatrix;
 	}
@@ -196,11 +174,22 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix3D RotationMatrix;
-		RotationMatrix[0] = Vector3D( Cosine, -Sine, Sine );
-		RotationMatrix[1] = Vector3D( Sine, Cosine, 0.0f );
-		RotationMatrix[2] = Vector3D( 0.0f, 0.0f, 1.0f );
+		RotationMatrix[X] = Vector3D( Cosine, -Sine, Sine );
+		RotationMatrix[Y] = Vector3D( Sine, Cosine, 0.0f );
+		RotationMatrix[Z] = Vector3D( 0.0f, 0.0f, 1.0f );
 
 		return RotationMatrix;
+	}
+
+	// Returns a non-uniform scale matrix.
+	static Matrix3D Scale( const Vector3D& Size )
+	{
+		Matrix3D ScaleMatrix;
+		ScaleMatrix[X] = Vector3D( Size.X, 0.0f, 0.0f );
+		ScaleMatrix[Y] = Vector3D( 0.0f, Size.Y, 0.0f );
+		ScaleMatrix[Z] = Vector3D( 0.0f, 0.0f, Size.Z );
+
+		return ScaleMatrix;
 	}
 
 	Vector3D Columns[3]{};
@@ -238,7 +227,8 @@ public:
 		Columns[W] = Columns[X] * Offset.X + Columns[Y] * Offset.Y + Columns[Z] * Offset.Z + Columns[W];
 	}
 
-	void Scale( const Vector3D& Factor )
+	// TODO: Come up with a better name that doesn't conflict with the static functions of Matrix4D.
+	/*void Scale( const Vector3D& Factor )
 	{
 		Columns[X][X] *= Factor.X;
 		Columns[Y][Y] *= Factor.Y;
@@ -251,7 +241,7 @@ public:
 		Columns[Y][Y] *= Factor.Y;
 		Columns[Z][Z] *= Factor.Z;
 		Columns[W][W] *= Factor.W;
-	}
+	}*/
 
 	Vector3D Rotate( const Vector3D& Vector ) const
 	{
@@ -370,9 +360,9 @@ public:
 		const auto InvertedCosine = 1.0f - Cosine;
 
 		Matrix4D RotationMatrix;
-		RotationMatrix[0] = Vector4D( InvertedCosine * Axis.X * Axis.X + Cosine, InvertedCosine * Axis.X * Axis.Y - Axis.Z * Sine, InvertedCosine * Axis.X * Axis.Z + Axis.Y * Sine, 0.0f );
-		RotationMatrix[1] = Vector4D( InvertedCosine * Axis.X * Axis.Y + Axis.Z * Sine, InvertedCosine * Axis.Y * Axis.Y + Cosine, InvertedCosine * Axis.Y * Axis.Z - Axis.X * Sine, 0.0f );
-		RotationMatrix[2] = Vector4D( InvertedCosine * Axis.X * Axis.Z - Axis.Y * Sine, InvertedCosine * Axis.Y * Axis.Z + Axis.X * Sine, InvertedCosine * Axis.Z * Axis.Z + Cosine, 0.0f );
+		RotationMatrix[X] = Vector4D( InvertedCosine * Axis.X * Axis.X + Cosine, InvertedCosine * Axis.X * Axis.Y - Axis.Z * Sine, InvertedCosine * Axis.X * Axis.Z + Axis.Y * Sine, 0.0f );
+		RotationMatrix[Y] = Vector4D( InvertedCosine * Axis.X * Axis.Y + Axis.Z * Sine, InvertedCosine * Axis.Y * Axis.Y + Cosine, InvertedCosine * Axis.Y * Axis.Z - Axis.X * Sine, 0.0f );
+		RotationMatrix[Z] = Vector4D( InvertedCosine * Axis.X * Axis.Z - Axis.Y * Sine, InvertedCosine * Axis.Y * Axis.Z + Axis.X * Sine, InvertedCosine * Axis.Z * Axis.Z + Cosine, 0.0f );
 
 		return RotationMatrix;
 	}
@@ -384,9 +374,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix4D RotationMatrix;
-		RotationMatrix[0] = Vector4D( 1.0f, 0.0f, 0.0f, 0.0f );
-		RotationMatrix[1] = Vector4D( 0.0f, Cosine, Sine, 0.0f );
-		RotationMatrix[2] = Vector4D( 0.0f, -Sine, Cosine, 0.0f );
+		RotationMatrix[X] = Vector4D( 1.0f, 0.0f, 0.0f, 0.0f );
+		RotationMatrix[Y] = Vector4D( 0.0f, Cosine, Sine, 0.0f );
+		RotationMatrix[Z] = Vector4D( 0.0f, -Sine, Cosine, 0.0f );
 		
 		return RotationMatrix;
 	}
@@ -398,9 +388,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix4D RotationMatrix;
-		RotationMatrix[0] = Vector4D( Cosine, 0.0f, -Sine, 0.0f );
-		RotationMatrix[1] = Vector4D( 0.0f, 1.0f, 0.0f, 0.0f );
-		RotationMatrix[2] = Vector4D( Sine, 0.0f, Cosine, 0.0f );
+		RotationMatrix[X] = Vector4D( Cosine, 0.0f, -Sine, 0.0f );
+		RotationMatrix[Y] = Vector4D( 0.0f, 1.0f, 0.0f, 0.0f );
+		RotationMatrix[Z] = Vector4D( Sine, 0.0f, Cosine, 0.0f );
 
 		return RotationMatrix;
 	}
@@ -413,9 +403,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix4D RotationMatrix;
-		RotationMatrix[0] = Vector4D( Cosine, Sine, NegativeSine, 0.0f );
-		RotationMatrix[1] = Vector4D( NegativeSine, Cosine, 0.0f, 0.0f );
-		RotationMatrix[2] = Vector4D( 0.0f, 0.0f, 1.0f, 0.0f );
+		RotationMatrix[X] = Vector4D( Cosine, Sine, NegativeSine, 0.0f );
+		RotationMatrix[Y] = Vector4D( NegativeSine, Cosine, 0.0f, 0.0f );
+		RotationMatrix[Z] = Vector4D( 0.0f, 0.0f, 1.0f, 0.0f );
 
 		return RotationMatrix;
 	}
@@ -427,9 +417,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix4D RotationMatrix;
-		RotationMatrix[0] = Vector4D( 1.0f, 0.0f, 0.0f, 0.0f );
-		RotationMatrix[1] = Vector4D( 0.0f, Cosine, -Sine, 0.0f );
-		RotationMatrix[2] = Vector4D( 0.0f, Sine, Cosine, 0.0f );
+		RotationMatrix[X] = Vector4D( 1.0f, 0.0f, 0.0f, 0.0f );
+		RotationMatrix[Y] = Vector4D( 0.0f, Cosine, -Sine, 0.0f );
+		RotationMatrix[Z] = Vector4D( 0.0f, Sine, Cosine, 0.0f );
 
 		return RotationMatrix;
 	}
@@ -441,9 +431,9 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix4D RotationMatrix;
-		RotationMatrix[0] = Vector4D( Cosine, 0.0f, Sine, 0.0f );
-		RotationMatrix[1] = Vector4D( 0.0f, 1.0f, 0.0f, 0.0f );
-		RotationMatrix[2] = Vector4D( -Sine, 0.0f, Cosine, 0.0f );
+		RotationMatrix[X] = Vector4D( Cosine, 0.0f, Sine, 0.0f );
+		RotationMatrix[Y] = Vector4D( 0.0f, 1.0f, 0.0f, 0.0f );
+		RotationMatrix[Z] = Vector4D( -Sine, 0.0f, Cosine, 0.0f );
 
 		return RotationMatrix;
 	}
@@ -455,11 +445,34 @@ public:
 		const auto Cosine = cosf( Angle );
 
 		Matrix4D RotationMatrix;
-		RotationMatrix[0] = Vector4D( Cosine, -Sine, Sine, 0.0f );
-		RotationMatrix[1] = Vector4D( Sine, Cosine, 0.0f, 0.0f );
-		RotationMatrix[2] = Vector4D( 0.0f, 0.0f, 1.0f, 0.0f );
+		RotationMatrix[X] = Vector4D( Cosine, -Sine, Sine, 0.0f );
+		RotationMatrix[Y] = Vector4D( Sine, Cosine, 0.0f, 0.0f );
+		RotationMatrix[Z] = Vector4D( 0.0f, 0.0f, 1.0f, 0.0f );
 
 		return RotationMatrix;
+	}
+
+	// Returns a non-uniform scale matrix.
+	static Matrix4D Scale( const Vector3D& Size )
+	{
+		Matrix4D ScaleMatrix;
+		ScaleMatrix[X] = Vector4D( Size.X, 0.0f, 0.0f, 0.0f );
+		ScaleMatrix[Y] = Vector4D( 0.0f, Size.Y, 0.0f, 0.0f );
+		ScaleMatrix[Z] = Vector4D( 0.0f, 0.0f, Size.Z, 0.0f );
+
+		return ScaleMatrix;
+	}
+
+	// Returns an offset matrix that can be used to translate matrices.
+	static Matrix4D Translation( const Vector3D& Offset )
+	{
+		Matrix4D TranslationMatrix;
+		TranslationMatrix[X] = Vector4D( 1.0f, 0.0f, 0.0f, 0.0f );
+		TranslationMatrix[Y] = Vector4D( 0.0f, 1.0f, 0.0f, 0.0f );
+		TranslationMatrix[Z] = Vector4D( 0.0f, 0.0f, 1.0f, 0.0f );
+		TranslationMatrix[W] = Vector4D( Offset.X, Offset.Y, Offset.Z, 1.0f );
+
+		return TranslationMatrix;
 	}
 
 	Vector4D Columns[4]{};
