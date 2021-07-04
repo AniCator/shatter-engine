@@ -819,13 +819,13 @@ CMesh* CAssets::FindMesh( const std::string& Name ) const
 
 CShader* CAssets::FindShader( const std::string& Name ) const
 {
-	auto Shader = Find<CShader>( Name, Shaders );
+	auto* Shader = Find<CShader>( Name, Shaders );
 	return Shader;
 }
 
 CTexture* CAssets::FindTexture( const std::string& Name ) const
 {
-	auto Texture = Find<CTexture>( Name, Textures );
+	auto* Texture = Find<CTexture>( Name, Textures );
 	return Texture ? Texture : Find<CTexture>( "error", Textures );
 }
 
