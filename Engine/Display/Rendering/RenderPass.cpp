@@ -255,6 +255,12 @@ void CRenderPass::Setup( CRenderable* Renderable, const std::unordered_map<std::
 				glUniform3fv( PreviousCameraDirectionLocation, 1, PreviousCameraSetup.CameraDirection.Base() );
 			}
 
+			const GLint CameraFarLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraFar" );
+			if( CameraFarLocation > -1 )
+			{
+				glUniform1fv( CameraFarLocation, 1, &CameraSetup.FarPlaneDistance );
+			}
+
 			// Viewport coordinates
 			glm::vec4 Viewport;
 			if( Target )
