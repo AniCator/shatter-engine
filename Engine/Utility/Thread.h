@@ -10,17 +10,14 @@
 
 struct Task
 {
-	Task()
-	{
-		// Default constructor is left empty.
-	}
+	Task() = default;
 
-	Task(std::function<void()> ToExecute)
+	Task( const std::function<void()>& ToExecute )
 	{
 		Function = ToExecute;
 	}
 
-	void Execute()
+	void Execute() const
 	{
 		Function();
 	}
@@ -36,7 +33,7 @@ struct Worker
 		Ready = false;
 		Running = false;
 		Alive = true;
-		Thread = std::thread(&Worker::Work, this);
+		Thread = std::thread( &Worker::Work, this );
 	}
 
 	~Worker()
@@ -71,10 +68,10 @@ struct Worker
 private:
 	void Work()
 	{
-		while (Alive)
+		while( Alive )
 		{
-			std::unique_lock<std::mutex> Lock(Mutex);
-			Notify.wait(Lock);
+			std::unique_lock<std::mutex> Lock( Mutex );
+			Notify.wait( Lock );
 
 			Running = true;
 
