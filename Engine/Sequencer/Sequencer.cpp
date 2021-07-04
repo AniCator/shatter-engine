@@ -3,8 +3,10 @@
 
 #include <string>
 #include <algorithm>
+#include <stack>
 
 #include <Engine/Audio/Sound.h>
+#include <Engine/Application/ApplicationMenu.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Display/Window.h>
@@ -119,6 +121,7 @@ struct FEventAudio : FTrackEvent
 			
 			Information.Volume = Volume;
 			Information.Rate = Rate;
+			Information.Bus = Bus;
 			Sound->Start( Information );
 		}
 
@@ -172,6 +175,8 @@ struct FEventAudio : FTrackEvent
 		ImGui::InputFloat( "Fade-In", &FadeIn, 1.0f, 10.0f, "%.0f" );
 		ImGui::InputFloat( "Fade-Out", &FadeOut, 1.0f, 10.0f, "%.0f" );
 
+		Bus = ImGui::BusSelector( Bus );
+
 		ImGui::Separator();
 
 		if( ImGui::BeginCombo( "##SoundAssets", Name.c_str() ) )
@@ -206,6 +211,7 @@ struct FEventAudio : FTrackEvent
 	bool Triggered = false;
 	std::string Name = std::string();
 	CSound* Sound = nullptr;
+	Bus::Type Bus = Bus::UI;
 
 	float FadeIn = 0.0f;
 	float FadeOut = 0.1f;
@@ -236,6 +242,10 @@ struct FEventAudio : FTrackEvent
 			
 			DataString::Encode( Data, Sound->FileLocation );
 		}
+
+		DataMarker::Mark( Data, "Bus" );
+		Data << Bus;
+		
 	}
 
 	virtual void Import( CData& Data )
@@ -261,8 +271,13 @@ struct FEventAudio : FTrackEvent
 			DataString::Decode( Data, FileLocation );
 			Sound = CAssets::Get().CreateNamedStream( Name.c_str(), FileLocation.c_str() );
 		}
-		
+
 		Sound = CAssets::Get().FindSound( Name );
+		
+		if( DataMarker::Check( Data, "Bus" ) )
+		{
+			Data >> Bus;
+		}
 	}
 };
 
@@ -352,7 +367,7 @@ struct FEventCamera : FTrackEvent
 			{
 				if( World->GetActiveCamera() != &Camera )
 				{
-					World->SetActiveCamera( &Camera, 1000 );
+					World->SetActiveCamera( &Camera, 200000 );
 				}
 			}
 		}
@@ -754,10 +769,12 @@ public:
 			for( auto& Track : Tracks )
 			{
 				Track.Reset();
+				Track.Evaluate( Marker );
 			}
 		}
 
 		Status = ESequenceStatus::Playing;
+		StartTime = GameLayersInstance->GetRealTime();
 	}
 
 	void Pause()
@@ -819,7 +836,8 @@ public:
 		// Stop the timeline playback if we have crossed the end marker.
 		if( Marker >= EndMarker )
 		{
-			Stop();
+			// Stop();
+			Play();
 		}
 	}
 
@@ -858,9 +876,6 @@ public:
 		return MarkerRangeToTime( StartMarker, EndMarker );
 	}
 
-	double PreviousTime = 0.0f;
-	double Remainder = 0.0f;
-	
 	void Feed()
 	{
 		const auto RealTime = GameLayersInstance->GetRealTime();
@@ -930,6 +945,12 @@ public:
 		{
 			DisplayTimeline();
 		}
+		else
+		{
+			LastDrag = TrackState();
+			AutoFit = false;
+			SnapToHandles = true;
+		}
 
 		Feed();
 	}
@@ -967,8 +988,6 @@ public:
 			if( ImGui::Button( "Play" ) )
 			{
 				Play();
-
-				StartTime = GameLayersInstance->GetRealTime();
 			}
 
 			ImGui::SameLine();
@@ -1068,6 +1087,18 @@ public:
 
 			ImGui::InputFloat( "##StretchFloat", &StretchFactor, 0.1f, 1.0f, "%.1f" );
 
+			ImGui::Checkbox( "Auto Fit", &AutoFit );
+
+			if( ImGui::IsItemHovered() )
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text( "When enabled, the timeline will automatically update to fit all events." );
+				ImGui::EndTooltip();
+			}
+
+			ImGui::SameLine();
+			ImGui::Checkbox( "Snap when Stretching", &SnapToHandles );
+
 			ImGui::Separator();
 
 			int StartLocation = StartMarker / Timebase;
@@ -1122,8 +1153,8 @@ public:
 				CursorOffset -= MarkerWindowPosition - WindowWidth * 0.5f;
 			}
 
-			UI::AddText( Vector2D( 50.0f, 130.0f ), "MarkerWindowPosition", MarkerWindowPosition );
-			UI::AddText( Vector2D( 50.0f, 150.0f ), "MarkerPercentageWindow", MarkerPercentageWindow );
+			// UI::AddText( Vector2D( 50.0f, 130.0f ), "MarkerWindowPosition", MarkerWindowPosition );
+			// UI::AddText( Vector2D( 50.0f, 150.0f ), "MarkerPercentageWindow", MarkerPercentageWindow );
 
 			auto CursorPosition = ImGui::GetCursorPos();
 			CursorPosition.x += CursorOffset;
@@ -1162,13 +1193,18 @@ public:
 			}
 
 			Timecode GhostMarker = 0;
+			Timecode SnapMarker = 0;
+			
+			auto MousePosition = ImGui::GetMousePos();
+			auto MouseOffset = MousePosition.x - MouseStartPosition.x;
+			if( MouseOffset < 0.0f )
+				MouseOffset = 0.0f;
+			
+			GhostMarker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
+			SnapMarker = GhostMarker;
+			
 			if( ImGui::IsItemHovered() )
 			{
-				auto MousePosition = ImGui::GetMousePos();
-				auto MouseOffset = MousePosition.x - MouseStartPosition.x;
-				if( MouseOffset < 0.0f )
-					MouseOffset = 0.0f;
-
 				GhostMarker = static_cast<Timecode>( ( MouseOffset / WidthDelta ) * Timebase );
 				if( ImGui::GetIO().MouseDown[0] )
 				{
@@ -1189,14 +1225,28 @@ public:
 			CursorPosition = ImGui::GetCursorPos();
 			auto ScreenPosition = ImGui::GetCursorScreenPos();
 
-			struct FEventTrackDrag
+			struct EventTrackDrag
 			{
-				bool Up;
-				size_t TrackIndex;
-				FTrackEvent* Event;
+				bool Up = false;
+				size_t TrackIndex = 0;
+				FTrackEvent* Event = nullptr;
 			};
-			std::vector<FEventTrackDrag> DragEvents;
+			
+			std::vector<EventTrackDrag> DragEvents;
 			DragEvents.reserve( 2 );
+
+			struct EventTrackStretch
+			{
+				int Left = 0;
+				int Right = 0;
+				size_t TrackIndex = 0;
+				FTrackEvent* Event = nullptr;
+			};
+			
+			std::vector<EventTrackStretch> StretchEvents;
+			StretchEvents.reserve( 2 );
+
+			TrackState NewState;
 
 			size_t GlobalIndex = 0;
 			size_t TrackIndex = 0;
@@ -1242,7 +1292,7 @@ public:
 						}
 					}
 
-					const float Brightness = SelectedEvent ? 1.0f : 0.6f;
+					const float Brightness = SelectedEvent ? 0.75f : 0.6f;
 					ImGui::PushStyleColor( ImGuiCol_Button, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, Brightness ) ) );
 					ImGui::PushStyleColor( ImGuiCol_ButtonHovered, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, 0.9f ) ) );
 					ImGui::PushStyleColor( ImGuiCol_ButtonActive, static_cast<ImVec4>( ImColor::HSV( Hue, 0.4f, 0.9f ) ) );
@@ -1256,7 +1306,8 @@ public:
 						;
 
 					std::string EventLabel = EventName + "##eb" + std::to_string( GlobalIndex );
-					ImGui::Button( EventLabel.c_str(), ImVec2( ( static_cast<float>( Event->Length ) / static_cast<float>( Timebase ) ) * WidthDelta, 30.0f ) );
+					ImVec2 EventSize = ImVec2( ( static_cast<float>( Event->Length ) / static_cast<float>( Timebase ) ) * WidthDelta, 30.0f );
+					ImGui::Button( EventLabel.c_str(), EventSize );
 					if( ImGui::IsItemHovered() )
 					{
 						ImGui::SetTooltip( EventName.c_str() );
@@ -1266,6 +1317,46 @@ public:
 					sprintf_s( ContextName, "ec##%zi", EventIndex );
 					if( ImGui::BeginPopupContextItem( ContextName ) )
 					{
+						const std::string ArrowLabelDown = "##MoveDown" + std::to_string( EventIndex );
+						if( ImGui::ArrowButton( ArrowLabelDown.c_str(), ImGuiDir_Down ) )
+						{
+							EventTrackDrag DragEvent;
+							DragEvent.Up = false;
+							DragEvent.TrackIndex = TrackIndex;
+							DragEvent.Event = Event;
+
+							DragEvents.emplace_back( DragEvent );
+						}
+
+						if( ImGui::IsItemHovered() )
+						{
+							ImGui::BeginTooltip();
+							ImGui::Text( "Move down 1 track" );
+							ImGui::EndTooltip();
+						}
+
+						ImGui::SameLine();
+
+						const std::string ArrowLabelUp = "##MoveUp" + std::to_string( EventIndex );
+						if( ImGui::ArrowButton( ArrowLabelUp.c_str(), ImGuiDir_Up ) )
+						{
+							EventTrackDrag DragEvent;
+							DragEvent.Up = true;
+							DragEvent.TrackIndex = TrackIndex;
+							DragEvent.Event = Event;
+
+							DragEvents.emplace_back( DragEvent );
+						}
+
+						if( ImGui::IsItemHovered() )
+						{
+							ImGui::BeginTooltip();
+							ImGui::Text( "Move up 1 track" );
+							ImGui::EndTooltip();
+						}						
+
+						ImGui::SameLine();
+						
 						Event->Context();
 						ImGui::EndPopup();
 					}
@@ -1293,29 +1384,114 @@ public:
 						// Marker = Event->Start;
 					}
 
-					auto NewEventStart = Event->Start + static_cast<Timecode>( Drag.x / WidthDelta * Timebase );
-					if( fabs( Drag.x ) > 0.001f && NewEventStart > Track.Start && NewEventStart < ( Track.Start + Track.Length ) )
-					{
-						Event->Start = NewEventStart;
+					ImGui::SetCursorPos( EventPosition );
 
-						auto EventCode = Event->Start + Event->Length;
-						auto TrackCode = Track.Start + Track.Length;
-						if( EventCode > TrackCode )
+					const float HandleWidth = EventSize.x > 40.0f ? 20.0f : 5.0f;
+
+					const std::string StretchHandleLeftLabel = "##StretchLeft" + std::to_string( GlobalIndex );
+					ImGui::Button( StretchHandleLeftLabel.c_str(), ImVec2( HandleWidth, 30.0f ) );
+
+					if( ImGui::IsItemHovered( ImGuiHoveredFlags_RectOnly ) || ImGui::IsItemClicked() )
+					{
+						ImGui::BeginTooltip();
+						if( LastDrag.Event && LastDrag.Stretch && LastDrag.Left )
 						{
-							Track.Length = EventCode - Track.Start;
+							ImGui::Text( "<<<" );
+						}
+						else
+						{
+							ImGui::Text( "<" );
+						}
+						ImGui::EndTooltip();
+
+						if( ImGui::GetIO().MouseDown[0] && !LastDrag.Event )
+						{
+							StretchEvents.emplace_back();
+							auto& Stretch = StretchEvents.back();
+							Stretch.Left = static_cast<int>( Drag.x / WidthDelta * Timebase );
+							Stretch.Event = Event;
+							Stretch.TrackIndex = TrackIndex;
+
+							NewState.Event = Event;
+							NewState.Stretch = true;
+							NewState.Left = true;
+							NewState.CursorPosition = ImGui::GetIO().MousePos;
+							NewState.TrackIndex = TrackIndex;
+						}
+
+						Drag.x = 0.0f;
+					}
+
+					ImVec2 HandleRightPosition = EventPosition;
+					HandleRightPosition.x += EventSize.x - HandleWidth;
+					ImGui::SetCursorPos( HandleRightPosition );
+
+					const std::string StretchHandleRightLabel = "##StretchRight" + std::to_string( GlobalIndex );
+					ImGui::Button( StretchHandleRightLabel.c_str(), ImVec2( HandleWidth, 30.0f ) );
+					if( ImGui::IsItemHovered( ImGuiHoveredFlags_RectOnly ) || ImGui::IsItemClicked() )
+					{
+						ImGui::BeginTooltip();
+						if( LastDrag.Event && LastDrag.Stretch && !LastDrag.Left )
+						{
+							ImGui::Text( ">>>" );
+						}
+						else
+						{
+							ImGui::Text( ">" );
+						}
+						ImGui::EndTooltip();
+
+						if( ImGui::GetIO().MouseDown[0] && !LastDrag.Event )
+						{
+							StretchEvents.emplace_back();
+							auto& Stretch = StretchEvents.back();
+							Stretch.Right = static_cast<int>( Drag.x / WidthDelta * Timebase );
+							Stretch.Event = Event;
+							Stretch.TrackIndex = TrackIndex;
+
+							NewState.Event = Event;
+							NewState.Stretch = true;
+							NewState.Left = false;
+							NewState.CursorPosition = ImGui::GetIO().MousePos;
+							NewState.TrackIndex = TrackIndex;
+						}
+						
+						Drag.x = 0.0f;
+					}
+
+					if( StretchEvents.empty() && !LastDrag.Event )
+					{
+						auto NewEventStart = Event->Start + static_cast<Timecode>( Drag.x / WidthDelta * Timebase );
+						if( fabs( Drag.x ) > 0.001f && NewEventStart > Track.Start && NewEventStart < ( Track.Start + Track.Length ) )
+						{
+							Event->Start = NewEventStart;
+
+							auto EventCode = Event->Start + Event->Length;
+							auto TrackCode = Track.Start + Track.Length;
+							if( EventCode > TrackCode )
+							{
+								Track.Length = EventCode - Track.Start;
+							}
+
+							NewState.Event = Event;
+							NewState.Stretch = false;
+							NewState.Left = false;
+							NewState.CursorPosition = ImGui::GetIO().MousePos;
+							NewState.TrackIndex = TrackIndex;
 						}
 					}
 
-					if( fabs( Drag.y ) > 1.0f && ImGui::IsItemActive() ) // 
-					{
-						const bool Up = Drag.y < 0.0f;
-						FEventTrackDrag DragEvent;
-						DragEvent.Up = Up;
-						DragEvent.TrackIndex = TrackIndex;
-						DragEvent.Event = Event;
+					// TODO: Disabled vertical dragging for now.
+					//if( fabs( Drag.y ) > 1.0f && ImGui::IsItemActive() ) // 
+					//{
+					//	const bool Up = Drag.y < 0.0f;
+					//	EventTrackDrag DragEvent;
+					//	DragEvent.Up = Up;
+					//	DragEvent.TrackIndex = TrackIndex;
+					//	DragEvent.Event = Event;
 
-						DragEvents.emplace_back( DragEvent );
-					}
+					//	DragEvents.emplace_back( DragEvent );
+					//}
 
 					ImGui::PopStyleVar();
 					ImGui::PopStyleVar();
@@ -1334,6 +1510,192 @@ public:
 				ImGui::PopStyleColor();
 			}
 
+			if( LastDrag.Event )
+			{
+				if( LastDrag.Stretch )
+				{
+					bool Snapped = false;
+					FTrackEvent* Closest = nullptr;
+					int SnapBounds = 2 * Timebase;
+					int ClosestDistance = SnapBounds;
+					bool Flipped = false;
+					for( auto& Track : Tracks )
+					{
+						for( auto* Event : Track.Events )
+						{
+							if( Event == LastDrag.Event )
+								continue;
+
+							if( LastDrag.Left )
+							{
+								int Distance = Event->Start;
+								Distance -= LastDrag.Event->Start;
+								Distance = std::abs( Distance );
+
+								if( Distance < ClosestDistance )
+								{
+									ClosestDistance = Distance;
+									Closest = Event;
+									Flipped = false;
+								}
+
+								Distance = Event->Start;
+								Distance -= LastDrag.Event->Start - LastDrag.Event->Length;
+								Distance = std::abs( Distance );
+
+								if( Distance < ClosestDistance )
+								{
+									// ClosestDistance = Distance;
+									// Closest = Event;
+									// Flipped = true;
+								}
+							}
+							else
+							{
+								int Distance = Event->Start + Event->Length;
+								Distance -= LastDrag.Event->Start + LastDrag.Event->Length;
+								Distance = std::abs( Distance );
+
+								if( Distance < ClosestDistance )
+								{
+									ClosestDistance = Distance;
+									Closest = Event;
+									Flipped = false;
+								}
+
+								Distance = Event->Start + Event->Length;
+								Distance -= LastDrag.Event->Start;
+								Distance = std::abs( Distance );
+
+								if( Distance < ClosestDistance )
+								{
+									// ClosestDistance = Distance;
+									// Closest = Event;
+									// Flipped = true;
+								}
+							}
+						}
+					}
+
+					if( Closest && SnapToHandles )
+					{
+						ImGui::BeginTooltip();
+						ImGui::Text( "Closest event: %s", Closest->GetName() );
+
+						if( LastDrag.Left )
+						{
+							int DistanceToMarker = LastDrag.Event->Start - GhostMarker;
+							DistanceToMarker = abs( DistanceToMarker );
+							if( DistanceToMarker < SnapBounds * 2 )
+							{
+								if( Flipped )
+								{
+									LastDrag.Event->Start = Closest->Start + Closest->Length;
+									ImGui::Text( "FLIP AAH" );
+								}
+								else
+								{
+									LastDrag.Event->Start = Closest->Start;
+								}
+
+								Snapped = true;
+							}
+							else
+							{
+								if( Flipped )
+								{
+									SnapMarker = Closest->Start + Closest->Length;
+								}
+								else
+								{
+									SnapMarker = Closest->Start;
+								}
+							}
+						}
+						else
+						{
+							int DistanceToMarker = ( LastDrag.Event->Start + LastDrag.Event->Length ) - GhostMarker;
+							DistanceToMarker = abs( DistanceToMarker );
+							if( DistanceToMarker < SnapBounds * 2 )
+							{
+								int Delta = LastDrag.Event->Start - Closest->Start;
+								LastDrag.Event->Length = Closest->Length - Delta;
+
+								if( Flipped )
+								{
+									// LastDrag.Event->Length = Closest->Length - Delta;
+								}
+								else
+								{
+									LastDrag.Event->Length = Closest->Length - Delta;
+								}
+
+								Snapped = true;
+							}
+							else
+							{
+								SnapMarker = Closest->Start + Closest->Length;
+							}
+
+							ImGui::Text( "Distance to marker: %i", DistanceToMarker );
+						}
+
+						ImGui::EndTooltip();
+					}
+
+					if( !Snapped )
+					{
+						auto Drag = ImGui::GetIO().MousePos;
+						Drag.x -= LastDrag.CursorPosition.x;
+						Drag.y -= LastDrag.CursorPosition.y;
+
+						LastDrag.CursorPosition = ImGui::GetIO().MousePos;
+
+						StretchEvents.emplace_back();
+						auto& Stretch = StretchEvents.back();
+						if( LastDrag.Left )
+						{
+							Stretch.Left = static_cast<int>( Drag.x / WidthDelta * Timebase );
+						}
+						else
+						{
+							Stretch.Right = static_cast<int>( Drag.x / WidthDelta * Timebase );
+						}
+
+						Stretch.Event = LastDrag.Event;
+						Stretch.TrackIndex = TrackIndex;
+					}
+				}
+				else
+				{
+					auto Drag = ImGui::GetIO().MousePos;
+					Drag.x -= LastDrag.CursorPosition.x;
+					Drag.y -= LastDrag.CursorPosition.y;
+
+					LastDrag.CursorPosition = ImGui::GetIO().MousePos;
+					auto* Event = LastDrag.Event;
+					auto& Track = Tracks[LastDrag.TrackIndex];
+
+					auto NewEventStart = Event->Start + static_cast<Timecode>( Drag.x / WidthDelta * Timebase );
+					if( fabs( Drag.x ) > 0.001f && NewEventStart > Track.Start && NewEventStart < ( Track.Start + Track.Length ) )
+					{
+						Event->Start = NewEventStart;
+
+						auto EventCode = Event->Start + Event->Length;
+						auto TrackCode = Track.Start + Track.Length;
+						if( EventCode > TrackCode )
+						{
+							Track.Length = EventCode - Track.Start;
+						}
+
+						if( EventCode > EndMarker )
+						{
+							EndMarker = EventCode;
+						}
+					}
+				}
+			}
+
 			auto* DrawList = ImGui::GetWindowDrawList();
 			if( DrawList )
 			{
@@ -1346,16 +1708,25 @@ public:
 				LineEnd.y += Tracks.size() * VerticalOffset;
 				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_WHITE );
 
-				UI::AddText( Vector2D( 50.0f, 50.0f ), "ScreenPositionX", ScreenPosition.x );
-				UI::AddText( Vector2D( 50.0f, 70.0f ), "MarkerPosition", MarkerPosition.x );
-				UI::AddText( Vector2D( 50.0f, 90.0f ), "WindowWidth", WindowWidth );
-				UI::AddText( Vector2D( 50.0f, 110.0f ), "CursorPosition", CursorPosition.x );
+				// UI::AddText( Vector2D( 50.0f, 50.0f ), "ScreenPositionX", ScreenPosition.x );
+				// UI::AddText( Vector2D( 50.0f, 70.0f ), "MarkerPosition", MarkerPosition.x );
+				// UI::AddText( Vector2D( 50.0f, 90.0f ), "WindowWidth", WindowWidth );
+				// UI::AddText( Vector2D( 50.0f, 110.0f ), "CursorPosition", CursorPosition.x );
 
 				MarkerPosition = ScreenPosition;
 				MarkerPosition.x += ( static_cast<float>( GhostMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
 				LineEnd = MarkerPosition;
 				LineEnd.y += Tracks.size() * VerticalOffset;
 				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 128, 128, 128, 255 ) );
+
+				if( SnapMarker != GhostMarker )
+				{
+					MarkerPosition = ScreenPosition;
+					MarkerPosition.x += ( static_cast<float>( SnapMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+					LineEnd = MarkerPosition;
+					LineEnd.y += Tracks.size() * VerticalOffset;
+					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 255, 255, 0, 255 ) );
+				}
 
 				MarkerPosition = ScreenPosition;
 				MarkerPosition.x += ( StartMarker / Timebase ) * WidthDelta;
@@ -1370,21 +1741,66 @@ public:
 				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK );
 			}
 
-			bool DragEventOccured = false;
-			for( auto& DragEvent : DragEvents )
+			for( auto& StretchEvent : StretchEvents )
 			{
-				size_t NewTrackIndex = std::min( Tracks.size() - 1, std::max( size_t( 0 ), DragEvent.Up ? ( DragEvent.TrackIndex == 0 ? 0 : DragEvent.TrackIndex - 1 ) : DragEvent.TrackIndex + 1 ) );
-				if( NewTrackIndex != DragEvent.TrackIndex )
+				auto* Event = StretchEvent.Event;
+				auto& Track = Tracks[StretchEvent.TrackIndex];
+
+				auto OffsetLeft = StretchEvent.Left;
+				auto DistanceLeft = std::abs( OffsetLeft );
+				if( OffsetLeft < 0 && DistanceLeft > Event->Start )
 				{
-					auto Iterator = std::find( Tracks[DragEvent.TrackIndex].Events.begin(), Tracks[DragEvent.TrackIndex].Events.end(), DragEvent.Event );
-					if( Iterator != Tracks[DragEvent.TrackIndex].Events.end() )
+					OffsetLeft = 0;
+				}
+				
+				Event->Start += OffsetLeft;
+				Event->Length -= OffsetLeft;
+
+				auto OffsetRight = StretchEvent.Right;
+				auto DistanceRight = std::abs( OffsetRight );
+				if( OffsetRight < 0 && DistanceRight > Event->Length )
+				{
+					OffsetRight = 0;
+				}
+				
+				Event->Length += OffsetRight;
+				Event->Length = Math::Max( Timecode( 1 ), Event->Length );
+
+				auto EventCode = Event->Start + Event->Length;
+				if( EventCode > EndMarker )
+				{
+					EndMarker = EventCode;
+				}
+			}
+
+			if( StretchEvents.empty() && !LastDrag.Event )
+			{
+				bool DragEventOccured = false;
+				for( auto& DragEvent : DragEvents )
+				{
+					size_t NewTrackIndex = std::min( Tracks.size() - 1, std::max( size_t( 0 ), DragEvent.Up ? ( DragEvent.TrackIndex == 0 ? 0 : DragEvent.TrackIndex - 1 ) : DragEvent.TrackIndex + 1 ) );
+					if( NewTrackIndex != DragEvent.TrackIndex )
 					{
-						Tracks[DragEvent.TrackIndex].Events.erase( Iterator );
-						Tracks[NewTrackIndex].Events.emplace_back( DragEvent.Event );
-						DragEventOccured = true;
-						ActiveTrack = &Tracks[NewTrackIndex];
+						auto Iterator = std::find( Tracks[DragEvent.TrackIndex].Events.begin(), Tracks[DragEvent.TrackIndex].Events.end(), DragEvent.Event );
+						if( Iterator != Tracks[DragEvent.TrackIndex].Events.end() )
+						{
+							Tracks[DragEvent.TrackIndex].Events.erase( Iterator );
+							Tracks[NewTrackIndex].Events.emplace_back( DragEvent.Event );
+							DragEventOccured = true;
+							ActiveTrack = &Tracks[NewTrackIndex];
+						}
 					}
 				}
+			}
+
+			if( LastDrag.Event && !ImGui::GetIO().MouseDown[0] )
+			{
+				LastDrag = TrackState();
+			}
+
+			if( !LastDrag.Event )
+			{
+				LastDrag = NewState;
 			}
 
 			if( !ActiveEvents.empty() )
@@ -1413,6 +1829,8 @@ public:
 				ActiveEvents.clear();
 			}
 
+			auto NewEndMarker = 0;
+			
 			// Update the length of each track.
 			for( auto& Track : Tracks )
 			{
@@ -1425,6 +1843,16 @@ public:
 					if( EventCode > TrackCode )
 					{
 						Track.Length = EventCode - Track.Start;
+					}
+
+					if( EventCode > NewEndMarker )
+					{
+						NewEndMarker = EventCode;
+
+						if( AutoFit )
+						{
+							EndMarker = NewEndMarker;
+						}
 					}
 				}
 			}
@@ -1497,6 +1925,30 @@ protected:
 	ESequenceStatus Status;
 
 	std::vector<FTrack> Tracks;
+
+	// State tracking
+	double PreviousTime = 0.0f;
+	double Remainder = 0.0f;
+
+	struct TrackState
+	{
+		FTrackEvent* Event = nullptr;
+		bool Stretch = false;
+
+		// For stretching, this indicates it is the left handle.
+		bool Left = false;
+
+		size_t TrackIndex = 0;
+
+		// In screen space.
+		ImVec2 CursorPosition = ImVec2( 0.0f, 0.0f );
+	} LastDrag;
+
+	// Automatically fit the scale of the timeline to what's in the tracks.
+	bool AutoFit = false;
+
+	// Snap events to each other when stretching.
+	bool SnapToHandles = true;
 };
 
 CSequence::CSequence()
