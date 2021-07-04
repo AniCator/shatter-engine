@@ -62,7 +62,7 @@ struct DataString
 	uint32_t Size;
 	char* Address;
 
-	friend CData& operator<<( CData& Data, DataString& String )
+	friend CData& operator<<( CData& Data, const DataString& String )
 	{
 		Data << String.Size;
 		Data << static_cast<const char*>( String.Address );
