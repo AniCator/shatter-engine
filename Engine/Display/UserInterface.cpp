@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "UserInterface.h"
 
+#include <Engine/Application/Application.h>
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Camera.h>
@@ -202,9 +203,9 @@ namespace UI
 		const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
 		const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
 
-		glm::vec4 WorldPositionHomogenoeus = glm::vec4( Math::ToGLM( WorldPosition ), 1.0f );
-		glm::vec4 ClipSpacePosition = ProjectionMatrix * ViewMatrix * WorldPositionHomogenoeus;
-		glm::vec3 NormalizedPosition = glm::vec3( ClipSpacePosition.x, -ClipSpacePosition.y, ClipSpacePosition.z ) / ClipSpacePosition.w;
+		const glm::vec4 WorldPositionHomogenoeus = glm::vec4( Math::ToGLM( WorldPosition ), 1.0f );
+		const glm::vec4 ClipSpacePosition = ProjectionMatrix * ViewMatrix * WorldPositionHomogenoeus;
+		const glm::vec3 NormalizedPosition = glm::vec3( ClipSpacePosition.x, -ClipSpacePosition.y, ClipSpacePosition.z ) / ClipSpacePosition.w;
 		
 		bool Front = ClipSpacePosition.w > 0.0f;
 		const float Bias = Front ? 1.0f : -1.0f;
@@ -340,7 +341,7 @@ namespace UI
 	}
 
 	void AddLine( const Vector2D& Start, const Vector2D& End, const Color& Color )
-	{
+	{	
 		if( DrawList )
 		{
 			DrawList->AddLine( ImVec2( Start.X, Start.Y ), ImVec2( End.X, End.Y ), GetColor( Color ), 1.0f );
@@ -366,6 +367,9 @@ namespace UI
 
 	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color, const double Duration )
 	{
+		if( CApplication::IsPaused() )
+			return;
+		
 		DrawLine Line( Start, End, Color, Duration );
 		Lines.emplace_back( Line );
 	}
@@ -416,12 +420,18 @@ namespace UI
 
 	void AddCircle( const Vector2D& Position, float Radius, const Color& Color )
 	{
+		if( CApplication::IsPaused() )
+			return;
+		
 		DrawCircleScreen Circle( Position, Radius, Color );
 		CirclesScreen.emplace_back( Circle );
 	}
 
 	void AddCircle( const Vector3D& Position, float Radius, const Color& Color )
 	{
+		if( CApplication::IsPaused() )
+			return;
+		
 		DrawCircle Circle( Position, Radius, Color );
 		Circles.emplace_back( Circle );
 	}
@@ -441,6 +451,9 @@ namespace UI
 
 	void AddText( const Vector2D& Position, const char* Start, const char* End, const Color& Color, const float Size )
 	{
+		if( CApplication::IsPaused() )
+			return;
+		
 		DrawTextScreen Text( Position, Start, End, Color, Size );
 		TextsScreen.emplace_back( Text );
 	}
@@ -458,6 +471,9 @@ namespace UI
 
 	void AddText( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
 	{
+		if( CApplication::IsPaused() )
+			return;
+		
 		DrawText Text( Position, Start, End, Color );
 		Texts.emplace_back( Text );
 	}
@@ -506,6 +522,9 @@ namespace UI
 	{
 		if( !Texture )
 			return;
+
+		if( CApplication::IsPaused() )
+			return;
 		
 		DrawImage Image( Position, Size, Texture, Color );
 		Images.emplace_back( Image );
@@ -513,26 +532,32 @@ namespace UI
 
 	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color, const double Duration )
 	{
-		Vector3D BottomNW = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
-		Vector3D BottomNE = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
-		Vector3D BottomSE = Vector3D( Maximum.X, Minimum.Y, Minimum.Z );
-		Vector3D BottomSW = Vector3D( Minimum.X, Minimum.Y, Minimum.Z );
+		if( CApplication::IsPaused() )
+			return;
+		
+		const auto BottomNW = Vector3D( Minimum.X, Maximum.Y, Minimum.Z );
+		const auto BottomNE = Vector3D( Maximum.X, Maximum.Y, Minimum.Z );
+		const auto BottomSE = Vector3D( Maximum.X, Minimum.Y, Minimum.Z );
+		const auto BottomSW = Vector3D( Minimum.X, Minimum.Y, Minimum.Z );
 
+		// Draw the bottom quad.
 		AddLine( BottomNW, BottomNE, Color, Duration );
 		AddLine( BottomNE, BottomSE, Color, Duration );
 		AddLine( BottomSE, BottomSW, Color, Duration );
 		AddLine( BottomSW, BottomNW, Color, Duration );
 
-		Vector3D TopNW = Vector3D( Minimum.X, Maximum.Y, Maximum.Z );
-		Vector3D TopNE = Vector3D( Maximum.X, Maximum.Y, Maximum.Z );
-		Vector3D TopSE = Vector3D( Maximum.X, Minimum.Y, Maximum.Z );
-		Vector3D TopSW = Vector3D( Minimum.X, Minimum.Y, Maximum.Z );
+		const auto TopNW = Vector3D( Minimum.X, Maximum.Y, Maximum.Z );
+		const auto TopNE = Vector3D( Maximum.X, Maximum.Y, Maximum.Z );
+		const auto TopSE = Vector3D( Maximum.X, Minimum.Y, Maximum.Z );
+		const auto TopSW = Vector3D( Minimum.X, Minimum.Y, Maximum.Z );
 
+		// Draw the top quad.
 		AddLine( TopNW, TopNE, Color, Duration );
 		AddLine( TopNE, TopSE, Color, Duration );
 		AddLine( TopSE, TopSW, Color, Duration );
 		AddLine( TopSW, TopNW, Color, Duration );
 
+		// Connecting lines between the top and bottom.
 		AddLine( TopNW, BottomNW, Color, Duration );
 		AddLine( TopNE, BottomNE, Color, Duration );
 		AddLine( TopSE, BottomSE, Color, Duration );
@@ -541,6 +566,9 @@ namespace UI
 
 	void AddBox( const Vector3D& Center, const Vector3D& Size, const Color& Color )
 	{
+		if( CApplication::IsPaused() )
+			return;
+		
 		const Vector3D HalfSize = Size * 0.5f;
 		const Vector3D Minimum = Center - Size;
 		const Vector3D Maximum = Center + Size;
@@ -563,7 +591,7 @@ namespace UI
 		{
 			DrawList = new ImDrawList( ImGui::GetDrawListSharedData() );
 
-			if( DrawList->CmdBuffer.size() == 0 )
+			if( DrawList->CmdBuffer.empty() )
 			{
 				DrawList->AddDrawCmd();
 			}
@@ -696,8 +724,7 @@ namespace UI
 
 			if( Points > Capacity )
 			{
-				if( RenderLines )
-					delete RenderLines;
+				delete RenderLines;
 
 				RenderLines = new RenderLine[Points];
 				Capacity = Points;
@@ -840,7 +867,7 @@ namespace UI
 			AddTextInternal( Text.Position, Text.Text, Text.Text + Text.Length, Text.Color, Text.Size );
 		}
 
-		if( DrawList->CmdBuffer.size() == 0 )
+		if( DrawList->CmdBuffer.empty() )
 		{
 			DrawList->AddDrawCmd();
 		}	
