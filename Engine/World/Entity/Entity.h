@@ -86,7 +86,7 @@ public:
 	void SetLevel( CLevel* SpawnLevel );
 	CLevel* GetLevel() const;
 
-	CWorld* GetWorld();
+	CWorld* GetWorld() const;
 
 	void SetParent( CEntity* Entity );
 	CEntity* GetParent();

@@ -66,7 +66,7 @@ CLevel* CEntity::GetLevel() const
 	return Level;
 }
 
-CWorld* CEntity::GetWorld()
+CWorld* CEntity::GetWorld() const
 {
 	return Level->GetWorld();
 }
