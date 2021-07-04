@@ -58,6 +58,8 @@ public:
 
 	void SetFPSLimit( const int& Limit = 0 );
 
+	static bool IsPaused();
+
 	CServiceRegistry ServiceRegistry;
 
 private:

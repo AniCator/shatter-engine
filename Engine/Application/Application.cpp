@@ -53,7 +53,7 @@ std::wstring CApplication::DirectoryName = L"UnnamedShatterGame";
 
 CCamera DefaultCamera = CCamera();
 FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
-bool PauseGame = false;
+static bool PauseGame = false;
 bool FrameStep = false;
 bool ScaleTime = false;
 bool CursorVisible = true;
@@ -1289,6 +1289,11 @@ void CApplication::SetFPSLimit( const int& Limit )
 	FPSLimit = Limit;
 }
 
+bool CApplication::IsPaused()
+{
+	return PauseGame && !FrameStep;
+}
+
 #if defined(_WIN32)
 #pragma comment(lib, "dbghelp.lib")
 
@@ -1417,13 +1422,15 @@ void CApplication::Initialize()
 		ImGui::SetNextWindowPos( ImVec2( 0.0f, 0.0f ), ImGuiCond_Always );
 		ImGui::SetNextWindowSize( ImVec2( 500.0f, 20.0f ), ImGuiCond_Always );
 
-		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
-		if( ImGui::Begin( "Loading", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
+		ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) ); // Transparent background
+		ImGui::PushStyleColor( ImGuiCol_Border, ImVec4( 0.0f, 0.0f, 0.0f, 0.0f ) ); // Transparent border
+		if( ImGui::Begin( "Loading", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
 		{
-			ImGui::Text( "Starting the Shatter Engine..." );
+			ImGui::Text( "..." );
 			ImGui::End();
 		}
 
+		ImGui::PopStyleColor();
 		ImGui::PopStyleColor();
 #endif
 
