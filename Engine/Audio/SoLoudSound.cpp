@@ -641,6 +641,16 @@ Bus::Volume CSoLoudSound::GetBusOutput( const Bus::Type& Bus )
 	return Volume;
 }
 
+float* CSoLoudSound::GetBusFFT( const Bus::Type& Bus )
+{
+	if( Bus == Bus::Master )
+	{
+		return Engine.calcFFT();
+	}
+
+	return Mixer[Bus].calcFFT();
+}
+
 float CSoLoudSound::Volume( const Bus::Type& Bus )
 {
 	if( Bus == Bus::Master )

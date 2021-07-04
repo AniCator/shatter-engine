@@ -193,6 +193,7 @@ public:
 	static void Update( StreamHandle Handle, const Vector3D& Position, const Vector3D& Velocity );
 
 	static Bus::Volume GetBusOutput( const Bus::Type& Bus );
+	static float* GetBusFFT( const Bus::Type& Bus );
 	static float Volume( const Bus::Type& Bus );
 	static void Volume( const Bus::Type& Bus, const float& Volume );
 
