@@ -261,8 +261,8 @@ namespace Math
 	}
 
 	// Returns the largest.
-	template<typename T>
-	inline T Max( const T& A, const T& B )
+	template<typename T, typename G>
+	inline T Max( const T& A, const G& B )
 	{
 		return A > B ? A : B;
 	}
@@ -278,8 +278,8 @@ namespace Math
 	}
 
 	// Returns the smallest.
-	template<typename T>
-	inline T Min( const T& A, const T& B )
+	template<typename T, typename G>
+	inline T Min( const T& A, const G& B )
 	{
 		return A < B ? A : B;
 	}
@@ -294,8 +294,8 @@ namespace Math
 		);
 	}
 
-	template<typename T>
-	inline T Clamp( const T& X, const T& Minimum, const T& Maximum )
+	template<typename T, typename B>
+	inline T Clamp( const T& X, const B& Minimum, const B& Maximum )
 	{
 		return Min( Max( Minimum, X ), Maximum );
 	}
@@ -621,7 +621,7 @@ namespace Math
 
 	inline float Random()
 	{
-		return static_cast<float>( std::rand() ) / RAND_MAX;
+		return static_cast<float>( std::rand() ) / static_cast<float>( RAND_MAX );
 	}
 
 	inline float RandomRange( const float Minimum, const float Maximum )
