@@ -136,20 +136,21 @@ bool CShader::Load( const std::string& FileLocation, GLuint& HandleIn, const ESh
 	
 	const bool Loaded = ShaderSource.Load();
 
+	// Update the modification time in case we want to automatially reload the file when it has been changed.
 	ModificationTime = ShaderSource.ModificationDate() > ModificationTime ? ShaderSource.ModificationDate() : ModificationTime;
 
 	if( Loaded )
 	{
 		const std::string Data = Process( ShaderSource );
-		const char* ShaderData = Data.c_str();
-		if( ShaderData )
+		const char* ProcessedCode = Data.c_str();
+		if( ProcessedCode )
 		{
-			const auto ShaderTypeGL = static_cast<GLuint>( Type );
-
-			HandleIn = glCreateShader( ShaderTypeGL );
+			// NOTE: If a render pass crashes here, it means it is tring to load a shader before OpenGL and GLAD have been initialized.
+			const auto NativeType = static_cast<GLuint>( Type );
+			HandleIn = glCreateShader( NativeType );
 			if( HandleIn > 0 )
 			{
-				glShaderSource( HandleIn, 1, &ShaderData, nullptr );
+				glShaderSource( HandleIn, 1, &ProcessedCode, nullptr );
 
 				return true;
 			}
@@ -157,6 +158,29 @@ bool CShader::Load( const std::string& FileLocation, GLuint& HandleIn, const ESh
 			{
 				Log::Event( Log::Error, "Failed to create shader \"%s\".\n", FileLocation.c_str() );
 			}
+		}
+	}
+
+	return false;
+}
+
+bool CShader::Load( GLuint& HandleIn, const EShaderType& Type, const std::string& Code )
+{
+	const std::string Data = Process( Code );
+	const char* ProcessedCode = Data.c_str();
+	if( ProcessedCode )
+	{
+		const auto NativeType = static_cast<GLuint>( Type );
+		HandleIn = glCreateShader( NativeType );
+		if( HandleIn > 0 )
+		{
+			glShaderSource( HandleIn, 1, &ProcessedCode, nullptr );
+
+			return true;
+		}
+		else
+		{
+			Log::Event( Log::Error, "Failed to create shader.\n" );
 		}
 	}
 
@@ -279,33 +303,45 @@ bool LogProgramCompilationErrors( GLuint v )
 	return false;
 }
 
-std::string CShader::Process(const CFile& File)
+std::string CShader::Process( const CFile& File )
 {
-	const char* ShaderData = File.Fetch<char>();
-	if( ShaderData == nullptr )
+	const char* Data = File.Fetch<char>();
+	if( Data == nullptr )
 		return "";
 	
-	std::stringstream StringStream;
-	StringStream << ShaderData;
+	std::stringstream Stream;
+	Stream << Data;
 
+	return Process( Stream );
+}
+
+std::string CShader::Process( const std::string& Data )
+{
+	std::stringstream Stream;
+	Stream << Data;
+
+	return Process( Stream );
+}
+
+std::string CShader::Process( std::stringstream& Stream )
+{
 	std::stringstream OutputStream;
-
 	std::string Line;
-	while( std::getline( StringStream, Line ) )
+	while( std::getline( Stream, Line ) )
 	{
 		bool bParsed = false;
 		if( Line[0] == '#' )
 		{
-			std::stringstream Stream( Line );;
+			std::stringstream LineStream( Line );
 			std::string Preprocessor;
-			Stream >> Preprocessor;
+			LineStream >> Preprocessor;
 
 			if( Preprocessor == "#include" )
 			{
 				std::string Path;
-				Stream >> Path;
+				LineStream >> Path;
 
-				Path = Path.substr(1, Path.length() - 2);
+				Path = Path.substr( 1, Path.length() - 2 );
 				bParsed = true;
 
 				std::stringstream ShaderPath;
@@ -322,7 +358,7 @@ std::string CShader::Process(const CFile& File)
 			else if( Preprocessor == "#blendmode" )
 			{
 				std::string Mode;
-				Stream >> Mode;
+				LineStream >> Mode;
 
 				BlendMode = EBlendMode::Opaque;
 
@@ -340,7 +376,7 @@ std::string CShader::Process(const CFile& File)
 			else if( Preprocessor == "#depthwrite" )
 			{
 				std::string Mode;
-				Stream >> Mode;
+				LineStream >> Mode;
 
 				DepthMask = EDepthMask::Write;
 
@@ -354,7 +390,7 @@ std::string CShader::Process(const CFile& File)
 			else if( Preprocessor == "#depthtest" )
 			{
 				std::string Mode;
-				Stream >> Mode;
+				LineStream >> Mode;
 
 				DepthTest = EDepthTest::Less;
 
@@ -419,7 +455,7 @@ GLuint CShader::Link()
 	
 	if( NeedsVertexShader && Handles.VertexShader == 0 )
 	{
-		Log::Event( Log::Error, "Shader doesn't have a vertex shader but requires it.\n" );
+		Log::Event( Log::Error, "Shader doesn't have a geometry shader but requires it.\n" );
 		return 0;
 	}
 

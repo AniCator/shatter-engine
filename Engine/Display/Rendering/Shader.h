@@ -74,7 +74,12 @@ public:
 	bool Load( const bool& ShouldLink = true );
 	bool Load( const char* FileLocation, const bool& ShouldLink = true, const EShaderType& ShaderType = EShaderType::Fragment );
 	bool Load( const char* VertexLocation, const char* FragmentLocation, const bool& ShouldLink = true );
+
+	// Used to load a shader from a file.
 	bool Load( const std::string& FileLocation, GLuint& HandleIn, const EShaderType& ShaderType );
+
+	// Used to load directly load code stored in strings as shaders.
+	bool Load( GLuint& HandleIn, const EShaderType& ShaderType, const std::string& Code );
 
 	bool Reload();
 
@@ -88,6 +93,8 @@ public:
 
 private:
 	std::string Process( const CFile& File );
+	std::string Process( const std::string& Data );
+	std::string Process( std::stringstream& Stream );
 	GLuint Link();
 
 	FProgramHandles Handles;
