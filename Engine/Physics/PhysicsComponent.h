@@ -24,6 +24,13 @@ public:
 		Static = false;
 		Stationary = true;
 
+		// Grab the transform from the owner by default.
+		auto* PointEntity = Cast<CPointEntity>( OwnerIn );
+		if( PointEntity )
+		{
+			TriggerTransform = PointEntity->GetTransform();
+		}
+
 		auto* MeshEntity = Cast<CMeshEntity>( OwnerIn );
 		if( MeshEntity )
 		{
