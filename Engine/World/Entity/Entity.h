@@ -111,7 +111,7 @@ public:
 	MessageInput Inputs;
 
 	virtual void Debug();
-	bool IsDebugEnabled() { return ShouldDebug; };
+	bool IsDebugEnabled() const { return ShouldDebug; };
 	void EnableDebug( const bool Enable );
 
 	std::string ClassName;
