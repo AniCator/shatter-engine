@@ -46,6 +46,8 @@ public:
 	void SetSampleCount( const int Samples );
 	int GetSampleCount() const;
 
+	RenderTextureConfiguration GetConfiguration() const;
+
 	FName Name;
 private:
 	GLuint FramebufferHandle;

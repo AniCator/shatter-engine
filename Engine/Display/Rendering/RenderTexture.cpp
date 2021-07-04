@@ -3,6 +3,7 @@
 
 #include <Engine/Display/Rendering/TextureEnumeratorsGL.h>
 #include <Engine/Profiling/Logging.h>
+#include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Math.h>
 
 
@@ -157,6 +158,11 @@ void CRenderTexture::Initialize()
 				Initialized = false;
 			}
 		}
+
+		if( Handle > 0 )
+		{
+			// CAssets::Get().CreateNamedTexture( ( "rt_" + Name.String() ).c_str(), this );
+		}
 	}
 
 	if( Configuration.EnableDepth )
@@ -275,4 +281,9 @@ void CRenderTexture::SetSampleCount( const int Samples )
 int CRenderTexture::GetSampleCount() const
 {
 	return Configuration.Samples;
+}
+
+RenderTextureConfiguration CRenderTexture::GetConfiguration() const
+{
+	return Configuration;
 }
