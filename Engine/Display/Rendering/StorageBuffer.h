@@ -25,10 +25,14 @@ public:
 			return;
 		}
 
+		if( BufferHandle )
+		{
+			glDeleteBuffers( 1, &BufferHandle );
+		}
+
 		glGenBuffers( 1, &BufferHandle );
 		glBindBuffer( GL_SHADER_STORAGE_BUFFER, BufferHandle );
 		glBufferData( GL_SHADER_STORAGE_BUFFER, BufferCount * sizeof( T ), BufferData, GL_STATIC_DRAW );
-		glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, BufferHandle );
 	}
 
 	void Bind() const
