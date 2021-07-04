@@ -163,24 +163,23 @@ void FTransform::Update()
 		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
 		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
 
-		ScaleMatrix = IdentityMatrix;
-		ScaleMatrix.Scale( { StoredSize[0], StoredSize[1], StoredSize[2] } );
+		ScaleMatrix = Matrix4D::Scale( StoredSize );
 
 		Vector3D Radians = StoredOrientation;
-		Radians.X = glm::radians( Radians.X );
-		Radians.Y = glm::radians( Radians.Y );
-		Radians.Z = glm::radians( Radians.Z );
+		Radians.X = Math::ToRadians( Radians.X );
+		Radians.Y = Math::ToRadians( Radians.Y );
+		Radians.Z = Math::ToRadians( Radians.Z );
 
-		glm::quat Pitch = glm::angleAxis( Radians.X, AxisX );
-		glm::quat Yaw = glm::angleAxis( Radians.Y, AxisY );
-		glm::quat Roll = glm::angleAxis( Radians.Z, AxisZ );
+		// glm::quat Pitch = glm::angleAxis( Radians.X, AxisX );
+		// glm::quat Yaw = glm::angleAxis( Radians.Y, AxisY );
+		// glm::quat Roll = glm::angleAxis( Radians.Z, AxisZ );
 
 		// glm::quat Quaternion = Yaw * Pitch * Roll;
 		// RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
 		RotationMatrix = Math::EulerToMatrix( StoredOrientation );
 
-		TranslationMatrix = IdentityMatrix;
-		TranslationMatrix.Translate( { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
+		TranslationMatrix = Matrix4D::Translation( StoredPosition );
+		// TranslationMatrix.Translate( { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
 		// TranslationMatrix = Math::ToGLM( TranslateTest );
 		// TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
 
