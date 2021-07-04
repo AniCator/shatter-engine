@@ -207,11 +207,18 @@ public:
 	};
 
 	Vector3D() = default;
-	Vector3D( float X, float Y, float Z )
+	Vector3D( const float& X, const float& Y, const float& Z )
 	{
 		this->X = X;
 		this->Y = Y;
 		this->Z = Z;
+	}
+
+	Vector3D( const float& A )
+	{
+		this->X = A;
+		this->Y = A;
+		this->Z = A;
 	}
 
 	inline const float* Base() const
