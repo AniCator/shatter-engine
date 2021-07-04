@@ -143,7 +143,7 @@ void UpdateAnimationSet( CMesh* Mesh, const std::string& Path )
 	auto Set = AnimationSet::Generate( Path );
 	const auto& MeshSet = Mesh->GetAnimationSet();
 
-	// TODO: This is an extra copy for no temporary reasons.
+	// TODO: This is an extra copy for temporary reasons.
 	Set.Skeleton = MeshSet.Skeleton;
 	Mesh->SetAnimationSet( Set );
 }
@@ -181,14 +181,34 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 		else if( Payload.Type == EAsset::Shader )
 		{
 			Log::Event( "Loading shader \"%s\".\n", Payload.Name.c_str() );
-			if( Payload.Locations.size() > 1 )
+
+			EShaderType ShaderType = EShaderType::Fragment;
+
+			const bool ShaderTypeInferrable = Payload.Locations.size() > 1;
+			if( ShaderTypeInferrable )
 			{
-				CreateNamedShader( Payload.Name.c_str(), Payload.Locations[0].c_str(), Payload.Locations[1].c_str() );
+				if( Payload.Locations[0] == "vertex" )
+				{
+					ShaderType = EShaderType::Vertex;
+				}
+				else if( Payload.Locations[0] == "compute" )
+				{
+					ShaderType = EShaderType::Compute;
+				}
+				else if( Payload.Locations[0] == "geometry" )
+				{
+					ShaderType = EShaderType::Geometry;
+				}
+			}
+
+			if( Payload.Locations.size() == 3 && ShaderType == EShaderType::Fragment )
+			{
+				CreateNamedShader( Payload.Name.c_str(), Payload.Locations[1].c_str(), Payload.Locations[2].c_str() );
 			}
 			else
 			{
-				CreateNamedShader( Payload.Name.c_str(), Payload.Locations[0].c_str() );
-			}
+				CreateNamedShader( Payload.Name.c_str(), Payload.Locations[1].c_str(), ShaderType );
+			} 
 		}
 		else if( Payload.Type == EAsset::Texture )
 		{
@@ -359,7 +379,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			}
 
 			// Automatically export an LM file if the extension was OBJ.
-			if( ( ForceLoad || ExportOBJToLM ) && Mesh && Extension != "lm" )
+			if( ExportOBJToLM && Mesh && Extension != "lm" )
 			{
 				Log::Event( "Exporting Lofty Model mesh \"%s\".", Name );
 
@@ -934,6 +954,11 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 				// Path to animation set.
 				UserData = Property->Value;
 			}
+			else if( Property->Key == "stype" )
+			{
+				// String designation of a shader type.
+				UserData = Property->Value;
+			}
 		}
 
 		if( Name.length() > 0 && ( !Paths.empty() || ( !VertexPath.empty() && !FragmentPath.empty() ) ) )
@@ -956,17 +981,20 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 					FGenericAssetPayload Payload;
 					Payload.Type = EAsset::Shader;
 					Payload.Name = Name;
+					Payload.Locations.emplace_back( "fragment" ); // Shader Type
 					Payload.Locations.emplace_back( VertexPath );
 					Payload.Locations.emplace_back( FragmentPath );
 					GenericAssets.emplace_back( Payload );
 				}
 				else
 				{
+					FGenericAssetPayload Payload;
+					Payload.Type = EAsset::Shader;
+					Payload.Name = Name;
+					Payload.Locations.emplace_back( UserData ); // Shader Type
+					
 					for( const auto& Path : Paths )
 					{
-						FGenericAssetPayload Payload;
-						Payload.Type = EAsset::Shader;
-						Payload.Name = Name;
 						Payload.Locations.emplace_back( Path );
 						GenericAssets.emplace_back( Payload );
 					}
