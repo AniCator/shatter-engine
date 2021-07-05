@@ -15,10 +15,16 @@ public:
 	};
 
 	Vector2D() = default;
-	Vector2D( float X, float Y )
+	Vector2D( const float& X, const float& Y )
 	{
 		this->X = X;
 		this->Y = Y;
+	}
+
+	Vector2D( const float& A )
+	{
+		this->X = A;
+		this->Y = A;
 	}
 
 	inline float* Base()
