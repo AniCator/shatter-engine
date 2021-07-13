@@ -94,4 +94,8 @@ namespace UI
 	void Render();
 
 	void SetCamera( const CCamera& Camera );
+
+	unsigned int GetWidth();
+	unsigned int GetHeight();
+	Vector2D RelativeToAbsolute( const Vector2D& Position );
 }

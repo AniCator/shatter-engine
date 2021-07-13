@@ -882,4 +882,24 @@ namespace UI
 	{
 		Camera = CameraIn;
 	}
+
+	unsigned int GetWidth()
+	{
+		return static_cast<unsigned int>( Width );
+	}
+
+	unsigned int GetHeight()
+	{
+		return static_cast<unsigned int>( Height );
+	}
+
+	Vector2D RelativeToAbsolute( const Vector2D& Position )
+	{
+		Vector2D Result;
+
+		Result.X = Position.X * Width;
+		Result.Y = Position.Y * Height;
+		
+		return Result;
+	}
 }
