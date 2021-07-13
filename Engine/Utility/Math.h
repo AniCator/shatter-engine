@@ -362,6 +362,11 @@ namespace Math
 		return A + Vector3D( Alpha, Alpha, Alpha ) * ( B - A );
 	}
 
+	inline float Map( const float& X, const float& Minimum, const float& Maximum, const float& NewMinimum, const float& NewMaximum )
+	{
+		return NewMinimum + ( X - Minimum ) * ( NewMaximum - NewMinimum ) / ( Maximum - Minimum );
+	}
+
 	inline float Abs( const float& Value )
 	{
 		return std::fabs( Value );
