@@ -57,7 +57,7 @@ void CAssets::Create( const std::string& Name, CAsset* NewAsset )
 	Assets.insert_or_assign( Name, NewAsset );
 }
 
-void ParsePayload(FPrimitivePayload* Payload )
+void ParsePayload( FPrimitivePayload* Payload )
 {
 	Payload->Native = false;
 
@@ -599,19 +599,20 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	// Check if the mesh exists
-	/*if( CTexture* ExistingTexture = Find<CTexture>( NameString, Textures ) )
-	{
-		return ExistingTexture;
-	}*/
+	// Check if the texture exists
+	const auto* ExistingTexture = Find<CTexture>( NameString, Textures );
 
 	if( Texture )
 	{
 		Create( NameString, Texture );
 
-		CProfiler& Profiler = CProfiler::Get();
-		const int64_t TextureCount = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", TextureCount ), false );
+		// Only increment the texture counter if it doesn't exist yet.
+		if( !ExistingTexture )
+		{
+			CProfiler& Profiler = CProfiler::Get();
+			const int64_t TextureCount = 1;
+			Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", TextureCount ), false );
+		}
 
 		Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
 
