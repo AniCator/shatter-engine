@@ -94,9 +94,8 @@ void CRenderTexture::Initialize()
 		Log::Event( Log::Warning, "Render texture could not be initialized because it hasn't been configured properly.\n" );
 	}
 
-	Initialized = true;
-
 	Delete();
+	Initialized = true;
 	
 	glGenFramebuffers( 1, &FramebufferHandle );
 	glBindFramebuffer( GL_FRAMEBUFFER, FramebufferHandle );
@@ -269,6 +268,8 @@ void CRenderTexture::Delete()
 		glDeleteTextures( 1, &MultiSampleHandle );
 		MultiSampleHandle = 0;
 	}
+
+	Initialized = false;
 }
 
 void CRenderTexture::SetSampleCount( const int Samples )
