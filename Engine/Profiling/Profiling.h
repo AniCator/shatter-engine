@@ -74,6 +74,12 @@ public:
 	bool IsEnabled() const;
 	void SetEnabled( const bool EnabledIn );
 
+	static size_t GetMemoryUsageInBytes();
+	static size_t GetMemoryUsageInKiloBytes();
+	static size_t GetMemoryUsageInMegaBytes();
+	static size_t GetMemoryUsageInGigaBytes();
+	static std::string GetMemoryUsageAsString();
+
 private:
 	std::map<FName, RingBuffer<FProfileTimeEntry, TimeWindow>> TimeEntries;
 

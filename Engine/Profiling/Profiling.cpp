@@ -6,6 +6,62 @@
 
 #include <ThirdParty/imgui-1.70/imgui.h>
 
+// NOTE: Crappy memory tracker.
+static size_t MemoryUsageBytes = 0;
+static size_t LargestAllocation = 0;
+void* operator new( size_t Size )
+{
+	MemoryUsageBytes += Size;
+
+	if( Size > LargestAllocation )
+	{
+		LargestAllocation = Size;
+	}
+
+	return malloc( Size );
+}
+
+void operator delete( void* Data, size_t Size )
+{
+	MemoryUsageBytes -= Size;
+
+	free( Data );
+}
+
+size_t BytesToKiloBytes( const size_t& Bytes )
+{
+	return Bytes * 0.001;
+}
+
+size_t BytesToMegaBytes( const size_t& Bytes )
+{
+	return Bytes * 0.000001;
+}
+
+size_t BytesToGigaBytes( const size_t& Bytes )
+{
+	return Bytes * 0.000000001;
+}
+
+std::string BytesToString( const size_t& Bytes )
+{
+	std::string MemoryIdentifier = "GB";
+	size_t Memory = BytesToGigaBytes( Bytes );
+	if( Memory == 0 )
+	{
+		Memory = BytesToMegaBytes( Bytes );
+		MemoryIdentifier = "MB";
+
+		if( Memory == 0 )
+		{
+			Memory = BytesToKiloBytes( Bytes );
+			MemoryIdentifier = "KB";
+		}
+	}
+
+	return std::to_string( Memory ) + " " + MemoryIdentifier;
+}
+
 size_t CounterGap = 0;
 size_t CounterGapFrame = 0;
 
@@ -133,7 +189,9 @@ void CProfiler::PlotPerformance()
 		DrawList->PushClipRect( Position, ImVec2( Position.x + Size.x, Position.y + Size.y ) );
 
 		const auto CurrentTime = std::chrono::duration_cast<std::chrono::nanoseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
-		std::vector<RingBuffer<FProfileTimeEntry, TimeWindow>*> PlottableEntries;
+		static std::vector<RingBuffer<FProfileTimeEntry, TimeWindow>*> PlottableEntries;
+		PlottableEntries.clear();
+		
 		for( auto& Pair : TimeEntries )
 		{
 			auto& Buffer = Pair.second;
@@ -277,8 +335,14 @@ void CProfiler::Display()
 					{
 						ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Peak): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
 						ImGui::PushItemWidth( -1 );
-						ImGui::PlotHistogram( "", TimeValues, static_cast<int>( TimeWindow ), static_cast<int>( Buffer.Offset() ), "Histogram (Frametime)", 0.0f, 33.3f, ImVec2( 500.0f, 100.0f ) );
-						ImGui::Text( "" );
+
+						unsigned int ColorAverage = std::min( 255, std::max( 0, int( 2300.0f / Average ) ) );
+						unsigned int Red = 255 - ColorAverage;
+						unsigned int Green = ColorAverage;
+
+						ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( Red, Green, 32, 255 ) );
+						ImGui::PlotHistogram( "", TimeValues, static_cast<int>( TimeWindow ), static_cast<int>( Buffer.Offset() ), "Frametime", 0.0f, 33.3f, ImVec2( 500.0f, 100.0f ) );
+						ImGui::PopStyleColor();
 					}
 					else
 					{
@@ -287,6 +351,32 @@ void CProfiler::Display()
 				}
 			}
 
+			
+			ImGui::Text( "Memory Usage: %s", GetMemoryUsageAsString().c_str() );
+			ImGui::Text( "Largest Allocation: %s", BytesToString( LargestAllocation ).c_str() );
+			static RingBuffer<size_t, TimeWindow> MemoryBuffer;
+
+			MemoryBuffer.Insert( GetMemoryUsageInMegaBytes() );
+
+			static std::vector<float> MemoryValues;
+			MemoryValues.clear();
+			MemoryValues.resize( TimeWindow );
+
+			size_t MemoryCeiling = 0;
+			for( size_t MemoryIndex = 0; MemoryIndex < TimeWindow; MemoryIndex++ )
+			{
+				const auto& BufferValue = MemoryBuffer.Get( MemoryIndex );
+				MemoryValues[MemoryIndex] = static_cast<float>( BufferValue );
+
+				MemoryCeiling = std::max( MemoryCeiling, BufferValue );
+			}
+
+			ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( 32, 64, 180, 255 ) );
+			ImGui::PlotHistogram( "", MemoryValues.data(), static_cast<int>( TimeWindow ), static_cast<int>( MemoryBuffer.Offset() ), "Memory Usage (MB)", 0.0f, static_cast<float>( MemoryCeiling ), ImVec2( 500.0f, 100.0f ) );
+			ImGui::PopStyleColor();
+
+			ImGui::Text( "" );
+			
 			PlotPerformance();
 		}
 
@@ -373,6 +463,31 @@ bool CProfiler::IsEnabled() const
 void CProfiler::SetEnabled( const bool EnabledIn )
 {
 	Enabled = EnabledIn;
+}
+
+size_t CProfiler::GetMemoryUsageInBytes()
+{	
+	return MemoryUsageBytes;
+}
+
+size_t CProfiler::GetMemoryUsageInKiloBytes()
+{
+	return BytesToKiloBytes( MemoryUsageBytes );
+}
+
+size_t CProfiler::GetMemoryUsageInMegaBytes()
+{
+	return BytesToMegaBytes( MemoryUsageBytes );
+}
+
+size_t CProfiler::GetMemoryUsageInGigaBytes()
+{
+	return BytesToGigaBytes( MemoryUsageBytes );
+}
+
+std::string CProfiler::GetMemoryUsageAsString()
+{
+	return BytesToString( MemoryUsageBytes );
 }
 
 std::atomic<size_t> CTimerScope::Depth = 0;
