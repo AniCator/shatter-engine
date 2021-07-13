@@ -372,6 +372,11 @@ void CWindow::SetIcon( CTexture* Texture )
 	glfwSetWindowIcon( WindowHandle, 1, &Icon );
 }
 
+void CWindow::SetTitle( const std::string& Title )
+{
+	glfwSetWindowTitle( WindowHandle, Title.c_str() );
+}
+
 CRenderer& CWindow::GetRenderer()
 {
 	return Renderer;

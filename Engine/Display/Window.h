@@ -54,6 +54,7 @@ public:
 	bool IsCursorEnabled() const;
 
 	void SetIcon( class CTexture* Texture );
+	void SetTitle( const std::string& Title );
 
 	CRenderer& GetRenderer();
 
