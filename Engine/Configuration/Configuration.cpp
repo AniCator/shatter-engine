@@ -28,7 +28,7 @@ bool CConfiguration::IsEnabled( const char* KeyName, const bool Default )
 		return Default;
 	}
 
-	std::string Value = GetValue( KeyName );
+	const auto& Value = GetValue( KeyName );
 
 	if( Value == "1" || Value == "true" )
 	{
@@ -146,15 +146,15 @@ void CConfiguration::Reload()
 
 		std::regex FilterSettings = ConfigureFilter( "(.*)" );
 
-		std::string line;
-		while( std::getline( configurationFileStream, line ) )
+		std::string Line;
+		while( std::getline( configurationFileStream, Line ) )
 		{
-			std::smatch match;
-			const bool IgnoreLine = line[0] == ';' || line[0] == '#';
-			if( !IgnoreLine && std::regex_search( line, match, FilterSettings ) )
+			std::smatch Match;
+			const bool IgnoreLine = Line[0] == ';' || Line[0] == '#';
+			if( !IgnoreLine && std::regex_search( Line, Match, FilterSettings ) )
 			{
-				Log::Event( "%s = %s\n", match[1].str().c_str(), match[2].str().c_str() );
-				StoredSettings.insert_or_assign( match[1].str(), match[2].str() );
+				Log::Event( "%s = %s\n", Match[1].str().c_str(), Match[2].str().c_str() );
+				StoredSettings.insert_or_assign( Match[1].str(), Match[2].str() );
 			}
 		}
 
