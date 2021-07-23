@@ -124,14 +124,14 @@ void CConfiguration::Reload()
 		configurationFileStream.open( FilePathCharacterString );
 		if( configurationFileStream.fail() )
 		{
-			Log::Event( "Could not find configuration file \"%s\".\n", FilePathCharacterString );
+			Log::Event( "Could not find configuration file \"%S\".\n", FilePathCharacterString );
 
 			if( IsFirstFile )
 			{
 				configurationFileStream.open( DefaultEngineConfigurationFile );
 				if( configurationFileStream.fail() )
 				{
-					Log::Event( Log::Warning, "Cannot restore engine configuration file because \"%s\" is missing.\n", DefaultEngineConfigurationFile );
+					Log::Event( Log::Warning, "Cannot restore engine configuration file because \"%S\" is missing.\n", DefaultEngineConfigurationFile.c_str() );
 				}
 				else
 				{
@@ -184,7 +184,7 @@ void CConfiguration::Save()
 
 		if( ConfigurationStream.good() )
 		{
-			Log::Event( "Saving configuration file to \"%s\".\n", SavePath.c_str() );
+			Log::Event( "Saving configuration file to \"%S\".\n", SavePath.c_str() );
 
 			for( auto& Setting : StoredSettings )
 			{
