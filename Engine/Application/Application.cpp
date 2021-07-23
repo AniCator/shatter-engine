@@ -329,9 +329,9 @@ void GenerateThemes()
 	ThemeCherry();
 }
 
-void SetTheme( const char* Theme )
+void SetTheme( const std::string& Theme )
 {
-	auto Iterator = Themes.find( Theme );
+	const auto& Iterator = Themes.find( Theme );
 	if( Iterator != Themes.end() )
 	{
 		Iterator->second();
@@ -450,12 +450,11 @@ void DebugMenu( CApplication* Application )
 
 			ImGui::Separator();
 
-			for( auto Iterator : Themes )
+			for( const auto& Iterator : Themes )
 			{
-				const char* ThemeKey = Iterator.first.c_str();
-				char ThemeName[256];
-				sprintf_s( ThemeName, "%s Theme", ThemeKey );
-				if( ImGui::MenuItem( ThemeName, "" ) )
+				const auto& ThemeKey = Iterator.first;
+				const std::string ThemeName = ThemeKey + " Theme";
+				if( ImGui::MenuItem( ThemeName.c_str() ) )
 				{
 					SetTheme( ThemeKey );
 				}
