@@ -366,7 +366,7 @@ void DebugMenu( CApplication* Application )
 			Number = TopLevelLayer->GetVersion();
 		}
 
-		const auto MenuName = CApplication::GetName() + " " + std::to_string( Number.Major ) + "." + std::to_string( Number.Minor ) + "." + std::to_string( Number.Hot );
+		const auto MenuName = CApplication::GetName() + " " + Number.String();
 		if( ImGui::BeginMenu( MenuName.c_str() ) )
 		{
 			ImGui::MenuItem( "2017 \xc2\xa9 Christiaan Bakker", nullptr, false, false );

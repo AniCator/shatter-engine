@@ -2,12 +2,18 @@
 #pragma once
 
 #include <vector>
+#include <string>
 
 struct Version
 {
-	int Major;
-	int Minor;
-	int Hot;
+	int Major = 0;
+	int Minor = 0;
+	int Hot = 0;
+
+	std::string String() const
+	{
+		return std::to_string( Major ) + "." + std::to_string( Minor ) + "." + std::to_string( Hot );
+	}
 };
 
 class IGameLayer
