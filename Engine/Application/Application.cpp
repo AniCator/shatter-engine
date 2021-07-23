@@ -406,37 +406,37 @@ void DebugMenu( CApplication* Application )
 			//	return;
 			//}
 
-			if( ImGui::MenuItem( "800x600", "" ) )
+			if( ImGui::MenuItem( "800x600" ) )
 			{
 				MainWindow.Resize( ViewDimensions( 800, 600 ) );
 			}
 
-			if( ImGui::MenuItem( "1280x720", "" ) )
+			if( ImGui::MenuItem( "1280x720" ) )
 			{
 				MainWindow.Resize( ViewDimensions( 1280, 720 ) );
 			}
 
-			if( ImGui::MenuItem( "1920x1080", "" ) )
+			if( ImGui::MenuItem( "1920x1080" ) )
 			{
 				MainWindow.Resize( ViewDimensions( 1920, 1080 ) );
 			}
 
-			if( ImGui::MenuItem( "2560x1440", "" ) )
+			if( ImGui::MenuItem( "2560x1440" ) )
 			{
 				MainWindow.Resize( ViewDimensions( 2560, 1440 ) );
 			}
 
-			if( ImGui::MenuItem( "Reload Configuration", "H" ) )
+			if( ImGui::MenuItem( "Reload Configuration" ) )
 			{
 				InputReloadConfiguration();
 			}
 
-			if( ImGui::MenuItem( "Restart Game Layers", "G" ) )
+			if( ImGui::MenuItem( "Restart Game Layers" ) )
 			{
 				RestartLayers = true;
 			}
 
-			if( ImGui::MenuItem( "Reload Shaders", "J" ) )
+			if( ImGui::MenuItem( "Reload Shaders" ) )
 			{
 				InputReloadShaders();
 			}
@@ -889,7 +889,7 @@ void CApplication::InitializeDefaultInputs()
 		} );
 	}
 
-	Input.AddActionBinding( "DisplayLog", EKey::L, EAction::Release, [] ( const float& Scale ) {
+	Input.AddActionBinding( "DisplayLog", EKey::GraveAccent, EAction::Release, [] ( const float& Scale ) {
 		DisplayLog = !DisplayLog;
 	} );
 
