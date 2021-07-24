@@ -83,7 +83,7 @@ namespace JSON
 					{
 						Object* StackParent = Current;
 						Object Object;
-						Container.Objects.push_back( Object );
+						Container.Objects.emplace_back( Object );
 
 						// Create a new node for the object.
 						Current = &Container.Objects.back();
@@ -93,13 +93,13 @@ namespace JSON
 						{
 							// Assign the stored parent node as the parent of the new node.
 							Current->Parent = Parent;
-							Current->Parent->Objects.push_back( Current );
+							Current->Parent->Objects.emplace_back( Current );
 						}
 						else if( StackParent )
 						{
 							// Assign the previous current node as the parent of the new node.
 							Current->Parent = StackParent;
-							Current->Parent->Objects.push_back( Current );
+							Current->Parent->Objects.emplace_back( Current );
 						}
 
 						// Parent = Current->Parent;
@@ -147,7 +147,7 @@ namespace JSON
 				if( LookingForKeyEntry && Start && End )
 				{
 					Object Object;
-					Container.Objects.push_back( Object );
+					Container.Objects.emplace_back( Object );
 
 					Current = &Container.Objects.back();
 					if( Current )
@@ -159,7 +159,7 @@ namespace JSON
 						if( Parent )
 						{
 							Current->Parent = Parent;
-							Current->Parent->Objects.push_back( Current );
+							Current->Parent->Objects.emplace_back( Current );
 						}
 					}
 				}
@@ -232,7 +232,7 @@ namespace JSON
 		{
 			if( !Object.Parent )
 			{
-				Tree.Tree.push_back( &Object );
+				Tree.Tree.emplace_back( &Object );
 			}
 		}
 	}

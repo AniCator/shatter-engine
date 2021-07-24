@@ -12,7 +12,7 @@
 namespace JSON
 {
 	struct Container;
-	void PopString( const char*& Token, const char*& Start, const char*& End, size_t& Length );
+
 	Container GenerateTree( const CFile& File );
 	void RegenerateTree( Container& Tree );
 
@@ -77,7 +77,7 @@ namespace JSON
 		{
 			if( !Objects.empty() )
 			{
-				const auto& Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
+				const auto Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
 					{
 						return Item->Key == Search;
 					}
@@ -174,7 +174,7 @@ namespace JSON
 
 		Object& operator[]( const std::string& Search )
 		{
-			auto& Result = std::find_if( Tree.begin(), Tree.end(), [Search] ( Object* Item ) -> bool
+			const auto Result = std::find_if( Tree.begin(), Tree.end(), [Search] ( Object* Item ) -> bool
 				{
 					return Item->Key == Search;
 				}
