@@ -47,6 +47,9 @@ public:
 	void BeginFrame();
 	void RenderFrame();
 
+	// Forces the current frame to render.
+	void FlushFrame();
+
 	bool Valid() const;
 	bool ShouldClose() const;
 

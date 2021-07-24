@@ -316,6 +316,13 @@ void CWindow::RenderFrame()
 	RenderingFrame = false;
 }
 
+void CWindow::FlushFrame()
+{
+	RenderFrame();
+	Renderer.RefreshFrame();
+	BeginFrame();
+}
+
 bool CWindow::Valid() const
 {
 	return Initialized;
