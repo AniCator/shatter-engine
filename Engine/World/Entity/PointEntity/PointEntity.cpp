@@ -64,7 +64,7 @@ void CPointEntity::SetTransform(const FTransform& TransformIn )
 	const auto InOrientation = TransformIn.GetOrientation();
 	if( !InPosition.IsValid() || !InOrientation.IsValid() )
 	{
-		Log::Event( Log::Error, "Invalid transform.\n" );
+		Log::Event( Log::Warning, "Invalid transform.\n" );
 	}
 #endif
 	
