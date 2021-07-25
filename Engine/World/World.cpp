@@ -157,7 +157,7 @@ CEntity* CWorld::Find( const std::string& Name ) const
 	return nullptr;
 }
 
-CEntity* CWorld::Find( const size_t ID ) const
+CEntity* CWorld::Find( const size_t& ID ) const
 {
 	for( const auto& Level : Levels )
 	{

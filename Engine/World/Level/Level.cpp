@@ -403,7 +403,7 @@ CEntity* CLevel::Find( const std::string& Name ) const
 	return nullptr;
 }
 
-CEntity* CLevel::Find( const size_t ID ) const
+CEntity* CLevel::Find( const size_t& ID ) const
 {
 	if( ID < Entities.size() )
 	{

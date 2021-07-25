@@ -46,7 +46,7 @@ public:
 	CLevel* GetActiveLevel() { return ActiveLevel; };
 
 	CEntity* Find( const std::string& Name ) const;
-	CEntity* Find( const size_t ID ) const;
+	CEntity* Find( const size_t& ID ) const;
 	CEntity* Find( const EntityUID& ID ) const;
 	CEntity* Find( const UniqueIdentifier& Identifier ) const;
 
