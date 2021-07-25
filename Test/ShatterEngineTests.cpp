@@ -491,8 +491,6 @@ namespace EngineTest
 		// Test if we can recover from reading an incorrect type.
 		TEST_METHOD( SerializeRecovery )
 		{
-			bool Success = false;
-
 			CData Data;
 			int8_t Input = 5;
 			Data << Input;
@@ -516,6 +514,67 @@ namespace EngineTest
 			if( !Data.Valid() )
 			{
 				Assert::Fail( L"Data invalid." );
+			}
+		}
+
+		// Test if we can recover from reading a DataString vector mismatch.
+		TEST_METHOD( SerializeRecoveryString )
+		{
+			CData Data;
+
+			// Submit data.
+			const int32_t InputSize = 1;
+			Data << InputSize;
+
+			// Move cursor to start.
+			Data.ReadToStart();
+
+			// Extract the data.
+			int32_t OutputSize;
+			Data >> OutputSize;
+
+			std::vector<std::string> Strings;
+			for( int32_t Index = 0; Index < OutputSize; Index++ )
+			{
+				std::string String;
+				DataString::Decode( Data, String );
+
+				if( String.length() > 0 )
+				{
+					Strings.emplace_back( String );
+				}
+			}
+
+			if( !Strings.empty() )
+			{
+				Assert::Fail( L"Extracted unexpected strings." );
+			}
+
+			if( InputSize != OutputSize )
+			{
+				Assert::Fail( L"Data corrupted." );
+			}
+
+			if( !Data.Valid() )
+			{
+				Assert::Fail( L"Data invalid." );
+			}
+		}
+
+		TEST_METHOD( UniqueID )
+		{
+			UniqueIdentifier Identifier;
+
+			if( Identifier.Valid() )
+			{
+				Assert::Fail( L"Identifier valid." );
+			}
+
+			Identifier.Random();
+
+			if( !Identifier.Valid() )
+			{
+				Assert::Fail( L"Identifier invalid." );
 			}
 		}
 	};
