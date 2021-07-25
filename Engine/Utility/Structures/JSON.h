@@ -14,11 +14,6 @@ namespace JSON
 	struct Container;
 
 	Container GenerateTree( const CFile& File );
-	void RegenerateTree( Container& Tree );
-
-	// Always regenerates the tree.
-	std::string ExportTree( Container& Tree );
-
 	void PrintTree( const Container& Tree );
 
 	struct Object;
@@ -26,20 +21,12 @@ namespace JSON
 
 	struct Object
 	{
-		Object()
-		{
-			IsObject = false;
-			IsArray = false;
-			IsField = false;
-			Parent = nullptr;
-		}
-
-		bool IsObject;
-		bool IsArray;
-		bool IsField;
+		bool IsObject = false;
+		bool IsArray = false;
+		bool IsField = false;
 		std::string Key;
 		std::string Value;
-		Object* Parent;
+		Object* Parent = nullptr;
 		Vector Objects;
 
 		void SetValue( const std::string& Key, const std::string& NewValue )
@@ -186,13 +173,22 @@ namespace JSON
 				Object.Key = Search;
 				Objects.emplace_back( Object );
 
-				RegenerateTree( *this );
+				Regenerate();
 				return Objects.back();
 			}
 
 			return **Result;
 		}
 
-		Container& operator+=( const Container& Container );		
+		Container& operator+=( const Container& Container );
+
+		Object* Allocate();
+		void Add( Object* Parent, Object* Child );
+		Object* Add( Object* Parent, const std::string& Key );
+		void Regenerate();
+		std::string Export();
+
+		// Returns true if the object is a part of this container.
+		bool Valid( Object* Object ) const;
 	};
 }

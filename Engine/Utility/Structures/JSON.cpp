@@ -219,22 +219,9 @@ namespace JSON
 			Token++;
 		}
 
-		RegenerateTree( Container );
+		Container.Regenerate();
 
 		return Container;
-	}
-
-	void RegenerateTree( Container& Tree )
-	{
-		Tree.Tree.clear();
-
-		for( auto& Object : Tree.Objects )
-		{
-			if( !Object.Parent )
-			{
-				Tree.Tree.emplace_back( &Object );
-			}
-		}
 	}
 
 	void StringifyObject( std::stringstream& Stream, Object* Object, const uint32_t Offset, const bool Last )
@@ -312,29 +299,6 @@ namespace JSON
 		}
 	}
 
-	std::string ExportTree( Container& Tree )
-	{
-		RegenerateTree( Tree );
-
-		std::stringstream Stream;
-
-		Stream << "{\n";
-
-		/*for( uint32_t Index = 0; Index < Tree.Tree.size(); Index++ )
-		{
-			StringifyObject( Stream, Tree.Tree[Index], 1, Index == ( Tree.Tree.size() - 1 ) );
-		}*/
-
-		for ( auto& Iterator : Tree.Tree )
-		{
-			StringifyObject( Stream, Iterator, 1, Iterator == Tree.Tree.back() );
-		}
-
-		Stream << "}";
-
-		return Stream.str();
-	}
-
 	static uint16_t TabOffset = 0;
 	void RecurseJSONObject( JSON::Object* Object )
 	{
@@ -406,9 +370,97 @@ namespace JSON
 			IntegrateBranch( *this, Branch );
 		}
 
-		RegenerateTree( *this );
+		Regenerate();
 
 		return *this;
+	}
+
+	Object* Container::Allocate()
+	{
+		Object Object;
+		Objects.emplace_back( Object );
+
+		return &Objects.back();
+	}
+
+	void Container::Add( Object* Parent, Object* Child )
+	{
+		if( !Parent )
+			return;
+
+		// Check if the parent belongs to this container.
+		if( !Valid( Parent ) )
+			return;
+
+
+		// Check if the child belongs to this container.
+		if( !Valid( Child ) )
+			return;
+
+		Child->Parent = Parent;
+		Parent->Objects.emplace_back( Child );
+		Regenerate();
+	}
+
+	Object* Container::Add( Object* Parent, const std::string& Key )
+	{
+		if( !Parent || Key.length() == 0 )
+			return nullptr;
+
+		// Check if the parent belongs to this container.
+		if( !Valid( Parent ) )
+			return nullptr;
+
+		auto* Child = Allocate();
+
+		Child->Parent = Parent;
+		Child->Key = Key;
+		Parent->Objects.emplace_back( Child );
+		Regenerate();
+
+		return Child;
+	}
+
+	void Container::Regenerate()
+	{
+		Tree.clear();
+
+		for( auto& Object : Objects )
+		{
+			if( !Object.Parent )
+			{
+				Tree.emplace_back( &Object );
+			}
+		}
+	}
+
+	std::string Container::Export()
+	{
+		Regenerate();
+
+		std::stringstream Stream;
+
+		Stream << "{\n";
+
+		for( auto& Iterator : Tree )
+		{
+			StringifyObject( Stream, Iterator, 1, Iterator == Tree.back() );
+		}
+
+		Stream << "}";
+
+		return Stream.str();
+	}
+
+	bool Container::Valid( Object* Object ) const
+	{
+		for( const auto& ContainerObject : Objects )
+		{
+			if( &ContainerObject == Object )
+				return true;
+		}
+
+		return false;
 	}
 
 	void CopyTree( Object* Source, Object* Target )
