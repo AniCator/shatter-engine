@@ -72,7 +72,13 @@ struct DataString
 
 	friend CData& operator>>( CData& Data, DataString& String )
 	{
-		Data >> String.Size;
+		const auto Result = Data >> String.Size;
+
+		// If the returned size is 0 this means we failed to extract the string size.
+		if( Result == 0 )
+		{
+			return Data;
+		}
 
 		if( String.Size > 100000 )
 		{

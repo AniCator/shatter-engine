@@ -83,6 +83,10 @@ public:
 			// Reset the position.
 			Data.clear();
 			Data.seekg( Position );
+
+			Log::Event( Log::Error, "Could not extract data stream to object.\n" );
+
+			return 0;
 		}
 
 		return Size;
@@ -105,6 +109,8 @@ public:
 			// Reset the position.
 			Data.clear();
 			Data.seekg( Position );
+
+			Log::Event( Log::Error, "Could not extract data stream to character array.\n" );
 		}
 	}
 
