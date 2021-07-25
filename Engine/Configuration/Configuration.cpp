@@ -198,12 +198,8 @@ void CConfiguration::Save()
 
 std::regex CConfiguration::ConfigureFilter( const char* KeyName )
 {
-	std::stringstream FilterString;
-	FilterString << "(?!#)(?!;)";
-	FilterString << KeyName;
-	FilterString << "=(.*)";
-
-	std::regex FilterSettings( FilterString.str().c_str() );
+	const std::string FilterString = "(?!#)(?!;)" + std::string( KeyName ) + "=(.*)";
+	std::regex FilterSettings( FilterString.c_str() );
 	return FilterSettings;
 }
 
