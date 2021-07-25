@@ -4,6 +4,9 @@
 #include <Engine/World/Level/Level.h>
 #include <Engine/World/World.h>
 
+#include <random>
+#include <iomanip>
+
 void CEntityMap::Add( const std::string& Type, EntityFunction Factory )
 {
 	// Log::Event( "Registering entity \"%s\".\n", Type.c_str() );
@@ -246,6 +249,8 @@ CData& operator<<( CData& Data, CEntity* Entity )
 		DataString::Encode( Data, Entity->ClassName );
 		DataString::Encode( Data, Entity->Name.String() );
 
+		Data << Entity->Identifier.ID;
+
 		const auto OutputCount = Entity->Outputs.size();
 		Data << OutputCount;
 		if( OutputCount > 0 )
@@ -330,4 +335,63 @@ EntityUID EntityUID::None()
 {
 	static EntityUID NoneID;
 	return NoneID;
+}
+
+std::string GenerateHex( const int& Length )
+{
+	// Not that random but random enough.
+	static std::random_device RandomDevice;
+	static std::mt19937 Generator( RandomDevice() );
+	static std::uniform_int_distribution<> Distribution( 0, 15 );
+	std::stringstream Stream;
+	
+	for( int Index = 0; Index < Length; Index++ )
+	{
+		Stream << std::hex << std::setw( 2 ) << std::setfill( '0' );
+		Stream << Distribution( Generator );
+	}
+
+	return Stream.str();
+}
+
+void UniqueIdentifier::Random()
+{
+	std::string Hex;
+	Hex.reserve( 36 );
+	
+	Hex += GenerateHex( 4 );
+	Hex += "-";
+	Hex += GenerateHex( 2 );
+	Hex += "-";
+	Hex += GenerateHex( 2 );
+	Hex += "-";
+	Hex += GenerateHex( 2 );
+	Hex += "-";
+	Hex += GenerateHex( 6 );
+
+	Set( Hex.c_str() );
+}
+
+void UniqueIdentifier::Set( const char* Identifier )
+{
+	const auto Size = std::strlen( Identifier );
+	if( Size == 36 )
+	{
+		strcpy_s( ID, Identifier );
+	}
+}
+
+bool UniqueIdentifier::Valid() const
+{
+	static char Invalid[37] = "00000000-0000-0000-0000-000000000000";
+	if( std::strcmp( ID, Invalid ) == 0 )
+		return false;
+
+	const auto Size = std::strlen( ID );
+	if( Size != 36 )
+	{
+		return false;
+	}
+
+	return true;
 }

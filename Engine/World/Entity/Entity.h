@@ -39,6 +39,16 @@ struct EntityUID
 	static EntityUID None();
 };
 
+// Struct that can store a unique identifier.
+struct UniqueIdentifier
+{
+	char ID[37] = "00000000-0000-0000-0000-000000000000";
+
+	void Random();
+	void Set( const char* Identifier );
+	bool Valid() const;
+};
+
 struct FMessage
 {
 	EntityUID TargetID;
@@ -100,6 +110,7 @@ public:
 	virtual void Reload();
 	void Link( const JSON::Vector& Objects );
 	FName Name;
+	UniqueIdentifier Identifier;
 
 	// Entity I/O
 	void Send( const char* Output );

@@ -32,6 +32,7 @@ public:
 		if( Entity )
 		{
 			Entity->Name = Name;
+			Entity->Identifier.Random();
 			Entity->SetEntityID( EntityUID::Create() );
 			Entity->SetLevelID( LevelUID( Entities.size() ) );
 			Entity->SetLevel( this );
@@ -41,12 +42,22 @@ public:
 		return dynamic_cast<T*>( Entity );
 	}
 
-	CEntity* Spawn( const std::string& Type, const std::string& Name )
+	CEntity* Spawn( const std::string& Type, const std::string& Name, const UniqueIdentifier& Identifier = UniqueIdentifier() )
 	{
 		CEntity* Entity = CEntityMap::Get().Find( Type )( );
 		if( Entity )
 		{
 			Entity->Name = Name;
+			
+			if( Identifier.Valid() )
+			{
+				Entity->Identifier = Identifier;
+			}
+			else
+			{
+				Entity->Identifier.Random();
+			}
+			
 			Entity->ClassName = Type;
 			Entity->SetEntityID( EntityUID::Create() );
 			Entity->SetLevelID( LevelUID( Entities.size() ) );
@@ -81,7 +92,9 @@ public:
 	template<class T>
 	std::vector<T*> Find() const
 	{
-		std::vector<T*> FoundEntities;
+		static std::vector<T*> FoundEntities;
+		FoundEntities.clear();
+		
 		for( auto Entity : Entities )
 		{
 			if( T* CastEntity = dynamic_cast<T*>( Entity ) )

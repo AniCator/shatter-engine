@@ -174,6 +174,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 							bool FoundName = false;
 							std::string ClassName = "";
 							std::string EntityName = "";
+							UniqueIdentifier Identifier;
 
 							std::string LevelPath = "";
 							std::string LevelPositionString = "";
@@ -198,6 +199,10 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									EntityName = Property->Value;
 									FoundName = true;
 								}
+								else if( Property->Key == "uuid" )
+								{
+									Identifier.Set( Property->Value.c_str() );
+								}
 								else if( Property->Key == "path" )
 								{
 									LevelPath = Property->Value;
@@ -214,6 +219,11 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 								{
 									LevelSizeString = Property->Value;
 								}
+							}
+
+							if( !Identifier.Valid() )
+							{
+								Identifier.Random();
 							}
 
 							if( FoundClass )
@@ -322,8 +332,18 @@ void CLevel::Remove( CEntity* MarkEntity )
 		{
 			if( Entities[ID] )
 			{
-				delete Entities[ID];
-				Entities[ID] = nullptr;
+				// Move the entity pointer to the back of the vector if it isn't there already.
+				if( ( ID + 1 ) != Entities.size() )
+				{
+					std::swap( Entities[ID], Entities.back() );
+				}
+
+				// Call the deconstructor of the entity.
+				const auto* Back = Entities.back();
+				delete Back;
+
+				// Remove it from the vector.
+				Entities.pop_back();
 			}
 		}
 	}
@@ -465,7 +485,10 @@ CData& operator>> ( CData& Data, CLevel& Level )
 				std::string EntityName;
 				DataString::Decode( Chunk.Data, EntityName );
 
-				Level.Entities[Index] = Level.Spawn( ClassName, EntityName );
+				UniqueIdentifier Identifier;
+				Chunk.Data >> Identifier.ID;
+
+				Level.Entities[Index] = Level.Spawn( ClassName, EntityName, Identifier );
 				Chunk.Data >> Level.Entities[Index];
 			}
 		}
