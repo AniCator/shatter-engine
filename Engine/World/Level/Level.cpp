@@ -111,6 +111,13 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 	SetName( File.Location() );
 
+	struct EntityIdentifier
+	{
+		JSON::Object* Entity = nullptr;
+		UniqueIdentifier Identifier;
+	};
+	std::vector<EntityIdentifier> Identifiers;
+
 	Log::Event( "Processing JSON tree.\n" );
 	CAssets& Assets = CAssets::Get();
 	size_t Pass = 0;
@@ -118,7 +125,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 	{
 		bool AssetsFound = false;
 		bool EntitiesFound = false;
-		for( auto Object : JSON.Tree )
+		for( auto* Object : JSON.Tree )
 		{
 			if( Object )
 			{
@@ -184,11 +191,8 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 							Vector3D LevelOrientation = { 0,0,0 };
 							Vector3D LevelSize = { 1,1,1 };
 
-							for( auto Property : EntityObject->Objects )
+							for( auto* Property : EntityObject->Objects )
 							{
-								if( FoundClass && FoundName )
-									break;
-
 								if( Property->Key == "type" )
 								{
 									ClassName = Property->Value;
@@ -221,14 +225,24 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 								}
 							}
 
-							if( !Identifier.Valid() )
+							const bool IsLevel = ClassName == "level";
+
+							if( !IsLevel && !Identifier.Valid() )
 							{
+								// Generate a random UUID.
 								Identifier.Random();
+
+								// Make sure it is added to the JSON tree afterwards.
+								EntityIdentifier NewIdentifier;
+								NewIdentifier.Entity = EntityObject;
+								NewIdentifier.Identifier = Identifier;
+								
+								Identifiers.emplace_back( NewIdentifier );
 							}
 
 							if( FoundClass )
 							{
-								if( ClassName != "level" && !AssetsOnly )
+								if( !IsLevel && !AssetsOnly )
 								{
 									if( FoundName )
 									{
@@ -241,6 +255,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 									if( Link.Entity )
 									{
+										Link.Entity->Identifier = Identifier;
 										Link.Entity->SetLevel( this );
 										EntityObjectLinks.emplace_back( Link );
 									}
@@ -251,8 +266,8 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									Extract( LevelOrientationString.c_str(), LevelOrientation );
 									Extract(LevelSizeString.c_str(), LevelSize );
 
-									CFile File( LevelPath.c_str() );
-									if( File.Exists() )
+									CFile SubLevelFile( LevelPath.c_str() );
+									if( SubLevelFile.Exists() )
 									{
 										LevelStruct Level;
 										Level.Path = LevelPath;
@@ -267,13 +282,13 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 						for( auto& Level : SubLevels )
 						{
-							CFile File( Level.Path.c_str() );
-							File.Load();
+							CFile SubLevelFile( Level.Path.c_str() );
+							SubLevelFile.Load();
 
 							if( AssetsOnly )
 							{
 								CLevel Dummy;
-								Dummy.Load( File, AssetsOnly );
+								Dummy.Load( SubLevelFile, AssetsOnly );
 							}
 							else
 							{
@@ -281,9 +296,10 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 								if( World )
 								{
 									CLevel& SubLevel = World->Add();
+									SubLevel.Prefab = true;
 									SubLevel.Transform = FTransform( Level.Position, Level.Orientation, Level.Size );
 									SubLevel.Transform = GetTransform() * SubLevel.Transform;
-									SubLevel.Load( File );
+									SubLevel.Load( SubLevelFile );
 								}
 							}
 						}
@@ -317,6 +333,23 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 		{
 			Pass++;
 		}
+	}
+
+	if( !Identifiers.empty() )
+	{
+		for( const auto& Identifier : Identifiers )
+		{
+			auto* IdentifierObject = JSON.Add( Identifier.Entity, "uuid" );
+			if( IdentifierObject )
+			{
+				IdentifierObject->Value = std::string( Identifier.Identifier.ID );
+			}
+		}
+		
+		const std::string Data = JSON.Export();
+		CFile Save = CFile( File.Location().c_str() );
+		Save.Load( Data );
+		Save.Save();
 	}
 }
 
@@ -359,7 +392,7 @@ void QuickSearch( const std::vector<T> Vector, const std::string& Name )
 
 CEntity* CLevel::Find( const std::string& Name ) const
 {
-	for( auto Entity : Entities )
+	for( auto* Entity : Entities )
 	{
 		if( Entity && Entity->Name == Name )
 		{
@@ -382,7 +415,7 @@ CEntity* CLevel::Find( const size_t ID ) const
 
 CEntity* CLevel::Find( const EntityUID& ID ) const
 {
-	for( auto Entity : Entities )
+	for( auto* Entity : Entities )
 	{
 		if( Entity && Entity->GetEntityID().ID == ID.ID )
 		{
@@ -390,6 +423,19 @@ CEntity* CLevel::Find( const EntityUID& ID ) const
 		}
 	}
 
+	return nullptr;
+}
+
+CEntity* CLevel::Find( const UniqueIdentifier& Identifier ) const
+{
+	for( auto* Entity : Entities )
+	{
+		if( Entity && std::strcmp( Entity->Identifier.ID, Identifier.ID ) == 0 )
+		{
+			return Entity;
+		}
+	}
+	
 	return nullptr;
 }
 

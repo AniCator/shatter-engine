@@ -88,6 +88,7 @@ public:
 	CEntity* Find( const std::string& Name ) const;
 	CEntity* Find( const size_t ID ) const;
 	CEntity* Find( const EntityUID& ID ) const;
+	CEntity* Find( const UniqueIdentifier& Identifier ) const;
 	
 	template<class T>
 	std::vector<T*> Find() const
@@ -123,12 +124,15 @@ public:
 		return Temporary;
 	}
 
+	// Used to indicate if the level was loaded as a sub-level in a level script.
+	bool Prefab = false;
+
 private:
 	std::vector<CEntity*> Entities;
 	CWorld* World;
 	std::string Name;
 
-	bool Temporary;
+	bool Temporary = false;
 
 public:
 	friend CData& operator<<( CData& Data, CLevel& Level );

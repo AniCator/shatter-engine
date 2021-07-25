@@ -139,8 +139,64 @@ CLevel& CWorld::Add()
 	Levels.push_back( CLevel( this ) );
 	ActiveLevel = &Levels[0];
 
-	auto LevelIndex = Levels.size() - 1;
+	const auto LevelIndex = Levels.size() - 1;
 	return Levels[LevelIndex];
+}
+
+CEntity* CWorld::Find( const std::string& Name ) const
+{
+	for( const auto& Level : Levels )
+	{
+		CEntity* Entity = Level.Find( Name );
+		if( Entity )
+		{
+			return Entity;
+		}
+	}
+
+	return nullptr;
+}
+
+CEntity* CWorld::Find( const size_t ID ) const
+{
+	for( const auto& Level : Levels )
+	{
+		CEntity* Entity = Level.Find( ID );
+		if( Entity )
+		{
+			return Entity;
+		}
+	}
+
+	return nullptr;
+}
+
+CEntity* CWorld::Find( const EntityUID& ID ) const
+{
+	for( const auto& Level : Levels )
+	{
+		CEntity* Entity = Level.Find( ID );
+		if( Entity )
+		{
+			return Entity;
+		}
+	}
+
+	return nullptr;
+}
+
+CEntity* CWorld::Find( const UniqueIdentifier& Identifier ) const
+{
+	for( const auto& Level : Levels )
+	{
+		CEntity* Entity = Level.Find( Identifier );
+		if( Entity )
+		{
+			return Entity;
+		}
+	}
+
+	return nullptr;
 }
 
 void CWorld::SetActiveCamera( CCamera* CameraIn, uint32_t Priority )

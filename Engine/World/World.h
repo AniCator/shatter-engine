@@ -45,47 +45,10 @@ public:
 	std::deque<CLevel>& GetLevels() { return Levels; };
 	CLevel* GetActiveLevel() { return ActiveLevel; };
 
-	CEntity* Find( const std::string& Name ) const
-	{
-		for( auto& Level : Levels )
-		{
-			CEntity* Entity = Level.Find( Name );
-			if( Entity )
-			{
-				return Entity;
-			}
-		}
-
-		return nullptr;
-	}
-
-	CEntity* Find( const size_t ID ) const
-	{
-		for( auto& Level : Levels )
-		{
-			CEntity* Entity = Level.Find( ID );
-			if( Entity )
-			{
-				return Entity;
-			}
-		}
-
-		return nullptr;
-	}
-
-	CEntity* Find( const EntityUID& ID ) const
-	{
-		for( auto& Level : Levels )
-		{
-			CEntity* Entity = Level.Find( ID );
-			if( Entity )
-			{
-				return Entity;
-			}
-		}
-
-		return nullptr;
-	}
+	CEntity* Find( const std::string& Name ) const;
+	CEntity* Find( const size_t ID ) const;
+	CEntity* Find( const EntityUID& ID ) const;
+	CEntity* Find( const UniqueIdentifier& Identifier ) const;
 
 	template<class T>
 	std::vector<T*> Find() const
