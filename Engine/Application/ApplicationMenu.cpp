@@ -566,6 +566,34 @@ bool* DisplayAssets()
 	return &ShowAssets;
 }
 
+void ReloadMesh( const std::string& Name, const std::string& Location )
+{
+	auto& Assets = CAssets::Get();
+	CTimer LoadTimer;
+
+	LoadTimer.Start();
+	auto* Mesh = Assets.CreateNamedMesh( Name.c_str(), Location.c_str(), true );
+	LoadTimer.Stop();
+
+	const size_t Triangles = Mesh->GetVertexBufferData().IndexCount / 3;
+
+	Log::Event( "Re-import: %ims %i triangles\n", LoadTimer.GetElapsedTimeMilliseconds(), Triangles );
+}
+
+void ReloadAllMeshes()
+{
+	auto& Assets = CAssets::Get();
+	
+	const auto& Meshes = Assets.GetMeshes();
+	for( const auto& Pair : Meshes )
+	{
+		if( Pair.second && Assets.FindMesh( Pair.first ) )
+		{
+			ReloadMesh( Pair.first, Pair.second->GetLocation() );
+		}
+	}
+}
+
 void AssetUI()
 {
 	auto& Assets = CAssets::Get();
@@ -579,7 +607,16 @@ void AssetUI()
 				ShowNewAssetPopup = true;
 			}
 
+			ImGui::SameLine();
+
 			NewAssetUI();
+
+			if( ImGui::Button( "Reload Meshes##MeshReload" ) )
+			{
+				ReloadAllMeshes();
+			}
+
+			ImGui::SameLine();
 
 			ImGui::SameLine(); ImGui::Checkbox( "Textures", &ShowTextures );
 			ImGui::SameLine(); ImGui::Checkbox( "Sounds", &ShowSounds );
@@ -599,7 +636,7 @@ void AssetUI()
 			ImGui::Separator();
 			ImGui::Separator();
 
-			auto World = CWorld::GetPrimaryWorld();
+			auto* World = CWorld::GetPrimaryWorld();
 			if( World )
 			{
 				auto& Levels = World->GetLevels();
@@ -618,7 +655,7 @@ void AssetUI()
 			ImGui::Separator();
 			ImGui::Separator();
 
-			auto CustomAssets = Assets.GetAssets();
+			const auto& CustomAssets = Assets.GetAssets();
 			for( const auto& Pair : CustomAssets )
 			{
 				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
@@ -634,23 +671,14 @@ void AssetUI()
 			ImGui::Separator();
 			ImGui::Separator();
 
-			auto Meshes = Assets.GetMeshes();
+			const auto& Meshes = Assets.GetMeshes();
 			for( const auto& Pair : Meshes )
 			{
 				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
-					auto& Assets = CAssets::Get();
 					if( Pair.second && Assets.FindMesh( Pair.first ) )
 					{
-						CTimer LoadTimer;
-
-						LoadTimer.Start();
-						auto Mesh = Assets.CreateNamedMesh( Pair.first.c_str(), Pair.second->GetLocation().c_str(), true );
-						LoadTimer.Stop();
-
-						const size_t Triangles = Mesh->GetVertexBufferData().IndexCount / 3;
-
-						Log::Event( "Re-import: %ims %i triangles\n", LoadTimer.GetElapsedTimeMilliseconds(), Triangles );
+						ReloadMesh( Pair.first, Pair.second->GetLocation() );
 					}
 				}
 				ImGui::NextColumn();
@@ -660,7 +688,7 @@ void AssetUI()
 
 			ImGui::Separator();
 
-			auto Shaders = Assets.GetShaders();
+			const auto& Shaders = Assets.GetShaders();
 			for( const auto& Pair : Shaders )
 			{
 				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
@@ -676,7 +704,7 @@ void AssetUI()
 
 			ImGui::Separator();
 
-			auto Textures = Assets.GetTextures();
+			const auto& Textures = Assets.GetTextures();
 			for( const auto& Pair : Textures )
 			{
 				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
@@ -692,7 +720,7 @@ void AssetUI()
 
 			ImGui::Separator();
 
-			auto Sounds = Assets.GetSounds();
+			const auto& Sounds = Assets.GetSounds();
 			for( const auto& Pair : Sounds )
 			{
 				if( ImGui::Selectable( Pair.first.c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
@@ -721,7 +749,7 @@ void AssetUI()
 				ImGui::Separator();
 			}
 
-			auto Sequences = Assets.GetSequences();
+			const auto& Sequences = Assets.GetSequences();
 			for( const auto& Pair : Sequences )
 			{
 				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
