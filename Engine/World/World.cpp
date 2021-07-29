@@ -136,7 +136,7 @@ void CWorld::Reload()
 
 CLevel& CWorld::Add()
 {
-	Levels.push_back( CLevel( this ) );
+	Levels.emplace_back( CLevel( this ) );
 	ActiveLevel = &Levels[0];
 
 	const auto LevelIndex = Levels.size() - 1;
