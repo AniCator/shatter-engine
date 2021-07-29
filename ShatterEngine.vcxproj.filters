@@ -153,6 +153,9 @@
     <Filter Include="Source Files\Engine\World\Entity\ParticleEntity">
       <UniqueIdentifier>{39ce6e86-9419-4f05-82a1-58a11307802c}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\Node">
+      <UniqueIdentifier>{3d100941-e2d5-4945-9328-1b9bc7a7f621}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -388,6 +391,9 @@
     </ClCompile>
     <ClCompile Include="Engine\World\Entity\ParticleEntity\ParticleEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\ParticleEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\Node\Node.cpp">
+      <Filter>Source Files\Engine\World\Entity\Node</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -723,6 +729,9 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\ParticleEntity\ParticleEntity.h">
       <Filter>Source Files\Engine\World\Entity\ParticleEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\Node\Node.h">
+      <Filter>Source Files\Engine\World\Entity\Node</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
