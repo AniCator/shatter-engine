@@ -2,14 +2,18 @@
 #pragma once
 
 #include "Math.h"
+#include <Engine/Physics/Body/Body.h>
 
 namespace Geometry
 {
 	struct Result
 	{
-		Vector3D Position = Vector3D::Zero;
 		bool Hit = false;
+		Vector3D Position = Vector3D::Zero;
 		float Distance = 0.0f;
+
+		// This value is only set when using the physics engine to cast rays. It will remain null if nothing was hit.
+		CBody* Body = nullptr;
 	};
 	
 	inline float RayInBoundingBox( const Vector3D& Origin, const Vector3D& Direction, const FBounds& Bounds )

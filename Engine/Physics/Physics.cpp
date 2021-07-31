@@ -81,10 +81,9 @@ public:
 		}
 	}
 
-	CBody* Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>() ) const
+	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>() ) const
 	{
 		float ClosestDistance = FLT_MAX;
-		CBody* ClosestBody = nullptr;
 		Geometry::Result ClosestResult;
 		
 		for( auto* Body : Bodies )
@@ -114,21 +113,12 @@ public:
 			if( Result.Hit && Result.Distance < ClosestDistance )
 			{
 				ClosestDistance = Result.Distance;
-				ClosestBody = Body;
 				ClosestResult = Result;
-				UI::AddAABB( Bounds.Minimum, Bounds.Maximum );
+				ClosestResult.Body = Body;
 			}
 		}
 
-		if( ClosestBody )
-		{
-			UI::AddLine( Start, End, Color::Green );
-			UI::AddCircle( ClosestResult.Position, 5.0f, Color::Blue );
-			return ClosestBody;
-		}
-
-		UI::AddLine( Start, End, Color::Red );
-		return nullptr;
+		return ClosestResult;
 	}
 
 	std::vector<CBody*> Query( const FBounds& AABB ) const
@@ -189,13 +179,13 @@ void CPhysics::Unregister( CBody* Body )
 	Scene->Unregister( Body );
 }
 
-CBody* CPhysics::Cast( const Vector3D& Start, const Vector3D& End ) const
+Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End ) const
 {
 	ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End );
 }
 
-CBody* CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const
+Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const
 {
 	ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End, Ignore );

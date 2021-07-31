@@ -8,6 +8,11 @@ class CPhysicsScene;
 class Vector3D;
 struct FBounds;
 
+namespace Geometry
+{
+	struct Result;
+}
+
 class CPhysics
 {
 public:
@@ -21,8 +26,8 @@ public:
 	void Register( CBody* Body );
 	void Unregister( CBody* Body );
 
-	CBody* Cast( const Vector3D& Start, const Vector3D& End ) const;
-	CBody* Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const;
+	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End ) const;
+	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const;
 	std::vector<CBody*> Query( const FBounds& AABB ) const;
 private:
 	CPhysicsScene* Scene;
