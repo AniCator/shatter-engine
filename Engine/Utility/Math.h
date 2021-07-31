@@ -589,12 +589,6 @@ namespace Math
 		return Start + ProjectOnVector( Point - Start, End - Start );
 	}
 
-	// TODO: Implement line segment in box.
-	inline bool LineInBoundingBox( const Vector3D& Start, const Vector3D& End, const Vector3D& Minimum, const Vector3D& Maximum )
-	{
-		return false;
-	}
-
 	inline bool BoundingBoxIntersection( const Vector3D& MinimumA, const Vector3D& MaximumA, const Vector3D& MinimumB, const Vector3D& MaximumB )
 	{
 		if( ( MinimumA.X < MaximumB.X && MaximumA.X > MinimumB.X ) &&
