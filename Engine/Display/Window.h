@@ -3,6 +3,8 @@
 
 #include "Rendering/Renderer.h"
 
+#include <Engine/Utility/Singleton.h>
+
 #define IMGUI_ENABLED
 
 struct ViewDimensions
@@ -33,7 +35,7 @@ struct SystemInformation
 	int VideoMemoryUsed = 0;
 };
 
-class CWindow
+class CWindow : public Singleton<CWindow>
 {
 public:
 	void Create( const char* Title );
@@ -97,16 +99,6 @@ private:
 	GLFWimage Icon;
 
 public:
-	static CWindow& Get()
-	{
-		static CWindow StaticInstance;
-		return StaticInstance;
-	}
-
-	CWindow( CWindow const& ) = delete;
-	void operator=( CWindow const& ) = delete;
 
 	static struct GLFWwindow* ThreadContext( const bool MakeCurrent = true );
-private:
-	CWindow() {};
 };

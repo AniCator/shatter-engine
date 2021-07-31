@@ -8,6 +8,7 @@
 
 #include <Engine/Utility/RingBuffer.h>
 #include <Engine/Utility/Structures/Name.h>
+#include <Engine/Utility/Singleton.h>
 
 template<typename T>
 bool ExclusiveComparison( const T& A, const T& B )
@@ -58,7 +59,7 @@ struct FProfileTimeEntry
 	size_t Depth;
 };
 
-class CProfiler
+class CProfiler : public Singleton<CProfiler>
 {
 public:
 	~CProfiler();
@@ -87,21 +88,13 @@ private:
 	std::map<FName, int64_t> TimeCountersFrame;
 	std::map<std::string, std::string> DebugMessages;
 
-	bool Enabled;
+#ifdef ProfileBuild
+	bool Enabled = true;
+#else
+	bool Enabled = false;
+#endif
 
 	void PlotPerformance();
-
-public:
-	static CProfiler& Get()
-	{
-		static CProfiler StaticInstance;
-		return StaticInstance;
-	}
-
-	CProfiler( CProfiler const& ) = delete;
-	void operator=( CProfiler const& ) = delete;
-private:
-	CProfiler();
 };
 
 class CTimerScope

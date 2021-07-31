@@ -213,8 +213,3 @@ const std::string& CConfiguration::GetValue( const char* KeyName )
 
 	return StoredSettings[KeyName];
 }
-
-CConfiguration::CConfiguration()
-{
-	Initialized = false;
-}

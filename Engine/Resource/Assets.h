@@ -9,6 +9,7 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Primitive.h>
 #include <Engine/Utility/Structures/JSON.h>
+#include <Engine/Utility/Singleton.h>
 
 class CMesh;
 class CShader;
@@ -46,7 +47,7 @@ struct FGenericAssetPayload
 	std::vector<std::string> Locations;
 };
 
-class CAssets
+class CAssets : public Singleton<CAssets>
 {
 public:
 	void Create( const std::string& Name, CMesh* NewMesh );
@@ -169,16 +170,10 @@ private:
 	// Non-native assets that are defined by the game project.
 	std::unordered_map<std::string, CAsset*> Assets;
 
+protected:
+	friend class Singleton<CAssets>;
+	CAssets();
+
 public:
 	static void ParseAndLoadJSON( const JSON::Object& Assets );
-	static CAssets& Get()
-	{
-		static CAssets StaticInstance;
-		return StaticInstance;
-	}
-
-	CAssets( CAssets const& ) = delete;
-	void operator=( CAssets const& ) = delete;
-private:
-	CAssets();
 };

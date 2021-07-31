@@ -5,9 +5,10 @@
 #include <map>
 #include <functional>
 
+#include <Engine/Utility/DataString.h>
 #include <Engine/Utility/Structures/JSON.h>
 #include <Engine/Utility/Structures/Name.h>
-#include <Engine/Utility/DataString.h>
+#include <Engine/Utility/Singleton.h>
 
 class CLevel;
 class CWorld;
@@ -147,7 +148,7 @@ public:
 	friend CData& operator>>( CData& Data, CEntity* Entity );
 };
 
-class CEntityMap
+class CEntityMap : public Singleton<CEntityMap>
 {
 public:
 	void Add( const std::string& Type, EntityFunction Factory );
@@ -155,19 +156,6 @@ public:
 
 private:
 	EntityMap Map;
-
-public:
-	static CEntityMap& Get()
-	{
-		static CEntityMap StaticInstance;
-		return StaticInstance;
-	}
-
-	CEntityMap( CEntityMap const& ) = delete;
-	void operator=( CEntityMap const& ) = delete;
-
-private:
-	CEntityMap() {};
 };
 
 template<class T>

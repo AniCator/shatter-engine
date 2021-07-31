@@ -5,6 +5,8 @@
 #include <string>
 #include <map>
 
+#include <Engine/Utility/Singleton.h>
+
 enum class ECategory : uint8_t
 {
 	Miscellaneous = 0,
@@ -24,7 +26,7 @@ namespace StorageCategory
 	};
 }
 
-class CConfiguration
+class CConfiguration : public Singleton<CConfiguration>
 {
 public:
 	bool IsValidKey( const char* KeyName );
@@ -54,17 +56,5 @@ private:
 
 	std::wstring FilePaths[StorageCategory::Maximum];
 	std::map<std::string, std::string> StoredSettings;
-	bool Initialized;
-
-public:
-	static CConfiguration& Get()
-	{
-		static CConfiguration StaticInstance;
-		return StaticInstance;
-	}
-
-	CConfiguration( CConfiguration const& ) = delete;
-	void operator=( CConfiguration const& ) = delete;
-private:
-	CConfiguration();
+	bool Initialized = false;
 };

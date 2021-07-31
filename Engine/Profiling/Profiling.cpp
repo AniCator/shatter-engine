@@ -65,15 +65,6 @@ std::string BytesToString( const size_t& Bytes )
 size_t CounterGap = 0;
 size_t CounterGapFrame = 0;
 
-CProfiler::CProfiler()
-{
-#ifdef ProfileBuild
-	Enabled = true;
-#else
-	Enabled = false;
-#endif
-}
-
 CProfiler::~CProfiler()
 {
 	Clear();

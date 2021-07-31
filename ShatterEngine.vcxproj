@@ -354,6 +354,7 @@
     <ClInclude Include="Engine\Utility\Script\AngelEngine.h" />
     <ClInclude Include="Engine\Utility\Service\Service.h" />
     <ClInclude Include="Engine\Utility\Service\ServiceRegistry.h" />
+    <ClInclude Include="Engine\Utility\Singleton.h" />
     <ClInclude Include="Engine\Utility\StringPool.h" />
     <ClInclude Include="Engine\Utility\Structures\JSON.h" />
     <ClInclude Include="Engine\Utility\Structures\KeyValue.h" />
