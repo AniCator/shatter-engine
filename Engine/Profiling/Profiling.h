@@ -97,11 +97,11 @@ public:
 		static CProfiler StaticInstance;
 		return StaticInstance;
 	}
-private:
-	CProfiler();
 
 	CProfiler( CProfiler const& ) = delete;
 	void operator=( CProfiler const& ) = delete;
+private:
+	CProfiler();
 };
 
 class CTimerScope

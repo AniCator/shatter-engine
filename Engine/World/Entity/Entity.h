@@ -163,11 +163,11 @@ public:
 		return StaticInstance;
 	}
 
-private:
-	CEntityMap() {};
-
 	CEntityMap( CEntityMap const& ) = delete;
 	void operator=( CEntityMap const& ) = delete;
+
+private:
+	CEntityMap() {};
 };
 
 template<class T>

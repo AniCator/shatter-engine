@@ -176,9 +176,9 @@ public:
 		static CAssets StaticInstance;
 		return StaticInstance;
 	}
-private:
-	CAssets();
 
 	CAssets( CAssets const& ) = delete;
 	void operator=( CAssets const& ) = delete;
+private:
+	CAssets();
 };

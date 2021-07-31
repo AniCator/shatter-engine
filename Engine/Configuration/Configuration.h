@@ -62,9 +62,9 @@ public:
 		static CConfiguration StaticInstance;
 		return StaticInstance;
 	}
-private:
-	CConfiguration();
 
 	CConfiguration( CConfiguration const& ) = delete;
 	void operator=( CConfiguration const& ) = delete;
+private:
+	CConfiguration();
 };

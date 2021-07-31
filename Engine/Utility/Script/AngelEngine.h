@@ -43,10 +43,10 @@ public:
 		return StaticInstance;
 	}
 
-private:
-	CAngelEngine();
-
 	CAngelEngine( CAngelEngine const& ) = delete;
 	void operator=( CAngelEngine const& ) = delete;
+
+private:
+	CAngelEngine();
 };
 #endif

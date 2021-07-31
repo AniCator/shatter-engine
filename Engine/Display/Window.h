@@ -103,10 +103,10 @@ public:
 		return StaticInstance;
 	}
 
+	CWindow( CWindow const& ) = delete;
+	void operator=( CWindow const& ) = delete;
+
 	static struct GLFWwindow* ThreadContext( const bool MakeCurrent = true );
 private:
 	CWindow() {};
-
-	CWindow( CWindow const& ) = delete;
-	void operator=( CWindow const& ) = delete;
 };
