@@ -19,21 +19,21 @@ namespace Geometry
 		const auto ScaleY = Math::Equal( Direction.Y, 0.0f ) ? 1.0f : Direction.Y;
 		const auto ScaleZ = Math::Equal( Direction.Z, 0.0f ) ? 1.0f : Direction.Z;
 		
-		const auto XMinimum = ( Bounds.Minimum.X - Origin.X ) * Direction.X;
-		const auto XMaximum = ( Bounds.Maximum.X - Origin.X ) * Direction.X;
+		const auto XMinimum = ( Bounds.Minimum.X - Origin.X ) / Direction.X;
+		const auto XMaximum = ( Bounds.Maximum.X - Origin.X ) / Direction.X;
 
-		const auto YMinimum = ( Bounds.Minimum.Y - Origin.Y ) * Direction.Y;
-		const auto YMaximum = ( Bounds.Maximum.Y - Origin.Y ) * Direction.Y;
+		const auto YMinimum = ( Bounds.Minimum.Y - Origin.Y ) / Direction.Y;
+		const auto YMaximum = ( Bounds.Maximum.Y - Origin.Y ) / Direction.Y;
 
-		const auto ZMinimum = ( Bounds.Minimum.Z - Origin.Z ) * Direction.Z;
-		const auto ZMaximum = ( Bounds.Maximum.Z - Origin.Z ) * Direction.Z;
+		const auto ZMinimum = ( Bounds.Minimum.Z - Origin.Z ) / Direction.Z;
+		const auto ZMaximum = ( Bounds.Maximum.Z - Origin.Z ) / Direction.Z;
 
 		const auto Minimum = Math::Max(
 			Math::Max(
 				Math::Min( XMinimum, XMaximum ),
 				Math::Min( YMinimum, YMaximum )
 			),
-			Math::Max( ZMinimum, ZMaximum )
+			Math::Min( ZMinimum, ZMaximum )
 		);
 
 		const auto Maximum = Math::Min(
@@ -60,11 +60,12 @@ namespace Geometry
 	{
 		Result Result;
 		const auto Direction = End - Start;
+		const auto Normalized = Direction.Normalized();
 
-		const auto Distance = RayInBoundingBox( Start, Direction.Normalized(), Bounds );
+		const auto Distance = RayInBoundingBox( Start, Normalized, Bounds );
 		Result.Hit = Distance >= 0.0f && Distance * Distance <= Direction.LengthSquared();
 		Result.Distance = Result.Hit ? Distance : -1.0f;
-		Result.Position = Result.Hit ? Start + Direction * Distance : End;
+		Result.Position = Result.Hit ? Start + Normalized * Distance : End;
 
 		return Result;
 	}
