@@ -110,7 +110,7 @@ public:
 				continue;
 
 			const FBounds Bounds = Body->GetBounds();
-			const auto Result = Geometry::LineInBoundingBox( Start, End, Bounds.Minimum, Bounds.Maximum );
+			const auto Result = Geometry::LineInBoundingBox( Start, End, Bounds );
 			if( Result.Hit && Result.Distance < ClosestDistance )
 			{
 				ClosestDistance = Result.Distance;
