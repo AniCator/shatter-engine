@@ -7,9 +7,10 @@ static CEntityFactory<CTriggerProximityEntity> Factory( "trigger_proximity" );
 
 CTriggerProximityEntity::CTriggerProximityEntity()
 {
-	Latched = false;
-	Frequency = -1;
-	TriggerCount = 0;
+	Inputs["Trigger"] = [&] ()
+	{
+		Send( "OnTrigger" );
+	};
 }
 
 void CTriggerProximityEntity::Construct()
@@ -28,12 +29,12 @@ void CTriggerProximityEntity::Tick()
 		float Length = Delta.Length();
 		if( Length < Radius )
 		{
-			if( !Latched && ( Frequency < 0 || TriggerCount < Frequency ) )
+			if( !Latched && ( Frequency < 0 || Count < Frequency ) )
 			{
 				Send( "OnTrigger" );
 				Latched = true;
 
-				TriggerCount++;
+				Count++;
 			}
 		}
 		else
@@ -83,7 +84,7 @@ void CTriggerProximityEntity::Export( CData& Data )
 	Data << Radius;
 	Data << Frequency;
 	Data << Latched;
-	Data << TriggerCount;
+	Data << Count;
 }
 
 void CTriggerProximityEntity::Import( CData& Data )
@@ -92,5 +93,5 @@ void CTriggerProximityEntity::Import( CData& Data )
 	Data >> Radius;
 	Data >> Frequency;
 	Data >> Latched;
-	Data >> TriggerCount;
+	Data >> Count;
 }

@@ -5,6 +5,14 @@
 
 static CEntityFactory<CTriggerBoxEntity> Factory( "trigger_box" );
 
+CTriggerBoxEntity::CTriggerBoxEntity()
+{
+	Inputs["Trigger"] = [&] ()
+	{
+		Send( "OnTrigger" );
+	};
+}
+
 void CTriggerBoxEntity::Construct()
 {
 	if( !Volume )

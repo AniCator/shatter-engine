@@ -7,7 +7,7 @@
 class CTriggerBoxEntity : public CPointEntity
 {
 public:
-	CTriggerBoxEntity() = default;
+	CTriggerBoxEntity();
 
 	void Construct() override;
 	void Tick() override;

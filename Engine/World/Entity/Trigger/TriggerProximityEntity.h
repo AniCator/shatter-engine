@@ -17,8 +17,8 @@ public:
 	virtual void Import( CData& Data ) override;
 
 private:
-	float Radius;
-	bool Latched;
-	int32_t Frequency;
-	int32_t TriggerCount;
+	float Radius = 1.0f;
+	bool Latched = false;
+	int32_t Frequency = -1;
+	int32_t Count = 0;
 };
