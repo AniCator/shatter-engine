@@ -16,14 +16,10 @@
 class CPhysicsScene
 {
 public:
-	CPhysicsScene()
-	{
-
-	}
-
+	CPhysicsScene() = default;
 	~CPhysicsScene()
 	{
-
+		Destroy();
 	}
 
 	void Register( CBody* Body )
@@ -33,7 +29,7 @@ public:
 
 	void Unregister( CBody* BodyIn )
 	{
-		for( auto& Body : Bodies )
+		for( auto*& Body : Bodies )
 		{
 			if( Body == BodyIn )
 			{
@@ -45,6 +41,13 @@ public:
 
 	void Destroy()
 	{
+		// Delete all of the bodies in the array.
+		for( auto* Body : Bodies )
+		{
+			delete Body;
+		}
+
+		// Clear the bodies array now that all of the elements have been deleted.
 		Bodies.clear();
 	}
 
@@ -150,31 +153,25 @@ CPhysics::CPhysics()
 CPhysics::~CPhysics()
 {
 	delete Scene;
-	Scene = nullptr;
 }
 
-void CPhysics::Construct()
-{
-	
-}
-
-void CPhysics::Tick()
+void CPhysics::Tick() const
 {
 	ProfileAlways( "Physics" );
 	Scene->Tick();
 }
 
-void CPhysics::Destroy()
+void CPhysics::Destroy() const
 {
 	Scene->Destroy();
 }
 
-void CPhysics::Register( CBody* Body )
+void CPhysics::Register( CBody* Body ) const
 {
 	Scene->Register( Body );
 }
 
-void CPhysics::Unregister( CBody* Body )
+void CPhysics::Unregister( CBody* Body ) const
 {
 	Scene->Unregister( Body );
 }

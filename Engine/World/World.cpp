@@ -41,11 +41,6 @@ void CWorld::Construct()
 
 	Physics = new CPhysics();
 
-	if( Physics )
-	{
-		Physics->Construct();
-	}
-
 	for( auto Level : Levels )
 	{
 		Level.Construct();

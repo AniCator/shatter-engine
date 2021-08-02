@@ -19,12 +19,11 @@ public:
 	CPhysics();
 	~CPhysics();
 
-	void Construct();
-	void Tick();
-	void Destroy();
+	void Tick() const;
+	void Destroy() const;
 
-	void Register( CBody* Body );
-	void Unregister( CBody* Body );
+	void Register( CBody* Body ) const;
+	void Unregister( CBody* Body ) const;
 
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End ) const;
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const;
