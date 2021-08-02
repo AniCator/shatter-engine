@@ -19,29 +19,21 @@ void CTriggerBoxEntity::Construct()
 
 void CTriggerBoxEntity::Tick()
 {
-	auto* World = GetWorld();
-	if( World )
+	if( CanTrigger() )
 	{
-		const auto& CameraSetup = World->GetActiveCameraSetup();
-		const auto Delta = CameraSetup.CameraPosition - Transform.GetPosition();
-
-		float Length = Delta.Length();
-		if( !Volume->Entities.empty() )
+		if( !Latched && ( Frequency < 0 || Count < Frequency ) )
 		{
-			if( !Latched && ( Frequency < 0 || Count < Frequency ) )
-			{
-				Send( "OnTrigger" );
-				Latched = true;
+			Send( "OnTrigger" );
+			Latched = true;
 
-				Count++;
-			}
+			Count++;
 		}
-		else
+	}
+	else
+	{
+		if( Latched )
 		{
-			if( Latched )
-			{
-				Latched = false;
-			}
+			Latched = false;
 		}
 	}
 }
@@ -69,7 +61,20 @@ void CTriggerBoxEntity::Load( const JSON::Vector& Objects )
 				Frequency = static_cast<int32_t>( PropertyFrequency );
 			}
 		}
+		else if( Property->Key == "filter" )
+		{
+			FilterName = Property->Value;
+		}
 	}
+}
+
+void CTriggerBoxEntity::Reload()
+{
+	const auto* World = GetWorld();
+	if( !World )
+		return;
+	
+	Filter = World->Find( FilterName );
 }
 
 void CTriggerBoxEntity::Export( CData& Data )
@@ -78,6 +83,8 @@ void CTriggerBoxEntity::Export( CData& Data )
 	Data << Frequency;
 	Data << Latched;
 	Data << Count;
+	
+	DataString::Encode( Data, FilterName );
 }
 
 void CTriggerBoxEntity::Import( CData& Data )
@@ -86,4 +93,34 @@ void CTriggerBoxEntity::Import( CData& Data )
 	Data >> Frequency;
 	Data >> Latched;
 	Data >> Count;
+
+	DataString::Decode( Data, FilterName );
+}
+
+bool CTriggerBoxEntity::CanTrigger() const
+{
+	// Check if any interactables are within the volume.
+	const bool IsEmpty = Volume->Entities.empty();
+	if( IsEmpty )
+		return false;
+	
+	const bool UseFilter = Filter != nullptr;
+	if( UseFilter )
+	{
+		// Check if the filtered entity is among the interactables.
+		for( auto* Interactable : Volume->Entities )
+		{
+			if( Cast<CEntity>( Interactable ) == Filter )
+			{
+				// We've found a match.
+				return true;
+			}
+		}
+
+		// No match was found.
+		return false;
+	}
+
+	// No filter was specified and any interactable will cause this trigger to fire.
+	return true;
 }
