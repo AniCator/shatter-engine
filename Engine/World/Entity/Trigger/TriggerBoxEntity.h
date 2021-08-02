@@ -9,14 +9,16 @@ class CTriggerBoxEntity : public CPointEntity
 public:
 	CTriggerBoxEntity() = default;
 
-	virtual void Construct() override;
-	virtual void Tick() override;
-	virtual void Destroy() override;
-	virtual void Load( const JSON::Vector& Objects ) override;
-	virtual void Reload() override;
+	void Construct() override;
+	void Tick() override;
+	void Destroy() override;
+	void Load( const JSON::Vector& Objects ) override;
+	void Reload() override;
 
-	virtual void Export( CData& Data ) override;
-	virtual void Import( CData& Data ) override;
+	void Debug() override;
+
+	void Export( CData& Data ) override;
+	void Import( CData& Data ) override;
 
 protected:
 	bool CanTrigger() const;

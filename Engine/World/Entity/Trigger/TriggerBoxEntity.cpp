@@ -11,9 +11,7 @@ void CTriggerBoxEntity::Construct()
 	{
 		Volume = new CTriggerBody<Interactable*>( this );
 		Volume->Construct();
-
-		const auto Size = Vector3D( 1.0f );
-		Volume->SetBounds( FBounds( -Size, Size ) );
+		Volume->SetBounds( Bounds );
 	}
 }
 
@@ -65,6 +63,16 @@ void CTriggerBoxEntity::Load( const JSON::Vector& Objects )
 		{
 			FilterName = Property->Value;
 		}
+		else if( Property->Key == "bounds" )
+		{
+			// The bounds are defined as two vectors separated by a comma.
+			const auto Vectors = ExtractTokens( Property->Value.c_str(), ',', 2 );
+			if( Vectors.size() == 2 )
+			{
+				Extract( Vectors[0].c_str(), Bounds.Minimum );
+				Extract( Vectors[1].c_str(), Bounds.Maximum );
+			}
+		}
 	}
 }
 
@@ -77,12 +85,24 @@ void CTriggerBoxEntity::Reload()
 	Filter = World->Find( FilterName );
 }
 
+void CTriggerBoxEntity::Debug()
+{
+	CPointEntity::Debug();
+
+	UI::AddAABB( 
+		Transform.GetPosition() + Bounds.Minimum, 
+		Transform.GetPosition() + Bounds.Maximum, 
+		Latched ? Color::Green : Color::Red 
+	);
+}
+
 void CTriggerBoxEntity::Export( CData& Data )
 {
 	CPointEntity::Export( Data );
 	Data << Frequency;
 	Data << Latched;
 	Data << Count;
+	Data << Bounds;
 	
 	DataString::Encode( Data, FilterName );
 }
@@ -93,6 +113,7 @@ void CTriggerBoxEntity::Import( CData& Data )
 	Data >> Frequency;
 	Data >> Latched;
 	Data >> Count;
+	Data >> Bounds;
 
 	DataString::Decode( Data, FilterName );
 }
