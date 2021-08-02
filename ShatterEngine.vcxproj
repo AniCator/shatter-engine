@@ -268,7 +268,8 @@
     <ClCompile Include="Engine\World\Entity\ParticleEntity\ParticleEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\PointEntity\PointEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp" />
-    <ClCompile Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.cpp" />
+    <ClCompile Include="Engine\World\Entity\Trigger\TriggerBoxEntity.cpp" />
+    <ClCompile Include="Engine\World\Entity\Trigger\TriggerProximityEntity.cpp" />
     <ClCompile Include="Engine\World\Level\Level.cpp" />
     <ClCompile Include="Engine\World\World.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
@@ -378,7 +379,8 @@
     <ClInclude Include="Engine\World\Entity\ParticleEntity\ParticleEntity.h" />
     <ClInclude Include="Engine\World\Entity\PointEntity\PointEntity.h" />
     <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h" />
-    <ClInclude Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.h" />
+    <ClInclude Include="Engine\World\Entity\Trigger\TriggerBoxEntity.h" />
+    <ClInclude Include="Engine\World\Entity\Trigger\TriggerProximityEntity.h" />
     <ClInclude Include="Engine\World\Level\Level.h" />
     <ClInclude Include="Engine\World\World.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />

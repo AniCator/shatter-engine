@@ -117,9 +117,6 @@
     <Filter Include="Source Files\Engine\World\Entity\CameraEntity">
       <UniqueIdentifier>{0e7b5254-55bf-4da6-a22c-c43a1a6dbfbe}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Engine\World\Entity\TriggerProximityEntity">
-      <UniqueIdentifier>{baaf6e28-74fd-4a86-9067-26c7a55708f8}</UniqueIdentifier>
-    </Filter>
     <Filter Include="Source Files\Engine\Physics">
       <UniqueIdentifier>{e5aabfae-81bb-4537-88cd-68f4e634edf3}</UniqueIdentifier>
     </Filter>
@@ -155,6 +152,9 @@
     </Filter>
     <Filter Include="Source Files\Engine\World\Entity\Node">
       <UniqueIdentifier>{3d100941-e2d5-4945-9328-1b9bc7a7f621}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\Trigger">
+      <UniqueIdentifier>{bb9957be-0405-416c-963d-5502ff2859db}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -284,9 +284,6 @@
     <ClCompile Include="Engine\World\Entity\CameraEntity\CameraEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\CameraEntity</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.cpp">
-      <Filter>Source Files\Engine\World\Entity\TriggerProximityEntity</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Display\UserInterface.cpp">
       <Filter>Source Files\Engine\Display</Filter>
     </ClCompile>
@@ -394,6 +391,12 @@
     </ClCompile>
     <ClCompile Include="Engine\World\Entity\Node\Node.cpp">
       <Filter>Source Files\Engine\World\Entity\Node</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\Trigger\TriggerProximityEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\Trigger</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\Trigger\TriggerBoxEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\Trigger</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -574,9 +577,6 @@
     <ClInclude Include="Engine\World\Entity\CameraEntity\CameraEntity.h">
       <Filter>Source Files\Engine\World\Entity\CameraEntity</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\World\Entity\TriggerProximityEntity\TriggerProximityEntity.h">
-      <Filter>Source Files\Engine\World\Entity\TriggerProximityEntity</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Display\UserInterface.h">
       <Filter>Source Files\Engine\Display</Filter>
     </ClInclude>
@@ -735,6 +735,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Singleton.h">
       <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\Trigger\TriggerProximityEntity.h">
+      <Filter>Source Files\Engine\World\Entity\Trigger</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\Trigger\TriggerBoxEntity.h">
+      <Filter>Source Files\Engine\World\Entity\Trigger</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
