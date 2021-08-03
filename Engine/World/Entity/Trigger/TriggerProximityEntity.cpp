@@ -60,20 +60,11 @@ void CTriggerProximityEntity::Load( const JSON::Vector& Objects )
 	{
 		if( Property->Key == "radius" )
 		{
-			size_t OutTokenCount = 0;
-			auto TokenDistance = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, 1 );
-			if( OutTokenCount == 1 )
-			{
-				Radius = TokenDistance[0];
-			}
+			Extract( Property->Value, Radius );
 		}
 		else if( Property->Key == "frequency" )
 		{
-			const double PropertyFrequency = ParseDouble( Property->Value.c_str() );
-			if( PropertyFrequency > 0.0f )
-			{
-				Frequency = static_cast<int32_t>( PropertyFrequency );
-			}
+			Extract( Property->Value, Frequency );
 		}
 	}
 }

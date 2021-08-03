@@ -84,15 +84,15 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 	{
 		if( Property->Key == "position" )
 		{
-			Extract( Property->Value.c_str(), Position );
+			Extract( Property->Value, Position );
 		}
 		else if( Property->Key == "rotation" )
 		{
-			Extract( Property->Value.c_str(), Orientation );
+			Extract( Property->Value, Orientation );
 		}
 		else if( Property->Key == "scale" )
 		{
-			Extract( Property->Value.c_str(), Size );
+			Extract( Property->Value, Size );
 		}
 	}
 

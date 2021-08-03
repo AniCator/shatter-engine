@@ -77,15 +77,15 @@ void CMoveLinearEntity::Load( const JSON::Vector& Objects )
 	{
 		if( Property->Key == "distance" )
 		{
-			Extract(Property->Value.c_str(), Distance );
+			Extract(Property->Value, Distance );
 		}
 		else if( Property->Key == "speed" )
 		{
-			Extract( Property->Value.c_str(), Speed );
+			Extract( Property->Value, Speed );
 		}
 		else if( Property->Key == "direction" )
 		{
-			Extract( Property->Value.c_str(), Direction );
+			Extract( Property->Value, Direction );
 			Direction.Normalize();
 		}
 	}

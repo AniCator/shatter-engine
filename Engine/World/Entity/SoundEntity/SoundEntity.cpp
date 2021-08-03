@@ -79,23 +79,23 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "radius" )
 		{
-			Extract( Property->Value.c_str(), Radius );
+			Extract( Property->Value, Radius );
 		}
 		else if( Property->Key == "rate" )
 		{
-			Extract( Property->Value.c_str(), Rate );
+			Extract( Property->Value, Rate );
 		}
 		else if( Property->Key == "volume" )
 		{
-			Extract( Property->Value.c_str(), Volume );
+			Extract( Property->Value, Volume );
 		}
 		else if( Property->Key == "fadein" )
 		{
-			Extract( Property->Value.c_str(), FadeIn );
+			Extract( Property->Value, FadeIn );
 		}
 		else if( Property->Key == "fadeout" )
 		{
-			Extract( Property->Value.c_str(), FadeOut );
+			Extract( Property->Value, FadeOut );
 		}
 		else if( Property->Key == "autoplay" )
 		{

@@ -19,7 +19,7 @@ void Entity::Load( const JSON::Vector& Objects )
 	{
 		if( Property->Key == "position" )
 		{
-			Extract( Property->Value.c_str(), NodeData.Position );
+			Extract( Property->Value, NodeData.Position );
 		}
 		else if( Property->Key == "links" )
 		{
