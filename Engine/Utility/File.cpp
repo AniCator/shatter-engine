@@ -317,6 +317,31 @@ float ParseFloat( const char* p )
 	return StaticCast<float>( ParseDouble( p ) );
 }
 
+void Extract( const std::string& String, float& Out )
+{
+	Extract( String.c_str(), Out );
+}
+
+void Extract( const std::string& String, int32_t& Out )
+{
+	Extract( String.c_str(), Out );
+}
+
+void Extract( const std::string& String, uint32_t& Out )
+{
+	Extract( String.c_str(), Out );
+}
+
+void Extract( const std::string& String, Vector3D& Out )
+{
+	Extract( String.c_str(), Out );
+}
+
+void Extract( const std::string& String, Vector4D& Out )
+{
+	Extract( String.c_str(), Out );
+}
+
 void Extract( const char* Start, float& Out )
 {
 	size_t OutTokenCount = 0;
@@ -324,6 +349,38 @@ void Extract( const char* Start, float& Out )
 	if( OutTokenCount == 1 )
 	{
 		Out = TokenDistance[0];
+	}
+}
+
+void Extract( const std::string& Value, bool& Out )
+{
+	if( Value == "0" )
+	{
+		Out = false;
+	}
+	else
+	{
+		Out = true;
+	}
+}
+
+void Extract( const char* Start, int32_t& Out )
+{
+	size_t OutTokenCount = 0;
+	auto* TokenDistance = ExtractTokensInteger( Start, ' ', OutTokenCount, 1 );
+	if( OutTokenCount == 1 )
+	{
+		Out = TokenDistance[0];
+	}
+}
+
+void Extract( const char* Start, uint32_t& Out )
+{
+	size_t OutTokenCount = 0;
+	auto* TokenDistance = ExtractTokensInteger( Start, ' ', OutTokenCount, 1 );
+	if( OutTokenCount == 1 )
+	{
+		Out = StaticCast<uint32_t>( TokenDistance[0] );
 	}
 }
 
