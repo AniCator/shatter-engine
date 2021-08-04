@@ -84,7 +84,22 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 
 	Target = ShadowMap;
 
-	// FrustumCull( Camera, Renderables );
+	FrustumCull( Camera, Renderables );
+
+	/*for( auto* Renderable : Renderables )
+	{
+		auto& RenderData = Renderable->GetRenderData();
+		if( !RenderData.ShouldRender )
+			continue;
+
+		static const float MaximumShadowDistance = 360.0f;
+		static const float MaximumShadowDistanceSquared = MaximumShadowDistance * MaximumShadowDistance;
+		const float DistanceToCamera = RenderData.Transform.GetPosition().DistanceSquared( Camera.GetCameraPosition() );
+		if( DistanceToCamera > MaximumShadowDistanceSquared )
+		{
+			RenderData.ShouldRender = false;
+		}
+	}*/
 
 	ProjectionView = Camera.GetProjectionMatrix() * Camera.GetViewMatrix();
 

@@ -23,6 +23,45 @@ FCameraSetup FCameraSetup::Mix( const FCameraSetup& A, const FCameraSetup& B, co
 	return A;
 }
 
+Plane::Plane()
+{
+	Point = Vector3D::Zero;
+	Normal = Vector3D( 0.0f, 0.0f, 1.0f );
+	Distance = 1.0f;
+}
+
+Plane::Plane( const Vector3D& Point, const Vector3D& Normal )
+{
+	this->Point = Point;
+	this->Normal = Normal;
+	Distance = Normal.Length();
+}
+
+Plane::Plane( const Vector3D& A, const Vector3D& B, const Vector3D& C )
+{
+	Point = B - A;
+
+	const Vector3D Edge = C - A;
+	Normal = Point.Cross( Edge ).Normalized();
+	Distance = -Normal.Dot( A );
+	Point = A;
+}
+
+float HalfSpace( const Plane& Plane, const Vector3D& Point )
+{
+	return Plane.Normal.X * Point.X + Plane.Normal.Y * Point.Y + Plane.Normal.Z * Point.Z + Plane.Distance;
+}
+
+bool HalfSpaceTest( const Plane& Plane, const Vector3D& Point, const float& Radius = 0.0f )
+{
+	if( HalfSpace( Plane, Point ) >= Radius )
+	{
+		return false;
+	}
+
+	return true;
+}
+
 float DistanceToPlane( const Plane& Plane, const Vector3D& Point )
 {
 	return Plane.Point.Dot( Point );
@@ -31,17 +70,26 @@ float DistanceToPlane( const Plane& Plane, const Vector3D& Point )
 bool PlaneTest( const Plane& Plane, const Vector3D& Point )
 {
 	const auto Difference = ( Point - Plane.Point );
-	return Difference.Dot( Plane.Normal ) < 0.0f;
+	return Difference.Dot( Plane.Normal ) > 0.0f;
 }
 
 bool SphereTest( const Plane& Plane, const Vector3D& Point, const float& Radius )
 {
-	const auto Difference = ( Point - Plane.Point );
-	return Point.Dot( Plane.Normal ) + Plane.Distance + Radius * Radius <= 0.0f;
+	// const auto Difference = ( Point - Plane.Point );
+	// return Point.Dot( Plane.Normal ) + Plane.Distance + Radius * Radius >= 0.0f;
+	return HalfSpaceTest( Plane, Point, Radius );
 }
 
 bool Frustum::Contains( const Vector3D& Point, const float Radius ) const
 {
+	// return HalfSpaceTest( Plane[Near], Point, Radius );
+	
+	if( !SphereTest( Plane[Near], Point, Radius ) )
+		return false;
+
+	if( !SphereTest( Plane[Far], Point, Radius ) )
+		return false;
+	
 	if( !SphereTest( Plane[Top], Point, Radius ) )
 		return false;
 
@@ -52,12 +100,6 @@ bool Frustum::Contains( const Vector3D& Point, const float Radius ) const
 		return false;
 
 	if( !SphereTest( Plane[Right], Point, Radius ) )
-		return false;
-
-	// if( !SphereTest( Plane[Near], Point, Radius ) )
-	// 	return false;
-
-	if( !SphereTest( Plane[Far], Point, Radius ) )
 		return false;
 
 	return true;

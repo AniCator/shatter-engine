@@ -365,15 +365,23 @@ void PointCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 	const auto& Frustum = Camera.GetFrustum();
 	for( auto* Renderable : Renderables )
 	{
-		Renderable->GetRenderData().ShouldRender = false;
+		auto& RenderData = Renderable->GetRenderData();
+		RenderData.ShouldRender = false;
 
 		const auto& Bounds = Renderable->GetMesh()->GetBounds();
-		const float Radius = Bounds.Minimum.Distance( Bounds.Maximum ) * 0.5f;
-		Vector3D Position3D = Renderable->GetRenderData().Transform.GetPosition();
+		
+		const auto Minimum = Math::Abs( Bounds.Minimum * RenderData.Transform.GetSize() );
+		const auto& Maximum = Math::Abs( Bounds.Maximum * RenderData.Transform.GetSize() );
+		
+		const float X = Math::Max( Minimum.X, Maximum.X );
+		const float Y = Math::Max( Minimum.Y, Maximum.Y );
+		const float Z = Math::Max( Minimum.Z, Maximum.Z );
+		
+		const float Radius = Math::VectorMax( X, Y, Z );
+		Vector3D Position3D = RenderData.Transform.GetPosition();
 		if( Frustum.Contains( Position3D, Radius ) )
 		{
-			// UI::AddLine( Position3D - Vector3D( 0.0f, 0.0f, Radius * 0.5f ), Position3D + Vector3D( 0.0f, 0.0f, Radius * 0.5f ) );
-			Renderable->GetRenderData().ShouldRender = true;
+			RenderData.ShouldRender = true;
 		}
 	}
 }
@@ -461,7 +469,7 @@ void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
 	// SphereCull( Camera, Renderables );
-	// PointCull( Camera, Renderables );
+	PointCull( Camera, Renderables );
 }
 
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )

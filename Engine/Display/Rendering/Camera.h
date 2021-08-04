@@ -38,29 +38,9 @@ struct FCameraSetup
 
 struct Plane
 {
-	Plane()
-	{
-		Point = Vector3D::Zero;
-		Normal = Vector3D( 0.0f, 0.0f, 1.0f );
-		Distance = 1.0f;
-	};
-
-	Plane(const Vector3D& Point, const Vector3D& Normal)
-	{
-		this->Point = Point;
-		this->Normal = Normal;
-		Distance = Normal.Length();
-	};
-
-	Plane( const Vector3D& A, const Vector3D& B, const Vector3D& C )
-	{
-		Point = B - A;
-
-		const Vector3D Edge = C - A;
-		Normal = Point.Cross( Edge );
-		Distance = -Normal.Dot( A );
-		Point = A;
-	};
+	Plane();
+	Plane( const Vector3D& Point, const Vector3D& Normal );
+	Plane( const Vector3D& A, const Vector3D& B, const Vector3D& C );
 
 	Vector3D Point;
 	Vector3D Normal;
