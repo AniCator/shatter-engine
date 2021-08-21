@@ -46,8 +46,8 @@ bool CPlaneBody::Collision( CBody* Body )
 	if( ShouldIgnoreBody( Body ) )
 		return Collided;
 
-	const FBounds& BoundsA = Body->GetBounds();
-	const FBounds& BoundsB = GetBounds();
+	const BoundingBox& BoundsA = Body->GetBounds();
+	const BoundingBox& BoundsB = GetBounds();
 	if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
 	 	return Collided;
 
@@ -131,7 +131,7 @@ void CPlaneBody::Tick()
 	
 }
 
-void CPlaneBody::Debug()
+void CPlaneBody::Debug() const
 {
 	CBody::Debug();
 	UI::AddLine( PlaneOrigin, PlaneOrigin + PlaneNormal, Color::Blue );

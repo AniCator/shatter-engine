@@ -106,31 +106,6 @@ void CEntity::Destroy()
 	}
 }
 
-void CEntity::Load( const JSON::Vector & Objects )
-{
-	
-}
-
-void CEntity::Reload()
-{
-	for( auto& Output : Outputs )
-	{
-		for( auto& Message : Output.second )
-		{
-			auto Entity = Level->Find( Message.TargetName );
-			if( Entity )
-			{
-				Message.TargetID = Entity->GetEntityID();
-			}
-			else
-			{
-				Log::Event( Log::Warning, "Target entity \"%s\" not found for entity \"%s\".\n", Message.TargetName.c_str(), Name.String().c_str() );
-			}
-		}
-	}
-
-}
-
 void CEntity::Link( const JSON::Vector& Objects )
 {
 	if( Level )
@@ -180,6 +155,25 @@ void CEntity::Link( const JSON::Vector& Objects )
 						}
 					}
 				}
+			}
+		}
+	}
+}
+
+void CEntity::Relink()
+{
+	for( auto& Output : Outputs )
+	{
+		for( auto& Message : Output.second )
+		{
+			auto* Entity = Level->Find( Message.TargetName );
+			if( Entity )
+			{
+				Message.TargetID = Entity->GetEntityID();
+			}
+			else
+			{
+				Log::Event( Log::Warning, "Target entity \"%s\" not found for entity \"%s\".\n", Message.TargetName.c_str(), Name.String().c_str() );
 			}
 		}
 	}

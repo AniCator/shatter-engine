@@ -3,6 +3,8 @@
 
 static NameIndex PoolIndex = 0;
 
+FName FName::Invalid = FName( "INVALID STRING" );
+
 FName::FName( const char* Name )
 {
 	const auto String = std::string( Name );
@@ -39,11 +41,6 @@ FName::FName( const std::string& Name )
 FName::FName( const NameIndex& Index )
 {
 	this->Index = Index;
-}
-
-FName::FName()
-{
-	Index = Invalid.Index;
 }
 
 const std::string& FName::String() const

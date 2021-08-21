@@ -748,6 +748,69 @@ void CApplication::Run()
 		if( RestartLayers )
 			InputRestartGameLayers( this );
 
+		const float TimeScale = ScaleTime ? 0.01f : 1.0f;
+
+		const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
+		if( GameDeltaTime >= MaximumGameTime )
+		{
+			MainWindow.EnableCursor( false );
+			
+			if( Tools )
+			{
+				if( !MainWindow.IsCursorEnabled() )
+				{
+					MainWindow.EnableCursor( true );
+				}
+			}
+
+			if( !PauseGame || FrameStep )
+			{
+				CProfiler::Get().Clear();
+				Renderer.RefreshFrame();
+
+				const double TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
+				const double TimeScaleGlobal = TimeScale * TimeScaleParameter;
+
+				// Clamp the maximum time added to avoid excessive tick spikes.
+				ScaledGameTime += Math::Clamp( GameDeltaTime * 0.001, 0.0, 1.0 ) * TimeScaleGlobal;
+
+				// Update game time.
+				GameLayersInstance->Time( ScaledGameTime );
+				GameLayersInstance->SetTimeScale( TimeScaleGlobal );
+
+				// Update the renderable stage for tick functions.
+				Renderer.UpdateRenderableStage( RenderableStage::Tick );
+
+				// Tick all game layers
+				GameLayersInstance->Tick();
+
+				GameTimer.Start();
+
+				if( FrameStep )
+				{
+					FrameStep = false;
+				}
+			}
+		}
+
+		if( PauseGame && !FrameStep )
+		{
+			GameTimer.Start();
+		}
+
+		const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
+		if( InputDeltaTime >= MaximumInputTime )
+		{
+			if( !MainWindow.IsWindowless() )
+			{
+				SetMouseWheel( ImGui::GetIO().MouseWheel );
+			}
+
+			MainWindow.ProcessInput();
+
+			InputTimer.Start();
+		}
+
 		const uint64_t MaximumFrameTime = FPSLimit > 0 ? 1000 / FPSLimit : 999;
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
 		if( RenderDeltaTime >= MaximumFrameTime || FPSLimit < 1 )
@@ -756,75 +819,7 @@ void CApplication::Run()
 
 			GameLayersInstance->FrameTime( StaticCast<double>( RealTime.GetElapsedTimeMilliseconds() ) * 0.001 );
 
-			const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
-			if( InputDeltaTime >= MaximumInputTime )
-			{
-				if( !MainWindow.IsWindowless() )
-				{
-					SetMouseWheel( ImGui::GetIO().MouseWheel );
-				}
-
-				MainWindow.ProcessInput();
-
-				InputTimer.Start();
-			}
-
 			MainWindow.BeginFrame();
-
-			const float TimeScale = ScaleTime ? 0.01f : 1.0f;
-
-			const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
-			if( GameDeltaTime >= MaximumGameTime )
-			{
-				if( !Tools )
-				{
-					if( MainWindow.IsCursorEnabled() )
-					{
-						MainWindow.EnableCursor( false );
-					}
-				}
-				else
-				{
-					if( !MainWindow.IsCursorEnabled() )
-					{
-						MainWindow.EnableCursor( true );
-					}
-				}
-
-				if( !PauseGame || FrameStep )
-				{
-					CProfiler::Get().Clear();
-					Renderer.RefreshFrame();
-
-					const double TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
-					const double TimeScaleGlobal = TimeScale * TimeScaleParameter;
-
-					// Clamp the maximum time added to avoid excessive tick spikes.
-					ScaledGameTime += Math::Clamp( GameDeltaTime * 0.001 * TimeScaleGlobal, 0.0, 1.0 );
-
-					// Update game time.
-					GameLayersInstance->Time( ScaledGameTime );
-					GameLayersInstance->SetTimeScale( TimeScaleGlobal );
-
-					// Update the renderable stage for tick functions.
-					Renderer.UpdateRenderableStage( RenderableStage::Tick );
-					
-					// Tick all game layers
-					GameLayersInstance->Tick();
-
-					GameTimer.Start();
-
-					if( FrameStep )
-					{
-						FrameStep = false;
-					}
-				}
-			}
-
-			if( PauseGame && !FrameStep )
-			{
-				GameTimer.Start();
-			}
 
 			{
 				Renderer.UpdateRenderableStage( RenderableStage::Frame );
@@ -843,6 +838,9 @@ void CApplication::Run()
 				RenderTimer.Start();
 			}
 		}
+
+		// Update the cursor after ticking the game layers so that state changes aren't lost.
+		MainWindow.UpdateCursor();
 	}
 
 	// CAngelEngine::Get().Shutdown();
@@ -902,7 +900,7 @@ void CApplication::InitializeDefaultInputs()
 		} );
 
 	Input.AddActionBinding( "ShowToolbar", EKey::NumpadSubtract, EAction::Release, [&] ( const float& Scale ) {
-		Tools = !Tools;
+		EnableTools( !Tools );
 	} );
 
 	Input.AddActionBinding( "ShowProfiler", EKey::NumpadAdd, EAction::Release, [] ( const float& Scale ) {
@@ -920,7 +918,6 @@ void CApplication::ResetImGui()
 	ImGuiIO& IO = ImGui::GetIO();
 	IO.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
 
-	Log::Event( "Setting font configuration.\n" );
 	static const char* FontLocation = "Resources/Roboto-Medium.ttf";
 	const bool FileExists = CFile::Exists( FontLocation );
 	if( FileExists )
@@ -943,7 +940,6 @@ void CApplication::ResetImGui()
 
 	while( !ImGui::GetIO().Fonts->IsBuilt() )
 	{
-		Log::Event( "Building fonts.\n" );
 		ImGui_ImplOpenGL3_Shutdown();
 		ImGui_ImplOpenGL3_NewFrame();
 	}
@@ -1236,6 +1232,14 @@ const bool CApplication::ToolsEnabled() const
 void CApplication::EnableTools( const bool Enable )
 {
 	Tools = Enable;
+
+	if( !Tools )
+	{
+		if( MainWindow.IsCursorEnabled() )
+		{
+			MainWindow.EnableCursor( false );
+		}
+	}
 }
 
 const bool CApplication::DefaultExitEnabled() const
@@ -1338,6 +1342,17 @@ LONG WINAPI ExceptionHandler( EXCEPTION_POINTERS* ExceptionInfo )
 
 #endif
 
+void SetupUserDirectories()
+{
+	const auto& UserConfigurationDirectory = CApplication::GetUserSettingsDirectory();
+	const bool DirectoryExists = std::experimental::filesystem::exists( UserConfigurationDirectory );
+	const bool DirectoryValid = std::experimental::filesystem::is_directory( UserConfigurationDirectory );
+	if( !DirectoryExists || !DirectoryValid )
+	{
+		std::experimental::filesystem::create_directory( UserConfigurationDirectory );
+	}
+}
+
 void CApplication::Initialize()
 {
 #if defined(_WIN32)
@@ -1345,13 +1360,16 @@ void CApplication::Initialize()
 	::SetUnhandledExceptionFilter( ExceptionHandler );
 #endif
 
+	// Configure the user directories first so that logs can be written to them.
+	SetupUserDirectories();
+
 	Log::Event( "%s (Build: %s)\n\n", Name.c_str(), __DATE__ );
 
 #if defined( IMGUI_ENABLED )
 	ImGui_ImplGlfw_Shutdown();
 #endif
 
-	const int EndianValue{ 0x01 };
+	constexpr int EndianValue{ 0x01 };
 	const auto* Address = static_cast<const void*>( &EndianValue );
 	const auto* LeastSignificantAddress = static_cast<const unsigned char*>( Address );
 	const bool LittleEndian = ( *LeastSignificantAddress == 0x01 );
@@ -1369,18 +1387,9 @@ void CApplication::Initialize()
 	// Calling Get creates the instance and initializes the class.
 	CConfiguration& Configuration = CConfiguration::Get();
 
-	static const std::wstring UserConfigurationDirectory = GetUserSettingsDirectory();
-	static const std::wstring UserConfigurationPath = GetUserSettingsPath();
-
+	const auto& UserConfigurationPath = GetUserSettingsPath();
 	Log::Event( "User configuration path: %s\n", UTF16ToUTF8( UserConfigurationPath ).c_str() );
 	Configuration.SetFile( StorageCategory::User, UserConfigurationPath );
-
-	const bool DirectoryExists = std::experimental::filesystem::exists( UserConfigurationDirectory );
-	const bool DirectoryValid = std::experimental::filesystem::is_directory( UserConfigurationDirectory );
-	if( !DirectoryExists || !DirectoryValid )
-	{
-		std::experimental::filesystem::create_directory( UserConfigurationDirectory );
-	}
 
 	Configuration.Initialize();
 
@@ -1492,6 +1501,8 @@ void CApplication::Initialize()
 		}
 
 		WaitForInput = false;
+
+		MainWindow.EnableCursor( false );
 	}
 
 	CSoLoudSound::Initialize();

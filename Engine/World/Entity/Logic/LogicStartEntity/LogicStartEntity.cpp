@@ -5,12 +5,12 @@ static CEntityFactory<CLogicStartEntity> Factory( "logic_start" );
 
 CLogicStartEntity::CLogicStartEntity()
 {
-	Construct();
+	HasStarted = false;
 }
 
 void CLogicStartEntity::Construct()
 {
-	HasStarted = false;
+	
 }
 
 void CLogicStartEntity::Tick()

@@ -91,6 +91,8 @@ void CTriggerBoxEntity::Reload()
 		return;
 	
 	Filter = World->Find( FilterName );
+	
+	CPointEntity::Reload();
 }
 
 void CTriggerBoxEntity::Debug()

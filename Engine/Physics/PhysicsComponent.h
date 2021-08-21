@@ -25,13 +25,13 @@ public:
 		Stationary = true;
 
 		// Grab the transform from the owner by default.
-		auto* PointEntity = Cast<CPointEntity>( OwnerIn );
+		auto* PointEntity = ::Cast<CPointEntity>( OwnerIn );
 		if( PointEntity )
 		{
 			TriggerTransform = PointEntity->GetTransform();
 		}
 
-		auto* MeshEntity = Cast<CMeshEntity>( OwnerIn );
+		auto* MeshEntity = ::Cast<CMeshEntity>( OwnerIn );
 		if( MeshEntity )
 		{
 			Owner = MeshEntity;
@@ -73,7 +73,7 @@ public:
 		auto Bodies = Physics->Query( BoundsB );
 		for( auto* Body : Bodies )
 		{
-			const FBounds& BoundsA = Body->GetBounds();
+			const BoundingBox& BoundsA = Body->GetBounds();
 			if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
 				return;
 

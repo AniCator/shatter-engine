@@ -92,7 +92,7 @@ public:
 	const FVertexData& GetVertexData() const;
 	const FIndexData& GetIndexData() const;
 
-	const FBounds& GetBounds() const;
+	const BoundingBox& GetBounds() const;
 
 	const std::string& GetLocation() const;
 	void SetLocation( const std::string& FileLocation );
@@ -122,7 +122,7 @@ private:
 	bool HasBones;
 	bool HasNormals;
 
-	FBounds AABB;
+	BoundingBox AABB;
 	FPrimitive Primitive;
 	AnimationSet Set;
 

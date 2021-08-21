@@ -218,6 +218,7 @@ public:
 	void Invalidate()
 	{
 		Invalid = true;
+		__debugbreak();
 	}
 
 private:

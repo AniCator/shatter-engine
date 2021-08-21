@@ -59,11 +59,14 @@ struct Bone
 	int ParentIndex;
 	std::vector<int> Children;
 
-	// Stores the offset matrix.
-	Matrix4D Matrix;
+	// Stores the inverse bind pose (bind -> origin).
+	Matrix4D ModelToBone;
+
+	// Stores the bind pose (origin -> bind).
+	Matrix4D BoneToModel;
 
 	// Stores the final transformation.
-	Matrix4D FinalMatrix;
+	Matrix4D BoneTransform;
 
 	Matrix4D ModelMatrix;
 	Matrix4D InverseModelMatrix;

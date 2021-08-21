@@ -57,6 +57,7 @@ public:
 
 	void EnableCursor( bool Enabled );
 	bool IsCursorEnabled() const;
+	void UpdateCursor() const;
 
 	void SetIcon( class CTexture* Texture );
 	void SetTitle( const std::string& Title );
@@ -78,7 +79,7 @@ public:
 	}
 
 	bool IsFullscreen() const;
-	void SetVSYNC( const bool Enable );
+	void SetVSYNC( const bool& Enable );
 
 private:
 	struct GLFWmonitor* GetTargetMonitor();

@@ -10,14 +10,18 @@
 
 struct Task
 {
-	Task() = default;
+	virtual ~Task() {};
+	virtual void Execute() = 0;
+};
 
-	Task( const std::function<void()>& ToExecute )
+struct LambdaTask : public Task
+{
+	LambdaTask( const std::function<void()>& ToExecute )
 	{
 		Function = ToExecute;
 	}
 
-	void Execute() const
+	void Execute() override
 	{
 		Function();
 	}
@@ -39,6 +43,7 @@ struct Worker
 	~Worker()
 	{
 		Alive = false;
+		Task = nullptr;
 		Notify.notify_one();
 		Thread.join();
 	}
@@ -53,8 +58,11 @@ struct Worker
 		return Running;
 	}
 
-	void Start( const Task& ToExecute )
+	void Start( const std::shared_ptr<Task>& ToExecute )
 	{
+		if( Ready )
+			return;
+
 		std::unique_lock<std::mutex> Lock( Mutex );
 
 		Task = ToExecute;
@@ -75,7 +83,10 @@ private:
 
 			Running = true;
 
-			Task.Execute();
+			if( Task )
+			{
+				Task->Execute();
+			}
 
 			Running = false;
 			Ready = false;
@@ -83,7 +94,7 @@ private:
 	}
 
 	std::thread Thread;
-	Task Task;
+	std::shared_ptr<Task> Task = nullptr;
 
 	std::mutex Mutex;
 	std::condition_variable Notify;

@@ -3,15 +3,12 @@
 
 #include <vector>
 
+#include <Engine/Utility/Geometry.h>
+
 class CBody;
 class CPhysicsScene;
 class Vector3D;
-struct FBounds;
-
-namespace Geometry
-{
-	struct Result;
-}
+struct BoundingBox;
 
 class CPhysics
 {
@@ -27,7 +24,7 @@ public:
 
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End ) const;
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const;
-	std::vector<CBody*> Query( const FBounds& AABB ) const;
+	std::vector<CBody*> Query( const BoundingBox& AABB ) const;
 private:
 	CPhysicsScene* Scene;
 };

@@ -327,7 +327,7 @@ void CProfiler::Display()
 						ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Peak): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
 						ImGui::PushItemWidth( -1 );
 
-						unsigned int ColorAverage = std::min( 255, std::max( 0, int( 2300.0f / Average ) ) );
+						unsigned int ColorAverage = std::min( 255, std::max( 0, int( 2300.0f / Peak ) ) );
 						unsigned int Red = 255 - ColorAverage;
 						unsigned int Green = ColorAverage;
 

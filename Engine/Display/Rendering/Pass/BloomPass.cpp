@@ -30,25 +30,16 @@ CRenderPassBloom::CRenderPassBloom( int Width, int Height, const CCamera& Camera
 
 CRenderPassBloom::~CRenderPassBloom()
 {
-	auto& DestroyRenderTexture = [&] ( CRenderTexture*& Texture )
-	{
-		if( Texture )
-		{
-			delete Texture;
-			Texture = nullptr;
-		}
-	};
-
-	DestroyRenderTexture( BloomA );
-	DestroyRenderTexture( BloomB );
-	DestroyRenderTexture( HalfSizeX );
-	DestroyRenderTexture( HalfSizeY );
-	DestroyRenderTexture( QuarterSizeX );
-	DestroyRenderTexture( QuarterSizeY );
-	DestroyRenderTexture( EigthSizeX );
-	DestroyRenderTexture( EigthSizeY );
-	DestroyRenderTexture( TinySizeX );
-	DestroyRenderTexture( TinySizeY );
+	delete BloomA;
+	delete BloomB;
+	delete HalfSizeX;
+	delete HalfSizeY;
+	delete QuarterSizeX;
+	delete QuarterSizeY;
+	delete EigthSizeX;
+	delete EigthSizeY;
+	delete TinySizeX;
+	delete TinySizeY;
 }
 
 uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )

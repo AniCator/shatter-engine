@@ -6,6 +6,7 @@
 #include <functional>
 
 #include <Engine/Utility/DataString.h>
+#include <Engine/Utility/Serialize.h>
 #include <Engine/Utility/Structures/JSON.h>
 #include <Engine/Utility/Structures/Name.h>
 #include <Engine/Utility/Singleton.h>
@@ -107,10 +108,11 @@ public:
 	virtual void Frame() {};
 	virtual void Destroy();
 
-	virtual void Load( const JSON::Vector& Objects );
-	virtual void Reload();
+	virtual void Load( const JSON::Vector& Objects ) {};
+	virtual void Reload() {};
 	void Link( const JSON::Vector& Objects );
-	FName Name;
+	void Relink();
+	FName Name = FName::Invalid;
 	UniqueIdentifier Identifier;
 
 	// Entity I/O

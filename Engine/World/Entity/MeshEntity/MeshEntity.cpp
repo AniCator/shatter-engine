@@ -31,8 +31,7 @@ CMeshEntity::CMeshEntity()
 	Collision = true;
 	Visible = true;
 
-	// Color = glm::vec4( 0.65f, 0.35f, 0.45f, 1.0f );
-	Color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
+	Color = Vector4D( 1.0f, 1.0f, 1.0f, 1.0f );
 }
 
 CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CPointEntity()
@@ -89,6 +88,7 @@ void CMeshEntity::Construct()
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
 		RenderData.Color = Color;
+		RenderData.WorldBounds = WorldBounds;
 
 		auto World = GetWorld();
 		if( World && Collision )
@@ -128,6 +128,14 @@ void CMeshEntity::Construct()
 				}
 			}
 		}
+
+		const auto& Set = Mesh->GetAnimationSet();
+		const auto& Skeleton = Set.Skeleton;
+		if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
+		{
+			const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
+			SetAnimation( FirstAnimation );
+		}
 	}
 }
 
@@ -153,6 +161,7 @@ void CMeshEntity::Tick()
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
 		RenderData.Color = Color;
+		RenderData.WorldBounds = WorldBounds;
 
 		QueueRenderable( Renderable );
 	}
@@ -172,8 +181,25 @@ void PrintMatrix( const std::string& Name, const Matrix4D& Matrix )
 	PrintColumn( Matrix.Columns[3] );
 }
 
-const float Duration = 1.0f;
-void TransformBones( const float& Time, const Skeleton& Skeleton, const Animation& Animation, const Bone* Bone, std::vector<::Bone>& Result )
+size_t NearestKey( const float& Time, const float& Duration, const Bone* Bone, const std::vector<Key>& Keys )
+{
+	size_t Output = 0;
+	for( size_t KeyIndex = 0; KeyIndex < Keys.size(); KeyIndex++ )
+	{
+		if( Bone->Index != Keys[KeyIndex].BoneIndex )
+			continue;
+		
+		const float RelativeTime = ( Keys[KeyIndex].Time / Duration ) * Duration;
+		if( RelativeTime < Time )
+		{
+			Output = KeyIndex;
+		}
+	}
+
+	return Output;
+}
+
+void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleton& Skeleton, const Animation& Animation, const Bone* Parent, const Bone* Bone, std::vector<::Bone>& Result )
 {
 	if( !Bone )
 	{
@@ -183,75 +209,84 @@ void TransformBones( const float& Time, const Skeleton& Skeleton, const Animatio
 	Matrix4D TranslationMatrix = Matrix4D();
 	Matrix4D RotationMatrix = Matrix4D();
 	Matrix4D ScaleMatrix = Matrix4D();
+
+	const auto PositionKeyIndex = NearestKey( Time, Animation.Duration, Bone, Animation.PositionKeys );
+	const auto PositionKey = Animation.PositionKeys[PositionKeyIndex];
+	auto Position = glm::mat4();
+	Position = glm::translate( Position, glm::vec3( PositionKey.Value.X, PositionKey.Value.Y, PositionKey.Value.Z ) );
+	TranslationMatrix = Math::FromGLM( Position );
+
+	if( Entity && Entity->IsDebugEnabled() )
+	{
+		UI::AddCircle( TranslationMatrix.Transform( Vector3D::Zero ), 3.0f, Color( 255, 0, 0 ) );
+	}
+
+	const auto RotationKeyIndex = NearestKey( Time, Animation.Duration, Bone, Animation.RotationKeys );
+	const auto RotationKey = Animation.RotationKeys[RotationKeyIndex];
+	auto Quaternion = glm::quat( RotationKey.Value.X, RotationKey.Value.Y, RotationKey.Value.Z, RotationKey.Value.W );
+
+	// auto Euler = glm::eulerAngles( Quaternion );
+	// Euler.x *= -1.0f;
+	// Quaternion = glm::quat( Euler );
 	
-	for( const auto& Key : Animation.PositionKeys )
+	/*if( Bone->ParentIndex < 0 || true )
 	{
-		if( Key.BoneIndex != Bone->Index )
-			continue;
+		auto Correction = glm::quat( glm::vec3( Math::ToRadians( -90.0f ), 0.0f, Math::ToRadians( 180.0f ) ) );
+		Quaternion = Quaternion * Correction;
+	}*/
+	
+	RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
 
-		const float RelativeTime = ( Key.Time / Animation.Duration ) * Animation.Duration;
-		if( RelativeTime < Time )
-		{
-			auto Position = glm::mat4();
-			Position = glm::translate( Position, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
-			TranslationMatrix = Math::FromGLM( Position );
-		}
+	if( Entity && Entity->IsDebugEnabled() )
+	{
+		UI::AddCircle( RotationMatrix.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), 3.0f, Color( 0, 255, 0 ) );
+		UI::AddLine( RotationMatrix.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), Vector3D::Zero );
 	}
 
-	for( const auto& Key : Animation.RotationKeys )
-	{
-		if( Key.BoneIndex != Bone->Index )
-			continue;
+	const auto ScalingKeyIndex = NearestKey( Time, Animation.Duration, Bone, Animation.ScalingKeys );
+	const auto ScalingKey = Animation.ScalingKeys[ScalingKeyIndex];
+	auto Scale = glm::mat4();
+	Scale = glm::scale( Scale, glm::vec3( ScalingKey.Value.X, ScalingKey.Value.Y, ScalingKey.Value.Z ) );
+	ScaleMatrix = Math::FromGLM( Scale );
 
-		const float RelativeTime = ( Key.Time / Animation.Duration ) * Animation.Duration;
-		if( RelativeTime < Time )
-		{
-			const auto Quaternion = glm::quat( Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
-			RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
-		}
+	if( Entity && Entity->IsDebugEnabled() )
+	{
+		UI::AddCircle( ScaleMatrix.Transform( Vector3D( 1.0f, 1.0f, 1.0f ) ), 3.0f, Color( 0, 0, 255 ) );
 	}
 
-	for( const auto& Key : Animation.ScalingKeys )
-	{
-		if( Key.BoneIndex != Bone->Index )
-			continue;
+	Result[Bone->Index] = *Bone;
 
-		const float RelativeTime = ( Key.Time / Animation.Duration ) * Animation.Duration;
-		if( RelativeTime < Time )
-		{
-			auto Scale = glm::mat4();
-			Scale = glm::scale( Scale, glm::vec3( Key.Value.X, Key.Value.Y, Key.Value.Z ) );
-			ScaleMatrix = Math::FromGLM( Scale );
-		}
-	}
-
-	// Concatenate all the keyframe transformations.
-	auto LocalTransform = TranslationMatrix * RotationMatrix * ScaleMatrix;
-
-	// Identity for debugging.
-	LocalTransform = Matrix4D();
-
-	// Look up the parent matrix.
-	auto ParentMatrix = Matrix4D();
-	if( Bone->ParentIndex > -1 )
-	{
-		ParentMatrix = Result[Bone->ParentIndex].GlobalTransform;
-	}
-
-	const auto& LocalMatrix = Bone->Matrix;
+	// Local bone data
+	const auto& ModelToBone = Bone->ModelToBone;
+	const auto& BoneToModel = Bone->BoneToModel;
 	const auto& ModelMatrix = Bone->ModelMatrix;
 	const auto& InverseModelMatrix = Bone->InverseModelMatrix;
 	
-	// NOTE: This only assigns a matrix value to the bone. All other data isn't transferred.
-	const auto& GlobalTransform = ParentMatrix * LocalTransform;
-	Result[Bone->Index].GlobalTransform = GlobalTransform;
-	Result[Bone->Index].FinalMatrix = LocalMatrix * GlobalTransform * Skeleton.GlobalMatrixInverse;
+	// Concatenate all the keyframe transformations.
+	auto LocalTransform = TranslationMatrix * RotationMatrix * ScaleMatrix;
+	
+	Result[Bone->Index].LocalTransform = LocalTransform;
+
+	// Create the global transform.
+	Result[Bone->Index].GlobalTransform = LocalTransform;
+
+	// Look up the parent matrix.
+	if( Parent )
+	{
+		// TODO: It seems like the rotation is being applied twice.
+		// TODO: See the SkeletonTest model for reference, its tip Root.001 cube is rotate multiple times.
+		Result[Bone->Index].GlobalTransform = Parent->GlobalTransform * LocalTransform;
+	}
+
+	Result[Bone->Index].GlobalTransform = Result[Bone->Index].GlobalTransform;
+
+	Result[Bone->Index].BoneTransform = Result[Bone->Index].GlobalTransform * ModelToBone;
 
 	for( const int& ChildIndex : Bone->Children )
 	{
 		if( ChildIndex > -1 && ChildIndex < Result.size() )
 		{
-			TransformBones( Time, Skeleton, Animation, &Skeleton.Bones[ChildIndex], Result );
+			TransformBones( Entity, Time, Skeleton, Animation, &Result[Bone->Index], &Skeleton.Bones[ChildIndex], Result );
 		}
 	}
 };
@@ -283,9 +318,15 @@ void CMeshEntity::TickAnimation()
 		return;
 	}
 
-	const float Time = static_cast<float>( GameLayersInstance->GetCurrentTime() );
-	const float ModulatedTime = fmod( Time, Animation.Duration );
-	UI::AddText( Transform.GetPosition(), std::to_string( ModulatedTime ).c_str() );
+	const float DeltaTime = static_cast<float>( GameLayersInstance->GetDeltaTime() ) * PlayRate;
+	AnimationTime = fmod( AnimationTime + DeltaTime, Animation.Duration );
+	
+
+	if( IsDebugEnabled() )
+	{
+		const auto TimeText = "Animation time: " + std::to_string( AnimationTime ) + "\nAnimation duration: " + std::to_string( Animation.Duration );
+		UI::AddText( Transform.GetPosition() + Vector3D( 0.5f, 0.0f, -0.1f ), TimeText.c_str() );
+	}
 
 	Bones.clear();
 	Bones.resize( Skeleton.Bones.size() );
@@ -293,7 +334,7 @@ void CMeshEntity::TickAnimation()
 	// Reset the matrices.
 	for( auto& Bone : Bones )
 	{
-		Bone.FinalMatrix = Matrix4D();
+		Bone.BoneTransform = Matrix4D();
 		Bone.GlobalTransform = Matrix4D();
 	}
 
@@ -310,7 +351,7 @@ void CMeshEntity::TickAnimation()
 	// Transform all of the bones in the skeletal hierarchy.
 	for( const auto* Bone : RootBones )
 	{
-		TransformBones( ModulatedTime, Skeleton, Animation, Bone, Bones );
+		TransformBones( this, AnimationTime, Skeleton, Animation, nullptr, Bone, Bones );
 	}
 
 	// Set global transform
@@ -318,36 +359,66 @@ void CMeshEntity::TickAnimation()
 
 	const std::string BoneLocationNamePrefix = "Bones[";
 
+	static int DebugIndex = 0;
+	DebugIndex++;
+	DebugIndex = DebugIndex % Bones.size();
+
 	auto WorldTransform = GetTransform();
+	// WorldTransform = FTransform();
 	for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
 	{
-		auto& Matrix = Bones[MatrixIndex].FinalMatrix;
-		glm::mat4 GLMMatrix = Math::ToGLM( Matrix );
-		auto WorldMatrix = Math::FromGLM( glm::inverse( GLMMatrix ) );
-		Vector3D BoneX = Matrix.Transform( Vector3D( 1.0f, 0.0f, 0.0f ) );
-		Vector3D BoneY = Matrix.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) );
-		Vector3D BoneZ = Matrix.Transform( Vector3D( 0.0f, 0.0f, 1.0f ) );
-
-		if( MatrixIndex == 3 || true )
+		auto Matrix = Bones[MatrixIndex].GlobalTransform;
+		auto ParentMatrix = Matrix;
+		if( Bones[MatrixIndex].ParentIndex > -1 )
 		{
-			const auto Origin = Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
-			Vector3D PointA = WorldTransform.Transform( Origin );
-			Vector3D PointB = WorldTransform.Transform( Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.5f ) ) );
-			Vector3D PointC = WorldTransform.Transform( Matrix.Transform( Vector3D( 0.0f, 0.0f, 1.0f ) ) );
+			ParentMatrix = Bones[Bones[MatrixIndex].ParentIndex].GlobalTransform;
+		}
 
-		FBounds AABB( ( Vector3D::One * -1.0f ), Vector3D::One );
-		AABB = Math::AABB( AABB, Matrix );
-		UI::AddAABB( AABB.Minimum, AABB.Maximum );
+		// Matrix = Skeleton.GlobalMatrixInverse * Matrix;
+		// ParentMatrix = Skeleton.GlobalMatrixInverse * ParentMatrix;
 		
-		UI::AddCircle( PointA, 3.0f, ::Color( 0, 0, 255 ) );
-		UI::AddLine( PointA, PointB, ::Color( 0, 0, 255 ), 0.5f );
-		UI::AddLine( PointB, PointC, ::Color( 255, 0, 0 ), 0.5f );
-		UI::AddCircle( PointC, 3.0f, ::Color( 255, 0, 0 ) );
-		UI::AddText( PointA, Skeleton.MatrixNames[MatrixIndex].c_str() );
-		// 
-		// int TextIndex = MatrixIndex * 1;
-		// const std::string MatrixName = Skeleton.MatrixNames[MatrixIndex] + "[" + std::to_string( Skeleton.Bones[MatrixIndex].Index ) + "]";
-		// UI::AddText( Vector2D( 30.0f, 30.0f + ( TextIndex + 0 ) * 20.0f ), MatrixName, Origin );
+		if( ( MatrixIndex < 1 || true ) && IsDebugEnabled() )
+		{
+			Vector3D RandomJitter = Vector3D( Math::Random(), Math::Random(), Math::Random() ) * 0.001f;
+			const auto Parent = ParentMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+			Vector3D PointSource = WorldTransform.Transform( Parent );
+			
+			const auto Current = Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );			
+			Vector3D PointTarget = WorldTransform.Transform( Current );
+
+			Vector3D PointCenter = PointSource + ( PointTarget - PointSource ) * 0.5f;
+
+			const auto Bind = Bones[MatrixIndex].BoneToModel.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+			Vector3D PointBind = WorldTransform.Transform( Bind );
+
+			auto ParentBindMatrix = Bones[MatrixIndex].BoneToModel;
+			if( Bones[MatrixIndex].ParentIndex > -1 )
+			{
+				ParentBindMatrix = Bones[Bones[MatrixIndex].ParentIndex].BoneToModel;
+			}
+
+			const auto ParentBind = ParentBindMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+			Vector3D PointParentBind = WorldTransform.Transform( ParentBind );
+
+			// FBounds AABB( ( Vector3D::One * -1.0f ), Vector3D::One );
+			// AABB = Math::AABB( AABB, Matrix );
+			// UI::AddAABB( AABB.Minimum, AABB.Maximum );
+			
+			UI::AddCircle( PointSource, 3.0f, ::Color( 0, 0, 255 ) );
+			UI::AddLine( PointSource, PointCenter, ::Color( 0, 0, 255 ) );
+			UI::AddLine( PointCenter, PointTarget, ::Color( 255, 0, 0 ) );
+			UI::AddCircle( PointTarget, 3.0f, ::Color( 255, 0, 0 ) );
+			UI::AddText( PointTarget, Skeleton.MatrixNames[MatrixIndex].c_str() );
+
+			UI::AddCircle( PointParentBind, 3.0f, ::Color( 0, 255, 255 ) );
+			UI::AddLine( PointParentBind, PointBind, ::Color( 255, 255, 0 ) );
+			UI::AddCircle( PointBind, 3.0f, ::Color( 0, 255, 255 ) );
+			// UI::AddText( PointBind, Skeleton.MatrixNames[MatrixIndex].c_str() );
+			
+			// 
+			// int TextIndex = MatrixIndex * 1;
+			// const std::string MatrixName = Skeleton.MatrixNames[MatrixIndex] + "[" + std::to_string( Skeleton.Bones[MatrixIndex].Index ) + "]";
+			// UI::AddText( Vector2D( 30.0f, 30.0f + ( TextIndex + 0 ) * 20.0f ), MatrixName, Origin );
 		}
 
 		// Bones[Bones[MatrixIndex].ParentIndex]
@@ -357,7 +428,7 @@ void CMeshEntity::TickAnimation()
 		if( Renderable )
 		{
 			const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
-			Renderable->SetUniform( BoneLocationName, Matrix );
+			Renderable->SetUniform( BoneLocationName, Bones[MatrixIndex].BoneTransform );
 		}
 	}
 }
@@ -375,7 +446,6 @@ void CMeshEntity::Destroy()
 	if( PhysicsBody )
 	{
 		PhysicsBody->Destroy();
-		delete PhysicsBody;
 		PhysicsBody = nullptr;
 	}
 
@@ -430,7 +500,7 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 
 	TextureNames.clear();
 
-	for( auto Property : Objects )
+	for( auto* Property : Objects )
 	{
 		if( Property->Key == "mesh" )
 		{
@@ -455,9 +525,9 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "texture" )
 		{
-			if( Property->Objects.size() > 0 )
+			if( !Property->Objects.empty() )
 			{
-				for( auto TextureProperty : Property->Objects )
+				for( auto* TextureProperty : Property->Objects )
 				{
 					TextureNames.emplace_back( TextureProperty->Value );
 				}
@@ -469,16 +539,16 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "color" )
 		{
-			size_t ExpectedTokenCount = 4;
+			const size_t ExpectedTokenCount = 4;
 			size_t OutTokenCount = 0;
-			auto Components = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, ExpectedTokenCount );
+			auto* Components = ExtractTokensFloat( Property->Value.c_str(), ' ', OutTokenCount, ExpectedTokenCount );
 			if( OutTokenCount == 3 )
 			{
-				Color = glm::vec4( Components[0], Components[1], Components[2], 1.0f );
+				Color = Vector4D( Components[0], Components[1], Components[2], 1.0f );
 			}
 			else if( OutTokenCount == 4 )
 			{
-				Color = glm::vec4( Components[0], Components[1], Components[2], Components[3] );
+				Color = Vector4D( Components[0], Components[1], Components[2], Components[3] );
 			}
 		}
 		else if( Property->Key == "collision" )
@@ -529,9 +599,13 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		{
 			CurrentAnimation = Property->Value;
 		}
+		else if( Property->Key == "playrate" && Property->Value.length() > 0 )
+		{
+			PlayRate = ParseFloat( Property->Value.c_str() );
+		}
 	}
 
-	if( TextureNames.size() == 0 )
+	if( TextureNames.empty() )
 	{
 		TextureNames.emplace_back( "error" );
 	}
@@ -544,6 +618,12 @@ void CMeshEntity::Reload()
 	CAssets& Assets = CAssets::Get();
 	CMesh* TargetMesh = Assets.FindMesh( MeshName );
 	CShader* TargetShader = Assets.FindShader( ShaderName );
+
+	if( !TargetShader )
+	{
+		// Try to use the default shader if the specified shader can't be found.
+		TargetShader = Assets.FindShader( "default" );
+	}
 
 	Spawn( TargetMesh, TargetShader, nullptr, Transform );
 
@@ -637,7 +717,7 @@ void CMeshEntity::SetVisible( const bool& VisibleIn )
 	Visible = VisibleIn;
 }
 
-FBounds CMeshEntity::GetWorldBounds() const
+BoundingBox CMeshEntity::GetWorldBounds() const
 {
 	return WorldBounds;
 }

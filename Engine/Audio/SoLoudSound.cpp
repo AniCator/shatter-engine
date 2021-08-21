@@ -770,7 +770,7 @@ void CSoLoudSound::Initialize()
 		"Reverb Early Reflection" );
 	
 	Stacks[Bus::SFX].Add( &ReverbTail, {
-		0.003f, // Wet
+		0.01f, // Wet
 		0.0f, // Freeze
 		1.0f, // RoomSize
 		0.0f, // Dampening

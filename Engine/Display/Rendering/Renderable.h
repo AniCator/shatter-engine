@@ -19,7 +19,8 @@ struct FRenderData
 	GLuint ShaderProgram = 0;
 
 	FTransform Transform{};
-	glm::vec4 Color{};
+	BoundingBox WorldBounds{};
+	Vector4D Color = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
 
 	EDrawMode DrawMode = None;
 
@@ -58,6 +59,9 @@ protected:
 	CMesh* Mesh;
 
 	void Prepare( FRenderData& RenderData );
+
+	// Uniform location
+	int TextureLocation[TextureSlots];
 
 	FRenderDataInstanced RenderData;
 	UniformMap Uniforms;

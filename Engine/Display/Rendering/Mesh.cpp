@@ -130,7 +130,7 @@ const FIndexData& CMesh::GetIndexData() const
 	return IndexData;
 }
 
-const FBounds& CMesh::GetBounds() const
+const BoundingBox& CMesh::GetBounds() const
 {
 	return AABB;
 }

@@ -145,6 +145,8 @@ void CWindow::Create( const char* Title )
 		glfwSetWindowPos( WindowHandle, WindowX, WindowY );
 	}
 
+	glfwSetInputMode( WindowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+
 	glfwMakeContextCurrent( WindowHandle );
 	
 	gladLoadGLLoader( (GLADloadproc) glfwGetProcAddress );
@@ -265,13 +267,6 @@ void CWindow::ProcessInput()
 
 	glfwPollEvents();
 
-	static bool PreviousCursorState = false;
-	if( PreviousCursorState != ShowCursor )
-	{
-		glfwSetInputMode( WindowHandle, GLFW_CURSOR, ShowCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED );
-		PreviousCursorState = ShowCursor;
-	}
-
 	CInputLocator::Get().Tick();
 }
 
@@ -343,6 +338,16 @@ bool CWindow::IsCursorEnabled() const
 	return ShowCursor;
 }
 
+void CWindow::UpdateCursor() const
+{
+	static bool PreviousCursorState = false;
+	if( PreviousCursorState != ShowCursor )
+	{
+		glfwSetInputMode( WindowHandle, GLFW_CURSOR, ShowCursor ? GLFW_CURSOR_NORMAL : GLFW_CURSOR_DISABLED );
+		PreviousCursorState = ShowCursor;
+	}
+}
+
 void CWindow::SetIcon( CTexture* Texture )
 {
 	if( !Texture )
@@ -399,7 +404,7 @@ bool CWindow::IsFullscreen() const
 	return glfwGetWindowMonitor( WindowHandle ) != nullptr;
 }
 
-void CWindow::SetVSYNC( const bool Enable )
+void CWindow::SetVSYNC( const bool& Enable )
 {
 	glfwSwapInterval( Enable ? 1 : 0 );
 }

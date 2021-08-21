@@ -141,7 +141,7 @@ void ParticleEmitter::Tick()
 		Vector3D::One
 	);
 
-	RenderData.Color = glm::vec4( 1.0f, 1.0f, 1.0f, 1.0f );
+	RenderData.Color = Vector4D( 1.0f, 1.0f, 1.0f, 1.0f );
 	
 	const auto Program = Compute->Activate();
 

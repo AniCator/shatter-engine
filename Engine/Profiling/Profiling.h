@@ -19,14 +19,8 @@ bool ExclusiveComparison( const T& A, const T& B )
 static const size_t TimeWindow = 512;
 struct FProfileTimeEntry
 {
-	FProfileTimeEntry()
-	{
-		Name = FName();
-		Time = 0;
-		Depth = 0;
-		StartTime = 0;
-	}
-
+	FProfileTimeEntry() = default;
+	
 	FProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn, const int64_t& StartTimeIn, const size_t& DepthIn )
 	{
 		Name = NameIn;
@@ -53,10 +47,10 @@ struct FProfileTimeEntry
 
 	bool operator<( const FProfileTimeEntry& Entry ) const;
 
-	FName Name;
-	int64_t Time;
-	int64_t StartTime;
-	size_t Depth;
+	FName Name = FName::Invalid;
+	int64_t Time = 0;
+	int64_t StartTime = 0;
+	size_t Depth = 0;
 };
 
 class CProfiler : public Singleton<CProfiler>
@@ -105,7 +99,7 @@ public:
 	~CTimerScope();
 
 private:
-	FName ScopeName;
+	FName ScopeName = FName::Invalid;
 	std::chrono::steady_clock::time_point StartTime;
 
 	bool TextOnly;

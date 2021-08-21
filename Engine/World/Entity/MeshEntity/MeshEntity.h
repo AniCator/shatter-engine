@@ -45,7 +45,7 @@ public:
 	virtual bool IsVisible() const;
 	virtual void SetVisible( const bool& Visible );
 
-	virtual FBounds GetWorldBounds() const;
+	virtual BoundingBox GetWorldBounds() const;
 	virtual CBody* GetBody() const;
 
 	virtual const FTransform& GetTransform() override;
@@ -60,7 +60,7 @@ public:
 	std::vector<CTexture*> Textures;
 	CRenderable* Renderable;
 
-	glm::vec4 Color;
+	Vector4D Color = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
 
 	std::string MeshName;
 	std::string CollisionMeshName;
@@ -74,7 +74,7 @@ public:
 
 protected:
 	static void QueueRenderable( CRenderable* Renderable );
-	FBounds WorldBounds;
+	BoundingBox WorldBounds;
 
 	bool Collision;
 	bool Static;
@@ -86,4 +86,7 @@ protected:
 
 	// Current bone transformations, updated by TickAnimation.
 	std::vector<Bone> Bones;
+
+	float AnimationTime = 0.0f;
+	float PlayRate = 1.0f;
 };

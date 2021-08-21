@@ -5,6 +5,7 @@
 #include <stdint.h>
 
 #include <Engine/Utility/File.h>
+#include <Engine/Utility/Singleton.h>
 
 class asIScriptEngine;
 class asIScriptContext;
@@ -20,7 +21,7 @@ enum class EAngelResult : uint8_t
 	Success
 };
 
-class CAngelEngine
+class CAngelEngine : public Singleton<CAngelEngine>
 {
 public:
 	~CAngelEngine();
@@ -35,18 +36,5 @@ public:
 private:
 	asIScriptEngine* Engine;
 	asIScriptContext* Context;
-
-public:
-	static CAngelEngine& Get()
-	{
-		static CAngelEngine StaticInstance;
-		return StaticInstance;
-	}
-
-	CAngelEngine( CAngelEngine const& ) = delete;
-	void operator=( CAngelEngine const& ) = delete;
-
-private:
-	CAngelEngine();
 };
 #endif

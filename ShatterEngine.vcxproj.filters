@@ -156,6 +156,9 @@
     <Filter Include="Source Files\Engine\World\Entity\Trigger">
       <UniqueIdentifier>{bb9957be-0405-416c-963d-5502ff2859db}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\Logic\LogicSequenceEntity">
+      <UniqueIdentifier>{81b53530-4060-4c68-a680-f739feedaff3}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -397,6 +400,15 @@
     </ClCompile>
     <ClCompile Include="Engine\World\Entity\Trigger\TriggerBoxEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\Trigger</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Math\BoundingBox.cpp">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Structures\BoundingVolumeHierarchy.cpp">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\Logic\LogicSequenceEntity\LogicSequenceEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\Logic\LogicSequenceEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -741,6 +753,18 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\Trigger\TriggerBoxEntity.h">
       <Filter>Source Files\Engine\World\Entity\Trigger</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Math\BoundingBox.h">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Serialize.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\BoundingVolumeHierarchy.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\Logic\LogicSequenceEntity\LogicSequenceEntity.h">
+      <Filter>Source Files\Engine\World\Entity\Logic\LogicSequenceEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

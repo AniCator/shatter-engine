@@ -2,35 +2,23 @@
 #pragma once
 
 #include "Math.h"
+#include "GeometryResult.h"
 #include <Engine/Physics/Body/Body.h>
 
 namespace Geometry
-{
-	struct Result
+{	
+	inline float RayInBoundingBox( const Vector3D& Origin, const Vector3D& Direction, const BoundingBox& Bounds )
 	{
-		bool Hit = false;
-		Vector3D Position = Vector3D::Zero;
-		float Distance = 0.0f;
-
-		// This value is only set when using the physics engine to cast rays. It will remain null if nothing was hit.
-		CBody* Body = nullptr;
-	};
-	
-	inline float RayInBoundingBox( const Vector3D& Origin, const Vector3D& Direction, const FBounds& Bounds )
-	{
-		// Direction has to be more than 0.
-		const auto ScaleX = Math::Equal( Direction.X, 0.0f ) ? 1.0f : Direction.X;
-		const auto ScaleY = Math::Equal( Direction.Y, 0.0f ) ? 1.0f : Direction.Y;
-		const auto ScaleZ = Math::Equal( Direction.Z, 0.0f ) ? 1.0f : Direction.Z;
+		const auto InverseDirection = 1.0f / Direction;
 		
-		const auto XMinimum = ( Bounds.Minimum.X - Origin.X ) / Direction.X;
-		const auto XMaximum = ( Bounds.Maximum.X - Origin.X ) / Direction.X;
+		const auto XMinimum = ( Bounds.Minimum.X - Origin.X ) * InverseDirection.X;
+		const auto XMaximum = ( Bounds.Maximum.X - Origin.X ) * InverseDirection.X;
 
-		const auto YMinimum = ( Bounds.Minimum.Y - Origin.Y ) / Direction.Y;
-		const auto YMaximum = ( Bounds.Maximum.Y - Origin.Y ) / Direction.Y;
+		const auto YMinimum = ( Bounds.Minimum.Y - Origin.Y ) * InverseDirection.Y;
+		const auto YMaximum = ( Bounds.Maximum.Y - Origin.Y ) * InverseDirection.Y;
 
-		const auto ZMinimum = ( Bounds.Minimum.Z - Origin.Z ) / Direction.Z;
-		const auto ZMaximum = ( Bounds.Maximum.Z - Origin.Z ) / Direction.Z;
+		const auto ZMinimum = ( Bounds.Minimum.Z - Origin.Z ) * InverseDirection.Z;
+		const auto ZMaximum = ( Bounds.Maximum.Z - Origin.Z ) * InverseDirection.Z;
 
 		const auto Minimum = Math::Max(
 			Math::Max(
@@ -60,7 +48,7 @@ namespace Geometry
 		return Minimum;
 	}
 
-	inline Result LineInBoundingBox( const Vector3D& Start, const Vector3D& End, const FBounds& Bounds )
+	inline Result LineInBoundingBox( const Vector3D& Start, const Vector3D& End, const BoundingBox& Bounds )
 	{
 		Result Result;
 		const auto Direction = End - Start;

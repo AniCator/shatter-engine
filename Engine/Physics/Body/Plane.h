@@ -12,7 +12,7 @@ public:
 	virtual void PreCollision() override;
 	virtual bool Collision( CBody* Body ) override;
 	virtual void Tick() override;
-	virtual void Debug() override;
+	virtual void Debug() const override;
 	virtual BodyType GetType() const override;
 
 	// A point on the plane.

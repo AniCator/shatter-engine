@@ -140,6 +140,9 @@ static const std::map<EImageFormat, std::string> StringToImageFormat = {
 
 void UpdateAnimationSet( CMesh* Mesh, const std::string& Path )
 {
+	if( Path.empty() )
+		return;
+
 	auto Set = AnimationSet::Generate( Path );
 	const auto& MeshSet = Mesh->GetAnimationSet();
 

@@ -31,7 +31,7 @@ void CServiceRegistry::Add( IEngineService* Service )
 
 void CServiceRegistry::CreateStandardServices()
 {
-	CInput* InputService = new CInput();
+	auto* InputService = new CInput();
 	CInputLocator::Assign( InputService );
 	Add( InputService );
 }

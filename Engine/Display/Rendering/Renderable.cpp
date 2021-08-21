@@ -12,6 +12,11 @@ CRenderable::CRenderable()
 	Shader = nullptr;
 	memset( Textures, 0, 32 * sizeof( CTexture* ) );
 
+	for( int& Index : TextureLocation )
+	{
+		Index = -1;
+	}
+
 	RenderData.ShouldRender = true;
 }
 
@@ -51,6 +56,11 @@ void CRenderable::SetShader( CShader* Shader )
 
 		const FProgramHandles& Handles = Shader->GetHandles();
 		RenderData.ShaderProgram = Handles.Program;
+
+		for( size_t Index = 0; Index < TextureSlots; Index++ )
+		{
+			TextureLocation[Index] = glGetUniformLocation( Handles.Program, TextureSlotName[Index] );;
+		}
 	}
 }
 
@@ -113,7 +123,7 @@ void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRend
 		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
 
 		const GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
-		glUniform4fv( ColorLocation, 1, glm::value_ptr( RenderData.Color ) );
+		glUniform4fv( ColorLocation, 1, RenderData.Color.Base() );
 
 		for( const auto& UniformBuffer : Uniforms )
 		{
@@ -156,7 +166,7 @@ void CRenderable::Prepare( FRenderData& RenderData )
 					Texture->Bind( Slot );
 				}
 
-				const auto Location = glGetUniformLocation( Handles.Program, TextureSlotName[Index] );
+				const auto Location = TextureLocation[Index];
 				if( Location > -1 )
 				{
 					glUniform1i( Location, Index );

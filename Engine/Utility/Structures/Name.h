@@ -10,7 +10,7 @@ typedef uint32_t NameIndex;
 struct FName
 {
 public:
-	FName();
+	FName() = delete;
 	FName( const char* Name );
 	FName( const std::string& Name );
 	FName( const NameIndex& Index );
@@ -28,8 +28,8 @@ public:
 		static std::map<std::string, NameIndex> NamePool;
 		return NamePool;
 	}
+
+	static FName Invalid;
 private:
 	NameIndex Index;
 };
-
-static FName Invalid( "INVALID STRING" );

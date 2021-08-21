@@ -4,6 +4,7 @@
 #include <Engine/Resource/Assets.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
 #include <Engine/Profiling/Profiling.h>
+#include <Engine/World/World.h>
 
 CRenderPassShadow::CRenderPassShadow( int Width, int Height, const CCamera& Camera, const bool AlwaysClear ) : CRenderPass( "Shadow", Width, Height, Camera, AlwaysClear )
 {
@@ -86,20 +87,36 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 
 	FrustumCull( Camera, Renderables );
 
-	/*for( auto* Renderable : Renderables )
+	const auto* World = CWorld::GetPrimaryWorld();
+	if( World )
 	{
-		auto& RenderData = Renderable->GetRenderData();
-		if( !RenderData.ShouldRender )
-			continue;
-
-		static const float MaximumShadowDistance = 360.0f;
-		static const float MaximumShadowDistanceSquared = MaximumShadowDistance * MaximumShadowDistance;
-		const float DistanceToCamera = RenderData.Transform.GetPosition().DistanceSquared( Camera.GetCameraPosition() );
-		if( DistanceToCamera > MaximumShadowDistanceSquared )
+		const auto* ActiveCamera = World->GetActiveCamera();
+		if( ActiveCamera )
 		{
-			RenderData.ShouldRender = false;
+			for( auto* Renderable : Renderables )
+			{
+				auto& RenderData = Renderable->GetRenderData();
+				if( !RenderData.ShouldRender )
+					continue;
+
+				static const float MaximumShadowDistance = 35.0f;
+				static const float MaximumShadowDistanceSquared = MaximumShadowDistance * MaximumShadowDistance;
+				const float DistanceToCamera = RenderData.Transform.GetPosition().DistanceSquared( ActiveCamera->GetCameraPosition() );
+				if( DistanceToCamera > MaximumShadowDistanceSquared )
+				{
+					const auto Size = ( RenderData.WorldBounds.Maximum - RenderData.WorldBounds.Minimum );
+
+					static const float MaximumSize = 2.5f;
+					static const float MaximumSizeSquared = MaximumSize * MaximumSize;
+					const auto SizeSquaredScalar = Size.LengthSquared();
+					if( SizeSquaredScalar < MaximumSizeSquared )
+					{
+						RenderData.ShouldRender = false;
+					}
+				}
+			}
 		}
-	}*/
+	}
 
 	ProjectionView = Camera.GetProjectionMatrix() * Camera.GetViewMatrix();
 

@@ -31,7 +31,7 @@ struct TriangleTree
 		delete Lower;
 	}
 
-	FBounds Bounds;
+	BoundingBox Bounds;
 
 	TriangleTree* Upper = nullptr;
 	TriangleTree* Lower = nullptr;

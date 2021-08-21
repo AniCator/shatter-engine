@@ -721,79 +721,84 @@ namespace Intrinsic
 			StoredVector = _mm_setr_ps( Vector.X, Vector.Y, Vector.Z, Vector.W );
 		}
 
-		inline void operator=( const ::Vector4D& Vector )
+		__m128 Base() const
+		{
+			return StoredVector;
+		}
+
+		void operator=( const ::Vector4D& Vector )
 		{
 			StoredVector = _mm_setr_ps( Vector.X, Vector.Y, Vector.Z, Vector.W );
-		};
+		}
 
-		inline ::Vector4D ToVector4D() const
+		::Vector4D ToVector4D() const
 		{
 			::Vector4D Vector;
 			_mm_storeu_ps( &Vector.X, StoredVector );
 			return Vector;
 		}
 
-		inline ::Vector3D ToVector3D() const
+		::Vector3D ToVector3D() const
 		{
 			::Vector4D Vector4 = ToVector4D();
 			::Vector3D Vector = ::Vector3D( Vector4.X, Vector4.Y, Vector4.Z );
 			return Vector;
 		}
 
-		inline float Dot( const __m128& Vector )
+		float Dot( const __m128& Vector ) const
 		{
 			return _mm_cvtss_f32( _mm_dp_ps( StoredVector, Vector, 0x71 ) );
 		}
 
-		inline float Length()
+		float Length() const
 		{
 			return Length( StoredVector );
 		}
 
-		inline float LengthSquared()
+		float LengthSquared() const
 		{
 			return Dot( StoredVector );
 		}
 
-		inline float Distance( const __m128& Vector )
+		float Distance( const __m128& Vector ) const
 		{
 			return Length( Subtract( StoredVector, Vector ) );
 		}
 
-		inline __m128 operator+=( const __m128& Vector )
+		__m128 operator+=( const __m128& Vector )
 		{
 			StoredVector = Add( StoredVector, Vector );
 			return StoredVector;
 		};
 
-		inline __m128 operator-=( const __m128& Vector )
+		__m128 operator-=( const __m128& Vector )
 		{
 			StoredVector = Subtract( StoredVector, Vector );
 			return StoredVector;
 		};
 
-		inline __m128 operator*=( const __m128& Vector )
+		__m128 operator*=( const __m128& Vector )
 		{
 			StoredVector = Multiply( StoredVector, Vector );
 			return StoredVector;
 		};
 
-		static inline __m128 Add( const __m128& A, const __m128& B )
+		static __m128 Add( const __m128& A, const __m128& B )
 		{
 			return _mm_add_ps( A, B );
 		}
 
-		static inline __m128 Subtract( const __m128& A, const __m128& B )
+		static __m128 Subtract( const __m128& A, const __m128& B )
 		{
 			return _mm_sub_ps( A, B );
 		}
 
-		static inline __m128 Multiply( const __m128& A, const __m128& B )
+		static __m128 Multiply( const __m128& A, const __m128& B )
 		{
 			return _mm_mul_ps( A, B );
 		}
 
-		static inline float Length( const __m128& Vector )
+		static float Length( const __m128& Vector )
 		{
 			return _mm_cvtss_f32( _mm_sqrt_ss( _mm_dp_ps( Vector, Vector, 0x71 ) ) );
 		}

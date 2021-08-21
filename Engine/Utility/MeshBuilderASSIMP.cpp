@@ -58,7 +58,7 @@ void PrintMatrix( const MatrixType& Transform )
 		Transform[0][3], Transform[1][3], Transform[2][3], Transform[3][3] );
 }
 
-// Converts ASSIMP style matrix to Shatter's convention.
+// Converts ASSIMP style matrix to Shatter's convention via a transpose.
 template<typename MatrixType>
 void ConvertMatrix( Matrix4D& TargetMatrix, const MatrixType& SourceMatrix )
 {
@@ -127,14 +127,7 @@ aiMatrix3x3 GetWorldRotationMatrix3x3()
 
 aiMatrix4x4 GetWorldRotationMatrix()
 {
-	aiMatrix3x3 RotationX;
-	aiMatrix3x3 RotationY;
-	aiMatrix3x3 RotationZ;
-	aiMatrix3x3::Rotation( glm::radians( 90.0f ), aiVector3D( 1.0f, 0.0f, 0.0f ), RotationX ); // Pitch
-	aiMatrix3x3::Rotation( glm::radians( 0.0f ), aiVector3D( 0.0f, 1.0f, 0.0f ), RotationY ); // Yaw
-	aiMatrix3x3::Rotation( glm::radians(0.0f ), aiVector3D( 0.0f, 0.0f, 1.0f ), RotationZ ); // Roll
-	const aiMatrix4x4 RotationMatrix = aiMatrix4x4( RotationZ * RotationY * RotationX );
-
+	const aiMatrix4x4 RotationMatrix = aiMatrix4x4( GetWorldRotationMatrix3x3() );
 	return RotationMatrix;
 }
 
@@ -171,13 +164,6 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 {
 	if( !Scene->HasAnimations() || !MeshData.Skeleton )
 		return;
-
-	// aiMatrix3x3 RotationMatrix;
-	// aiMatrix3x3::Rotation( glm::radians( -90.0f ), aiVector3D( 0.0f, 0.0f, 1.0f ), RotationMatrix );
-	// aiMatrix4x4 RotMat = aiMatrix4x4( RotationMatrix );
-	const auto RotationMatrix = GetWorldRotationMatrix();
-	auto RotationMatrixInverse = RotationMatrix;
-	RotationMatrixInverse.Inverse();
 
 	// Log::Event( "Calculating bone weights.\n" );
 	Skeleton& Skeleton = *MeshData.Skeleton;
@@ -239,32 +225,19 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 		Skeleton.MatrixNames.resize( Mesh->mNumBones );
 	}
 
-	auto GlobalTransformationInverse = Transform;
-	GlobalTransformationInverse.Inverse();
-	//if( MeshData.Parent )
-	//{
-	//	GlobalTransformation = MeshData.Parent->mTransformation;// *GlobalTransformation;
-	//}
-
-	// ConvertMatrix( MeshData.Skeleton->GlobalMatrix, GlobalTransformation );
-
 	// Map the bones to their respective nodes and viceversa.
 	for( size_t BoneIndex = 0; BoneIndex < Mesh->mNumBones; BoneIndex++ )
 	{
 		const auto* Bone = Mesh->mBones[BoneIndex];
+		auto InverseOffsetMatrix = Bone->mOffsetMatrix;
 
-		aiMatrix4x4 BoneTransformation;		
-		auto BoneIterator = MeshData.Nodes.find( Bone->mName.C_Str() );
-		if( BoneIterator != MeshData.Nodes.end() )
-		{
-			BoneTransformation = BoneIterator->second->mTransformation;
-		}
-
-		auto InverseOffsetMatrix = Bone->mOffsetMatrix * BoneTransformation;
+		// Set the inverse bind pose matrix.
+		ConvertMatrix( Skeleton.Bones[BoneIndex].ModelToBone, InverseOffsetMatrix );
+		
 		InverseOffsetMatrix.Inverse();
-	
-		// Assign the offset matrix to the bone in column major format.
-		ConvertMatrix( Skeleton.Bones[BoneIndex].Matrix, InverseOffsetMatrix );
+
+		// Set the bind pose matrix.
+		ConvertMatrix( Skeleton.Bones[BoneIndex].BoneToModel, InverseOffsetMatrix );
 
 		Skeleton.MatrixNames[BoneIndex] = Bone->mName.C_Str();
 
@@ -430,7 +403,7 @@ void ParseNodes( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNod
 	}
 }
 
-bool CompareKeys( const Key& A, const Key& B )
+bool CompareAnimationKeys( const Key& A, const Key& B )
 {
 	return A.Time < B.Time;
 }
@@ -440,6 +413,13 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 	if( !Scene->HasAnimations() || !MeshData.Skeleton )
 		return;
 
+	aiMatrix3x3 RotationMatrix = GetWorldRotationMatrix3x3();
+	RotationMatrix.Inverse();
+
+	const auto RotationQuaternion = aiQuaternion( RotationMatrix );
+
+	const auto YawFix = aiQuaternion( Math::ToRadians( 180.0f ), Math::ToRadians( 0.0f ), Math::ToRadians( 0.0f ) );
+
 	for( size_t AnimationIndex = 0; AnimationIndex < Scene->mNumAnimations; AnimationIndex++ )
 	{
 		auto Sequence = Scene->mAnimations[AnimationIndex];
@@ -447,13 +427,13 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 		{
 			Animation NewAnimation;
 			NewAnimation.Name = Sequence->mName.C_Str();
-			if( Sequence->mTicksPerSecond > 0.0f )
+			const float TickRate = Sequence->mTicksPerSecond;
+			const auto AnimationScale = 0.001f * TickRate;
+			NewAnimation.Duration = Sequence->mDuration * AnimationScale;
+			
+			if( TickRate > 0.0 )
 			{
-				NewAnimation.Duration = Sequence->mDuration / Sequence->mTicksPerSecond;
-			}
-			else
-			{
-				NewAnimation.Duration = Sequence->mDuration;
+				NewAnimation.Duration /= Math::Float( TickRate );
 			}
 
 			for( size_t ChannelIndex = 0; ChannelIndex < Sequence->mNumChannels; ChannelIndex++ )
@@ -466,16 +446,37 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 					{
 						const auto& Bone = MeshData.NodeToBone[Channel->mNodeName.C_Str()];
 
+						Matrix4D TranslationCorrection = Matrix4D();
+						if( Bone.Bone->Index < 0 )
+						{
+							auto RootTransformation = MeshData.BoneToNode[Channel->mNodeName.C_Str()]->mTransformation;
+							RootTransformation.Inverse();
+
+							ConvertMatrix( TranslationCorrection, RootTransformation );
+						}
+
 						for( size_t KeyIndex = 0; KeyIndex < Channel->mNumPositionKeys; KeyIndex++ )
 						{
 							const auto& ChannelKey = Channel->mPositionKeys[KeyIndex];
 
 							Key Key;
 							Key.BoneIndex = Bone.Bone->Index;
-							Key.Time = ChannelKey.mTime / Sequence->mTicksPerSecond;
-							Key.Value.X = ChannelKey.mValue.x;
-							Key.Value.Y = ChannelKey.mValue.y;
-							Key.Value.Z = ChannelKey.mValue.z;
+							Key.Time = ChannelKey.mTime * AnimationScale / TickRate;
+
+							// auto Value = RotationMatrix * ChannelKey.mValue;
+							auto Value = ChannelKey.mValue;
+							
+							Key.Value.X = Value.x;
+							Key.Value.Y = Value.y;
+							Key.Value.Z = Value.z;
+
+							// Key.Value.X = Value.x;
+							// Key.Value.Y = Value.y * -1.0f;
+							// Key.Value.Z = Value.z * -1.0f;
+							
+							Key.Value.W = 1.0f;
+
+							// Key.Value = Vector4D( TranslationCorrection.Transform( Vector3D( Key.Value.X, Key.Value.Y, Key.Value.Z ) ), 1.0f );
 
 							NewAnimation.PositionKeys.emplace_back( Key );
 						}
@@ -486,12 +487,19 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 
 							Key Key;
 							Key.BoneIndex = Bone.Bone->Index;
-							Key.Time = ChannelKey.mTime / Sequence->mTicksPerSecond;
+							Key.Time = ChannelKey.mTime * AnimationScale / TickRate;
 
-							Key.Value.X = ChannelKey.mValue.x;
-							Key.Value.Y = ChannelKey.mValue.y;
-							Key.Value.Z = ChannelKey.mValue.z;
-							Key.Value.W = ChannelKey.mValue.w;
+							// auto Value = YawFix * ChannelKey.mValue;
+							auto Value = ChannelKey.mValue;
+								
+							// auto Quat = glm::quat( Value.w, Value.x, Value.y, Value.z );
+							auto Quat = glm::quat( Value.x, Value.y, Value.z, Value.w );
+							// Quat = glm::conjugate( Quat );
+
+							Key.Value.X = Quat.x;
+							Key.Value.Y = Quat.y;
+							Key.Value.Z = Quat.z;
+							Key.Value.W = Quat.w;
 
 							NewAnimation.RotationKeys.emplace_back( Key );
 						}
@@ -502,7 +510,7 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 
 							Key Key;
 							Key.BoneIndex = Bone.Bone->Index;
-							Key.Time = ChannelKey.mTime / Sequence->mTicksPerSecond;
+							Key.Time = ChannelKey.mTime * AnimationScale / TickRate;
 							Key.Value.X = ChannelKey.mValue.x;
 							Key.Value.Y = ChannelKey.mValue.y;
 							Key.Value.Z = ChannelKey.mValue.z;
@@ -513,9 +521,9 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 				}
 			}
 
-			std::sort( NewAnimation.PositionKeys.begin(), NewAnimation.PositionKeys.end(), CompareKeys );
-			std::sort( NewAnimation.RotationKeys.begin(), NewAnimation.RotationKeys.end(), CompareKeys );
-			std::sort( NewAnimation.ScalingKeys.begin(), NewAnimation.ScalingKeys.end(), CompareKeys );
+			std::sort( NewAnimation.PositionKeys.begin(), NewAnimation.PositionKeys.end(), CompareAnimationKeys );
+			std::sort( NewAnimation.RotationKeys.begin(), NewAnimation.RotationKeys.end(), CompareAnimationKeys );
+			std::sort( NewAnimation.ScalingKeys.begin(), NewAnimation.ScalingKeys.end(), CompareAnimationKeys );
 
 			MeshData.Animations.insert_or_assign( NewAnimation.Name, NewAnimation );
 			Log::Event( "Imported animation \"%s\" (%i keys)\n", NewAnimation.Name.c_str(), NewAnimation.PositionKeys.size() + NewAnimation.RotationKeys.size() + NewAnimation.ScalingKeys.size() );
@@ -554,10 +562,12 @@ void FinishSkeleton( FMeshData& MeshData )
 		MeshData.Vertices[VertexIndex].Bone[0] = Math::Float( Skeleton.Weights[VertexIndex].Index[0] );
 		MeshData.Vertices[VertexIndex].Bone[1] = Math::Float( Skeleton.Weights[VertexIndex].Index[1] );
 		MeshData.Vertices[VertexIndex].Bone[2] = Math::Float( Skeleton.Weights[VertexIndex].Index[2] );
+		MeshData.Vertices[VertexIndex].Bone[3] = Math::Float( Skeleton.Weights[VertexIndex].Index[3] );
 
 		MeshData.Vertices[VertexIndex].Weight[0] = Math::Float( Skeleton.Weights[VertexIndex].Weight[0] );
 		MeshData.Vertices[VertexIndex].Weight[1] = Math::Float( Skeleton.Weights[VertexIndex].Weight[1] );
 		MeshData.Vertices[VertexIndex].Weight[2] = Math::Float( Skeleton.Weights[VertexIndex].Weight[2] );
+		MeshData.Vertices[VertexIndex].Weight[3] = Math::Float( Skeleton.Weights[VertexIndex].Weight[3] );
 	}
 }
 
@@ -591,7 +601,7 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	if( !Scene )
 		return;
 
-	Log::Event( "Meshes found: %i\n", Scene->mNumMeshes );
+	// Log::Event( "Meshes found: %i\n", Scene->mNumMeshes );
 
 	if( Scene->mNumMeshes > 0 )
 	{
@@ -601,14 +611,34 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 		FMeshData MeshData;
 		MeshData.Skeleton = &Set.Skeleton;
 		
-		MeshData.InverseTransform = Scene->mRootNode->mTransformation;
+		MeshData.InverseTransform = Transform;
 		MeshData.InverseTransform.Inverse();
-		ConvertMatrix( MeshData.Skeleton->GlobalMatrixInverse, Transform );
+		ConvertMatrix( MeshData.Skeleton->GlobalMatrixInverse, MeshData.InverseTransform );
 
 		ParseNodes( Transform, Scene, Scene->mRootNode, MeshData );
 		UpdateBoneHierarchy( Scene->mRootNode, MeshData );
 		ParseAnimations( Transform, Scene, MeshData );
 		FinishSkeleton( MeshData );
+
+		// Note: For debugging.
+		if( Scene->mMetaData && false )
+		{
+			Log::Event( "MetaData\n" );
+
+			int UpAxis;
+			Scene->mMetaData->Get( "UpAxis", UpAxis );
+			Log::Event( "UpAxis: %i\n", UpAxis );
+
+			Scene->mMetaData->Get( "UpAxisSign", UpAxis );
+			Log::Event( "UpAxisSign: %i\n", UpAxis );
+
+			for( int MetaIndex = 0; MetaIndex < Scene->mMetaData->mNumProperties; MetaIndex++ )
+			{
+				Log::Event( "%s\n",
+					Scene->mMetaData->mKeys[MetaIndex].C_Str()
+				);
+			}
+		}
 
 		std::vector<FVertex> FatVertices;
 		std::vector<uint32_t> FatIndices;

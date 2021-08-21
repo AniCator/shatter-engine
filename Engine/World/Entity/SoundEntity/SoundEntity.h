@@ -20,6 +20,7 @@ public:
 	virtual void Destroy() override;
 
 	virtual void Load( const JSON::Vector& Objects ) override;
+	virtual void Reload() override;
 
 	void Play();
 	void Stop();
@@ -42,11 +43,12 @@ public:
 	bool AutoPlay;
 	bool Loop;
 	bool Is3D = true;
+	Bus::Type Bus = Bus::SFX;
 	
 	bool OutOfRange = false;
 	float Range = -1.0f;
 
 	bool AutoPlayed;
 
-	FName SoundName;
+	std::string SoundName;
 };

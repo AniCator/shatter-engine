@@ -32,8 +32,8 @@ protected:
 	// When not null, only this entity will cause the trigger event to fire.
 	CEntity* Filter = nullptr;
 
-	const FBounds DefaultBounds = FBounds( Vector3D( -1.0f ), Vector3D( 1.0f ) );
-	FBounds Bounds = DefaultBounds;
+	const BoundingBox DefaultBounds = BoundingBox( Vector3D( -1.0f ), Vector3D( 1.0f ) );
+	BoundingBox Bounds = DefaultBounds;
 
 	CTriggerBody<Interactable*>* Volume = nullptr;
 };

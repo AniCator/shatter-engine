@@ -326,7 +326,7 @@ struct FEventCamera : FTrackEvent
 		if( !World )
 			return;
 
-		// if( World->GetActiveCamera() == &Camera )
+		if( TimelineCamera && !Scrubbing )
 		{
 			World->SetActiveCamera( nullptr );
 		}
@@ -639,7 +639,7 @@ void FTrackEvent::Import( CData& Data )
 }
 
 struct FTrack
-{
+{	
 	void AddEvent( FTrackEvent* Event )
 	{
 		Events.emplace_back( Event );
@@ -738,6 +738,9 @@ public:
 
 	bool Load( const char* FileLocation )
 	{
+		if( !Tracks.empty() )
+			return false;
+		
 		Location = FileLocation;
 		CFile File( Location.c_str() );
 		if( File.Exists() )
@@ -751,7 +754,7 @@ public:
 		return false;
 	}
 
-	void Save( const char* FileLocation = nullptr )
+	void Save( const char* FileLocation = nullptr ) const
 	{
 		const char* SaveLocation = FileLocation ? FileLocation : Location.c_str();
 		if( SaveLocation )
@@ -836,8 +839,14 @@ public:
 		// Stop the timeline playback if we have crossed the end marker.
 		if( Marker >= EndMarker )
 		{
-			// Stop();
-			Play();
+			if( DrawTimeline )
+			{
+				Play();
+			}
+			else
+			{
+				Stop();
+			}
 		}
 	}
 
@@ -1906,6 +1915,8 @@ public:
 
 		Data >> Timeline.StartMarker;
 		Data >> Timeline.EndMarker;
+
+		Timeline.Tracks.clear();
 
 		DataVector::Decode( Data, Timeline.Tracks );
 

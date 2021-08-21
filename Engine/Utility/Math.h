@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <string>
 
+#include <Engine/Utility/Math/BoundingBox.h>
 #include <Engine/Utility/Math/Vector.h>
 #include <Engine/Utility/Math/Matrix.h>
 #include <Engine/Utility/Math/Transform.h>
@@ -16,24 +17,6 @@
 static const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
 static const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
 static const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };
-
-struct FBounds
-{
-	FBounds()
-	{
-		Minimum = Vector3D( 0.0f, 0.0f, 0.0f );
-		Maximum = Vector3D( 0.0f, 0.0f, 0.0f );
-	}
-
-	FBounds( const Vector3D& Minimum, const Vector3D& Maximum )
-	{
-		this->Minimum = Minimum;
-		this->Maximum = Maximum;
-	}
-
-	Vector3D Minimum;
-	Vector3D Maximum;
-};
 
 template<typename NewType, typename OldType>
 NewType* Cast( OldType* Object )
@@ -435,9 +418,9 @@ namespace Math
 		return VectorMin( Vector.X, Vector.Y, Vector.Z );
 	}
 
-	inline FBounds AABB( const Vector3D* Positions, uint32_t Count )
+	inline BoundingBox AABB( const Vector3D* Positions, uint32_t Count )
 	{
-		FBounds AABB;
+		BoundingBox AABB;
 		for( uint32_t VertexIndex = 0; VertexIndex < Count; VertexIndex++ )
 		{
 			const Vector3D& Position = Positions[VertexIndex];
@@ -482,7 +465,7 @@ namespace Math
 		return AABB;
 	}
 
-	inline FBounds AABB( const FBounds& AABB, FTransform& Transform )
+	inline BoundingBox AABB( const BoundingBox& AABB, FTransform& Transform )
 	{
 		const auto& Minimum = AABB.Minimum;
 		const auto& Maximum = AABB.Maximum;
@@ -504,11 +487,11 @@ namespace Math
 			TransformedPositions[PositionIndex] = Transform.Transform( Positions[PositionIndex] );
 		}
 
-		FBounds TransformedAABB = Math::AABB( TransformedPositions, 8 );
+		BoundingBox TransformedAABB = Math::AABB( TransformedPositions, 8 );
 		return TransformedAABB;
 	}
 
-	inline FBounds AABB( const FBounds& AABB, Matrix4D& Matrix )
+	inline BoundingBox AABB( const BoundingBox& AABB, Matrix4D& Matrix )
 	{
 		const auto& Minimum = AABB.Minimum;
 		const auto& Maximum = AABB.Maximum;
@@ -530,7 +513,7 @@ namespace Math
 			TransformedPositions[PositionIndex] = Matrix.Transform( Positions[PositionIndex] );
 		}
 
-		FBounds TransformedAABB = Math::AABB( TransformedPositions, 8 );
+		BoundingBox TransformedAABB = Math::AABB( TransformedPositions, 8 );
 		return TransformedAABB;
 	}
 

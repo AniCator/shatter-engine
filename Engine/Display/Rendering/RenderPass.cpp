@@ -368,10 +368,10 @@ void PointCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 		auto& RenderData = Renderable->GetRenderData();
 		RenderData.ShouldRender = false;
 
-		const auto& Bounds = Renderable->GetMesh()->GetBounds();
+		const auto& Bounds = RenderData.WorldBounds;
 		
-		const auto Minimum = Math::Abs( Bounds.Minimum * RenderData.Transform.GetSize() );
-		const auto& Maximum = Math::Abs( Bounds.Maximum * RenderData.Transform.GetSize() );
+		const auto Minimum = Math::Abs( Bounds.Minimum );
+		const auto& Maximum = Math::Abs( Bounds.Maximum );
 		
 		const float X = Math::Max( Minimum.X, Maximum.X );
 		const float Y = Math::Max( Minimum.Y, Maximum.Y );

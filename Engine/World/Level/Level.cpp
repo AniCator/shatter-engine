@@ -118,7 +118,6 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 	};
 	std::vector<EntityIdentifier> Identifiers;
 
-	Log::Event( "Processing JSON tree.\n" );
 	CAssets& Assets = CAssets::Get();
 	size_t Pass = 0;
 	while( Pass < 2 )
@@ -298,7 +297,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									CLevel& SubLevel = World->Add();
 									SubLevel.Prefab = true;
 									SubLevel.Transform = FTransform( Level.Position, Level.Orientation, Level.Size );
-									SubLevel.Transform = GetTransform() * SubLevel.Transform;
+									SubLevel.Transform = SubLevel.Transform * GetTransform();
 									SubLevel.Load( SubLevelFile );
 								}
 							}
@@ -313,6 +312,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 								{
 									Link.Entity->Load( Link.Object->Objects );
 									Link.Entity->Link( Link.Object->Objects );
+									Link.Entity->Relink();
 									Link.Entity->Reload();
 								}
 							}
@@ -539,10 +539,11 @@ CData& operator>> ( CData& Data, CLevel& Level )
 			}
 		}
 
-		for( auto Entity : Level.Entities )
+		for( auto* Entity : Level.Entities )
 		{
 			if( Entity )
 			{
+				Entity->Relink();
 				Entity->Reload();
 			}
 		}

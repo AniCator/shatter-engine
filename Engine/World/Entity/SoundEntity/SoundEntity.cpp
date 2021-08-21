@@ -59,12 +59,12 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 	CPointEntity::Load( Objects );
 	CAssets& Assets = CAssets::Get();
 
-	for( auto Property : Objects )
+	bool BusFound = false;
+	for( auto* Property : Objects )
 	{
 		if( Property->Key == "sound" )
 		{
 			SoundName = Property->Value;
-			Asset = Assets.FindSound( Property->Value );
 		}
 		else if( Property->Key == "falloff" )
 		{
@@ -122,9 +122,29 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 				Is3D = true;
 			}
 		}
+		else if( Property->Key == "bus" )
+		{
+			int32_t BusInteger = Bus::SFX;
+			Extract( Property->Value, BusInteger );
+			Bus = Bus::Type( BusInteger );
+			BusFound = true;
+		}
+	}
+
+	// If no bus was specified, set it to the Music channel if the sound isn't spatialized.
+	if( !BusFound && !Is3D )
+	{
+		Bus = Bus::Music;
 	}
 
 	Spawn( Transform );
+}
+
+void CSoundEntity::Reload()
+{
+	Asset = CAssets::Get().FindSound( SoundName );
+
+	CPointEntity::Reload();
 }
 
 void CSoundEntity::Play()
@@ -138,10 +158,8 @@ void CSoundEntity::Play()
 		{
 			Information = Spatial::Create( Transform.GetPosition(), Vector3D::Zero );
 		}
-		else
-		{
-			Information.Bus = Bus::Music;
-		}
+
+		Information.Bus = Bus;
 		
 		if( Falloff == EFalloff::None )
 		{
@@ -178,48 +196,40 @@ void CSoundEntity::UpdateSound()
 {
 	if( !Asset )
 		return;
+
+	const auto* World = GetWorld();
+	if( !World )
+		return;
+	
+	auto* ActiveCamera = World->GetActiveCamera();
+	if( !ActiveCamera )
+		return;
 	
 	float Length = -1.0f;
 	if( Falloff == EFalloff::Linear )
 	{
-		const auto* World = GetWorld();
-		if( World )
-		{
-			auto* ActiveCamera = World->GetActiveCamera();
-			if( ActiveCamera )
-			{
-				const auto& CameraSetup = ActiveCamera->GetCameraSetup();
-				const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+		const auto& CameraSetup = ActiveCamera->GetCameraSetup();
+		const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
-				Length = Delta.Length();
-				Length /= Radius;
+		Length = Delta.Length();
+		Length /= Radius;
 
-				OutOfRange = Length > 1.0f;
-				
-				Length = 1.0f - glm::clamp( Length, 0.0f, 1.0f );
-			}
-		}
+		OutOfRange = Length > 1.0f;
+		
+		Length = 1.0f - glm::clamp( Length, 0.0f, 1.0f );
 	}
 	else if( Falloff == EFalloff::InverseSquare )
 	{
-		const auto* World = GetWorld();
-		if( World )
-		{
-			auto* ActiveCamera = World->GetActiveCamera();
-			if( ActiveCamera )
-			{
-				const auto& CameraSetup = ActiveCamera->GetCameraSetup();
-				const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+		const auto& CameraSetup = ActiveCamera->GetCameraSetup();
+		const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
-				const float Factor = 1.0f / Radius;
-				Length = Delta.Length() * Factor;
-				
-				Length = 1.0f / ( Length * Length );
-				Length = glm::clamp( Length, 0.0f, 1.0f );
+		const float Factor = 1.0f / Radius;
+		Length = Delta.Length() * Factor;
+		
+		Length = 1.0f / ( Length * Length );
+		Length = glm::clamp( Length, 0.0f, 1.0f );
 
-				OutOfRange = Length < 0.02f;
-			}
-		}
+		OutOfRange = Length < 0.02f;
 	}
 	else
 	{
@@ -258,29 +268,28 @@ void CSoundEntity::Import( CData& Data )
 {
 	CPointEntity::Import( Data );
 
-	std::string SoundString;
-	DataString::Decode( Data, SoundString );
-	SoundName = SoundString;
-
-	Sound = CAssets::Get().FindSound( SoundString );
-
+	DataString::Decode( Data, SoundName );
 	Data >> Falloff;
 	Data >> Radius;
 	Data >> Rate;
 	Data >> Volume;
 	Data >> AutoPlay;
 	Data >> Loop;
+	Data >> Is3D;
+	Data >> Bus;
 }
 
 void CSoundEntity::Export( CData& Data )
 {
 	CPointEntity::Export( Data );
 
-	DataString::Encode( Data, SoundName.String() );
+	DataString::Encode( Data, SoundName );
 	Data << Falloff;
 	Data << Radius;
 	Data << Rate;
 	Data << Volume;
 	Data << AutoPlay;
 	Data << Loop;
+	Data << Is3D;
+	Data << Bus;
 }

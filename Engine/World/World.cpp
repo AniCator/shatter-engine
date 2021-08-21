@@ -25,6 +25,9 @@ CWorld::CWorld()
 
 CWorld::~CWorld()
 {
+	if( Physics )
+		Physics->Destroy();
+
 	delete Physics;
 	Physics = nullptr;
 }
@@ -94,6 +97,8 @@ void CWorld::Tick()
 
 void CWorld::Destroy()
 {
+	Physics->Destroy();
+
 	if( PrimaryWorld == this )
 	{
 		PrimaryWorld = nullptr;
@@ -117,8 +122,6 @@ void CWorld::Destroy()
 	{
 		Level.Destroy();
 	}
-
-	Physics->Destroy();
 }
 
 void CWorld::Reload()
@@ -285,7 +288,9 @@ CData& operator>>( CData& Data, CWorld* World )
 	int ExtractedStamp;
 	Chunk.Data >> ExtractedStamp;
 
-	if( strcmp( Identifier, WorldIdentifier ) == 0 && Version >= WorldVersion && StampInteger == ExtractedStamp )
+	const bool FromCurrentBuild = true; // StampInteger == ExtractedStamp;
+
+	if( strcmp( Identifier, WorldIdentifier ) == 0 && Version >= WorldVersion && FromCurrentBuild )
 	{
 		size_t Count;
 		Chunk.Data >> Count;
@@ -297,14 +302,14 @@ CData& operator>>( CData& Data, CWorld* World )
 			World->Levels.push_back( Level );
 		}
 
-		if( World->Levels.size() > 0 )
+		if( !World->Levels.empty() )
 		{
 			World->ActiveLevel = &World->Levels[0];
 		}
 
 		for( auto& Level : World->Levels )
 		{
-			for( auto Entity : Level.GetEntities() )
+			for( auto* Entity : Level.GetEntities() )
 			{
 				Entity->SetLevel( &Level );
 			}

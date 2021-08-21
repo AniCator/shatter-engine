@@ -7,6 +7,8 @@
 #include <Engine/Physics/Body/Body.h>
 #include <Engine/Physics/Body/Plane.h>
 
+#include <Engine/Utility/Geometry.h>
+
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
@@ -23,9 +25,9 @@ static const auto Gravity = Vector3D( 0.0f, 0.0f, 9.81f );
 
 size_t TextPosition = 0;
 
-void CreateBVH( CMesh* Mesh, FTransform& Transform, const FBounds& WorldBounds, TriangleTree*& Tree, CBody* Body );
+void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBounds, TriangleTree*& Tree, CBody* Body );
 
-void EnsureVolume( FBounds& Bounds )
+void EnsureVolume( BoundingBox& Bounds )
 {
 	if( Math::Equal( Bounds.Minimum.Y, Bounds.Maximum.Y ) )
 	{
@@ -49,7 +51,7 @@ void EnsureVolume( FBounds& Bounds )
 void VisualizeBounds( TriangleTree* Tree, FTransform* Transform = nullptr, Color BoundsColor = Color::Blue );
 
 // Takes in world space bounds and returns the response normal.
-CollisionResponse CollisionResponseAABBAABB( const FBounds& A, const FBounds& B )
+CollisionResponse CollisionResponseAABBAABB( const BoundingBox& A, const BoundingBox& B )
 {
 	CollisionResponse Response;
 
@@ -68,53 +70,29 @@ CollisionResponse CollisionResponseAABBAABB( const FBounds& A, const FBounds& B 
 	const Vector3D HalfSizeA = SizeA * 0.5f;
 	const Vector3D HalfSizeB = SizeB * 0.5f;
 
-	const Vector3D CenterDistance = ( CenterA - CenterB );
-	const Vector3D CenterDistanceSquared = CenterDistance * CenterDistance;
-	if( CenterDistanceSquared.Z > CenterDistanceSquared.Y && CenterDistanceSquared.Z > CenterDistanceSquared.X )
+	const Vector3D CenterDistance = ( CenterB - CenterA );
+	const auto Overlap = ( HalfSizeA + HalfSizeB ) - Math::Abs( CenterDistance );
+	if( Overlap.X < Overlap.Y && Overlap.X < Overlap.Z )
 	{
-		Response.Distance = Math::Abs( CenterDistance.Z ) - ( HalfSizeA.Z + HalfSizeB.Z );
-		Response.Normal.X = 0.0f;
+		Response.Distance = Overlap.X;
+		Response.Normal.X = HalfSizeA.X * Math::Sign( CenterDistance.X );
 		Response.Normal.Y = 0.0f;
-		Response.Normal.Z = Math::Sign( -CenterDistance.Z );
+		Response.Normal.Z = 0.0f;
 	}
-	else if( CenterDistanceSquared.Y > CenterDistanceSquared.X )
+	else if( Overlap.Y < Overlap.Z )
 	{
-		Response.Distance = Math::Abs( CenterDistance.Y ) - ( HalfSizeA.Y + HalfSizeB.Y );
+		Response.Distance = Overlap.Y;
 		Response.Normal.X = 0.0f;
-		Response.Normal.Y = Math::Sign( -CenterDistance.Y );
+		Response.Normal.Y = HalfSizeA.Y + Math::Sign( CenterDistance.Y );
 		Response.Normal.Z = 0.0f;
 	}
 	else
 	{
-		Response.Distance = Math::Abs( CenterDistance.X ) - ( HalfSizeA.X + HalfSizeB.X );
-		Response.Normal.X = Math::Sign( -CenterDistance.X );
+		Response.Distance = Overlap.Z;
+		Response.Normal.X = 0.0f;
 		Response.Normal.Y = 0.0f;
-		Response.Normal.Z = 0.0f;
+		Response.Normal.Z = HalfSizeA.Z + Math::Sign( CenterDistance.Z );
 	}
-
-	Response.Distance *= -1.0f;
-
-
-#if DrawCollisionResponseAABBAABB == 1
-	bool IsInFront = false;
-	auto ScreenPosition = UI::WorldToScreenPosition( CenterA, &IsInFront );
-	if( IsInFront )
-	{
-		ScreenPosition.X += 10.0f;
-
-		ScreenPosition.Y += TextPosition * 15.0f;
-		/*char VectorString[64];
-		sprintf_s( VectorString, "c %.2f %.2f %.2f", CenterDistance.X, CenterDistance.Y, CenterDistance.Z );
-		UI::AddText( ScreenPosition, VectorString );
-
-		TextPosition++;*/
-
-		auto Start = CenterA + Vector3D( -4.0f, 0.0f, 0.0f );
-		auto End = Start + Response.Normal * Response.Distance;
-		UI::AddLine( Start, End, Color( 0, 255, 255 ) );
-		UI::AddCircle( End, 5.0f, Color( 0, 255, 255 ) );
-	}
-#endif
 
 	return Response;
 }
@@ -242,14 +220,14 @@ CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex
 	return Response;
 }
 
-CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const FBounds& WorldBounds, FTransform& Transform, FTransform& OtherTransform )
+CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingBox& WorldBounds, FTransform& Transform, FTransform& OtherTransform )
 {
 	CollisionResponse Response;
 
 	if( !Tree )
 		return Response;
 
-	FBounds LocalBounds = Math::AABB( WorldBounds, Transform.GetTransformationMatrixInverse() );
+	BoundingBox LocalBounds = Math::AABB( WorldBounds, Transform.GetTransformationMatrixInverse() );
 
 	const Vector3D Center = ( LocalBounds.Maximum + LocalBounds.Minimum ) * 0.5f;
 	Vector3D Extent = ( LocalBounds.Maximum - LocalBounds.Minimum ) * 0.5f;
@@ -379,7 +357,6 @@ CBody::CBody()
 
 CBody::~CBody()
 {
-	Destroy();
 	delete Tree;
 }
 
@@ -411,6 +388,9 @@ void CBody::Construct()
 
 void CBody::Construct( CPhysics* Physics )
 {
+	if( !Physics )
+		return;
+	
 	this->Physics = Physics;
 	Physics->Register( this );
 	CalculateBounds();
@@ -470,15 +450,15 @@ bool CBody::Collision( CBody* Body )
 	if( !Body->Block )
 		return false;
 
-	if( IsType<CPlaneBody>( Body ) )
-		return false;
-
 	if( ShouldIgnoreBody( Body ) )
 		return false;
 
-	const FBounds& BoundsA = Body->GetBounds();
-	const FBounds& BoundsB = GetBounds();
+	const BoundingBox& BoundsA = Body->GetBounds();
+	const BoundingBox& BoundsB = GetBounds();
 	if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
+		return false;
+
+	if( IsType<CPlaneBody>( Body ) )
 		return false;
 
 	const float DeltaTime = GameLayersInstance->GetDeltaTime();
@@ -502,7 +482,7 @@ bool CBody::Collision( CBody* Body )
 			Response = CollisionResponseAABBAABB( Body->WorldBounds, WorldBounds );
 		}
 	}
-	else
+	else if( !Static || !Body->Static )
 	{
 		Response = CollisionResponseAABBAABB( Body->WorldBounds, WorldBounds );
 	}
@@ -544,40 +524,10 @@ bool CBody::Collision( CBody* Body )
 #if DrawDebugLines == 1
 		auto Position = Transform.GetPosition();
 		const auto ImpulseEnd = Position + Impulse + ( InverseMass * Impulse * Mass );
+		UI::AddLine( Position, Position + Response.Normal.Normalized(), Color( 0, 255, 0 ) );
 		UI::AddLine( Position, ImpulseEnd, Color( 255, 0, 0 ) );
 		UI::AddCircle( ImpulseEnd, 5.0f, Color( 255, 0, DebugUsingTree ? 255 : 0 ) );
 		UI::AddText( ImpulseEnd, std::to_string( VelocityAlongNormal ).c_str() );
-#endif
-	}
-
-	if( !Static && !Stationary )
-	{
-		Vector3D ProjectionPosition = Response.Normal * Response.Distance;
-
-#if DrawCollisionResponseAABBAABB == 1
-		/*UI::AddAABB( WorldBounds.Minimum + ProjectionPosition, WorldBounds.Maximum + ProjectionPosition, Color( 255, 0, 127 ) );
-
-		const Vector3D& CenterA = ( WorldBounds.Maximum + WorldBounds.Minimum ) * 0.5f;
-		bool IsInFront = false;
-		auto ScreenPosition = UI::WorldToScreenPosition( CenterA, &IsInFront );
-		if( IsInFront )
-		{
-			ScreenPosition.X += 10.0f;
-
-			ScreenPosition.Y += TextPosition * 15.0f;
-			char VectorString[64];
-			sprintf_s( VectorString, "rN %.2f %.2f %.2f (rD %.2f)", Response.Normal.X, Response.Normal.Y, Response.Normal.Z, Response.Distance );
-			UI::AddText( ScreenPosition, VectorString );
-
-			TextPosition++;
-		}*/
-#endif
-
-#if DrawDebugLines == 1
-		if( Contacts > 0 )
-		{
-			// UI::AddLine( WorldBounds.Minimum, Body->WorldBounds.Minimum, Color::White );
-		}
 #endif
 	}
 
@@ -682,7 +632,7 @@ bool VectorCompare( const Vector3D& A, const Vector3D& B )
 		&& A.Z < B.Z;
 }
 
-void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const FBounds& WorldBounds, const size_t Depth )
+void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox& WorldBounds, const size_t Depth )
 {
 	if( !Tree )
 	{
@@ -702,8 +652,8 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const FBounds& Wor
 
 	// Median = ( WorldBounds.Minimum + WorldBounds.Maximum ) * 0.5f;
 
-	FBounds UpperBounds = WorldBounds;
-	FBounds LowerBounds = UpperBounds;
+	BoundingBox UpperBounds = WorldBounds;
+	BoundingBox LowerBounds = UpperBounds;
 
 	size_t Axis = 0;
 	Vector3D Size = ( WorldBounds.Maximum - WorldBounds.Minimum );
@@ -822,7 +772,7 @@ void VisualizeBounds( TriangleTree* Tree, FTransform* Transform, Color BoundsCol
 						Positions[PositionIndex] = Transform->Transform( Positions[PositionIndex] );
 					}
 
-					FBounds TransformedAABB = Math::AABB( Positions, 8 );
+					BoundingBox TransformedAABB = Math::AABB( Positions, 8 );
 
 					UI::AddAABB( TransformedAABB.Minimum, TransformedAABB.Maximum, BoundsColor );
 				}
@@ -855,7 +805,7 @@ void VisualizeBounds( TriangleTree* Tree, FTransform* Transform, Color BoundsCol
 	}
 }
 
-void CreateBVH( CMesh* Mesh, FTransform& Transform, const FBounds& WorldBounds, TriangleTree*& Tree, CBody* Body )
+void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBounds, TriangleTree*& Tree, CBody* Body )
 {
 	if( !Tree )
 	{
@@ -992,7 +942,7 @@ void CBody::CalculateBounds()
 	InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
 }
 
-FBounds CBody::GetBounds() const
+const BoundingBox& CBody::GetBounds() const
 {
 	return WorldBounds;
 }
@@ -1006,7 +956,7 @@ const FTransform& CBody::GetTransform() const
 
 	if( Ghost )
 	{
-		auto* Point = Cast<CPointEntity>( Ghost );
+		auto* Point = ::Cast<CPointEntity>( Ghost );
 		if( Point )
 		{
 			return Point->GetTransform();
@@ -1018,7 +968,7 @@ const FTransform& CBody::GetTransform() const
 	return Identity;
 }
 
-void CBody::Debug()
+void CBody::Debug() const
 {
 	if( !Owner && !Ghost )
 		return;
@@ -1058,13 +1008,17 @@ BodyType CBody::GetType() const
 
 bool CBody::ShouldIgnoreBody( CBody* Body ) const
 {
-	const auto* MeshEntity = Cast<CMeshEntity>( Body->Owner );
+	const auto* MeshEntity = ::Cast<CMeshEntity>( Body->Owner );
 	if( !MeshEntity )
 		return false;
 
-	for( const auto* IgnoredBody : IgnoredBodies )
+	if( IgnoredBodies.empty() )
+		return false;
+
+	const auto BodyCount = IgnoredBodies.size();
+	for( size_t Index = 0; Index < BodyCount; Index++ )
 	{
-		if( IgnoredBody == MeshEntity )
+		if( IgnoredBodies[Index] == MeshEntity )
 			return true;
 	}
 
@@ -1073,7 +1027,7 @@ bool CBody::ShouldIgnoreBody( CBody* Body ) const
 
 void CBody::Ignore( CBody* Body, const bool Clear )
 {
-	Ignore( Cast<CMeshEntity>( Body->Owner ), Clear );
+	Ignore( ::Cast<CMeshEntity>( Body->Owner ), Clear );
 }
 
 void CBody::Ignore( CMeshEntity* Entity, const bool Clear )
@@ -1081,9 +1035,18 @@ void CBody::Ignore( CMeshEntity* Entity, const bool Clear )
 	if( !Entity )
 		return;
 
+	auto DiscoveredBody = IgnoredBodies.end();
+	for( auto Iterator = std::begin( IgnoredBodies ); Iterator != std::end( IgnoredBodies ); ++Iterator )
+	{
+		if( Entity == *Iterator )
+		{
+			DiscoveredBody = Iterator;
+		}
+	}
+	
 	if( Clear )
 	{
-		const auto DiscoveredBody = IgnoredBodies.find( Entity );
+		// The body was found, erase it from the list.
 		if( DiscoveredBody != IgnoredBodies.end() )
 		{
 			IgnoredBodies.erase( DiscoveredBody );
@@ -1091,6 +1054,38 @@ void CBody::Ignore( CMeshEntity* Entity, const bool Clear )
 	}
 	else
 	{
-		IgnoredBodies.insert( Entity );
+		// The body wasn't found, add it to the list.
+		if( DiscoveredBody == IgnoredBodies.end() )
+		{
+			IgnoredBodies.emplace_back( Entity );
+		}
 	}
+}
+
+void CBody::Query( const BoundingBox& Box, QueryResult& Result ) const
+{
+	if( !Box.Intersects( GetBounds() ) )
+		return;
+	
+	Result.Hit = true;
+	Result.Objects.emplace_back( const_cast<Testable*>( static_cast<const Testable*>( this ) ) );
+}
+
+Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const
+{
+	Geometry::Result Empty;
+	if( !Block )
+		return Empty;
+
+	for( auto* Ignored : Ignore )
+	{
+		if( this == Ignored )
+		{
+			return Empty;
+		}
+	}
+
+	Geometry::Result Result = Geometry::LineInBoundingBox( Start, End, GetBounds() );
+	Result.Body = const_cast<CBody*>( this );
+	return Result;
 }

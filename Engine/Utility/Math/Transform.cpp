@@ -139,8 +139,12 @@ FTransform FTransform::Transform( const FTransform& B )
 	auto NewPosition = Position( B.GetPosition() );
 	Vector3D Position3D = { NewPosition[0], NewPosition[1], NewPosition[2] };
 
-	auto OrientationRadians = Math::ToRadians( B.GetOrientation() );
-	auto NewOrientation = Rotate( OrientationRadians );
+	const auto OrientationRadians = Math::ToRadians( B.GetOrientation() );
+	/*const Matrix4D Matrix = Matrix4D::FromAxisAngle( WorldUp, OrientationRadians.Yaw ) *
+		Matrix4D::FromAxisAngle( WorldRight, OrientationRadians.Pitch ) *
+		Matrix4D::FromAxisAngle( WorldForward, OrientationRadians.Roll );*/
+	
+	auto NewOrientation = Math::FromGLM( RotateEuler( Math::ToGLM( OrientationRadians ) ) );
 	NewOrientation = Math::ToDegrees( NewOrientation );
 	Vector3D Orientation3D = { NewOrientation[0], NewOrientation[1], NewOrientation[2] };
 

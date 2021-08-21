@@ -48,7 +48,7 @@ public:
 
 	RenderTextureConfiguration GetConfiguration() const;
 
-	FName Name;
+	FName Name = FName::Invalid;
 private:
 	GLuint FramebufferHandle;
 	GLuint DepthHandle;

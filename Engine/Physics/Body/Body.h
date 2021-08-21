@@ -4,6 +4,8 @@
 #include <set>
 
 #include <Engine/Physics/Body/Shared.h>
+#include <Engine/Utility/GeometryResult.h>
+#include <Engine/Utility/Structures/BoundingVolumeHierarchy.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
 struct CollisionResponse
@@ -13,7 +15,7 @@ struct CollisionResponse
 	float Distance = 0.0f;
 };
 
-class CBody
+class CBody : public Testable
 {
 public:
 	CBody();
@@ -31,8 +33,8 @@ public:
 	void Destroy();
 
 	virtual void CalculateBounds();
-	FBounds GetBounds() const;
-	virtual void SetBounds( const FBounds& Bounds )
+	const BoundingBox& GetBounds() const;
+	virtual void SetBounds( const BoundingBox& Bounds )
 	{
 		LocalBounds = Bounds;
 		CalculateBounds();
@@ -40,7 +42,7 @@ public:
 
 	virtual const FTransform& GetTransform() const;
 
-	virtual void Debug();
+	virtual void Debug() const override;
 
 	virtual BodyType GetType() const;
 	
@@ -54,6 +56,9 @@ public:
 	// Setting Clear to true will remove the body from the list. (if it exists)
 	virtual void Ignore( CMeshEntity* Entity, const bool Clear = false );
 
+	void Query( const BoundingBox& Box, QueryResult& Result ) const override;
+	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore = std::vector<Testable*>() ) const override;
+	
 	CMeshEntity* Owner = nullptr;
 
 	// Used to represent any owner that isn't a mesh entity.
@@ -80,8 +85,8 @@ public:
 
 	bool Contact = false;
 	FTransform PreviousTransform;
-	FBounds LocalBounds;
-	FBounds WorldBounds;
+	BoundingBox LocalBounds;
+	BoundingBox WorldBounds;
 	Vector3D DeltaPosition = Vector3D::Zero;
 	Vector3D Acceleration = Vector3D::Zero;
 	Vector3D Velocity = Vector3D::Zero;
@@ -96,6 +101,6 @@ public:
 
 	TriangleTree* Tree = nullptr;
 
-	std::set<CMeshEntity*> IgnoredBodies;
+	std::vector<CMeshEntity*> IgnoredBodies;
 	class CPhysics* Physics = nullptr;
 };
