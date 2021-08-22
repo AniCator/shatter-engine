@@ -19,6 +19,19 @@ struct Light
 
 	// X: Inner Cone
 	// Y: Outer Cone
-	// 
+	// Z: Unused
+	// W: Unused
 	glm::vec4 Properties;
+
+	enum Type
+	{
+		Point = 0,
+		Spot,
+		Directional
+	};
+};
+
+struct LightIndices
+{
+	int32_t Index[4]{ -1, -1, -1, -1 };
 };

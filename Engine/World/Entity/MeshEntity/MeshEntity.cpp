@@ -15,6 +15,8 @@
 
 #include <Engine/Display/UserInterface.h>
 
+#include <Engine/World/Entity/LightEntity/LightEntity.h>
+
 static CEntityFactory<CMeshEntity> Factory( "mesh" );
 
 CMeshEntity::CMeshEntity()
@@ -162,6 +164,11 @@ void CMeshEntity::Tick()
 		RenderData.Transform = Transform;
 		RenderData.Color = Color;
 		RenderData.WorldBounds = WorldBounds;
+
+		if( RenderData.LightIndex.Index[0] == -1 )
+		{
+			RenderData.LightIndex = LightEntity::Fetch( RenderData.Transform.GetPosition() );
+		}
 
 		QueueRenderable( Renderable );
 	}

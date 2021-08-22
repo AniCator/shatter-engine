@@ -3,6 +3,7 @@
 
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Profiling/Logging.h>
+#include <Engine/World/Entity/LightEntity/LightEntity.h>
 
 #include <ThirdParty/glm/gtc/type_ptr.hpp>
 
@@ -100,6 +101,12 @@ void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRend
 		if( ObjectPositionLocation > -1 )
 		{
 			glUniform3fv( ObjectPositionLocation, 1, RenderData.Transform.GetPosition().Base() );
+		}
+
+		const GLint LightIndicesLocation = glGetUniformLocation( RenderData.ShaderProgram, "LightIndices" );
+		if( LightIndicesLocation > -1 )
+		{
+			glUniform4iv( LightIndicesLocation, 1, RenderData.LightIndex.Index );
 		}
 
 		if( Mesh )

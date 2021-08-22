@@ -35,9 +35,9 @@ public:
 		glBufferData( GL_SHADER_STORAGE_BUFFER, BufferCount * sizeof( T ), BufferData, GL_STATIC_DRAW );
 	}
 
-	void Bind() const
+	void Bind( const size_t& Binding = 0 ) const
 	{
-		glBindBufferBase( GL_SHADER_STORAGE_BUFFER, 0, BufferHandle );
+		glBindBufferBase( GL_SHADER_STORAGE_BUFFER, Binding, BufferHandle );
 	}
 
 	GLuint Handle() const

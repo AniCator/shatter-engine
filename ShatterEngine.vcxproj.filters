@@ -159,6 +159,12 @@
     <Filter Include="Source Files\Engine\World\Entity\Logic\LogicSequenceEntity">
       <UniqueIdentifier>{81b53530-4060-4c68-a680-f739feedaff3}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Display\Rendering\Light">
+      <UniqueIdentifier>{679b9221-9ed8-41ca-b0d4-29cc0b024d67}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\LightEntity">
+      <UniqueIdentifier>{e1bf181d-1c53-4de4-9714-8f3b02f291d7}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -409,6 +415,12 @@
     </ClCompile>
     <ClCompile Include="Engine\World\Entity\Logic\LogicSequenceEntity\LogicSequenceEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\Logic\LogicSequenceEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Light\Light.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Light</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\LightEntity\LightEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\LightEntity</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -765,6 +777,12 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\Logic\LogicSequenceEntity\LogicSequenceEntity.h">
       <Filter>Source Files\Engine\World\Entity\Logic\LogicSequenceEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Light\Light.h">
+      <Filter>Source Files\Engine\Display\Rendering\Light</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\LightEntity\LightEntity.h">
+      <Filter>Source Files\Engine\World\Entity\LightEntity</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

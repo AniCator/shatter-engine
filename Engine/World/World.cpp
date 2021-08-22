@@ -9,6 +9,7 @@
 #include <Engine/Resource/Assets.h>
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/World/Entity/Entity.h>
+#include <Engine/World/Entity/LightEntity/LightEntity.h>
 #include <Engine/Utility/Chunk.h>
 
 static const char WorldIdentifier[5] = "LLWF"; // Lofty Lagoon World Format
@@ -44,10 +45,14 @@ void CWorld::Construct()
 
 	Physics = new CPhysics();
 
+	LightEntity::Initialize();
+
 	for( auto Level : Levels )
 	{
 		Level.Construct();
 	}
+
+	LightEntity::UploadToGPU();
 }
 
 void CWorld::Frame()
@@ -56,6 +61,8 @@ void CWorld::Frame()
 	{
 		Level.Frame();
 	}
+
+	LightEntity::Bind();
 }
 
 void CWorld::Tick()

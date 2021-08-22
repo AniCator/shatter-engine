@@ -168,6 +168,7 @@
     <ClCompile Include="Engine\Display\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Camera.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Framebuffer.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Light\Light.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Particle\Particle.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Particle\ParticleEmitter.cpp" />
@@ -218,6 +219,7 @@
     <ClCompile Include="Engine\World\Entity\CameraEntity\CameraEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Entity.cpp" />
     <ClCompile Include="Engine\World\Entity\Info\InfoTextEntity.cpp" />
+    <ClCompile Include="Engine\World\Entity\LightEntity\LightEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicPointEntity\LogicPointEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicSequenceEntity\LogicSequenceEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.cpp" />
@@ -258,6 +260,7 @@
     <ClInclude Include="Engine\Display\imgui_impl_opengl3.h" />
     <ClInclude Include="Engine\Display\Rendering\Camera.h" />
     <ClInclude Include="Engine\Display\Rendering\Framebuffer.h" />
+    <ClInclude Include="Engine\Display\Rendering\Light\Light.h" />
     <ClInclude Include="Engine\Display\Rendering\Mesh.h" />
     <ClInclude Include="Engine\Display\Rendering\Particle\Particle.h" />
     <ClInclude Include="Engine\Display\Rendering\Particle\ParticleEmitter.h" />
@@ -333,6 +336,7 @@
     <ClInclude Include="Engine\World\Entity\CameraEntity\CameraEntity.h" />
     <ClInclude Include="Engine\World\Entity\Entity.h" />
     <ClInclude Include="Engine\World\Entity\Info\InfoTextEntity.h" />
+    <ClInclude Include="Engine\World\Entity\LightEntity\LightEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicPointEntity\LogicPointEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicSequenceEntity\LogicSequenceEntity.h" />
     <ClInclude Include="Engine\World\Entity\Logic\LogicStartEntity\LogicStartEntity.h" />

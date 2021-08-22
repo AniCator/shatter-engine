@@ -7,6 +7,7 @@
 
 #include <Engine/Display/Rendering/Mesh.h>
 class CShader;
+#include <Engine/Display/Rendering/Light/Light.h>
 #include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Display/Rendering/Uniform.h>
 
@@ -21,6 +22,7 @@ struct FRenderData
 	FTransform Transform{};
 	BoundingBox WorldBounds{};
 	Vector4D Color = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
+	LightIndices LightIndex;
 
 	EDrawMode DrawMode = None;
 
