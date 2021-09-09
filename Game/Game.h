@@ -60,15 +60,15 @@ public:
 private:
 	std::vector<IGameLayer*> GameLayers;
 
-	double PreviousTime;
-	double CurrentTime;
-	double DeltaTime;
+	double PreviousTime = 0.0;
+	double CurrentTime = 0.0;
+	double DeltaTime = 0.0;
 
-	double TimeScale;
+	double TimeScale = 1.0;
 
-	double PreviousFrameTime;
-	double CurrentFrameTime;
-	double DeltaFrameTime;
+	double PreviousFrameTime = 0.0;
+	double CurrentFrameTime = 0.0;
+	double DeltaFrameTime = 0.0;
 };
 
 extern CGameLayers* GameLayersInstance;

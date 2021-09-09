@@ -175,5 +175,12 @@ protected:
 	CAssets();
 
 public:
+	// Loads any assets specified in the object.
 	static void ParseAndLoadJSON( const JSON::Object& Assets );
+
+	// Checks a tree for an "assets" entry and loads any assets specified in it.
+	static void ParseAndLoadJSON( const JSON::Vector& Tree );
+
+	// Checks a container's tree for an "assets" entry and loads any assets specified in it.
+	static void ParseAndLoadJSON( const JSON::Container& Container );
 };

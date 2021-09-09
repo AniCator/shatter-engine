@@ -135,10 +135,10 @@ void CRenderer::Initialize()
 
 	CMesh* SquareMesh = Assets.CreateNamedMesh( "square", Square );
 
-	FPrimitive Cube;
-	MeshBuilder::Cube( Cube, 1.0f );
+	// FPrimitive Cube;
+	// MeshBuilder::Cube( Cube, 1.0f );
 
-	Assets.CreateNamedMesh( "cube", Cube );
+	// Assets.CreateNamedMesh( "cube", Cube );
 
 	FPrimitive Pyramid;
 	MeshBuilder::Cone( Pyramid, 1.0f, 4 );
@@ -213,6 +213,10 @@ void CRenderer::DrawQueuedRenderables()
 
 	const bool RenderOnlyMainPass = SkipRenderPasses || ForceWireFrame;
 
+	const bool PreviousSuperSampling = SuperSampling;
+	SuperSampling = CConfiguration::Get().GetInteger( "supersampling", 1 ) > 0;
+	const bool SuperSamplingChanged = SuperSampling != PreviousSuperSampling;
+
 	if( !RenderOnlyMainPass && SuperSampling )
 	{
 		FramebufferWidth *= SuperSamplingFactor;
@@ -223,7 +227,8 @@ void CRenderer::DrawQueuedRenderables()
 	const bool FramebufferReady = Framebuffer.Ready() && 
 		FramebufferWidth == Framebuffer.GetWidth() && 
 		FramebufferHeight == Framebuffer.GetHeight() &&
-		CorrectSampleCount;
+		CorrectSampleCount &&
+		!SuperSamplingChanged;
 	
 	if( !FramebufferReady )
 	{
@@ -346,7 +351,7 @@ void CRenderer::DrawQueuedRenderables()
 				FramebufferRenderable.SetTexture( &BufferPrevious, ETextureSlot::Slot1 );
 			}
 
-			if( !BufferA.Ready() )
+			if( !BufferA.Ready() || !FramebufferReady )
 			{
 				if( ViewportWidth > -1 && ViewportHeight > -1 )
 				{
@@ -357,7 +362,7 @@ void CRenderer::DrawQueuedRenderables()
 				}
 			}
 
-			if( !BufferB.Ready() )
+			if( !BufferB.Ready() || !FramebufferReady )
 			{
 				if( ViewportWidth > -1 && ViewportHeight > -1 )
 				{
@@ -369,6 +374,8 @@ void CRenderer::DrawQueuedRenderables()
 			if( SuperSampling )
 			{
 				CRenderPass AntiAliasingResolve( "AntiAliasingResolve", ViewportWidth, ViewportHeight, Camera );
+				AntiAliasingResolve.ViewportWidth = ViewportWidth;
+				AntiAliasingResolve.ViewportHeight = ViewportHeight;
 				AntiAliasingResolve.Target = &BufferA;
 				AntiAliasingResolve.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 				
@@ -383,6 +390,8 @@ void CRenderer::DrawQueuedRenderables()
 				FramebufferRenderable.SetShader( ImageProcessingShader );
 				
 				CRenderPass ImageProcessingPass( "ImageProcessingPass", ViewportWidth, ViewportHeight, Camera );
+				ImageProcessingPass.ViewportWidth = ViewportWidth;
+				ImageProcessingPass.ViewportHeight = ViewportHeight;
 				ImageProcessingPass.Target = &BufferA;
 				ImageProcessingPass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 
@@ -395,7 +404,7 @@ void CRenderer::DrawQueuedRenderables()
 				CopyTexture( &BufferA, &BufferB, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
 			}
 
-			if( !BufferPrevious.Ready() )
+			if( !BufferPrevious.Ready() || !FramebufferReady )
 			{
 				if( ViewportWidth > -1 && ViewportHeight > -1 )
 				{
@@ -415,6 +424,9 @@ void CRenderer::DrawQueuedRenderables()
 				FramebufferRenderable.SetTexture( &BufferB, ETextureSlot::Slot0 );
 
 				CRenderPass ResolveToViewport( "ResolveToViewport", ViewportWidth, ViewportHeight, Camera );
+				ResolveToViewport.ViewportWidth = ViewportWidth;
+				ResolveToViewport.ViewportHeight = ViewportHeight;
+
 				ResolveToViewport.Target = &BufferA;
 				DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 

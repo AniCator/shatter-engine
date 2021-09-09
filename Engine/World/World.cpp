@@ -35,6 +35,8 @@ CWorld::~CWorld()
 
 void CWorld::Construct()
 {
+	OptickEvent();
+
 	Camera = nullptr;
 
 	if( Physics )
@@ -57,6 +59,8 @@ void CWorld::Construct()
 
 void CWorld::Frame()
 {
+	OptickEvent();
+
 	for( auto Level : Levels )
 	{
 		Level.Frame();
@@ -67,6 +71,8 @@ void CWorld::Frame()
 
 void CWorld::Tick()
 {
+	OptickEvent();
+
 	for( auto Level : Levels )
 	{
 		Level.Tick();

@@ -71,7 +71,7 @@ const char* FEventImage::GetType()
 
 void FEventImage::Export( CData& Data )
 {
-	FTrackEvent::Export( Data );
+	TrackEvent::Export( Data );
 
 	DataString::Encode( Data, Name );
 
@@ -87,7 +87,7 @@ void FEventImage::Export( CData& Data )
 
 void FEventImage::Import( CData& Data )
 {
-	FTrackEvent::Import( Data );
+	TrackEvent::Import( Data );
 
 	DataString::Decode( Data, Name );
 

@@ -774,12 +774,6 @@ void AssetUI()
 
 		ImGui::End();
 	}
-
-	auto Sequences = Assets.GetSequences();
-	for( const auto& Pair : Sequences )
-	{
-		Pair.second->Frame();
-	}
 }
 
 static bool ShowStrings = false;

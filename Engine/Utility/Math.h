@@ -45,9 +45,20 @@ bool IsType( Type* Object )
 
 namespace Math
 {
-	static const float Pi = 3.14159265358979323846264338327950288f;
-	static const float Pi2 = 6.28318530717958647692528676655900576f;
-	static const float Tau = 6.28318530717958647692528676655900576f;
+	inline float Pi()
+	{
+		return 3.14159265358979323846264338327950288f;
+	}
+
+	inline float Pi2()
+	{
+		return 6.28318530717958647692528676655900576f;
+	}
+
+	inline float Tau()
+	{
+		return 6.28318530717958647692528676655900576f;
+	}
 
 	inline float ToRadians( const float& Degrees )
 	{
@@ -100,7 +111,7 @@ namespace Math
 		const float Yaw = atan2f( Direction.Y, Direction.X );
 		const float Roll = 0.0f;
 
-		return Vector3D( Pitch, Roll, Yaw ) * ( 180.0f / Math::Pi );
+		return Vector3D( Pitch, Roll, Yaw ) * ( 180.0f / Math::Pi() );
 	}
 
 	inline Matrix4D EulerToMatrixRadians( const Vector3D& EulerRadians )

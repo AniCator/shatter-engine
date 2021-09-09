@@ -7,7 +7,7 @@
 typedef uint64_t Timecode;
 static const Timecode Timebase = 1536;
 
-struct FTrackEvent
+struct TrackEvent
 {
 	virtual void Evaluate( const Timecode& Marker );
 	virtual void Execute() = 0;
@@ -21,7 +21,7 @@ struct FTrackEvent
 		return Event;
 	}
 
-	static void AddType( const std::string& Name, const std::function<FTrackEvent* ( )>& Generator );
+	static void AddType( const std::string& Name, const std::function<TrackEvent* ( )>& Generator );
 
 	virtual const char* GetName() = 0;
 	virtual const char* GetType() = 0;
@@ -43,13 +43,13 @@ struct FTrackEvent
 	virtual void Export( CData& Data );
 	virtual void Import( CData& Data );
 
-	friend CData& operator<<( CData& Data, FTrackEvent* Track )
+	friend CData& operator<<( CData& Data, TrackEvent* Track )
 	{
 		Track->Export( Data );
 		return Data;
 	}
 
-	friend CData& operator>>( CData& Data, FTrackEvent* Track )
+	friend CData& operator>>( CData& Data, TrackEvent* Track )
 	{
 		Track->Import( Data );
 		return Data;
@@ -57,9 +57,9 @@ struct FTrackEvent
 };
 
 template<typename T>
-FTrackEvent* CreateTrack()
+TrackEvent* CreateTrack()
 {
-	return FTrackEvent::Create<T>();
+	return TrackEvent::Create<T>();
 }
 
 class CSequence
@@ -94,7 +94,7 @@ public:
 	static void AddType()
 	{
 		auto* Temporary = CreateTrack<T>();
-		FTrackEvent::AddType( Temporary->GetType(), CreateTrack<T> );
+		TrackEvent::AddType( Temporary->GetType(), CreateTrack<T> );
 		delete Temporary;
 	}
 

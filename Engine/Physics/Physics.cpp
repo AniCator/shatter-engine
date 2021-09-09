@@ -20,6 +20,8 @@ struct QueryTask : public Task
 		if( !Scene || !Bodies || !Results )
 			return;
 
+		OptickEvent("Scene Queries");
+
 		size_t Index = 0;
 		for( const auto* Body : *Bodies )
 		{
@@ -151,6 +153,8 @@ public:
 
 	void Tick()
 	{
+		OptickCategory( "Physics Tick", Optick::Category::Physics );
+
 		const bool WorkCompleted = StaticQueryWorker.Completed() && DynamicQueryWorker.Completed();
 		if( WorkCompleted )
 		{
@@ -236,6 +240,8 @@ public:
 
 	void UpdateBodies()
 	{
+		OptickEvent();
+
 		size_t QueryIndex = 0;
 		for( auto* BodyA : Bodies )
 		{
@@ -266,7 +272,7 @@ public:
 					for( auto* Object : Query.Objects )
 					{
 						auto* BodyB = ::Cast<CBody>( Object );
-						if( BodyB == BodyA )
+						if( !BodyA || !BodyB || BodyB == BodyA )
 							continue;
 
 						if( BodyB->Owner != BodyA->Owner )
@@ -290,14 +296,26 @@ public:
 		}
 	}
 
-	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>() ) const
+	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>(), const PollType& Type = PollType::All ) const
 	{
-		Geometry::Result Empty;
-		if( !StaticScene )
-			return Empty;
+		OptickEvent();
 
-		if( !DynamicScene )
-			return Empty;
+		Geometry::Result Empty;
+
+		const bool PollStaticScene = Type == PollType::All || Type == PollType::Static;
+		const bool PollDynamicScene = Type == PollType::All || Type == PollType::Dynamic;
+
+		if( PollStaticScene )
+		{
+			if( !StaticScene )
+				return Empty;
+		}
+
+		if( PollDynamicScene )
+		{
+			if( !DynamicScene )
+				return Empty;
+		}
 		
 		float ClosestDistance = FLT_MAX;
 		Geometry::Result ClosestResult;
@@ -310,10 +328,19 @@ public:
 			IgnoreList.emplace_back( Body );
 		}
 
-		const auto StaticResult = StaticScene->Cast( Start, End, IgnoreList );
-		const auto DynamicResult = DynamicScene->Cast( Start, End, IgnoreList );
+		Geometry::Result StaticResult;
+		Geometry::Result DynamicResult;
 
-		Geometry::Result Result;
+		if( PollStaticScene )
+		{
+			StaticResult = StaticScene->Cast( Start, End, IgnoreList );
+		}
+
+		if( PollDynamicScene )
+		{
+			DynamicResult = DynamicScene->Cast( Start, End, IgnoreList );
+		}
+
 		if( StaticResult.Hit && DynamicResult.Hit && StaticResult.Body && DynamicResult.Body )
 		{
 			if( DynamicResult.Distance < StaticResult.Distance )
@@ -367,15 +394,30 @@ public:
 		return ClosestResult;
 	}
 
-	std::vector<CBody*> Query( const BoundingBox& AABB ) const
+	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const
 	{
-		std::vector<CBody*> Result;
-		if( !StaticScene )
-			return Result;
-		
-		QueryResult Query = QueryResult();
-		StaticScene->Query( AABB, Query );
-		DynamicScene->Query( AABB, Query );
+		OptickEvent();
+
+		const bool PollStaticScene = Type == PollType::All || Type == PollType::Static;
+		const bool PollDynamicScene = Type == PollType::All || Type == PollType::Dynamic;
+
+		std::vector<CBody*> Result;		
+		auto Query = QueryResult();
+		if( PollStaticScene )
+		{
+			if( !StaticScene )
+				return Result;
+
+			StaticScene->Query( AABB, Query );
+		}
+
+		if( PollDynamicScene )
+		{
+			if( !DynamicScene )
+				return Result;
+
+			DynamicScene->Query( AABB, Query );
+		}
 
 		for( auto* Object : Query.Objects )
 		{
@@ -405,6 +447,8 @@ public:
 
 	void BuildStaticScene()
 	{
+		OptickEvent();
+
 		if( StaticScene )
 			BoundingVolumeHierarchy::Destroy( StaticScene );
 		
@@ -425,6 +469,8 @@ public:
 
 	void BuildDynamicScene()
 	{
+		OptickEvent();
+
 		if( DynamicScene )
 			BoundingVolumeHierarchy::Destroy( DynamicScene );
 		
@@ -482,19 +528,19 @@ void CPhysics::Unregister( CBody* Body ) const
 	Scene->Unregister( Body );
 }
 
-Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End ) const
+Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const PollType& Type ) const
 {
 	ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End );
 }
 
-Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore ) const
+Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore, const PollType& Type ) const
 {
 	ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End, Ignore );
 }
 
-std::vector<CBody*> CPhysics::Query( const BoundingBox& AABB ) const
+std::vector<CBody*> CPhysics::Query( const BoundingBox& AABB, const PollType& Type ) const
 {
 	ProfileAlways( "Physics" );
 	return Scene->Query( AABB );

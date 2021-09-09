@@ -244,6 +244,7 @@ void CSoLoudSound::Speak( const std::string& Sentence, const Spatial Information
 {
 	Speech.setText( Sentence.c_str() );
 	Speech.setParams( Math::RandomRangeInteger( 2000, 3000 ), 5.0f );
+	Speech.setVolume( Information.Volume * 0.01f );
 
 	unsigned int SelectedBus = Information.Bus;
 	if( SelectedBus >= Bus::Maximum )
@@ -330,7 +331,7 @@ StreamHandle CSoLoudSound::Start( StreamHandle Handle, const Spatial Information
 		Streams.emplace_back( NewStream );
 
 		// Always tick inaudible streams.
-		// Engine.setInaudibleBehavior( NewStream.Stream, true, false );
+		Engine.setInaudibleBehavior( NewStream.Stream, true, false );
 
 		StreamHandle Handle;
 		Handle.Handle = Streams.size() - 1;

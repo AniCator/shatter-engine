@@ -103,7 +103,7 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>false</ShowIncludes>
-      <PreprocessorDefinitions>DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OptickBuild;DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
@@ -196,10 +196,12 @@
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
     <ClCompile Include="Engine\Resource\Assets.cpp" />
+    <ClCompile Include="Engine\Sequencer\Events\EntityEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Events\ImageEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Sequencer.cpp" />
     <ClCompile Include="Engine\Utility\Chunk.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
+    <ClCompile Include="Engine\Utility\Gizmo.cpp" />
     <ClCompile Include="Engine\Utility\Math\BoundingBox.cpp" />
     <ClCompile Include="Engine\Utility\Math\Matrix.cpp" />
     <ClCompile Include="Engine\Utility\Math\Transform.cpp" />
@@ -296,13 +298,16 @@
     <ClInclude Include="Engine\Profiling\Profiling.h" />
     <ClInclude Include="Engine\Resource\Asset.h" />
     <ClInclude Include="Engine\Resource\Assets.h" />
+    <ClInclude Include="Engine\Sequencer\Events\EntityEvent.h" />
     <ClInclude Include="Engine\Sequencer\Events\ImageEvent.h" />
     <ClInclude Include="Engine\Sequencer\Sequencer.h" />
     <ClInclude Include="Engine\Utility\Chunk.h" />
     <ClInclude Include="Engine\Utility\Data.h" />
     <ClInclude Include="Engine\Utility\DataString.h" />
+    <ClInclude Include="Engine\Utility\Definitions.h" />
     <ClInclude Include="Engine\Utility\File.h" />
     <ClInclude Include="Engine\Utility\Geometry.h" />
+    <ClInclude Include="Engine\Utility\Gizmo.h" />
     <ClInclude Include="Engine\Utility\Iterate.h" />
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />

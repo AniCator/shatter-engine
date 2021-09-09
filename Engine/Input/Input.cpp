@@ -17,7 +17,7 @@
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int ActionInput, int Modifiers )
 {
 #if defined( IMGUI_ENABLED )
-	if( ImGui::IsAnyItemActive() )
+	if( ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused() || ImGui::IsAnyItemHovered() )
 	{
 		ImGui_ImplGlfw_KeyCallback( window, KeyInput, ScanCode, ActionInput, Modifiers );
 		return;

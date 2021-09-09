@@ -165,7 +165,7 @@ void CMeshEntity::Tick()
 		RenderData.Color = Color;
 		RenderData.WorldBounds = WorldBounds;
 
-		if( RenderData.LightIndex.Index[0] == -1 )
+		if( RenderData.LightIndex.Index[0] == -1 || !Static )
 		{
 			RenderData.LightIndex = LightEntity::Fetch( RenderData.Transform.GetPosition() );
 		}
@@ -459,6 +459,32 @@ void CMeshEntity::Destroy()
 	CPointEntity::Destroy();
 }
 
+void DebugLight( const Vector3D& Position, const int32_t& Index )
+{
+	if( Index < 0 )
+		return;
+
+	const auto& Light = LightEntity::Get( Index );
+	const auto LightPosition = Vector3D( Light.Position.x, Light.Position.y, Light.Position.z );
+	UI::AddLine( Position, LightPosition, Color::Purple );
+
+	const auto DebugColor = ::Color( Light.Color.r * 255.0f, Light.Color.g * 255.0f, Light.Color.b * 255.0f );
+	UI::AddCircle( LightPosition, Math::Max( 10.0f, Light.Direction.w ), DebugColor );
+
+	Vector3D Direction;
+	Direction.X = Light.Direction.x;
+	Direction.Y = Light.Direction.y;
+	Direction.Z = Light.Direction.z;
+
+	auto Unit = ( Position - LightPosition );
+	const auto Length = Unit.Normalize();
+	const auto Angle = cosf( Light.Properties.y );
+	const auto Visibility = Unit.Dot( Direction ) - Angle;
+
+	UI::AddText( LightPosition, "Visibility", Visibility );
+	UI::AddText( LightPosition + Vector3D( 0.0f, 0.0f, 1.0f ), "Angle", Angle );
+}
+
 void CMeshEntity::Debug()
 {
 	CPointEntity::Debug();
@@ -497,6 +523,15 @@ void CMeshEntity::Debug()
 		{
 			PhysicsBody->Debug();
 		}
+	}
+
+	if( Renderable )
+	{
+		const auto& RenderData = Renderable->GetRenderData();
+		DebugLight( Position, RenderData.LightIndex.Index[0] );
+		DebugLight( Position, RenderData.LightIndex.Index[1] );
+		DebugLight( Position, RenderData.LightIndex.Index[2] );
+		DebugLight( Position, RenderData.LightIndex.Index[3] );
 	}
 }
 
@@ -755,6 +790,42 @@ void CMeshEntity::SetAnimation( const std::string& Name )
 const std::string& CMeshEntity::GetAnimation() const
 {
 	return CurrentAnimation;
+}
+
+void CMeshEntity::SetPosition( const Vector3D& Position, const bool& Teleport )
+{
+	ShouldUpdateTransform = true;
+
+	Transform.SetPosition( Position );
+
+	if( Teleport && PhysicsBody )
+	{
+		PhysicsBody->PreviousTransform = Transform;
+	}
+}
+
+void CMeshEntity::SetOrientation( const Vector3D& Orientation )
+{
+	ShouldUpdateTransform = true;
+
+	Transform.SetOrientation( Orientation );
+
+	if( PhysicsBody )
+	{
+		PhysicsBody->PreviousTransform = Transform;
+	}
+}
+
+void CMeshEntity::SetSize( const Vector3D& Size )
+{
+	ShouldUpdateTransform = true;
+
+	Transform.SetSize( Size );
+
+	if( PhysicsBody )
+	{
+		PhysicsBody->PreviousTransform = Transform;
+	}
 }
 
 void CMeshEntity::QueueRenderable( CRenderable* Renderable )

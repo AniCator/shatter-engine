@@ -11,7 +11,7 @@ struct QueryResult
 {
 	QueryResult()
 	{
-		Objects.reserve( 2048 );
+		Objects.reserve( 64 );
 	}
 	
 	bool Hit = false;

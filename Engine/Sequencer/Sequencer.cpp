@@ -16,10 +16,14 @@
 #include <Engine/World/World.h>
 
 #include <Engine/Sequencer/Events/ImageEvent.h>
+#include <Engine/Sequencer/Events/EntityEvent.h>
 
 #include <Game/Game.h>
 
 #include <ThirdParty/imgui-1.70/imgui.h>
+
+#include <Engine/Input/InputMapGLFW.h>
+#include "Engine/Utility/Locator/InputLocator.h"
 
 static bool TimelineCamera = true;
 static CCamera* ActiveTimelineCamera = nullptr;
@@ -45,7 +49,7 @@ enum class ESequenceStatus : uint8_t
 	Playing
 };
 
-struct FEventAudio : FTrackEvent
+struct FEventAudio : TrackEvent
 {
 	virtual void Evaluate( const Timecode& Marker ) override
 	{
@@ -220,7 +224,7 @@ struct FEventAudio : FTrackEvent
 
 	virtual void Export( CData& Data )
 	{
-		FTrackEvent::Export( Data );
+		TrackEvent::Export( Data );
 
 		DataString::Encode( Data, Name );
 		Data << Triggered;
@@ -250,7 +254,7 @@ struct FEventAudio : FTrackEvent
 
 	virtual void Import( CData& Data )
 	{
-		FTrackEvent::Import( Data );
+		TrackEvent::Import( Data );
 
 		DataString::Decode( Data, Name );
 		Data >> Triggered;
@@ -281,7 +285,7 @@ struct FEventAudio : FTrackEvent
 	}
 };
 
-struct FEventCamera : FTrackEvent
+struct FEventCamera : TrackEvent
 {
 	void BlendCameras()
 	{
@@ -433,7 +437,7 @@ struct FEventCamera : FTrackEvent
 
 	virtual void Export( CData& Data )
 	{
-		FTrackEvent::Export( Data );
+		TrackEvent::Export( Data );
 
 		DataString::Encode( Data, Name );
 		Data << Camera;
@@ -443,7 +447,7 @@ struct FEventCamera : FTrackEvent
 
 	virtual void Import( CData& Data )
 	{
-		FTrackEvent::Import( Data );
+		TrackEvent::Import( Data );
 
 		DataString::Decode( Data, Name );
 		Data >> Camera;
@@ -452,7 +456,7 @@ struct FEventCamera : FTrackEvent
 	}
 };
 
-struct FEventRenderable : FTrackEvent
+struct FEventRenderable : TrackEvent
 {
 	virtual void Execute() override
 	{
@@ -557,30 +561,31 @@ struct FEventRenderable : FTrackEvent
 	std::string Name = std::string();
 	CRenderable Renderable;
 
-	virtual void Export( CData& Data )
+	virtual void Export( CData& Data ) override
 	{
-		FTrackEvent::Export( Data );
+		TrackEvent::Export( Data );
 
 		DataString::Encode( Data, Name );
 	}
 
-	virtual void Import( CData& Data )
+	virtual void Import( CData& Data ) override
 	{
-		FTrackEvent::Import( Data );
+		TrackEvent::Import( Data );
 
 		DataString::Decode( Data, Name );
 	}
 };
 
-static std::map<std::string, std::function<FTrackEvent*()>> EventTypes
+static std::map<std::string, std::function<TrackEvent* ( )>> EventTypes
 {
 	std::make_pair( "Audio", CreateTrack<FEventAudio> ),
 	std::make_pair( "Camera", CreateTrack<FEventCamera> ),
 	std::make_pair( "Mesh", CreateTrack<FEventRenderable> ),
-	std::make_pair( "Image", CreateTrack<FEventImage> )
+	std::make_pair( "Image", CreateTrack<FEventImage> ),
+	std::make_pair( "Entity", CreateTrack<EventEntity> )
 };
 
-void FTrackEvent::Evaluate( const Timecode& Marker )
+void TrackEvent::Evaluate( const Timecode& Marker )
 {
 	if( Marker >= Start && Marker < ( Start + Length ) )
 	{
@@ -588,7 +593,7 @@ void FTrackEvent::Evaluate( const Timecode& Marker )
 	}
 }
 
-void FTrackEvent::Context()
+void TrackEvent::Context()
 {
 	ImGui::Text( "%s", GetName() );
 
@@ -600,7 +605,7 @@ void FTrackEvent::Context()
 	}
 }
 
-void FTrackEvent::AddType( const std::string& Name, const std::function<FTrackEvent*()>& Generator )
+void TrackEvent::AddType( const std::string& Name, const std::function<TrackEvent*()>& Generator )
 {
 	if( EventTypes.find( Name ) == EventTypes.end() )
 	{
@@ -608,7 +613,7 @@ void FTrackEvent::AddType( const std::string& Name, const std::function<FTrackEv
 	}
 }
 
-void FTrackEvent::UpdateInternalMarkers( const Timecode& Marker )
+void TrackEvent::UpdateInternalMarkers( const Timecode& Marker )
 {
 	if( Scrubbing )
 	{
@@ -622,14 +627,14 @@ void FTrackEvent::UpdateInternalMarkers( const Timecode& Marker )
 	Offset = Math::Clamp( Marker - Start, StaticCast<Timecode>( 0 ), Length );
 }
 
-void FTrackEvent::Export( CData& Data )
+void TrackEvent::Export( CData& Data )
 {
 	DataString::Encode( Data, GetType() );
 	Data << Start;
 	Data << Length;
 }
 
-void FTrackEvent::Import( CData& Data )
+void TrackEvent::Import( CData& Data )
 {
 	std::string Type;
 	DataString::Decode( Data, Type );
@@ -640,7 +645,7 @@ void FTrackEvent::Import( CData& Data )
 
 struct FTrack
 {	
-	void AddEvent( FTrackEvent* Event )
+	void AddEvent( TrackEvent* Event )
 	{
 		Events.emplace_back( Event );
 	}
@@ -671,7 +676,7 @@ struct FTrack
 	Timecode Start;
 	Timecode Length;
 
-	std::vector<FTrackEvent*> Events;
+	std::vector<TrackEvent*> Events;
 
 	friend CData& operator<<( CData& Data, FTrack& Track )
 	{
@@ -708,7 +713,7 @@ struct FTrack
 		{
 			DataString::Decode( Data, String );
 			
-			FTrackEvent* Event = EventTypes[String]();
+			TrackEvent* Event = EventTypes[String]();
 			Track.Events.emplace_back( Event );
 
 			Data >> Event;
@@ -937,14 +942,14 @@ public:
 		// Always evaluate cameras if the timeline isn't drawn.
 		if( !DrawTimeline )
 		{
-			TimelineCamera = true;
+			// TimelineCamera = true;
 		}
 
 		// Make sure we clear the active camera.
 		if( !ActiveTimelineCamera && Playing() )
 		{
-			auto World = CWorld::GetPrimaryWorld();
-			if( World )
+			auto* World = CWorld::GetPrimaryWorld();
+			if( World && World->GetActiveCamera() == ActiveTimelineCamera )
 			{
 				World->SetActiveCamera( nullptr );
 			}
@@ -977,8 +982,6 @@ public:
 			ImVec2( 1000.0f, 500.0f ), 0.45f
 		) )
 		{
-			static FTrack* ActiveTrack = nullptr;
-			static std::vector<FTrackEvent*> ActiveEvents;
 			static int SequenceLengthSeconds = 2;
 
 			/*const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
@@ -1047,7 +1050,7 @@ public:
 			{
 				if( ActiveTrack && Tracks.size() > 0 )
 				{
-					FTrackEvent* Event = EventTypes[EventType]();
+					TrackEvent* Event = EventTypes[EventType]();
 					Event->Start = Marker;
 					Event->Length = SequenceLengthSeconds * Timebase;
 					ActiveTrack->AddEvent( Event );
@@ -1238,7 +1241,7 @@ public:
 			{
 				bool Up = false;
 				size_t TrackIndex = 0;
-				FTrackEvent* Event = nullptr;
+				TrackEvent* Event = nullptr;
 			};
 			
 			std::vector<EventTrackDrag> DragEvents;
@@ -1249,7 +1252,7 @@ public:
 				int Left = 0;
 				int Right = 0;
 				size_t TrackIndex = 0;
-				FTrackEvent* Event = nullptr;
+				TrackEvent* Event = nullptr;
 			};
 			
 			std::vector<EventTrackStretch> StretchEvents;
@@ -1326,6 +1329,36 @@ public:
 					sprintf_s( ContextName, "ec##%zi", EventIndex );
 					if( ImGui::BeginPopupContextItem( ContextName ) )
 					{
+						const auto FrameHeight = ImGui::GetFrameHeight();
+						const auto ButtonSize = ImVec2( FrameHeight, FrameHeight );
+						if( ImGui::Button( "D##EventDuplicate", ButtonSize ) )
+						{
+							EventDuplicate( Event );
+						}
+
+						if( ImGui::IsItemHovered() )
+						{
+							ImGui::BeginTooltip();
+							ImGui::Text( "Duplicate event" );
+							ImGui::EndTooltip();
+						}
+
+						ImGui::SameLine();
+
+						if( ImGui::Button( "S##EventSplit", ButtonSize ) )
+						{
+							EventSplit( Event );
+						}
+
+						if( ImGui::IsItemHovered() )
+						{
+							ImGui::BeginTooltip();
+							ImGui::Text( "Split event" );
+							ImGui::EndTooltip();
+						}
+
+						ImGui::SameLine();
+
 						const std::string ArrowLabelDown = "##MoveDown" + std::to_string( EventIndex );
 						if( ImGui::ArrowButton( ArrowLabelDown.c_str(), ImGuiDir_Down ) )
 						{
@@ -1365,7 +1398,7 @@ public:
 						}						
 
 						ImGui::SameLine();
-						
+
 						Event->Context();
 						ImGui::EndPopup();
 					}
@@ -1524,7 +1557,7 @@ public:
 				if( LastDrag.Stretch )
 				{
 					bool Snapped = false;
-					FTrackEvent* Closest = nullptr;
+					TrackEvent* Closest = nullptr;
 					int SnapBounds = 2 * Timebase;
 					int ClosestDistance = SnapBounds;
 					bool Flipped = false;
@@ -1812,12 +1845,20 @@ public:
 				LastDrag = NewState;
 			}
 
-			if( !ActiveEvents.empty() )
+			auto& Input = CInputLocator::Get();
+			static bool DeleteState = false;
+			bool WantsToDelete = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Delete ) );
+
+			const bool DeleteHeld = Input.IsKeyDown( EKey::Delete );
+			if( DeleteHeld == false && DeleteState == true ) // Key released.
 			{
-				// ImGui::GetIO().WantCaptureKeyboard = true;
+				WantsToDelete = true;
+				ImGui::GetIO().WantCaptureKeyboard = true;
 			}
 
-			if( ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Delete ) ) )
+			DeleteState = DeleteHeld;
+
+			if( WantsToDelete )
 			{
 				for( auto& ActiveEvent : ActiveEvents )
 				{
@@ -1836,6 +1877,39 @@ public:
 				}
 
 				ActiveEvents.clear();
+			}
+
+			// static bool DuplicateState = false;
+			bool WantsToDuplicate = false;
+			const auto KeyCode = InputGLFW::KeyToCode[static_cast<size_t>( EKey::D )];
+			const bool DuplicateReleased = ImGui::GetIO().KeyCtrl && ImGui::IsKeyReleased( KeyCode );
+			if( DuplicateReleased )
+			{
+				WantsToDuplicate = true;
+			}
+
+			//const bool DuplicateHeld = Input.IsKeyDown( EKey::LeftControl ) && Input.IsKeyDown( EKey::D );
+			//if( DuplicateHeld == false && DuplicateState == true ) // Key released.
+			//{
+			//	WantsToDuplicate = true;
+			//}
+
+			//DuplicateState = DuplicateHeld;
+
+			if( WantsToDuplicate )
+			{
+				if( ActiveTrack && !Tracks.empty() )
+				{
+					for( auto& ActiveEvent : ActiveEvents )
+					{
+						if( ActiveEvent )
+						{
+							EventDuplicate( ActiveEvent );
+						}
+					}
+
+					ActiveEvents.clear();
+				}
 			}
 
 			auto NewEndMarker = 0;
@@ -1877,6 +1951,86 @@ public:
 		Track.Length = EndMarker - StartMarker;
 
 		Tracks.emplace_back( Track );
+	}
+
+	void AdjustTrack( TrackEvent* Event )
+	{
+		const auto EventCode = Event->Start + Event->Length;
+		const auto TrackCode = ActiveTrack->Start + ActiveTrack->Length;
+		if( EventCode > TrackCode )
+		{
+			ActiveTrack->Length = EventCode - ActiveTrack->Start;
+		}
+
+		const auto AdjustedEnd = ActiveTrack->Start + ActiveTrack->Length;
+		if( AdjustedEnd > EndMarker )
+		{
+			EndMarker = AdjustedEnd;
+		}
+	}
+
+	void EventDuplicate( TrackEvent* Source )
+	{
+		if( !ActiveTrack )
+			return;
+
+		CData Data;
+		Source->Export( Data );
+
+		TrackEvent* Event = EventTypes[Source->GetType()]();
+		Event->Import( Data );
+
+		Event->Start = Source->Start + Source->Length;
+		Event->Length = Source->Length;
+		ActiveTrack->AddEvent( Event );
+
+		AdjustTrack( Event );
+	}
+
+	void EventSplit( TrackEvent* Source )
+	{
+		if( !ActiveTrack )
+			return;
+
+		CData Data;
+		Source->Export( Data );
+
+		TrackEvent* Event = EventTypes[Source->GetType()]();
+		Event->Import( Data );
+
+		Event->Start = Source->Start + Source->Length / 2;
+		Event->Length = Source->Length / 2;
+		ActiveTrack->AddEvent( Event );
+
+		Source->Length /= 2;
+
+		AdjustTrack( Event );
+	}
+
+	void EventSplitAtMarker( TrackEvent* Source )
+	{
+		if( !ActiveTrack )
+			return;
+
+		if( Marker < Source->Start )
+			return;
+
+		const Timecode SplitOffset = Marker - Source->Start;
+		const Timecode SplitRemainder = Source->Length - SplitOffset;
+
+		CData Data;
+		Source->Export( Data );
+
+		TrackEvent* Event = EventTypes[Source->GetType()]();
+		Event->Import( Data );
+
+		Event->Start = Source->Start + SplitOffset;
+		Event->Length = SplitRemainder;
+		ActiveTrack->AddEvent( Event );
+
+		Source->Length = SplitOffset;
+
+		AdjustTrack( Event );
 	}
 
 	void Stretch( const float& Factor )
@@ -1927,6 +2081,9 @@ protected:
 	bool DrawTimeline;
 	double StartTime = -1.0f;
 
+	FTrack* ActiveTrack = nullptr;
+	std::vector<TrackEvent*> ActiveEvents;
+
 	std::string Location;
 	Timecode Marker;
 
@@ -1943,7 +2100,7 @@ protected:
 
 	struct TrackState
 	{
-		FTrackEvent* Event = nullptr;
+		TrackEvent* Event = nullptr;
 		bool Stretch = false;
 
 		// For stretching, this indicates it is the left handle.

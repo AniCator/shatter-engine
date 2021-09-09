@@ -102,4 +102,14 @@ struct Serialize
 
 		DataString::Decode( Data, Snippet );
 	}
+
+	// Copies string data to a character array.
+	static void StringToArray( const std::string& String, char* Array, size_t Size )
+	{
+		if( Size == 0 || Array == nullptr )
+			return;
+
+		const auto Length = String.copy( Array, Size );
+		Array[Length] = '\0';
+	}
 };

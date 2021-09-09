@@ -22,7 +22,7 @@
 #if defined(_DEBUG)
 #define KHRDebug
 #else
-#define KHRDebug
+// #define KHRDebug // This crashes people when the debug context happens to be enabled on some systems.
 #endif
 
 static void DebugCallbackOpenGL( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam )
@@ -106,6 +106,12 @@ void CWindow::Create( const char* Title )
 
 	GLFWmonitor* Monitor = GetTargetMonitor();
 	CurrentDimensions = GetMonitorDimensions( Monitor );
+
+	// Increase the height by 1 pixel to avoid the exclusive no border behavior.
+	if( FullScreen && !EnableBorder )
+	{
+		CurrentDimensions.Height += 1;
+	}
 
 	glfwWindowHint( GLFW_VISIBLE, GL_TRUE );
 	WindowHandle = glfwCreateWindow( CurrentDimensions.Width, CurrentDimensions.Height, Title, FullScreen ? Monitor : nullptr, Context );
@@ -264,6 +270,7 @@ void CWindow::ProcessInput()
 		return;
 
 	ProfileAlways( "Input" );
+	OptickCategory( "Input", Optick::Category::Input );
 
 	glfwPollEvents();
 
@@ -290,6 +297,7 @@ void CWindow::RenderFrame()
 		return;
 
 	ProfileAlways( "Render" );
+	OptickCategory( "Render", Optick::Category::Rendering );
 
 #if defined(IMGUI_ENABLED)
 	UI::Frame();

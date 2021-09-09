@@ -74,24 +74,7 @@ struct Worker
 	void SetName( const std::string& Name );
 
 private:
-	void Work()
-	{
-		while( Alive )
-		{
-			std::unique_lock<std::mutex> Lock( Mutex );
-			Notify.wait( Lock );
-
-			Running = true;
-
-			if( Task )
-			{
-				Task->Execute();
-			}
-
-			Running = false;
-			Ready = false;
-		}
-	}
+	void Work();
 
 	std::thread Thread;
 	std::shared_ptr<Task> Task = nullptr;

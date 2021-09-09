@@ -4,6 +4,8 @@
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Utility/Geometry.h>
 
+#include <Engine/Profiling/Profiling.h>
+
 void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const size_t& Start, const size_t& End )
 {
 	// Invalid span.
@@ -98,7 +100,7 @@ Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, con
 	if( !Result.Hit )
 		return Result;
 
-	const float Distance = Result.Distance;
+	const float& Distance = Result.Distance;
 
 	Geometry::Result SplitResult;
 
@@ -152,6 +154,8 @@ bool BoundingVolumeHierarchy::Node::Compare( const RawObject& A, const RawObject
 
 std::shared_ptr<Testable> BoundingVolumeHierarchy::Build( const RawObjectList& Source )
 {
+	OptickEvent();
+
 	const auto Result = std::make_shared<Node>();
 	Result->Build( Source, 0, Source.size() );
 	return Result;

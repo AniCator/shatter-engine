@@ -16,8 +16,6 @@ CGameLayers* GameLayersInstance = new CGameLayers();
 CGameLayers::CGameLayers()
 {
 	GameLayers.reserve( 128 );
-
-	TimeScale = 1.0;
 }
 
 CGameLayers::~CGameLayers()
@@ -55,6 +53,7 @@ void CGameLayers::Initialize()
 void CGameLayers::Frame()
 {
 	ProfileAlways( "Game Frame" );
+	OptickCategory( "Game Frame", Optick::Category::GameLogic );
 
 	for( auto* GameLayer : GameLayers )
 	{
@@ -68,6 +67,7 @@ void CGameLayers::Frame()
 void CGameLayers::Tick()
 {
 	ProfileAlways( "Game Tick" );
+	OptickCategory( "Game Tick", Optick::Category::GameLogic );
 
 	Vector4D Time;
 	Time.X = static_cast<float>( GetCurrentTime() );

@@ -114,14 +114,32 @@ private:
 
 #define ProfileAlways( Name ) _PROFILE_( Name, false )
 
-#ifdef ProfileBuild
+#ifdef OptickBuild
+#include <ThirdParty/Optick/optick.h>
+#define ProfileScope() OPTICK_EVENT()
+#define Profile( Name ) OPTICK_EVENT()
+#define ProfileBareScope() OPTICK_EVENT()
+#define ProfileBare( Name ) OPTICK_EVENT()
+#define ProfileThread( Name ) OPTICK_THREAD( Name )
+#define ProfileFrame( Name ) OPTICK_FRAME( Name )
+#define OptickEvent() OPTICK_EVENT()
+#define OptickCategory( Name, Category ) OPTICK_CATEGORY( Name, Category )
+#elif ProfileBuild
 #define ProfileScope() _PROFILE_( __FUNCTION__, false )
 #define Profile( Name ) _PROFILE_( Name, false )
 #define ProfileBareScope() _PROFILE_( __FUNCTION__, true )
 #define ProfileBare( Name ) _PROFILE_( Name, true )
+#define ProfileThread( Name ) (void(0))
+#define ProfileFrame( Name ) (void(0))
+#define OptickEvent() (void(0))
+#define OptickCategory() (void(0))
 #else
 #define ProfileScope() (void(0))
 #define Profile( Name ) (void(0))
 #define ProfileBareScope() (void(0))
 #define ProfileBare( Name ) (void(0))
+#define ProfileThread( Name ) (void(0))
+#define ProfileFrame( Name ) (void(0))
+#define OptickEvent() (void(0))
+#define OptickCategory() (void(0))
 #endif

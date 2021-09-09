@@ -18,12 +18,15 @@ public:
 	void Import( CData& Data ) override;
 	void Export( CData& Data ) override;
 
+	void Debug() override;
+
 	static void Initialize();
 	static void UploadToGPU();
 	static void Bind();
 
 	// Fetch nearby lights.
 	static LightIndices Fetch( const Vector3D& Position );
+	static const Light& Get( int32_t Index );
 	
 protected:
 	Light Information;

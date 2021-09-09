@@ -53,6 +53,10 @@ public:
 	void SetAnimation( const std::string& Name );
 	const std::string& GetAnimation() const;
 
+	void SetPosition( const Vector3D& Position, const bool& Teleport = true );
+	void SetOrientation( const Vector3D& Orientation );
+	void SetSize( const Vector3D& Size );
+
 public:
 	CMesh* Mesh;
 	CMesh* CollisionMesh;

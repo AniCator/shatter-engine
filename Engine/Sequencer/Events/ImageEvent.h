@@ -3,7 +3,7 @@
 
 #include <Engine/Sequencer/Sequencer.h>
 
-struct FEventImage : FTrackEvent
+struct FEventImage : TrackEvent
 {
 	void Execute() override;
 	void Reset() override {};

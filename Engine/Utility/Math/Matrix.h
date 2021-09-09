@@ -6,10 +6,7 @@
 class Matrix3D
 {
 public:
-	Matrix3D()
-	{
-		Identity();
-	}
+	Matrix3D() = default;
 
 	void Identity()
 	{
@@ -192,25 +189,25 @@ public:
 		return ScaleMatrix;
 	}
 
-	Vector3D Columns[3]{};
+	Vector3D Columns[3]
+	{
+		{ 1.0f, 0.0f ,0.0f },
+		{ 0.0f, 1.0f ,0.0f },
+		{ 0.0f, 0.0f ,1.0f }
+	};
 
 private:
-	const static uint32_t X = 0;
-	const static uint32_t Y = 1;
-	const static uint32_t Z = 2;
+	constexpr static uint32_t X = 0;
+	constexpr static uint32_t Y = 1;
+	constexpr static uint32_t Z = 2;
 };
 
 class Matrix4D
 {
 public:
-	Matrix4D()
-	{
-		Identity();
-	}
-
+	Matrix4D() = default;
 	Matrix4D( const Vector3D& Offset )
 	{
-		Identity();
 		Translate( Offset );
 	}
 
@@ -475,11 +472,17 @@ public:
 		return TranslationMatrix;
 	}
 
-	Vector4D Columns[4]{};
+	Vector4D Columns[4]
+	{
+		{ 1.0f, 0.0f ,0.0f, 0.0f },
+		{ 0.0f, 1.0f ,0.0f, 0.0f },
+		{ 0.0f, 0.0f ,1.0f, 0.0f },
+		{ 0.0f, 0.0f ,0.0f, 1.0f }
+	};
 
 private:
-	const static uint32_t X = 0;
-	const static uint32_t Y = 1;
-	const static uint32_t Z = 2;
-	const static uint32_t W = 3;
+	constexpr static uint32_t X = 0;
+	constexpr static uint32_t Y = 1;
+	constexpr static uint32_t Z = 2;
+	constexpr static uint32_t W = 3;
 };

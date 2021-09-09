@@ -56,9 +56,13 @@ uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )
 
 	auto CreateRenderTexture = [&] ( CRenderTexture*& Texture, const std::string& Name, float Factor )
 	{
-		if( !Texture )
+		const int Width = ViewportWidth * Factor;
+		const int Height = ViewportHeight * Factor;
+		const bool CreateTexture = !Texture || Texture->GetWidth() != Width || Texture->GetHeight() != Height;
+		if( CreateTexture )
 		{
-			Texture = new CRenderTexture( Name, ViewportWidth * Factor, ViewportHeight * Factor );
+			delete Texture;
+			Texture = new CRenderTexture( Name, Width, Height );
 		}
 	};
 

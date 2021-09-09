@@ -891,7 +891,7 @@ void CBody::Tick()
 
 	const auto Difference = NewPosition - PreviousTransform.GetPosition();
 	const auto DifferenceLengthSquared = Difference.LengthSquared();
-	if( DifferenceLengthSquared > 0.001f || LastActivity < 0.0f )
+	if( DifferenceLengthSquared > 0.001f || LastActivity < 0.0 )
 	{
 		LastActivity = GameLayersInstance->GetCurrentTime();
 	}

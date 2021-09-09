@@ -52,10 +52,11 @@ namespace Geometry
 	{
 		Result Result;
 		const auto Direction = End - Start;
-		const auto Normalized = Direction.Normalized();
+		auto Normalized = Direction;
+		const auto Length = Normalized.Normalize();
 
 		const auto Distance = RayInBoundingBox( Start, Normalized, Bounds );
-		Result.Hit = Distance >= 0.0f && Distance * Distance <= Direction.LengthSquared();
+		Result.Hit = Distance >= 0.0f && Distance <= Length;
 		Result.Distance = Result.Hit ? Distance : -1.0f;
 		Result.Position = Result.Hit ? Start + Normalized * Distance : End;
 

@@ -12,7 +12,7 @@ public:
 	virtual ~CPointEntity() override;
 
 	virtual const FTransform& GetTransform();
-	virtual const FTransform& GetLocalTransform();
+	virtual const FTransform& GetLocalTransform() const;
 	virtual void SetTransform(const FTransform& Transform );
 	virtual void Load( const JSON::Vector& Objects ) override;
 

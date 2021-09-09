@@ -52,12 +52,12 @@ const FTransform& CPointEntity::GetTransform()
 	return WorldTransform;
 }
 
-const FTransform& CPointEntity::GetLocalTransform()
+const FTransform& CPointEntity::GetLocalTransform() const
 {
 	return Transform;
 }
 
-void CPointEntity::SetTransform(const FTransform& TransformIn )
+void CPointEntity::SetTransform( const FTransform& TransformIn )
 {
 #if _DEBUG
 	const auto InPosition = TransformIn.GetPosition();
@@ -67,7 +67,7 @@ void CPointEntity::SetTransform(const FTransform& TransformIn )
 		Log::Event( Log::Warning, "Invalid transform.\n" );
 	}
 #endif
-	
+
 	Transform = TransformIn;
 	ShouldUpdateTransform = true;
 }

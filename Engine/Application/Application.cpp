@@ -31,6 +31,7 @@
 #include <Engine/Configuration/Configuration.h>
 
 #include <Engine/Resource/Assets.h>
+#include <Engine/Sequencer/Sequencer.h> // TODO: Move sequencer updating somewhere else (see Frame call below)
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
@@ -560,8 +561,8 @@ void DebugMenu( CApplication* Application )
 		{
 			ImGui::Text( "Click on an asset to convert it." );
 
-			auto Map = CAssets::Get().GetMeshes();
-			for( auto Entry : Map )
+			const auto& Map = CAssets::Get().GetMeshes();
+			for( auto& Entry : Map )
 			{
 				if( ImGui::Button( Entry.first.c_str() ) )
 				{
@@ -743,12 +744,14 @@ void CApplication::Run()
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
 	CSoLoudSound::Volume( GlobalVolume );
 
+	// const auto TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
+
 	while( !MainWindow.ShouldClose() )
 	{
+		ProfileFrame( "Main Thread" );
+
 		if( RestartLayers )
 			InputRestartGameLayers( this );
-
-		const float TimeScale = ScaleTime ? 0.01f : 1.0f;
 
 		const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
 		if( GameDeltaTime >= MaximumGameTime )
@@ -768,15 +771,15 @@ void CApplication::Run()
 				CProfiler::Get().Clear();
 				Renderer.RefreshFrame();
 
-				const double TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
-				const double TimeScaleGlobal = TimeScale * TimeScaleParameter;
+				const auto GameTimeScale = GameLayersInstance->GetTimeScale();
+				const auto TimeScale = ScaleTime ? GameTimeScale * 0.01 : GameTimeScale * 1.0;
 
 				// Clamp the maximum time added to avoid excessive tick spikes.
-				ScaledGameTime += Math::Clamp( GameDeltaTime * 0.001, 0.0, 1.0 ) * TimeScaleGlobal;
+				ScaledGameTime += Math::Clamp( static_cast<double>( GameDeltaTime ) * 0.001, 0.0, 1.0 ) * TimeScale;
 
 				// Update game time.
 				GameLayersInstance->Time( ScaledGameTime );
-				GameLayersInstance->SetTimeScale( TimeScaleGlobal );
+				GameLayersInstance->SetTimeScale( GameTimeScale );
 
 				// Update the renderable stage for tick functions.
 				Renderer.UpdateRenderableStage( RenderableStage::Tick );
@@ -824,6 +827,13 @@ void CApplication::Run()
 			{
 				Renderer.UpdateRenderableStage( RenderableStage::Frame );
 				GameLayersInstance->Frame();
+
+				// TODO: Sequence update should happen elsewhere but this is better than having it run via DebugMenu().
+				const auto& Sequences = CAssets::Get().GetSequences();
+				for( const auto& Pair : Sequences )
+				{
+					Pair.second->Frame();
+				}
 
 #if defined( IMGUI_ENABLED )
 				if( !MainWindow.IsWindowless() )
@@ -1380,6 +1390,15 @@ void CApplication::Initialize()
 	else
 	{
 		Log::Event( "Byte order: Big endian.\n" );
+	}
+
+	if( !CommandLine.empty() )
+	{
+		Log::Event( "\nCommand line:\n" );
+		for( auto& Line : CommandLine )
+		{
+			Log::Event( "%s | %s\n", Line.first.c_str(), Line.second.c_str() );
+		}
 	}
 
 	ServiceRegistry.CreateStandardServices();

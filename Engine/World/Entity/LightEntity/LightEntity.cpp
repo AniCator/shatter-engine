@@ -1,7 +1,10 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "LightEntity.h"
 
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Resource/Assets.h>
+
+#include <Game/Game.h>
 
 static CEntityFactory<LightEntity> Factory( "light" );
 
@@ -21,6 +24,29 @@ void LightEntity::Construct()
 void LightEntity::Tick()
 {
 	CPointEntity::Tick();
+
+	/*if( Information.Position.w == 1.0f )
+	{
+		auto Direction = Vector3D( Information.Direction.x, Information.Direction.y, Information.Direction.z );
+		const auto Color = ::Color( Information.Color.x * 255.0f, Information.Color.y * 255.0f, Information.Color.z * 255.0f );
+		UI::AddLine( Transform.GetPosition(), Transform.GetPosition() + Direction, Color );
+
+		Direction = WorldUp;
+		auto Orientation = Vector3D::Zero;
+		Orientation.Pitch = sin( GameLayersInstance->GetCurrentTime() ) * 360.0;
+		Orientation.Yaw = cos( GameLayersInstance->GetCurrentTime() ) * 360.0;
+		Orientation.Roll = sin( GameLayersInstance->GetCurrentTime() ) * 360.0;
+
+		const auto Radians = Math::ToRadians( Orientation );
+		const auto MatrixPitch = Matrix4D::FromAxisAngle( WorldRight, Radians.Roll );
+		const auto MatrixYaw = Matrix4D::FromAxisAngle( WorldUp, Radians.Yaw );
+		const auto MatrixRoll = Matrix4D::FromAxisAngle( WorldForward, Radians.Pitch );
+		const auto Matrix = MatrixRoll * MatrixYaw * MatrixPitch;
+
+		Direction = Matrix.Rotate( Direction );
+
+		UI::AddLine( Vector3D::Zero, Direction, Color::Blue );
+	}*/
 }
 
 void LightEntity::Frame()
@@ -56,7 +82,20 @@ void LightEntity::Load( const JSON::Vector& Objects )
 	JSON::Assign( Objects, "angle_inner", AngleInner );
 	JSON::Assign( Objects, "angle_outer", AngleOuter );
 
-	const auto Direction = Math::EulerToDirection( Orientation );
+	auto Direction = WorldUp * -1.0f;
+
+	if( Type == 1 )
+	{
+		const auto Radians = Math::ToRadians( Orientation );
+		const auto MatrixPitch = Matrix4D::FromAxisAngle( WorldRight, Radians.Roll );
+		const auto MatrixYaw = Matrix4D::FromAxisAngle( WorldUp, Radians.Yaw );
+		const auto MatrixRoll = Matrix4D::FromAxisAngle( WorldForward, Radians.Pitch );
+		const auto Matrix = MatrixRoll * MatrixYaw * MatrixPitch;
+
+		Direction = Matrix.Rotate( Direction );
+		Direction.Y *= -1.0f;
+	}
+
 	Information.Position.x = Position.X;
 	Information.Position.y = Position.Y;
 	Information.Position.z = Position.Z;
@@ -71,6 +110,11 @@ void LightEntity::Load( const JSON::Vector& Objects )
 	Information.Color.y = Color.Y;
 	Information.Color.z = Color.Z;
 	Information.Color.w = Intensity;
+
+	if( Type == 1 )
+	{
+		// Information.Color.w *= Math::Pi();
+	}
 
 	Information.Properties.x = AngleInner;
 	Information.Properties.y = AngleOuter;
@@ -92,6 +136,18 @@ void LightEntity::Export( CData& Data )
 	Serialize::Export( Data, "dir", Information.Direction );
 	Serialize::Export( Data, "col", Information.Color );
 	Serialize::Export( Data, "prp", Information.Properties );
+}
+
+void LightEntity::Debug()
+{
+	CPointEntity::Debug();
+
+	if( Information.Position.w == 1.0f )
+	{
+		const auto Direction = Vector3D( Information.Direction.x, Information.Direction.y, Information.Direction.z );
+		const auto Color = ::Color( Information.Color.x * 255.0f, Information.Color.y * 255.0f, Information.Color.z * 255.0f );
+		UI::AddLine( Transform.GetPosition(), Transform.GetPosition() + Direction, Color );
+	}
 }
 
 void LightEntity::Initialize()
@@ -138,20 +194,46 @@ void LightEntity::Bind()
 LightIndices LightEntity::Fetch( const Vector3D& Position )
 {
 	Vector3D LightPosition;
+	Vector3D Direction;
 	int32_t Closest[4] { -1, -1, -1, -1 };
 	float Distance = FLT_MAX;
 	for( int32_t Index = 0; Index <= AllocationIndex; Index++ )
 	{
-		if( Lights[Index].Position.w < 0.0f )
+		const auto Type = static_cast<int>( Lights[Index].Position.w );
+		if( Type < 0 )
 			continue;
 
 		LightPosition.X = Lights[Index].Position.x;
 		LightPosition.Y = Lights[Index].Position.y;
 		LightPosition.Z = Lights[Index].Position.z;
 
+		// Check cone of spot lights.
+		if( Type == 1 )
+		{
+			Direction.X = Lights[Index].Direction.x;
+			Direction.Y = Lights[Index].Direction.y;
+			Direction.Z = Lights[Index].Direction.z;
+
+			auto Unit = ( Position - LightPosition );
+			const auto Length = Unit.Normalize();
+
+			const auto Angle = cosf( Lights[Index].Properties.y );
+			const auto Visibility = Unit.Dot( Direction );// -Angle;
+			if( Visibility < 0.75f )
+				continue;
+		}
+
 		const auto LightDistance = LightPosition.DistanceSquared( Position );
+		const auto LightFactor = LightDistance - Lights[Index].Color.w * 0.01f;
+		const auto LightCullFactor = LightDistance * 0.01f;
+
+		if( LightCullFactor > 200.0f )
+		{
+			continue;
+		}
+
 		const bool FreeIndex = Closest[0] == -1 || Closest[1] == -1 || Closest[2] == -1 || Closest[3] == -1;
-		if( LightDistance < Distance || FreeIndex )
+		if( LightFactor < Distance )
 		{
 			Distance = LightDistance;
 
@@ -170,4 +252,9 @@ LightIndices LightEntity::Fetch( const Vector3D& Position )
 	Indices.Index[3] = Closest[3];
 
 	return Indices;
+}
+
+const Light& LightEntity::Get( int32_t Index )
+{
+	return Lights[Index];
 }

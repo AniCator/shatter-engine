@@ -422,6 +422,12 @@
     <ClCompile Include="Engine\World\Entity\LightEntity\LightEntity.cpp">
       <Filter>Source Files\Engine\World\Entity\LightEntity</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Sequencer\Events\EntityEvent.cpp">
+      <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Gizmo.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -783,6 +789,15 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Entity\LightEntity\LightEntity.h">
       <Filter>Source Files\Engine\World\Entity\LightEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Definitions.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sequencer\Events\EntityEvent.h">
+      <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Gizmo.h">
+      <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

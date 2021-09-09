@@ -27,157 +27,157 @@ public:
 		this->Y = A;
 	}
 
-	inline float* Base()
+	float* Base()
 	{
 		return &X;
 	}
 
-	inline float& operator[]( size_t Index )
+	float& operator[]( size_t Index )
 	{
 		return ( &X )[Index];
 	}
 
-	inline const float& operator[]( size_t Index ) const
+	const float& operator[]( size_t Index ) const
 	{
 		return ( &X )[Index];
 	}
 
-	inline Vector2D operator=( const Vector2D& Vector )
+	Vector2D operator=( const Vector2D& Vector )
 	{
 		this->X = Vector.X;
 		this->Y = Vector.Y;
 		return *this;
 	}
 
-	inline Vector2D operator+( const Vector2D& Vector ) const
+	Vector2D operator+( const Vector2D& Vector ) const
 	{
 		return Vector2D(
 			X + Vector.X,
 			Y + Vector.Y
 		);
-	};
+	}
 
-	inline Vector2D operator-( const Vector2D& Vector ) const
+	Vector2D operator-( const Vector2D& Vector ) const
 	{
 		return Vector2D(
 			X - Vector.X,
 			Y - Vector.Y
 		);
-	};
+	}
 
-	inline Vector2D operator*( const Vector2D& Vector ) const
+	Vector2D operator*( const Vector2D& Vector ) const
 	{
 		return Vector2D(
 			X * Vector.X,
 			Y * Vector.Y
 		);
-	};
+	}
 
-	inline Vector2D operator+( const float& Scalar ) const
+	Vector2D operator+( const float& Scalar ) const
 	{
 		return Vector2D(
 			X + Scalar,
 			Y + Scalar
 		);
-	};
+	}
 
-	inline Vector2D operator-( const float& Scalar ) const
+	Vector2D operator-( const float& Scalar ) const
 	{
 		return Vector2D(
 			X - Scalar,
 			Y - Scalar
 		);
-	};
+	}
 
-	inline Vector2D operator*( const float& Scalar ) const
+	Vector2D operator*( const float& Scalar ) const
 	{
 		return Vector2D(
 			X * Scalar,
 			Y * Scalar
 		);
-	};
+	}
 
-	inline Vector2D operator+=( const Vector2D& Vector )
+	Vector2D operator+=( const Vector2D& Vector )
 	{
 		X += Vector.X;
 		Y += Vector.Y;
 		return *this;
-	};
+	}
 
-	inline Vector2D operator-=( const Vector2D& Vector )
+	Vector2D operator-=( const Vector2D& Vector )
 	{
 		X -= Vector.X;
 		Y -= Vector.Y;
 		return *this;
-	};
+	}
 
-	inline Vector2D operator*=( const Vector2D& Vector )
+	Vector2D operator*=( const Vector2D& Vector )
 	{
 		X *= Vector.X;
 		Y *= Vector.Y;
 		return *this;
-	};
+	}
 
-	inline Vector2D operator+=( const float& Scalar )
+	Vector2D operator+=( const float& Scalar )
 	{
 		X += Scalar;
 		Y += Scalar;
 		return *this;
-	};
+	}
 
-	inline Vector2D operator-=( const float& Scalar )
+	Vector2D operator-=( const float& Scalar )
 	{
 		X -= Scalar;
 		Y -= Scalar;
 		return *this;
-	};
+	}
 
-	inline Vector2D operator*=( const float& Scalar )
+	Vector2D operator*=( const float& Scalar )
 	{
 		X *= Scalar;
 		Y *= Scalar;
 		return *this;
-	};
+	}
 
-	inline Vector2D operator/=( const float& Scalar )
+	Vector2D operator/=( const float& Scalar )
 	{
 		X /= Scalar;
 		Y /= Scalar;
 		return *this;
-	};
+	}
 
-	inline float Dot( const Vector2D& Vector ) const
+	float Dot( const Vector2D& Vector ) const
 	{
 		return X * Vector.X + Y * Vector.Y;
 	}
 
-	inline float Length() const
+	float Length() const
 	{
 		return sqrt( Dot( *this ) );
 	}
 
-	inline float LengthSquared() const
+	float LengthSquared() const
 	{
 		return Dot( *this );
 	}
 
-	inline float Length( const Vector2D& Vector ) const
+	float Length( const Vector2D& Vector ) const
 	{
 		return sqrt( Vector.Dot( Vector ) );
 	}
 
-	inline float Distance( const Vector2D& Vector ) const
+	float Distance( const Vector2D& Vector ) const
 	{
 		return Length( *this - Vector );
 	}
 
-	inline float DistanceSquared( const Vector2D& Vector ) const
+	float DistanceSquared( const Vector2D& Vector ) const
 	{
 		const Vector2D Delta = *this - Vector;
 		return Delta.Dot( Delta );
 	}
 
-	inline Vector2D Normalized() const
+	Vector2D Normalized() const
 	{
 		Vector2D Unit = *this;
 
@@ -190,7 +190,7 @@ public:
 		return Unit;
 	}
 
-	inline float Normalize()
+	float Normalize()
 	{
 		const float VectorLength = Length( *this );
 		if( VectorLength > 0.0f )
@@ -205,7 +205,7 @@ public:
 class Vector3D
 {
 public:
-	union { 
+	union {
 		struct { float X, Y, Z; };
 		struct { float R, G, B; };
 		struct { float S, T, P; };
@@ -227,22 +227,22 @@ public:
 		this->Z = A;
 	}
 
-	inline const float* Base() const
+	const float* Base() const
 	{
 		return &X;
 	}
 
-	inline float& operator[]( size_t Index )
+	float& operator[]( size_t Index )
 	{
 		return ( &X )[Index];
 	}
 
-	inline const float& operator[]( size_t Index ) const
+	const float& operator[]( size_t Index ) const
 	{
 		return ( &X )[Index];
 	}
 
-	inline Vector3D operator=( const Vector3D& Vector )
+	Vector3D operator=( const Vector3D& Vector )
 	{
 		this->X = Vector.X;
 		this->Y = Vector.Y;
@@ -250,171 +250,171 @@ public:
 		return *this;
 	}
 
-	inline Vector3D operator+( const Vector3D& Vector ) const
+	Vector3D operator+( const Vector3D& Vector ) const
 	{
 		return Vector3D(
 			X + Vector.X,
 			Y + Vector.Y,
 			Z + Vector.Z
 		);
-	};
+	}
 
-	inline Vector3D operator-( const Vector3D& Vector ) const
+	Vector3D operator-( const Vector3D& Vector ) const
 	{
 		return Vector3D(
 			X - Vector.X,
 			Y - Vector.Y,
 			Z - Vector.Z
 		);
-	};
+	}
 
-	inline Vector3D operator*( const Vector3D& Vector ) const
+	Vector3D operator*( const Vector3D& Vector ) const
 	{
 		return Vector3D(
 			X * Vector.X,
 			Y * Vector.Y,
 			Z * Vector.Z
 		);
-	};
+	}
 
-	inline Vector3D operator/( const Vector3D& Vector ) const
+	Vector3D operator/( const Vector3D& Vector ) const
 	{
 		return Vector3D(
 			X / Vector.X,
 			Y / Vector.Y,
 			Z / Vector.Z
 		);
-	};
+	}
 
-	inline Vector3D operator+( const float& Scalar ) const
+	Vector3D operator+( const float& Scalar ) const
 	{
 		return Vector3D(
 			X + Scalar,
 			Y + Scalar,
 			Z + Scalar
 		);
-	};
+	}
 
-	inline Vector3D operator-( const float& Scalar ) const
+	Vector3D operator-( const float& Scalar ) const
 	{
-		return Vector3D( 
-			X - Scalar, 
-			Y - Scalar, 
+		return Vector3D(
+			X - Scalar,
+			Y - Scalar,
 			Z - Scalar
 		);
-	};
+	}
 
-	inline Vector3D operator*( const float& Scalar ) const
+	Vector3D operator*( const float& Scalar ) const
 	{
 		return Vector3D(
 			X * Scalar,
 			Y * Scalar,
 			Z * Scalar
 		);
-	};
+	}
 
-	friend inline Vector3D operator*( const float& Scalar, const Vector3D& Vector )
+	friend Vector3D operator*( const float& Scalar, const Vector3D& Vector )
 	{
 		return Vector * Scalar;
-	};
+	}
 
-	inline Vector3D operator/( const float& Scalar ) const
+	Vector3D operator/( const float& Scalar ) const
 	{
 		return Vector3D(
 			X / Scalar,
 			Y / Scalar,
 			Z / Scalar
 		);
-	};
+	}
 
-	friend inline Vector3D operator/( const float& Scalar, const Vector3D& Vector )
+	friend Vector3D operator/( const float& Scalar, const Vector3D& Vector )
 	{
 		return Vector3D(
 			Scalar / Vector.X,
 			Scalar / Vector.Y,
 			Scalar / Vector.Z
 		);
-	};
+	}
 
-	inline Vector3D operator+=( const Vector3D& Vector )
+	Vector3D operator+=( const Vector3D& Vector )
 	{
 		X += Vector.X;
 		Y += Vector.Y;
 		Z += Vector.Z;
 		return *this;
-	};
+	}
 
-	inline Vector3D operator-=( const Vector3D& Vector )
+	Vector3D operator-=( const Vector3D& Vector )
 	{
 		X -= Vector.X;
 		Y -= Vector.Y;
 		Z -= Vector.Z;
 		return *this;
-	};
+	}
 
-	inline Vector3D operator*=( const Vector3D& Vector )
+	Vector3D operator*=( const Vector3D& Vector )
 	{
 		X *= Vector.X;
 		Y *= Vector.Y;
 		Z *= Vector.Z;
 		return *this;
-	};
+	}
 
-	inline Vector3D operator/=( const Vector3D& Vector )
+	Vector3D operator/=( const Vector3D& Vector )
 	{
 		X /= Vector.X;
 		Y /= Vector.Y;
 		Z /= Vector.Z;
 		return *this;
-	};
+	}
 
-	inline Vector3D operator+=( const float& Scalar )
+	Vector3D operator+=( const float& Scalar )
 	{
 		X += Scalar;
 		Y += Scalar;
 		Z += Scalar;
 		return *this;
-	};
+	}
 
-	inline Vector3D operator-=( const float& Scalar )
+	Vector3D operator-=( const float& Scalar )
 	{
 		X -= Scalar;
 		Y -= Scalar;
 		Z -= Scalar;
 		return *this;
-	};
+	}
 
-	inline Vector3D operator*=( const float& Scalar )
+	Vector3D operator*=( const float& Scalar )
 	{
 		X *= Scalar;
 		Y *= Scalar;
 		Z *= Scalar;
 		return *this;
-	};
+	}
 
-	inline Vector3D operator/=( const float& Scalar )
+	Vector3D operator/=( const float& Scalar )
 	{
 		X /= Scalar;
 		Y /= Scalar;
 		Z /= Scalar;
 		return *this;
-	};
+	}
 
-	friend inline Vector3D operator-( const Vector3D& Vector )
+	friend Vector3D operator-( const Vector3D& Vector )
 	{
 		Vector3D Result;
 		Result.X = -Vector.X;
 		Result.Y = -Vector.Y;
 		Result.Z = -Vector.Z;
 		return Result;
-	};
+	}
 
-	inline float Dot( const Vector3D& Vector ) const
+	float Dot( const Vector3D& Vector ) const
 	{
 		return X * Vector.X + Y * Vector.Y + Z * Vector.Z;
 	}
 
-	inline Vector3D Cross( const Vector3D& Vector ) const
+	Vector3D Cross( const Vector3D& Vector ) const
 	{
 		return Vector3D(
 			Y * Vector.Z - Vector.Y * Z,
@@ -423,33 +423,33 @@ public:
 		);
 	}
 
-	inline float Length() const
+	float Length() const
 	{
 		return sqrt( Dot( *this ) );
 	}
 
-	inline float LengthSquared() const
+	float LengthSquared() const
 	{
 		return Dot( *this );
 	}
 
-	inline float Length( const Vector3D& Vector ) const
+	float Length( const Vector3D& Vector ) const
 	{
 		return sqrt( Vector.Dot( Vector ) );
 	}
 
-	inline float Distance( const Vector3D& Vector ) const
+	float Distance( const Vector3D& Vector ) const
 	{
 		return Length( *this - Vector );
 	}
 
-	inline float DistanceSquared( const Vector3D& Vector ) const
+	float DistanceSquared( const Vector3D& Vector ) const
 	{
 		const Vector3D Delta = *this - Vector;
 		return Delta.Dot( Delta );
 	}
 
-	inline Vector3D Normalized() const
+	Vector3D Normalized() const
 	{
 		Vector3D Unit = *this;
 
@@ -462,7 +462,7 @@ public:
 		return Unit;
 	}
 
-	inline float Normalize()
+	float Normalize()
 	{
 		const float VectorLength = Length( *this );
 		if( VectorLength > 0.0f )
@@ -473,21 +473,21 @@ public:
 		return VectorLength;
 	}
 
-	inline bool IsNaN() const
+	bool IsNaN() const
 	{
 		return isnan( X )
 			|| isnan( Y )
 			|| isnan( Z );
 	}
 
-	inline bool IsInfinite() const
+	bool IsInfinite() const
 	{
 		return isinf( X )
 			|| isinf( Y )
 			|| isinf( Z );
 	}
 
-	inline bool IsValid() const
+	bool IsValid() const
 	{
 		return !IsNaN() && !IsInfinite();
 	}
@@ -522,22 +522,22 @@ public:
 		this->W = W;
 	}
 
-	inline const float* Base() const
+	const float* Base() const
 	{
 		return &X;
 	}
 
-	inline float& operator[]( size_t Index )
+	float& operator[]( size_t Index )
 	{
 		return ( &X )[Index];
 	}
 
-	inline const float& operator[]( size_t Index ) const
+	const float& operator[]( size_t Index ) const
 	{
 		return ( &X )[Index];
 	}
 
-	inline Vector4D operator=( const Vector4D& Vector )
+	Vector4D operator=( const Vector4D& Vector )
 	{
 		this->X = Vector.X;
 		this->Y = Vector.Y;
@@ -546,7 +546,7 @@ public:
 		return *this;
 	}
 
-	inline Vector4D operator+( const Vector4D& Vector ) const
+	Vector4D operator+( const Vector4D& Vector ) const
 	{
 		return Vector4D(
 			X + Vector.X,
@@ -554,9 +554,9 @@ public:
 			Z + Vector.Z,
 			W + Vector.W
 		);
-	};
+	}
 
-	inline Vector4D operator-( const Vector4D& Vector ) const
+	Vector4D operator-( const Vector4D& Vector ) const
 	{
 		return Vector4D(
 			X - Vector.X,
@@ -564,9 +564,9 @@ public:
 			Z - Vector.Z,
 			W - Vector.W
 		);
-	};
+	}
 
-	inline Vector4D operator*( const Vector4D& Vector ) const
+	Vector4D operator*( const Vector4D& Vector ) const
 	{
 		return Vector4D(
 			X * Vector.X,
@@ -574,9 +574,9 @@ public:
 			Z * Vector.Z,
 			W * Vector.W
 		);
-	};
+	}
 
-	inline Vector4D operator+( const float& Scalar ) const
+	Vector4D operator+( const float& Scalar ) const
 	{
 		return Vector4D(
 			X + Scalar,
@@ -584,9 +584,9 @@ public:
 			Z + Scalar,
 			W + Scalar
 		);
-	};
+	}
 
-	inline Vector4D operator-( const float& Scalar ) const
+	Vector4D operator-( const float& Scalar ) const
 	{
 		return Vector4D(
 			X - Scalar,
@@ -594,9 +594,9 @@ public:
 			Z - Scalar,
 			W - Scalar
 		);
-	};
+	}
 
-	inline Vector4D operator*( const float& Scalar ) const
+	Vector4D operator*( const float& Scalar ) const
 	{
 		return Vector4D(
 			X * Scalar,
@@ -604,91 +604,114 @@ public:
 			Z * Scalar,
 			W * Scalar
 		);
-	};
+	}
 
-	inline Vector4D operator+=( const Vector4D& Vector )
+	Vector4D operator+=( const Vector4D& Vector )
 	{
 		X += Vector.X;
 		Y += Vector.Y;
 		Z += Vector.Z;
 		W += Vector.W;
 		return *this;
-	};
+	}
 
-	inline Vector4D operator-=( const Vector4D& Vector )
+	Vector4D operator-=( const Vector4D& Vector )
 	{
 		X -= Vector.X;
 		Y -= Vector.Y;
 		Z -= Vector.Z;
 		W -= Vector.W;
 		return *this;
-	};
+	}
 
-	inline Vector4D operator*=( const Vector4D& Vector )
+	Vector4D operator*=( const Vector4D& Vector )
 	{
 		X *= Vector.X;
 		Y *= Vector.Y;
 		Z *= Vector.Z;
 		W *= Vector.W;
 		return *this;
-	};
+	}
 
-	inline Vector4D operator+=( const float& Scalar )
+	Vector4D operator/=( const Vector4D& Vector )
+	{
+		X /= Vector.X;
+		Y /= Vector.Y;
+		Z /= Vector.Z;
+		W /= Vector.W;
+		return *this;
+	}
+
+	Vector4D operator+=( const float& Scalar )
 	{
 		X += Scalar;
 		Y += Scalar;
 		Z += Scalar;
 		W += Scalar;
 		return *this;
-	};
+	}
 
-	inline Vector4D operator-=( const float& Scalar )
+	Vector4D operator-=( const float& Scalar )
 	{
 		X -= Scalar;
 		Y -= Scalar;
 		Z -= Scalar;
 		W -= Scalar;
 		return *this;
-	};
+	}
 
-	inline Vector4D operator*=( const float& Scalar )
+	Vector4D operator*=( const float& Scalar )
 	{
 		X *= Scalar;
 		Y *= Scalar;
 		Z *= Scalar;
 		W *= Scalar;
 		return *this;
-	};
+	}
 
-	inline float Dot( const Vector4D& Vector ) const
+	Vector4D operator/=( const float& Scalar )
+	{
+		X /= Scalar;
+		Y /= Scalar;
+		Z /= Scalar;
+		W /= Scalar;
+		return *this;
+	}
+
+	float Dot( const Vector4D& Vector ) const
 	{
 		return X * Vector.X + Y * Vector.Y + Z * Vector.Z + W * Vector.W;
 	}
 
-	inline float Length()
+	float Length() const
 	{
 		return sqrt( Dot( *this ) );
 	}
 
-	inline float Length( const Vector4D& Vector )
+	float Length( const Vector4D& Vector ) const
 	{
 		return sqrt( Vector.Dot( Vector ) );
 	}
 
-	inline float Distance( const Vector4D& Vector )
+	float Distance( const Vector4D& Vector ) const
 	{
 		return Length( *this - Vector );
 	}
 
-	inline Vector4D Normalized()
+	Vector4D Normalized() const
 	{
-		const float LengthBiased = 1.f / ( Length() + FLT_EPSILON );
-		*this *= LengthBiased;
+		Vector4D Unit = *this;
 
-		return *this;
+		const float VectorLength = Length( Unit );
+		if( VectorLength > 0.0f )
+		{
+			Unit /= VectorLength;
+		}
+
+		return Unit;
 	}
 
-	inline float Normalize()
+	float Normalize()
 	{
 		const float LengthBiased = 1.f / ( Length() + FLT_EPSILON );
 		*this *= LengthBiased;
@@ -696,7 +719,7 @@ public:
 		return LengthBiased;
 	}
 
-	inline float Normalize( const Vector4D& Vector, const float& Length )
+	float Normalize( const Vector4D& Vector, const float& Length )
 	{
 		const float LengthBiased = 1.f / ( Length + FLT_EPSILON );
 		*this *= LengthBiased;
@@ -769,19 +792,19 @@ namespace Intrinsic
 		{
 			StoredVector = Add( StoredVector, Vector );
 			return StoredVector;
-		};
+		}
 
 		__m128 operator-=( const __m128& Vector )
 		{
 			StoredVector = Subtract( StoredVector, Vector );
 			return StoredVector;
-		};
+		}
 
 		__m128 operator*=( const __m128& Vector )
 		{
 			StoredVector = Multiply( StoredVector, Vector );
 			return StoredVector;
-		};
+		}
 
 		static __m128 Add( const __m128& A, const __m128& B )
 		{

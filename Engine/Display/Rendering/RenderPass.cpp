@@ -216,18 +216,18 @@ void CRenderPass::Setup( CRenderable* Renderable, const std::unordered_map<std::
 
 			const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 			const FCameraSetup& PreviousCameraSetup = PreviousCamera.GetCameraSetup();
-			const glm::mat4& ViewMatrix = Camera.GetViewMatrix();
-			const glm::mat4& ProjectionMatrix = Camera.GetProjectionMatrix();
 
 			const GLint ViewMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "View" );
 			if( ViewMatrixLocation > -1 )
 			{
+				const auto& ViewMatrix = Camera.GetViewMatrix();
 				glUniformMatrix4fv( ViewMatrixLocation, 1, GL_FALSE, &ViewMatrix[0][0] );
 			}
 
 			const GLint ProjectionMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Projection" );
 			if( ProjectionMatrixLocation > -1 )
 			{
+				const auto& ProjectionMatrix = Camera.GetProjectionMatrix();
 				glUniformMatrix4fv( ProjectionMatrixLocation, 1, GL_FALSE, &ProjectionMatrix[0][0] );
 			}
 
@@ -468,6 +468,7 @@ void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 
 void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
+	OptickEvent();
 	// SphereCull( Camera, Renderables );
 	PointCull( Camera, Renderables );
 }
@@ -475,6 +476,8 @@ void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*>&
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )
 {
 	static CRenderPassCopy Copy( Width, Height, Camera, AlwaysClear );
+	Copy.ViewportWidth = Width;
+	Copy.ViewportHeight = Height;
 	Copy.AlwaysClear = AlwaysClear;
 	Copy.Source = Source;
 	Copy.Target = Target;
@@ -484,6 +487,8 @@ uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width,
 uint32_t DownsampleTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )
 {
 	static CRenderPassDownsample Downsample( Width, Height, Camera, AlwaysClear );
+	Downsample.ViewportWidth = Width;
+	Downsample.ViewportHeight = Height;
 	Downsample.Source = Source;
 	Downsample.Target = Target;
 	return Downsample.Render( Uniforms );

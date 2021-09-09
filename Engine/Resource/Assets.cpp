@@ -59,6 +59,8 @@ void CAssets::Create( const std::string& Name, CAsset* NewAsset )
 
 void ParsePayload( FPrimitivePayload* Payload )
 {
+	OptickEvent();
+
 	Payload->Native = false;
 
 	CFile File( Payload->Location.c_str() );
@@ -866,6 +868,11 @@ void CAssets::ReloadShaders()
 
 void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 {
+	OptickEvent();
+
+	if( AssetsIn.Objects.empty() )
+		return;
+
 	auto& Assets = Get();
 	
 	std::vector<FPrimitivePayload> MeshList;
@@ -1060,4 +1067,17 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 	}
 
 	Assets.CreatedNamedAssets( MeshList, GenericAssets );
+}
+
+void CAssets::ParseAndLoadJSON( const JSON::Vector& Tree )
+{
+	if( const auto* Object = JSON::Find( Tree, "assets" ) )
+	{
+		ParseAndLoadJSON( *Object );
+	}
+}
+
+void CAssets::ParseAndLoadJSON( const JSON::Container& Container )
+{
+	ParseAndLoadJSON( Container.Tree );
 }

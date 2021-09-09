@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Thread.h"
 
+#include <Engine/Profiling/Profiling.h>
+
 #if defined(_WIN32)
 #include <windows.h>
 const DWORD MS_VC_EXCEPTION = 0x406D1388;
@@ -50,4 +52,24 @@ void SetThreadName( std::thread& Thread, const std::string& Name )
 void Worker::SetName( const std::string& Name )
 {
 	SetThreadName( Thread, Name );
+}
+
+void Worker::Work()
+{
+	ProfileThread( "Shatter Engine Worker");
+	while( Alive )
+	{
+		std::unique_lock<std::mutex> Lock( Mutex );
+		Notify.wait( Lock );
+
+		Running = true;
+
+		if( Task )
+		{
+			Task->Execute();
+		}
+
+		Running = false;
+		Ready = false;
+	}
 }
