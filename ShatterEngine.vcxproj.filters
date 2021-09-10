@@ -799,6 +799,9 @@
     <ClInclude Include="Engine\Utility\Gizmo.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Utility\BuildTime.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">
