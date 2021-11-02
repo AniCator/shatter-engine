@@ -78,6 +78,8 @@ void CWorld::Tick()
 		Level.Tick();
 	}
 
+	LightEntity::UploadToGPU();
+
 	if( Camera )
 	{
 		auto& Configuration = CConfiguration::Get();
@@ -235,6 +237,11 @@ const FCameraSetup& CWorld::GetActiveCameraSetup() const
 	return DummySetup;
 }
 
+CCamera* CWorld::GetPreviousCamera() const
+{
+	return PreviousCamera;
+}
+
 CPhysics* CWorld::GetPhysics() const
 {
 	return Physics;
@@ -248,6 +255,82 @@ void CWorld::MakePrimary()
 CWorld* CWorld::GetPrimaryWorld()
 {
 	return PrimaryWorld;
+}
+
+void CWorld::Tag( CEntity* Entity, const std::string& TagName )
+{
+	auto Iterator = Tags.find( TagName );
+	if( Iterator == Tags.end() )
+	{
+		// Create a new tag entry if it doesn't exist yet.
+		Tags.insert_or_assign( TagName, std::vector<CEntity*>() );
+		Iterator = Tags.find( TagName );
+	}
+
+	// Create just the tag category if a nullptr is given.
+	if( Entity == nullptr )
+		return;
+
+	// Assign the entity to this tag category.
+	Iterator->second.emplace_back( Entity );
+}
+
+void CWorld::Untag( CEntity* Entity, const std::string& TagName )
+{
+	for( auto TagIterator = Tags.begin(); TagIterator != Tags.end();)
+	{
+		if( TagIterator->first == TagName )
+		{
+			auto& Entities = TagIterator->second;
+			auto Iterator = Entities.begin();
+			while( Iterator != Entities.end() )
+			{
+				if( ( *Iterator ) == Entity )
+				{
+					Iterator = Entities.erase( Iterator );
+				}
+				else
+				{
+					++Iterator;
+				}
+			}
+		}
+
+		++TagIterator;
+	}
+}
+
+const std::vector<CEntity*>* CWorld::GetTagged( const std::string& TagName ) const
+{
+	const auto Iterator = Tags.find( TagName );
+	if( Iterator != Tags.end() )
+	{
+		return &Iterator->second;
+	}
+
+	return nullptr;
+}
+
+const std::unordered_map<std::string, std::vector<CEntity*>>& CWorld::GetTags() const
+{
+	return Tags;
+}
+
+CEntity* CWorld::Find( const std::string& TagName, const std::string& EntityName ) const
+{
+	const auto Iterator = Tags.find( TagName );
+	if( Iterator != Tags.end() )
+	{
+		for( auto* Entity : Iterator->second )
+		{
+			if( Entity->Name == EntityName )
+			{
+				return Entity;
+			}
+		}
+	}
+
+	return nullptr;
 }
 
 CData& operator<<( CData& Data, CWorld* World )
@@ -292,8 +375,8 @@ CData& operator>>( CData& Data, CWorld* World )
 
 	std::string Timestamp( __TIME__ );
 	Timestamp.erase( std::remove_if( Timestamp.begin(), Timestamp.end(),
-		[] ( const char a_c ) {
-			return !isdigit( a_c );
+		[] ( const char Character ) {
+			return !isdigit( Character );
 		} ),
 		Timestamp.end() );
 

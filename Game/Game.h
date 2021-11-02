@@ -19,7 +19,7 @@ struct Version
 class IGameLayer
 {
 public:
-	virtual ~IGameLayer() {};
+	virtual ~IGameLayer() = default;
 
 	virtual void Initialize() = 0;
 	virtual void Frame() = 0;

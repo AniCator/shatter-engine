@@ -4,7 +4,7 @@
 #include <set>
 
 #include <Engine/Physics/Body/Shared.h>
-#include <Engine/Utility/GeometryResult.h>
+#include <Engine/Physics/GeometryResult.h>
 #include <Engine/Utility/Structures/BoundingVolumeHierarchy.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
@@ -28,7 +28,11 @@ public:
 	// Simulate environmental factors that should be executed before doing any collision work.
 	virtual void Simulate();
 
+	// The collision function is used to generate collision responses and update the velocity vectors of bodies.
+	// These are applied in the Tick function.
 	virtual bool Collision( CBody* Body );
+
+	// The tick currently applies the collision results produced by the Collision function to the owning object and resets the body's internal values.
 	virtual void Tick();
 	void Destroy();
 
@@ -41,6 +45,7 @@ public:
 	}
 
 	virtual const FTransform& GetTransform() const;
+	virtual void SetTransform( const FTransform& Transform ) const;
 
 	virtual void Debug() const override;
 
@@ -76,6 +81,9 @@ public:
 	// This body can be pulled down by gravity.
 	bool AffectedByGravity = true;
 
+	// Uses continuous collision detection.
+	bool Continuous = false;
+
 	// Determines whether triangle mesh tests should be done for this object.
 	bool TriangleMesh = false;
 
@@ -87,6 +95,7 @@ public:
 	FTransform PreviousTransform;
 	BoundingBox LocalBounds;
 	BoundingBox WorldBounds;
+	BoundingBox WorldBoundsSwept;
 	Vector3D DeltaPosition = Vector3D::Zero;
 	Vector3D Acceleration = Vector3D::Zero;
 	Vector3D Velocity = Vector3D::Zero;

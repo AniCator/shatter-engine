@@ -17,6 +17,26 @@ struct BoundingBox
 	static BoundingBox Combine( const BoundingBox& A, const BoundingBox& B );
 };
 
+struct BoundingPoints
+{
+	BoundingPoints() = delete;
+	BoundingPoints( const BoundingBox& Box )
+	{
+		Position[0] = Vector3D( Box.Minimum.X, Box.Maximum.Y, Box.Minimum.Z );
+		Position[1] = Vector3D( Box.Maximum.X, Box.Maximum.Y, Box.Minimum.Z );
+		Position[2] = Vector3D( Box.Maximum.X, Box.Minimum.Y, Box.Minimum.Z );
+		Position[3] = Vector3D( Box.Minimum.X, Box.Minimum.Y, Box.Minimum.Z );
+
+		Position[4] = Vector3D( Box.Minimum.X, Box.Maximum.Y, Box.Maximum.Z );
+		Position[5] = Vector3D( Box.Maximum.X, Box.Maximum.Y, Box.Maximum.Z );
+		Position[6] = Vector3D( Box.Maximum.X, Box.Minimum.Y, Box.Maximum.Z );
+		Position[7] = Vector3D( Box.Minimum.X, Box.Minimum.Y, Box.Maximum.Z );
+	}
+
+	static constexpr size_t Count = 8;
+	Vector3D Position[Count]{};
+};
+
 struct BoundingBoxSIMD
 {
 	BoundingBoxSIMD() = default;

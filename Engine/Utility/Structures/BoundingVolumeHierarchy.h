@@ -1,38 +1,13 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <Engine/Utility/GeometryResult.h>
+#include <Engine/Physics/GeometryResult.h>
 #include <Engine/Utility/Math/BoundingBox.h>
+#include <Engine/Utility/Structures/Testable.h>
+#include <Engine/Utility/Structures/QueryResult.h>
 
 #include <memory>
 #include <vector>
-
-struct QueryResult
-{
-	QueryResult()
-	{
-		Objects.reserve( 64 );
-	}
-	
-	bool Hit = false;
-	class std::vector<class Testable*> Objects;
-
-	explicit operator bool() const
-	{
-		return Hit;
-	}
-};
-
-class Testable
-{
-public:
-	virtual ~Testable() = default;
-
-	virtual const BoundingBox& GetBounds() const = 0;
-	virtual void Query( const BoundingBox& Box, QueryResult& Result ) const = 0;
-	virtual Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore = std::vector<Testable*>() ) const = 0;
-	virtual void Debug() const {}
-};
 
 class BoundingVolumeHierarchy
 {
@@ -59,8 +34,10 @@ public:
 
 		const BoundingBox& GetBounds() const override;
 
-		static bool Cast( const RawObject& Node, const Vector3D& Start, const Vector3D& End, Geometry::Result& Result );
+		static bool Cast( const RawObject& Node, const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore, Geometry::Result& Result );
 		static bool Compare( const RawObject& A, const RawObject& B, const int32_t& Axis );
+
+		static size_t Depth;
 	};
 
 	static std::shared_ptr<Testable> Build( const RawObjectList& Source );

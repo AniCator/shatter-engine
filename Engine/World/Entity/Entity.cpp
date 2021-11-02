@@ -76,10 +76,36 @@ CWorld* CEntity::GetWorld() const
 
 void CEntity::SetParent( CEntity* Entity )
 {
+	// Don't do anything if we're already parented to this entity.
+	if( Parent == Entity )
+		return;
+
+	// Check if we have a former parent.
+	if( Parent )
+	{
+		// Remove this entity from the former parent.
+		const auto Iterator = std::find( Parent->Children.begin(), Parent->Children.end(), this );
+		if( Iterator != Parent->Children.end() )
+		{
+			Parent->Children.erase( Iterator );
+		}
+	}
+
 	Parent = Entity;
+
+	if( Parent )
+	{
+		// Assign this entity as a child.
+		Parent->Children.emplace_back( this );
+		ParentName = Parent->Name.String();
+	}
+	else
+	{
+		ParentName = std::string();
+	}
 }
 
-CEntity* CEntity::GetParent()
+CEntity* CEntity::GetParent() const
 {
 	return Parent;
 }
@@ -91,6 +117,15 @@ void CEntity::Construct()
 
 void CEntity::Destroy()
 {
+	// Unregister any remaining tags.
+	if( auto* World = GetWorld() )
+	{
+		for( auto& Tag : Tags )
+		{
+			World->Untag( this, Tag );
+		}
+	}
+
 	if( Level )
 	{
 		for( const auto& TrackedEntityID : TrackedEntityIDs )
@@ -103,6 +138,41 @@ void CEntity::Destroy()
 		}
 
 		Level->Remove( this );
+	}
+}
+
+void CEntity::Traverse()
+{
+	const auto* World = GetWorld();
+
+	// Initialize the parent if we deserialized a parent name but didn't assign the parent yet.
+	if( ParentName.length() > 0 && !Parent && World )
+	{
+		if( auto* Entity = World->Find( ParentName ) )
+		{
+			SetParent( Entity );
+		}
+		else
+		{
+			// Clear the parent name to avoid retries.
+			ParentName = std::string();
+		}
+	}
+
+	Tick();
+
+	if( IsDebugEnabled() )
+	{
+		Debug();
+	}
+
+	const auto HasChildren = !Children.empty();
+	if( HasChildren )
+	{
+		for( auto* Child : Children )
+		{
+			Child->Traverse();
+		}
 	}
 }
 
@@ -214,7 +284,7 @@ void CEntity::Track( const CEntity* Entity )
 {
 	if( Entity )
 	{
-		TrackedEntityIDs.push_back( Entity->GetEntityID().ID );
+		TrackedEntityIDs.emplace_back( Entity->GetEntityID().ID );
 	}
 }
 
@@ -236,6 +306,26 @@ void CEntity::EnableDebug( const bool Enable )
 	ShouldDebug = Enable;
 }
 
+void CEntity::Tag( const std::string& TagName )
+{
+	if( auto* World = GetWorld() )
+	{
+		World->Tag( this, TagName );
+
+		Tags.insert( TagName );
+	}
+}
+
+void CEntity::Untag( const std::string& TagName )
+{
+	if( auto* World = GetWorld() )
+	{
+		World->Untag( this, TagName );
+
+		Tags.erase( std::find( Tags.begin(), Tags.end(), TagName ) );
+	}
+}
+
 CData& operator<<( CData& Data, CEntity* Entity )
 {
 	if( Entity )
@@ -244,6 +334,15 @@ CData& operator<<( CData& Data, CEntity* Entity )
 		DataString::Encode( Data, Entity->Name.String() );
 
 		Data << Entity->Identifier.ID;
+
+		if( Entity->Parent )
+		{
+			const auto ParentName = Entity->Parent->Name.String();
+			if( ParentName.length() > 0 )
+			{
+				Serialize::Export( Data, "pt", ParentName );
+			}
+		}
 
 		const auto OutputCount = Entity->Outputs.size();
 		Data << OutputCount;
@@ -279,6 +378,8 @@ CData& operator>>( CData& Data, CEntity* Entity )
 {
 	if( Entity )
 	{
+		Serialize::Import( Data, "pt", Entity->ParentName );
+
 		size_t OutputCount;
 		Data >> OutputCount;
 

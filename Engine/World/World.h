@@ -67,10 +67,28 @@ public:
 	CCamera* GetActiveCamera() const;
 	const FCameraSetup& GetActiveCameraSetup() const;
 
+	CCamera* GetPreviousCamera() const;
+
 	CPhysics* GetPhysics() const;
 
 	void MakePrimary();
 	static CWorld* GetPrimaryWorld();
+
+	// Associates an entity with a tag name.
+	void Tag( CEntity* Entity, const std::string& TagName );
+
+	// Unregisters an entity from a tag name.
+	void Untag( CEntity* Entity, const std::string& TagName );
+
+	// Returns a vector of entities matching the given tag name.
+	// Returns null if the tag couldn't be found.
+	const std::vector<CEntity*>* GetTagged( const std::string& TagName ) const;
+
+	// Returns the entire tag container. (read-only)
+	const std::unordered_map<std::string, std::vector<CEntity*>>& GetTags() const;
+
+	// Find an entity in a specific tag category.
+	CEntity* Find( const std::string& TagName, const std::string& EntityName ) const;
 
 private:
 	std::deque<CLevel> Levels;
@@ -78,10 +96,13 @@ private:
 
 	Vector3D CameraPosition = Vector3D::Zero;
 	CCamera* PreviousCamera = nullptr;
-	CCamera* Camera;
+	CCamera* Camera = nullptr;
 	uint32_t CameraPriority;
 
 	CPhysics* Physics;
+
+	// Used to store tagged/registered entities.
+	std::unordered_map<std::string, std::vector<CEntity*>> Tags;
 
 	static CWorld* PrimaryWorld;
 

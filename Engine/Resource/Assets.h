@@ -36,7 +36,8 @@ namespace EAsset
 		Shader,
 		Texture,
 		Sound,
-		Sequence
+		Sequence,
+		Generic
 	};
 }
 
@@ -46,6 +47,8 @@ struct FGenericAssetPayload
 	std::string Name;
 	std::vector<std::string> Locations;
 };
+
+typedef const std::vector<std::string> AssetParameters;
 
 class CAssets : public Singleton<CAssets>
 {
@@ -57,14 +60,14 @@ public:
 	void Create( const std::string& Name, CSequence* NewSequence );
 	void Create( const std::string& Name, CAsset* NewAsset );
 
-	void CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
+	void CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation, const EShaderType& Type = EShaderType::Fragment );
 	CShader* CreateNamedShader( const char* Name, const char* VertexLocation, const char* FragmentLocation );
-	CTexture* CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8 );
-	CTexture* CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8 );
+	CTexture* CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
+	CTexture* CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
 	CTexture* CreateNamedTexture( const char* Name, CTexture* Texture );
 	CSound* CreateNamedSound( const char* Name, const char* FileLocation );
 	CSound* CreateNamedSound( const char* Name );
@@ -103,6 +106,15 @@ public:
 		return NewAsset;
 	}
 
+	CAsset* CreateNamedAsset( const std::string& Name, const std::string& Type, AssetParameters& Parameters );
+
+	// This function can be used to register an asset that was created in a deferred manner.
+	// Returns true upon successful registration.
+	bool RegisterNamedAsset( const std::string& Name, CAsset* Asset );
+
+	// This is a special method that can be used to run asset loaders that generate multiple assets.
+	void CreateAssets( const std::string& Type, const std::string& Location );
+
 	CMesh* FindMesh( const std::string& Name ) const;
 	CShader* FindShader( const std::string& Name ) const;
 	CTexture* FindTexture( const std::string& Name ) const;
@@ -110,7 +122,7 @@ public:
 	CSequence* FindSequence( const std::string& Name ) const;
 
 	template<class T>
-	T* FindAsset( const std::string& Name )
+	T* FindAsset( const std::string& Name ) const
 	{
 		return Cast<T>( Find<CAsset>( Name, Assets ) );
 	}
@@ -160,6 +172,21 @@ public:
 		return Assets;
 	}
 
+	void RegisterAssetType( const std::string& Name, const std::function<CAsset*( AssetParameters& )>& Loader )
+	{
+		AssetLoaders.insert_or_assign( Name, Loader );
+	}
+
+	bool IsValidAssetType( const std::string& Type ) const
+	{
+		if( AssetLoaders.find(Type) != AssetLoaders.end() )
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 private:
 	std::unordered_map<std::string, CMesh*> Meshes;
 	std::unordered_map<std::string, CShader*> Shaders;
@@ -167,8 +194,11 @@ private:
 	std::unordered_map<std::string, CSound*> Sounds;
 	std::unordered_map<std::string, CSequence*> Sequences;
 
-	// Non-native assets that are defined by the game project.
+	// Generic assets of any other type.
 	std::unordered_map<std::string, CAsset*> Assets;
+
+	// Generic asset loaders.
+	std::unordered_map<std::string, std::function<CAsset*( AssetParameters& )>> AssetLoaders;
 
 protected:
 	friend class Singleton<CAssets>;

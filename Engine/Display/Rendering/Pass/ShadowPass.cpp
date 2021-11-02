@@ -13,6 +13,9 @@ CRenderPassShadow::CRenderPassShadow( int Width, int Height, const CCamera& Came
 	ShadowMap = nullptr;
 
 	SendQueuedRenderables = true;
+
+	Assets.CreateNamedTexture( "noise256near", "Textures/noise256.png", EFilteringMode::Nearest, EImageFormat::RGB8, false );
+	Assets.CreateNamedTexture( "noise256", "Textures/noise256.png", EFilteringMode::Linear );
 }
 
 CRenderPassShadow::~CRenderPassShadow()
@@ -38,8 +41,9 @@ void CRenderPassShadow::Clear()
 void CRenderPassShadow::Draw( CRenderable* Renderable )
 {
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
-	auto Shader = Renderable->GetShader();
-	if( !RenderData.ShouldRender || ( Shader && Shader->GetBlendMode() != EBlendMode::Opaque ) )
+	auto* Shader = Renderable->GetShader();
+	const bool CompatibleShader = Shader && Shader->GetBlendMode() != EBlendMode::Opaque && Shader->GetDepthMask() != EDepthMask::Write;
+	if( !RenderData.ShouldRender || CompatibleShader )
 		return;
 
 	RenderData.ShaderProgram = ShadowShader->GetHandles().Program;
@@ -48,7 +52,7 @@ void CRenderPassShadow::Draw( CRenderable* Renderable )
 	GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
 	glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
 
-	auto Mesh = Renderable->GetMesh();
+	auto* Mesh = Renderable->GetMesh();
 	if( Mesh )
 	{
 		const FVertexBufferData& Data = Mesh->GetVertexBufferData();
@@ -99,15 +103,15 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 				if( !RenderData.ShouldRender )
 					continue;
 
-				static const float MaximumShadowDistance = 35.0f;
-				static const float MaximumShadowDistanceSquared = MaximumShadowDistance * MaximumShadowDistance;
+				static constexpr float MaximumShadowDistance = 35.0f;
+				static constexpr float MaximumShadowDistanceSquared = MaximumShadowDistance * MaximumShadowDistance;
 				const float DistanceToCamera = RenderData.Transform.GetPosition().DistanceSquared( ActiveCamera->GetCameraPosition() );
 				if( DistanceToCamera > MaximumShadowDistanceSquared )
 				{
 					const auto Size = ( RenderData.WorldBounds.Maximum - RenderData.WorldBounds.Minimum );
 
-					static const float MaximumSize = 2.5f;
-					static const float MaximumSizeSquared = MaximumSize * MaximumSize;
+					static constexpr float MaximumSize = 2.5f;
+					static constexpr float MaximumSizeSquared = MaximumSize * MaximumSize;
 					const auto SizeSquaredScalar = Size.LengthSquared();
 					if( SizeSquaredScalar < MaximumSizeSquared )
 					{
@@ -142,6 +146,13 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 	End();
 
 	ShadowMap->Bind( ETextureSlot::Slot8 );
+	ShadowMap->Bind( ETextureSlot::Slot9 );
+
+	const auto* Noise = CAssets::Get().FindTexture( "noise256" );
+	if( Noise )
+	{
+		Noise->Bind( ETextureSlot::Slot10 );
+	}
 
 	return Calls;
 }

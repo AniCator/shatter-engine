@@ -34,7 +34,6 @@ static bool Scrubbing = false;
 double MarkerToTime( const Timecode& Marker )
 {
 	return StaticCast<double>( Marker ) / StaticCast<double>( Timebase );
-	return StaticCast<double>( Marker ) / StaticCast<double>( Timebase );
 }
 
 double MarkerRangeToTime( const Timecode& StartMarker, const Timecode& EndMarker )
@@ -893,11 +892,11 @@ public:
 	void Feed()
 	{
 		const auto RealTime = GameLayersInstance->GetRealTime();
-		const auto DebugTime = RealTime - StartTime;
-		const auto Drift = Math::Max( 0.0, DebugTime - Time() );
+		const auto TimeSinceStart = RealTime - StartTime;
+		const auto Drift = Math::Max( 0.0, TimeSinceStart - Time() );
 		const auto StepDrift = StaticCast<uint64_t>( std::ceil( Drift * StaticCast<double>( Timebase ) ) );
-		const auto DeltaTime = RealTime - PreviousTime + Remainder;
-		auto Steps = StaticCast<uint64_t>( std::floor( DeltaTime * StaticCast<double>( Timebase ) ) );
+		const auto DeltaTime = RealTime - PreviousTime;
+		auto Steps = StaticCast<uint64_t>( std::floor( DeltaTime * PlayRate * StaticCast<double>( Timebase ) ) );
 		Steps += StepDrift;
 		
 		for( uint64_t StepIndex = 0; StepIndex < Steps; StepIndex++ )
@@ -1852,8 +1851,11 @@ public:
 			const bool DeleteHeld = Input.IsKeyDown( EKey::Delete );
 			if( DeleteHeld == false && DeleteState == true ) // Key released.
 			{
-				WantsToDelete = true;
-				ImGui::GetIO().WantCaptureKeyboard = true;
+				if( !ImGui::IsAnyItemActive() )
+				{
+					WantsToDelete = true;
+					ImGui::GetIO().WantCaptureKeyboard = true;
+				}
 			}
 
 			DeleteState = DeleteHeld;
@@ -1885,7 +1887,10 @@ public:
 			const bool DuplicateReleased = ImGui::GetIO().KeyCtrl && ImGui::IsKeyReleased( KeyCode );
 			if( DuplicateReleased )
 			{
-				WantsToDuplicate = true;
+				if( !ImGui::IsAnyItemActive() )
+				{
+					WantsToDuplicate = true;
+				}
 			}
 
 			//const bool DuplicateHeld = Input.IsKeyDown( EKey::LeftControl ) && Input.IsKeyDown( EKey::D );
@@ -1912,7 +1917,7 @@ public:
 				}
 			}
 
-			auto NewEndMarker = 0;
+			Timecode NewEndMarker = 0;
 			
 			// Update the length of each track.
 			for( auto& Track : Tracks )
@@ -1921,8 +1926,8 @@ public:
 
 				for( auto* Event : Track.Events )
 				{
-					auto EventCode = Event->Start + Event->Length;
-					auto TrackCode = Track.Start + Track.Length;
+					Timecode EventCode = Event->Start + Event->Length;
+					Timecode TrackCode = Track.Start + Track.Length;
 					if( EventCode > TrackCode )
 					{
 						Track.Length = EventCode - Track.Start;
@@ -2079,7 +2084,8 @@ public:
 
 protected:
 	bool DrawTimeline;
-	double StartTime = -1.0f;
+	double StartTime = -1.0;
+	double PlayRate = 1.0;
 
 	FTrack* ActiveTrack = nullptr;
 	std::vector<TrackEvent*> ActiveEvents;
@@ -2095,8 +2101,7 @@ protected:
 	std::vector<FTrack> Tracks;
 
 	// State tracking
-	double PreviousTime = 0.0f;
-	double Remainder = 0.0f;
+	double PreviousTime = 0.0;
 
 	struct TrackState
 	{

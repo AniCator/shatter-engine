@@ -15,18 +15,18 @@ CTriggerProximityEntity::CTriggerProximityEntity()
 
 void CTriggerProximityEntity::Construct()
 {
-	
+	Tag( "trigger" );
 }
 
 void CTriggerProximityEntity::Tick()
 {
-	auto World = GetWorld();
+	auto* World = GetWorld();
 	if( World )
 	{
 		const auto& CameraSetup = World->GetActiveCameraSetup();
-		Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+		const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
-		float Length = Delta.Length();
+		const float Length = Delta.Length();
 		if( Length < Radius )
 		{
 			if( !Latched && ( Frequency < 0 || Count < Frequency ) )

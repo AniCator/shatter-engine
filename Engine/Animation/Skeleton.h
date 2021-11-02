@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <stdint.h>
+#include <cstdint>
 #include <vector>
 #include <map>
 #include <string>
@@ -9,15 +9,21 @@
 #include <Engine/Utility/DataString.h>
 #include <Engine/Utility/Math/Matrix.h>
 
-static const char SkeletonIdentifier[5] = "LSKE";
-static const size_t SkeletonVersion = 1;
+static constexpr char SkeletonIdentifier[5] = "LSKE";
+static constexpr size_t SkeletonVersion = 1;
 
-static const uint32_t MaximumInfluences = 4;
+static constexpr uint32_t MaximumInfluences = 4;
 
 struct VertexWeight
 {
-	uint32_t Index[MaximumInfluences] {};
-	float Weight[MaximumInfluences] {};
+	uint32_t Index[MaximumInfluences]{};
+	float Weight[MaximumInfluences]
+	{
+		0.0f,0.0f,0.0f,0.0f
+	};
+
+	// Checks if there is a free weight slot and inserts the bone index and value for that weight.
+	void Add( const uint32_t& BoneIndex, const float& Value );
 };
 
 namespace AnimationKey
@@ -78,16 +84,15 @@ struct Bone
 class Skeleton
 {
 public:
-	Skeleton() {};
+	Skeleton() = default;
+	~Skeleton() = default;
 
 	Skeleton( const uint32_t MaximumWeights, const uint32_t MaximumMatrices )
 	{
 		Weights.resize( MaximumWeights );
 		Bones.resize( MaximumMatrices );
 		MatrixNames.resize( MaximumMatrices );
-	};
-
-	~Skeleton() {};
+	}
 
 	int RootIndex = -1;
 

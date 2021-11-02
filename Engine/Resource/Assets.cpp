@@ -153,8 +153,10 @@ void UpdateAnimationSet( CMesh* Mesh, const std::string& Path )
 	Mesh->SetAnimationSet( Set );
 }
 
-void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
+void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
 {
+	OptickEvent();
+
 	CTimer LoadTimer;
 	LoadTimer.Start();
 
@@ -252,6 +254,16 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 				NewSequence->Load( Payload.Locations[0].c_str() );
 			}
 		}
+		else if( Payload.Type == EAsset::Generic )
+		{
+			const auto& SubType = Payload.Locations[0];
+			const auto& Path = Payload.Locations[1];
+
+			std::vector<std::string> Parameters;
+			Parameters.emplace_back( Path );
+
+			CreateNamedAsset( Payload.Name, SubType, Parameters );
+		}
 	}
 
 	for( auto& Future : Futures )
@@ -291,6 +303,8 @@ void CAssets::CreatedNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::v
 
 CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad )
 {
+	OptickEvent();
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -335,7 +349,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			else if ( Extension == "ses" ) // Animation set
 			{
 				File.Load();
-				const auto SetData = JSON::GenerateTree( File );
+				const auto SetData = JSON::Tree( File );
 				const auto& MeshLocation = JSON::Find( SetData.Tree, "path" );
 				if( MeshLocation && CFile::Exists( MeshLocation->Value.c_str() ) )
 				{
@@ -416,6 +430,8 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 
 CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 {
+	OptickEvent();
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -443,7 +459,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 		return NewMesh;
 	}
 
-	// This should never happen because we check for existing meshes before creating new ones, but you never know.
+	delete NewMesh;
 	return nullptr;
 }
 
@@ -451,6 +467,8 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation,
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -478,7 +496,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation,
 		return NewShader;
 	}
 
-	// This should never happen because we check for existing shaders before creating new ones, but you never know.
+	delete NewShader;
 	return nullptr;
 }
 
@@ -486,6 +504,8 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -513,14 +533,16 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 		return NewShader;
 	}
 
-	// This should never happen because we check for existing shaders before creating new ones, but you never know.
+	delete NewShader;
 	return nullptr;
 }
 
-CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode, const EImageFormat Format )
+CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode, const EImageFormat Format, const bool& GenerateMipMaps )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -533,7 +555,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 	}
 
 	CTexture* NewTexture = new CTexture( FileLocation );
-	const bool bSuccessfulCreation = NewTexture->Load( Mode, Format );
+	const bool bSuccessfulCreation = NewTexture->Load( Mode, Format, GenerateMipMaps );
 
 	if( bSuccessfulCreation )
 	{
@@ -549,17 +571,19 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 	}
 	else
 	{
+		delete NewTexture;
 		return FindTexture( "error" );
 	}
 
-	// This should never happen because we check for existing textures before creating new ones, but you never know.
 	return nullptr;
 }
 
-CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode, const EImageFormat Format )
+CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode, const EImageFormat Format, const bool& GenerateMipMaps )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -572,7 +596,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 	}
 
 	CTexture* NewTexture = new CTexture();
-	const bool bSuccessfulCreation = NewTexture->Load( Data, Width, Height, Channels, Mode, Format );
+	const bool bSuccessfulCreation = NewTexture->Load( Data, Width, Height, Channels, Mode, Format, GenerateMipMaps );
 
 	if( bSuccessfulCreation )
 	{
@@ -588,10 +612,10 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 	}
 	else
 	{
+		delete NewTexture;
 		return FindTexture( "error" );
 	}
 
-	// This should never happen because we check for existing textures before creating new ones, but you never know.
 	return nullptr;
 }
 
@@ -599,6 +623,8 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -628,7 +654,6 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
 		return FindTexture( "error" );
 	}
 
-	// This should never happen because we check for existing textures before creating new ones, but you never know.
 	return nullptr;
 }
 
@@ -636,6 +661,8 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -663,7 +690,7 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 		return NewSound;
 	}
 
-	// This should never happen because we check for existing sounds before creating new ones, but you never know.
+	delete NewSound;
 	return nullptr;
 }
 
@@ -671,6 +698,8 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -699,6 +728,8 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
 
+	OptickEvent();
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -725,7 +756,7 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 		return NewSound;
 	}
 
-	// This should never happen because we check for existing streams before creating new ones, but you never know.
+	delete NewSound;
 	return nullptr;
 }
 
@@ -733,6 +764,8 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -761,6 +794,8 @@ CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocat
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
 
+	OptickEvent();
+
 	// Transform given name into lower case string
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
@@ -787,7 +822,6 @@ CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocat
 		return NewSequence;
 	}
 
-	// This should never happen because we check for existing sequences before creating new ones, but you never know.
 	return nullptr;
 }
 
@@ -795,6 +829,8 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
+
+	OptickEvent();
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -816,6 +852,68 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 	Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
 
 	return NewSequence;
+}
+
+CAsset* CAssets::CreateNamedAsset( const std::string& Name, const std::string& Type, AssetParameters& Parameters )
+{
+	if( IsValidAssetType( Type ) )
+	{
+		// Transform given name into lower case string
+		std::string NameString = Name;
+		std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+		auto* ExistingAsset = Find<CAsset>( NameString, Assets );
+		if( ExistingAsset == nullptr )
+		{
+			auto* Asset = AssetLoaders[Type]( Parameters );
+
+			// Loaders can return null pointers.
+			if( Asset != nullptr )
+			{
+				Assets.insert_or_assign( NameString, Asset );
+			}
+
+			return Asset;
+		}
+		else
+		{
+			return ExistingAsset;
+		}
+	}
+
+	Log::Event( Log::Warning, "Unknown asset type \"%s\".\n", Type.c_str() );
+	return nullptr;
+}
+
+bool CAssets::RegisterNamedAsset( const std::string& Name, CAsset* Asset )
+{
+	if( !Asset )
+		return false;
+
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the asset already exists.
+	auto* ExistingAsset = Find<CAsset>( NameString, Assets );
+	if( ExistingAsset != nullptr )
+		return false;
+
+	// Register the asset.
+	Assets.insert_or_assign( NameString, Asset );
+	return true;
+}
+
+void CAssets::CreateAssets( const std::string& Type, const std::string& Location )
+{
+	if( !IsValidAssetType( Type ) )
+	{
+		Log::Event( Log::Warning, "Unknown asset type \"%s\", can't load \"%s\".\n", Type.c_str(), Location.c_str() );
+		return;
+	}
+
+	AssetParameters Parameters = { Location };
+	const auto* NullAsset = AssetLoaders[Type]( Parameters );
 }
 
 CMesh* CAssets::FindMesh( const std::string& Name ) const
@@ -879,12 +977,13 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 	std::vector<FGenericAssetPayload> GenericAssets;
 	for( const auto* Asset : AssetsIn.Objects )
 	{
-		bool Mesh = false;
-		bool Shader = false;
-		bool Texture = false;
-		bool Sound = false;
-		bool Stream = false;
-		bool Sequence = false;
+		bool Mesh = false; // Is this a mesh?
+		bool Shader = false; // Is this a shader?
+		bool Texture = false; // Is this a texture?
+		bool Sound = false; // Is this an audio file?
+		bool Stream = false; // Is this an audio stream?
+		bool Sequence = false; // Is this a sequence?
+		bool Generic = false; // Is this a generic asset?
 		std::string Name;
 		std::vector<std::string> Paths;
 		Paths.reserve( 10 );
@@ -918,6 +1017,8 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 				}
 
 				Sequence = Property->Value == "sequence";
+
+				Generic = Property->Value == "asset" || Property->Value == "generic";
 			}
 			else if( Property->Key == "name" )
 			{
@@ -965,9 +1066,9 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 				// Path to animation set.
 				UserData = Property->Value;
 			}
-			else if( Property->Key == "stype" )
+			else if( Property->Key == "stype" || Property->Key == "subtype" )
 			{
-				// String designation of a shader type.
+				// String designation of a sub/shader type.
 				UserData = Property->Value;
 			}
 		}
@@ -1055,6 +1156,20 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 
 				GenericAssets.emplace_back( Payload );
 			}
+			else if ( Generic )
+			{
+				FGenericAssetPayload Payload;
+				Payload.Type = EAsset::Sequence;
+				Payload.Name = Name;
+
+				// Add the sub-type.
+				Payload.Locations.emplace_back( UserData );
+
+				// Add the first path, expected to be a definition file for the loader to use.
+				Payload.Locations.emplace_back( Paths[0] );
+
+				GenericAssets.emplace_back( Payload );
+			}
 			else
 			{
 				Log::Event( Log::Error, "Missing asset type for asset \"%s\".\n", Name.c_str() );
@@ -1066,7 +1181,7 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 		}
 	}
 
-	Assets.CreatedNamedAssets( MeshList, GenericAssets );
+	Assets.CreateNamedAssets( MeshList, GenericAssets );
 }
 
 void CAssets::ParseAndLoadJSON( const JSON::Vector& Tree )

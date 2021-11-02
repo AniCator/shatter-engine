@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include "Math/Vector.h"
+#include <Engine/Utility/Math/Vector.h>
 
 class CBody;
 

@@ -14,6 +14,8 @@
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
+#include "Engine/Profiling/Profiling.h"
+
 template<typename TriggerType>
 class CTriggerBody : public CBody
 {
@@ -56,6 +58,18 @@ public:
 
 	virtual bool Collision( CBody* Body ) override
 	{
+		const auto BoundsB = GetBounds();
+		const BoundingBox& BoundsA = Body->GetBounds();
+		if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
+			return false;
+
+		CEntity* Target = Body->Owner ? Body->Owner : Body->Ghost;
+		TriggerType Collider = dynamic_cast<TriggerType>( Target );
+		if( Collider )
+		{
+			Entities.insert( Collider );
+		}
+
 		return false;
 	}
 
@@ -69,7 +83,7 @@ public:
 		if( !Physics )
 			return;
 
-		const auto BoundsB = GetBounds();
+		/*const auto BoundsB = GetBounds();
 		auto Bodies = Physics->Query( BoundsB );
 		for( auto* Body : Bodies )
 		{
@@ -83,7 +97,7 @@ public:
 			{
 				Entities.insert( Collider );
 			}
-		}
+		}*/
 	}
 
 	std::set<TriggerType> Entities;

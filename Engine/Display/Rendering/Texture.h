@@ -16,16 +16,16 @@ public:
 	CTexture( const char* FileLocation );
 	virtual ~CTexture();
 
-	virtual bool Load( const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
-	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8 );
+	virtual bool Load( const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
+	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
 	void Save( const char* FileLocation = nullptr );
 	virtual void Bind( ETextureSlot Slot ) const;
 
 	const std::string& GetLocation() const;
-	const GLuint GetHandle() const;
-	const int GetWidth() const;
-	const int GetHeight() const;
-	const EImageFormat GetImageFormat() const;
+	GLuint GetHandle() const;
+	int GetWidth() const;
+	int GetHeight() const;
+	EImageFormat GetImageFormat() const;
 
 	void* GetImageData() const;
 

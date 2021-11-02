@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include <Engine/Utility/Geometry.h>
+#include <Engine/Physics/Geometry.h>
 
 class CBody;
 class CPhysicsScene;

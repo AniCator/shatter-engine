@@ -38,6 +38,23 @@ public:
 			Shader = Emitter->Render;
 		}
 
+		for( uint32_t Index = 0; Index < MaximumParticleTextures; Index++ )
+		{
+			SetTexture( Emitter->Texture[Index], static_cast<ETextureSlot>( Index ) );
+		}
+
+		// Calculate rough world bounds based on the initial positions.
+		auto* Positions = new Vector3D[Count];
+		for( size_t Index = 0; Index < Count; Index++ )
+		{
+			Positions[Index].X = Data[Index].Position.x;
+			Positions[Index].Y = Data[Index].Position.y;
+			Positions[Index].Z = Data[Index].Position.z;
+		}
+
+		RenderData.WorldBounds = Math::AABB( Positions, Count );
+		delete[] Positions;
+
 		Buffer.Initialize( Data, Count );
 		
 		glGenVertexArrays( 1, &VAO );
@@ -45,18 +62,32 @@ public:
 		Buffer.Bind();
 		
 		glEnableVertexAttribArray( 0 );
+		glEnableVertexAttribArray( 1 );
+		glEnableVertexAttribArray( 2 );
+		glEnableVertexAttribArray( 3 );
+		glEnableVertexAttribArray( 4 );
+
 		glBindBuffer( GL_ARRAY_BUFFER, Buffer.Handle() );
-		glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof( Particle ), nullptr );
+		glVertexAttribPointer( 0, 4, GL_FLOAT, GL_FALSE, sizeof( Particle ), reinterpret_cast<void*>( offsetof( Particle, Position ) ) );
+		// glVertexAttribDivisor( 0, 1 );
+		glVertexAttribPointer( 1, 4, GL_FLOAT, GL_FALSE, sizeof( Particle ), reinterpret_cast<void*>( offsetof( Particle, PreviousPosition ) ) );
+		// glVertexAttribDivisor( 1, 1 );
+		glVertexAttribPointer( 2, 4, GL_FLOAT, GL_FALSE, sizeof( Particle ), reinterpret_cast<void*>( offsetof( Particle, Parameters ) ) );
+		// glVertexAttribDivisor( 2, 1 );
+		glVertexAttribPointer( 3, 4, GL_FLOAT, GL_FALSE, sizeof( Particle ), reinterpret_cast<void*>( offsetof( Particle, ScratchpadA ) ) );
+		// glVertexAttribDivisor( 3, 1 );
+		glVertexAttribPointer( 4, 4, GL_FLOAT, GL_FALSE, sizeof( Particle ), reinterpret_cast<void*>( offsetof( Particle, ScratchpadB ) ) );
+		// glVertexAttribDivisor( 4, 1 );
 
 		glBindVertexArray( 0 );
 	}
 	
-	void Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride ) override
+	void Draw( FRenderData& RenderDataIn, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride ) override
 	{
 		if( !Emitter || !Emitter->Render || !VAO )
 			return;
 
-		CRenderable::Draw( RenderData, PreviousRenderData, DrawModeOverride );
+		CRenderable::Draw( RenderDataIn, PreviousRenderData, DrawModeOverride );
 
 		/*const auto* FFT = CSoLoudSound::GetBusFFT( Bus::Music );
 		std::memcpy( CurrentFFT, FFT, sizeof( float ) * 256 );
@@ -86,7 +117,32 @@ public:
 
 ParticleEmitter::ParticleEmitter()
 {
-	
+	auto* ErrorTexture = CAssets::Get().FindTexture( "error" );
+	for( uint32_t Index = 0; Index < MaximumParticleTextures; Index++ )
+	{
+		Texture[Index] = ErrorTexture;
+	}
+}
+
+void ParticleEmitter::Initialize( const ParticleSystem& System )
+{
+	Initialize( &System );
+}
+
+void ParticleEmitter::Initialize( const ParticleSystem* System )
+{
+	if( !System )
+	{
+		Initialize( nullptr, nullptr );
+		return;
+	}
+
+	for( uint32_t Index = 0; Index < MaximumParticleTextures; Index++ )
+	{
+		Texture[Index] = System->Texture[Index];
+	}
+
+	Initialize( System->Compute, System->Render, System->Count );
 }
 
 void ParticleEmitter::Initialize( CShader* ComputeIn, CShader* RenderIn, const size_t& CountIn )
@@ -94,7 +150,7 @@ void ParticleEmitter::Initialize( CShader* ComputeIn, CShader* RenderIn, const s
 	if( ComputeIn && RenderIn )
 	{
 		Compute = ComputeIn;
-		Render = ComputeIn;
+		Render = RenderIn;
 	}
 	else
 	{
@@ -103,16 +159,19 @@ void ParticleEmitter::Initialize( CShader* ComputeIn, CShader* RenderIn, const s
 	}
 
 	Count = CountIn > 0 ? CountIn : 1000;
-	
+
 	auto* Particles = new Particle[Count];
 	for( size_t Index = 0; Index < Count; Index++ )
 	{
-		const auto X = Location.X + Math::RandomRange( -100.0f, 100.0f );
-		const auto Y = Location.Y + Math::RandomRange( -100.0f, 100.0f );
-		const auto Z = Location.Z + Math::RandomRange( -100.0f, 100.0f );
+		const auto X = Location.X + Math::RandomRange( -10.0f, 10.0f );
+		const auto Y = Location.Y + Math::RandomRange( -10.0f, 10.0f );
+		const auto Z = Location.Z + Math::RandomRange( -10.0f, 10.0f );
 		
 		Particles[Index].Position = glm::vec4( X, Y, Z, 1.0f );
 		Particles[Index].PreviousPosition = Particles[Index].Position;
+		Particles[Index].Parameters = glm::vec4( -1.0f ); // Initialize with -1.0 to indicate none of the values have been set.
+		Particles[Index].ScratchpadA = glm::vec4( -1.0f ); // Initialize with -1.0 to indicate none of the values have been set.
+		Particles[Index].ScratchpadB = glm::vec4( -1.0f ); // Initialize with -1.0 to indicate none of the values have been set.
 	}
 
 	auto* Particle = new ParticleRenderable( this );
@@ -152,15 +211,15 @@ void ParticleEmitter::Tick()
 	const auto MaxVolume = Math::Max( Volume.Left, Volume.Right );
 
 	Time += GameLayersInstance->GetDeltaTime();// +std::powf( MaxVolume, 7.0f ) * 3.0f;
-	const auto X = 0.0f + sinf( Time * 0.4f ) * 500.0f;
-	const auto Y = 0.0f + cosf( Time * 0.39f ) * 500.0f;
-	const auto Z = 400.0f + cosf( Time * 0.11f ) * 200.0f;
-	const auto W = sinf( Time * 13.0f ) * 0.5f + 0.5f;
+	// UI::AddCircle( Vector3D( Location.X, Location.Y, Location.Z ), 10.0f );
+	// UI::AddAABB( RenderData.WorldBounds.Minimum, RenderData.WorldBounds.Maximum, Color::Green );
 
-	// UI::AddCircle( Vector3D( X, Y, Z ), 10.0f );
-
-	const auto Attractor = Uniform( Vector4D( X, Y, Z, MaxVolume ) );
-	Attractor.Bind( Program, "Attractor" );
+	for( uint32_t Index = 0; Index < TotalControlPoints; Index++ )
+	{
+		const auto Point = Index == 0 ? Location : ControlPoints[Index - 1];
+		const auto ControlPoint = Uniform( Point );
+		ControlPoint.Bind( Program, "ControlPoint" + std::to_string( Index ) );
+	}
 
 	const auto ParticleCount = Uniform( Count );
 	ParticleCount.Bind( Program, "ParticleCount" );
@@ -174,7 +233,6 @@ void ParticleEmitter::Tick()
 	TimeUniform.Bind( Program, "Time" );
 	
 	glDispatchCompute( Count / WorkSize + 1, 1, 1 );
-	glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT );
 }
 
 void ParticleEmitter::Frame()
@@ -192,4 +250,12 @@ void ParticleEmitter::SetShader( CShader* Compute, CShader* Render )
 	
 	this->Compute = Compute;
 	this->Render = Render;
+}
+
+void ParticleEmitter::SetBounds( const BoundingBox& Bounds )
+{
+	if( !Renderable )
+		return;
+
+	Renderable->GetRenderData().WorldBounds = Bounds;
 }

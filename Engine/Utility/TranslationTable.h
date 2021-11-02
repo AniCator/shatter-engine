@@ -16,7 +16,7 @@ struct Translate
 		}
 	}
 
-	Key From( const Value& Value )
+	Key From( const Value& Value ) const
 	{
 		auto Iterator = ToKey.find( Value );
 		if( Iterator != ToKey.end() )
@@ -27,7 +27,7 @@ struct Translate
 		return Key();
 	}
 
-	Value To( const Key& Key )
+	Value To( const Key& Key ) const
 	{
 		auto Iterator = FromKey.find( Key );
 		if( Iterator != FromKey.end() )

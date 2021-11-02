@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <cstdint>
 #include <ThirdParty/glad/include/glad/glad.h>
 
 template<typename T>
@@ -15,7 +16,7 @@ public:
 		}
 	}
 
-	void Initialize( T* Data, const size_t& Count )
+	void Initialize( T* Data, const size_t& Count, const bool& DeleteExisting = true )
 	{
 		BufferData = Data;
 		BufferCount = Count;
@@ -25,17 +26,22 @@ public:
 			return;
 		}
 
-		if( BufferHandle )
+		if( BufferHandle && DeleteExisting )
 		{
 			glDeleteBuffers( 1, &BufferHandle );
+			BufferHandle = 0;
 		}
 
-		glGenBuffers( 1, &BufferHandle );
+		if( !BufferHandle )
+		{
+			glGenBuffers( 1, &BufferHandle );
+		}
+
 		glBindBuffer( GL_SHADER_STORAGE_BUFFER, BufferHandle );
-		glBufferData( GL_SHADER_STORAGE_BUFFER, BufferCount * sizeof( T ), BufferData, GL_STATIC_DRAW );
+		glBufferData( GL_SHADER_STORAGE_BUFFER, BufferCount * sizeof( T ), BufferData, GL_DYNAMIC_DRAW );
 	}
 
-	void Bind( const size_t& Binding = 0 ) const
+	void Bind( const uint32_t& Binding = 0 ) const
 	{
 		glBindBufferBase( GL_SHADER_STORAGE_BUFFER, Binding, BufferHandle );
 	}

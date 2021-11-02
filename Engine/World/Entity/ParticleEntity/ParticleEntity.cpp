@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "ParticleEntity.h"
 
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Resource/Assets.h>
 
 static CEntityFactory<ParticleEntity> Factory( "particle" );
@@ -8,7 +9,12 @@ static CEntityFactory<ParticleEntity> Factory( "particle" );
 void ParticleEntity::Construct()
 {
 	Emitter.Location = Transform.GetPosition();
-	Emitter.Initialize( Compute, Render, Count );
+
+	if( !Asset )
+		return;
+
+	Emitter.Initialize( Asset->System );
+	Emitter.SetBounds( Bounds );
 }
 
 void ParticleEntity::Tick()
@@ -28,34 +34,38 @@ void ParticleEntity::Destroy()
 
 void ParticleEntity::Reload()
 {
-	auto& Assets = CAssets::Get();
-
-	Compute = Assets.FindShader( ComputeName );
-	Render = Assets.FindShader( RenderName );
+	const auto& Assets = CAssets::Get();
+	Asset = Assets.FindAsset<ParticleAsset>( ParticleAssetName );
 }
 
 void ParticleEntity::Load( const JSON::Vector& Objects )
 {
-	JSON::Assign( Objects, "compute", ComputeName );
-	JSON::Assign( Objects, "render", RenderName );
+	CPointEntity::Load( Objects );
 
-	// Assume the render shader uses the same name as the compute shader if no name was specified.
-	if( RenderName.length() == 0 )
+	JSON::Assign( Objects, "particle_system", ParticleAssetName );
+
+	auto* BoundsObject = JSON::Find( Objects, "bounds" );
+	if( BoundsObject )
 	{
-		RenderName = ComputeName;
+		Extract( BoundsObject->Value.c_str(), Bounds );
 	}
 }
 
 void ParticleEntity::Import( CData& Data )
 {
-	DataString::Decode( Data, ComputeName );
-	DataString::Decode( Data, RenderName );
-	Data << Count;
+	CPointEntity::Import( Data );
+	Serialize::Import( Data, "pan", ParticleAssetName );
 }
 
 void ParticleEntity::Export( CData& Data )
 {
-	DataString::Encode( Data, ComputeName );
-	DataString::Encode( Data, RenderName );
-	Data >> Count;
+	CPointEntity::Export( Data );
+	Serialize::Export( Data, "pan", ParticleAssetName );
+}
+
+void ParticleEntity::Debug()
+{
+	CPointEntity::Debug();
+
+	UI::AddAABB( Bounds.Minimum, Bounds.Maximum );
 }

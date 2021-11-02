@@ -9,6 +9,11 @@ using namespace Node;
 
 static CEntityFactory<Entity> Factory( "node" );
 
+void Entity::Construct()
+{
+	Tag( "node" );
+}
+
 void Entity::Load( const JSON::Vector& Objects )
 {
 	auto* Level = GetLevel();
@@ -156,3 +161,17 @@ Network::Route Network::Path( const Vector3D& Start, const Vector3D& End )
 
 	return Route;
 }
+
+class GroundNode : public Entity
+{
+
+};
+
+static CEntityFactory<GroundNode> FactoryGround( "node_ground" );
+
+class AirNode : public Entity
+{
+
+};
+
+static CEntityFactory<AirNode> FactoryAir( "node_air" );

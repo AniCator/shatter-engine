@@ -148,7 +148,7 @@ void CRenderTexture::Initialize()
 			glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D_MULTISAMPLE, MultiSampleHandle, 0 );
 
 			GLenum DrawBuffers[] = { GL_COLOR_ATTACHMENT0 };
-			glDrawBuffers( 1, DrawBuffers );			
+			glDrawBuffers( 1, DrawBuffers );
 
 			const GLenum MultiSampleBufferStatus = glCheckFramebufferStatus( GL_FRAMEBUFFER );
 			if( MultiSampleBufferStatus != GL_FRAMEBUFFER_COMPLETE )

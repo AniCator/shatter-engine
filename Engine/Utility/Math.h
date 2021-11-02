@@ -83,9 +83,9 @@ namespace Math
 	inline Vector3D EulerToDirectionX( const Vector3D& Euler )
 	{
 		Vector3D Direction;
-		Direction[0] = cos( glm::radians( Euler[0] ) ) * cos( glm::radians( Euler[2] ) );
-		Direction[2] = sin( glm::radians( Euler[0] ) );
-		Direction[1] = cos( glm::radians( Euler[0] ) ) * sin( glm::radians( Euler[2] ) );
+		Direction[0] = cos( ToRadians( Euler[0] ) ) * cos( ToRadians( Euler[2] ) );
+		Direction[2] = sin( ToRadians( Euler[0] ) );
+		Direction[1] = cos( ToRadians( Euler[0] ) ) * sin( ToRadians( Euler[2] ) );
 
 		return Direction.Normalized();
 	}
@@ -93,9 +93,9 @@ namespace Math
 	inline Vector3D EulerToDirectionY( const Vector3D& Euler )
 	{
 		Vector3D Direction;
-		Direction[0] = cos( glm::radians( Euler[1] ) ) * cos( glm::radians( Euler[2] ) );
-		Direction[2] = sin( glm::radians( Euler[1] ) );
-		Direction[1] = cos( glm::radians( Euler[1] ) ) * sin( glm::radians( Euler[2] ) );
+		Direction[0] = cos( ToRadians( Euler[1] ) ) * cos( ToRadians( Euler[2] ) );
+		Direction[2] = sin( ToRadians( Euler[1] ) );
+		Direction[1] = cos( ToRadians( Euler[1] ) ) * sin( ToRadians( Euler[2] ) );
 
 		return Direction.Normalized();
 	}
@@ -354,6 +354,11 @@ namespace Math
 	inline Vector3D Lerp( const Vector3D& A, const Vector3D& B, const float& Alpha )
 	{
 		return A + Vector3D( Alpha, Alpha, Alpha ) * ( B - A );
+	}
+
+	inline Vector4D Lerp( const Vector4D& A, const Vector4D& B, const float& Alpha )
+	{
+		return A + Vector4D( Alpha, Alpha, Alpha, Alpha ) * ( B - A );
 	}
 
 	inline float Map( const float& X, const float& Minimum, const float& Maximum, const float& NewMinimum, const float& NewMaximum )

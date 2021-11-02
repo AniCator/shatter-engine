@@ -90,6 +90,10 @@ public:
 	const EDepthTest::Type& GetDepthTest() const;
 
 	void AutoReload( const bool& Enable );
+	bool AutoReload() const
+	{
+		return ShouldAutoReload;
+	}
 
 private:
 	std::string Process( const CFile& File );

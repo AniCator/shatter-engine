@@ -26,13 +26,23 @@ public:
 
 	// Fetch nearby lights.
 	static LightIndices Fetch( const Vector3D& Position );
-	static const Light& Get( int32_t Index );
+	static Light& Get( int32_t Index );
+	static int32_t AllocateLight();
+	static void ConfigureLight(
+		Light& Information,
+		const Vector3D& Position,
+		const Vector3D& Color = Vector3D::One,
+		const float& Intensity = 100.0f,
+		const float& Radius = 10.0f,
+		const int& Type = 0,
+		const Vector3D& Orientation = Vector3D::Zero,
+		const float& AngleInner = 1.0f,
+		const float& AngleOuter = 1.0f
+	);
 	
 protected:
 	Light Information;
 	int32_t LightIndex = -1;
-
-	static int32_t AllocateLight();
 
 	static constexpr int32_t LightMaximum = 64;
 	static Light Lights[LightMaximum];

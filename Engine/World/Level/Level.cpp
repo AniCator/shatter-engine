@@ -33,7 +33,7 @@ CLevel::~CLevel()
 
 void CLevel::Construct()
 {
-	for( auto Entity : Entities )
+	for( const auto Entity : Entities )
 	{
 		if( !Entity )
 			continue;
@@ -45,7 +45,7 @@ void CLevel::Construct()
 
 void CLevel::Frame()
 {
-	for( auto Entity : Entities )
+	for( const auto Entity : Entities )
 	{
 		if( !Entity )
 			continue;
@@ -56,43 +56,38 @@ void CLevel::Frame()
 
 void CLevel::Tick()
 {
-	for( auto Entity : Entities )
+	for( const auto Entity : Entities )
 	{
-		if( !Entity )
+		if( !Entity || Entity->GetParent() )
 			continue;
 
-		Entity->Tick();
-
-		if( Entity->IsDebugEnabled() )
-		{
-			Entity->Debug();
-		}
+		Entity->Traverse();
 	}
 }
 
 void CLevel::Destroy()
 {
-	World = nullptr;
-
-	for( size_t Index = 0; Index < Entities.size(); Index++ )
+	for( const auto& Entity : Entities )
 	{
-		if( !Entities[Index] )
+		if( !Entity )
 			continue;
 
-		Entities[Index]->Destroy();
+		Entity->Destroy();
 		// delete Entities[Index];
 		// Entities[Index] = nullptr;
 	}
+
+	World = nullptr;
 }
 
 void CLevel::Reload()
 {
-	for( size_t Index = 0; Index < Entities.size(); Index++ )
+	for( const auto& Entity : Entities )
 	{
-		if( !Entities[Index] )
+		if( !Entity )
 			continue;
 
-		Entities[Index]->Destroy();
+		Entity->Destroy();
 	}
 
 	Entities.clear();
@@ -107,7 +102,7 @@ void CLevel::Reload()
 void CLevel::Load( const CFile& File, const bool AssetsOnly )
 {
 	Log::Event( "Parsing level \"%s\".\n", File.Location().c_str() );
-	JSON::Container JSON = JSON::GenerateTree( File );
+	JSON::Container JSON = JSON::Tree( File );
 
 	SetName( File.Location() );
 

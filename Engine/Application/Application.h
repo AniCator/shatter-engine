@@ -42,16 +42,16 @@ public:
 	void RedirectLogToConsole();
 	void ProcessCommandLine( int argc, char** argv );
 
-	const bool ToolsEnabled() const;
+	bool ToolsEnabled() const;
 	void EnableTools( const bool Enable );
 
-	const bool DefaultExitEnabled() const;
+	bool DefaultExitEnabled() const;
 	void EnableDefaultExit( const bool Enable );
 
 	void RegisterDebugUI( DebugUIFunction Function );
 	void RenderDebugUI( const bool Menu );
 	void UnregisterDebugUI();
-	const size_t DebugFunctions() const;
+	size_t DebugFunctions() const;
 
 	bool HasCommand( const std::string& Command );
 	const std::string& GetCommand( const std::string& Command );

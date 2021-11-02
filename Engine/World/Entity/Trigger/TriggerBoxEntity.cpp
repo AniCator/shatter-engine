@@ -21,6 +21,8 @@ void CTriggerBoxEntity::Construct()
 		Volume->Construct();
 		Volume->SetBounds( Bounds );
 	}
+
+	Tag( "trigger" );
 }
 
 void CTriggerBoxEntity::Tick()
@@ -62,7 +64,7 @@ void CTriggerBoxEntity::Load( const JSON::Vector& Objects )
 		if( Property->Key == "frequency" )
 		{
 			const double PropertyFrequency = ParseDouble( Property->Value.c_str() );
-			if( PropertyFrequency > 0.0f )
+			if( PropertyFrequency > 0.0 )
 			{
 				Frequency = static_cast<int32_t>( PropertyFrequency );
 			}

@@ -64,8 +64,8 @@ public:
 
 	CRenderer& GetRenderer();
 
-	inline int GetWidth() const { return CurrentDimensions.Width; };
-	inline int GetHeight() const { return CurrentDimensions.Height; };
+	int GetWidth() const { return CurrentDimensions.Width; };
+	int GetHeight() const { return CurrentDimensions.Height; };
 
 	bool IsRendering() const
 	{

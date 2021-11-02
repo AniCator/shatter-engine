@@ -53,6 +53,9 @@ public:
 	void SetAnimation( const std::string& Name );
 	const std::string& GetAnimation() const;
 
+	float GetPlayRate() const;
+	void SetPlayRate( const float& PlayRate );
+
 	void SetPosition( const Vector3D& Position, const bool& Teleport = true );
 	void SetOrientation( const Vector3D& Orientation );
 	void SetSize( const Vector3D& Size );

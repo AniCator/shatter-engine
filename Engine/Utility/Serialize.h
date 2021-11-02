@@ -4,6 +4,7 @@
 #include "Data.h"
 #include "DataString.h"
 
+#include <algorithm>
 #include <set>
 #include <string>
 
@@ -109,7 +110,9 @@ struct Serialize
 		if( Size == 0 || Array == nullptr )
 			return;
 
-		const auto Length = String.copy( Array, Size );
+		strcpy_s( Array, Size * sizeof( char ), String.c_str() );
+
+		const auto Length = std::min( Size - 1, String.size() );
 		Array[Length] = '\0';
 	}
 };

@@ -16,14 +16,13 @@ public:
 	void Load( const JSON::Vector& Objects ) override;
 	void Import( CData& Data ) override;
 	void Export( CData& Data ) override;
-	
+
+	void Debug() override;
+
 protected:
 	ParticleEmitter Emitter;
 
-	class CShader* Compute = nullptr;
-	class CShader* Render = nullptr;
-	size_t Count = 1000;
-
-	std::string ComputeName;
-	std::string RenderName;
+	class ParticleAsset* Asset = nullptr;
+	std::string ParticleAssetName;
+	BoundingBox Bounds;
 };

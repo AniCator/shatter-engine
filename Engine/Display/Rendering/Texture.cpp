@@ -47,7 +47,7 @@ CTexture::~CTexture()
 	glDeleteTextures( 1, &Handle );
 }
 
-bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredFormat )
+bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredFormat, const bool& GenerateMipMaps )
 {
 	CFile TextureSource( Location.c_str() );
 	const std::string Extension = TextureSource.Extension();
@@ -91,7 +91,7 @@ bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredForm
 	return false;
 }
 
-bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn, const int ChannelsIn, const EFilteringMode ModeIn, const EImageFormat PreferredFormatIn )
+bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn, const int ChannelsIn, const EFilteringMode ModeIn, const EImageFormat PreferredFormatIn, const bool& GenerateMipMaps )
 {
 	bool Supported = false;
 
@@ -142,7 +142,8 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 
 	// Filtering parameters
 	const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GetFilteringMipMapMode( Mode ) );
+	const auto MinFilter = GenerateMipMaps ? GetFilteringMipMapMode( Mode ) : GetFilteringMode( Mode );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinFilter );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
 
 	const auto ImageFormat = static_cast<EImageFormatType>( PreferredFormatIn );
@@ -180,7 +181,7 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 		Log::Event( Log::Warning, "Not a power of two texture (\"%s\").\n", Location.c_str() );
 	}
 
-	if( Supported )
+	if( Supported && GenerateMipMaps )
 	{
 		glGenerateMipmap( GL_TEXTURE_2D );
 	}
@@ -215,22 +216,22 @@ const std::string& CTexture::GetLocation() const
 	return Location;
 }
 
-const GLuint CTexture::GetHandle() const
+GLuint CTexture::GetHandle() const
 {
 	return Handle;
 }
 
-const int CTexture::GetWidth() const
+int CTexture::GetWidth() const
 {
 	return Width;
 }
 
-const int CTexture::GetHeight() const
+int CTexture::GetHeight() const
 {
 	return Height;
 }
 
-const EImageFormat CTexture::GetImageFormat() const
+EImageFormat CTexture::GetImageFormat() const
 {
 	return Format;
 }

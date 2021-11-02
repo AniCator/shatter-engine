@@ -173,34 +173,23 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 	}
 
 	// Assign the bone weights for each vertex.
-	for( size_t BoneIndex = 0; BoneIndex < Mesh->mNumBones; BoneIndex++ )
+	for( uint32_t BoneIndex = 0; BoneIndex < Mesh->mNumBones; BoneIndex++ )
 	{
 		auto* Bone = Mesh->mBones[BoneIndex];
 		// Log::Event( "Importing bone \"%s\" (%i).\n", Bone->mName.C_Str(), BoneIndex );
 
-		for( size_t WeightIndex = 0; WeightIndex < Bone->mNumWeights; WeightIndex++ )
+		for( uint32_t WeightIndex = 0; WeightIndex < Bone->mNumWeights; WeightIndex++ )
 		{
-			size_t VertexID = IndexOffset + Bone->mWeights[WeightIndex].mVertexId;
+			const size_t VertexID = IndexOffset + Bone->mWeights[WeightIndex].mVertexId;
 			VertexWeight& Weight = Skeleton.Weights[VertexID];
-
-			for( size_t InfluenceIndex = 0; InfluenceIndex < MaximumInfluences; InfluenceIndex++ )
-			{
-				// if( Weight.Weight[InfluenceIndex] == 0.0f )
-				{
-					Weight.Index[InfluenceIndex] = BoneIndex;
-					Weight.Weight[InfluenceIndex] = Bone->mWeights[InfluenceIndex].mWeight;
-
-					// Log::Event( "Weight %.2f.\n", Weight.Weight[InfluenceIndex] );
-					break;
-				}
-			}
+			Weight.Add( BoneIndex, Bone->mWeights[WeightIndex].mWeight );
 		}
 	}
 
-	for( size_t Index = 0; Index < MeshData.Vertices.size(); Index++ )
+	/*for( size_t Index = 0; Index < MeshData.Vertices.size(); Index++ )
 	{
 		auto& Vertex = MeshData.Vertices[Index];
-		VertexWeight& Weight = Skeleton.Weights[Index];
+		const auto& Weight = Skeleton.Weights[Index];
 		Vertex.Bone = Vector4D( 
 			Weight.Index[0], 
 			Weight.Index[1], 
@@ -212,7 +201,7 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 			Weight.Weight[1], 
 			Weight.Weight[2], 
 			Weight.Weight[3] );
-	}
+	}*/
 
 	// Log::Event( "Calculating bone matrices.\n" );
 	if( Skeleton.Bones.size() != Mesh->mNumBones )
@@ -491,9 +480,12 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 
 							// auto Value = YawFix * ChannelKey.mValue;
 							auto Value = ChannelKey.mValue;
-								
-							// auto Quat = glm::quat( Value.w, Value.x, Value.y, Value.z );
-							auto Quat = glm::quat( Value.x, Value.y, Value.z, Value.w );
+
+							// ASSIMP w, xyz
+							auto Quat = glm::quat( Value.w, Value.x, Value.y, Value.z );
+
+							// xyz, w -> quat( w, xyz)
+							// auto Quat = glm::quat( Value.x, Value.y, Value.z, Value.w );
 							// Quat = glm::conjugate( Quat );
 
 							Key.Value.X = Quat.x;
@@ -608,12 +600,21 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 		const aiMatrix4x4 RotationMatrix = GetWorldRotationMatrix();
 		// auto Transform = Scene->mRootNode->mTransformation;
 		auto Transform = Scene->mRootNode->mTransformation * RotationMatrix;
+
+		/*if( Scene->mNumAnimations > 0 )
+		{
+			Transform = Scene->mRootNode->mTransformation;
+		}*/
+
 		FMeshData MeshData;
 		MeshData.Skeleton = &Set.Skeleton;
 		
 		MeshData.InverseTransform = Transform;
 		MeshData.InverseTransform.Inverse();
-		ConvertMatrix( MeshData.Skeleton->GlobalMatrixInverse, MeshData.InverseTransform );
+
+		auto GlobalMatrixInverse = Scene->mRootNode->mTransformation;
+		GlobalMatrixInverse.Inverse();
+		ConvertMatrix( MeshData.Skeleton->GlobalMatrixInverse, GlobalMatrixInverse ); // NOTE: Used to use MeshData.InverseTransform.
 
 		ParseNodes( Transform, Scene, Scene->mRootNode, MeshData );
 		UpdateBoneHierarchy( Scene->mRootNode, MeshData );

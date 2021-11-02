@@ -342,6 +342,11 @@ void Extract( const std::string& String, Vector4D& Out )
 	Extract( String.c_str(), Out );
 }
 
+void Extract( const std::string& String, BoundingBox& Out )
+{
+	Extract( String.c_str(), Out );
+}
+
 void Extract( const char* Start, float& Out )
 {
 	size_t OutTokenCount = 0;
@@ -352,9 +357,9 @@ void Extract( const char* Start, float& Out )
 	}
 }
 
-void Extract( const std::string& Value, bool& Out )
+void Extract( const std::string& String, bool& Out )
 {
-	if( Value == "0" )
+	if( String == "0" )
 	{
 		Out = false;
 	}
@@ -367,7 +372,7 @@ void Extract( const std::string& Value, bool& Out )
 void Extract( const char* Start, int32_t& Out )
 {
 	size_t OutTokenCount = 0;
-	auto* TokenDistance = ExtractTokensInteger( Start, ' ', OutTokenCount, 1 );
+	const auto* TokenDistance = ExtractTokensInteger( Start, ' ', OutTokenCount, 1 );
 	if( OutTokenCount == 1 )
 	{
 		Out = TokenDistance[0];
@@ -377,7 +382,7 @@ void Extract( const char* Start, int32_t& Out )
 void Extract( const char* Start, uint32_t& Out )
 {
 	size_t OutTokenCount = 0;
-	auto* TokenDistance = ExtractTokensInteger( Start, ' ', OutTokenCount, 1 );
+	const auto* TokenDistance = ExtractTokensInteger( Start, ' ', OutTokenCount, 1 );
 	if( OutTokenCount == 1 )
 	{
 		Out = StaticCast<uint32_t>( TokenDistance[0] );
@@ -387,7 +392,7 @@ void Extract( const char* Start, uint32_t& Out )
 void Extract( const char* Start, Vector3D& Out )
 {
 	size_t OutTokenCount = 0;
-	auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 3 );
+	const auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 3 );
 	if (OutTokenCount == 3)
 	{
 		Out = Vector3D( TokenDistance[0], TokenDistance[1], TokenDistance[2] );
@@ -397,10 +402,21 @@ void Extract( const char* Start, Vector3D& Out )
 void Extract( const char* Start, Vector4D& Out )
 {
 	size_t OutTokenCount = 0;
-	auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 4 );
+	const auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 4 );
 	if (OutTokenCount == 4)
 	{
 		Out = Vector4D( TokenDistance[0], TokenDistance[1], TokenDistance[2], TokenDistance[3] );
+	}
+}
+
+void Extract( const char* Start, BoundingBox& Out )
+{
+	// Bounds are defined as two vectors separated by a comma.
+	const auto& Vectors = ExtractTokens( Start, ',', 2 );
+	if( Vectors.size() == 2 )
+	{
+		Extract( Vectors[0].c_str(), Out.Minimum );
+		Extract( Vectors[1].c_str(), Out.Maximum );
 	}
 }
 

@@ -13,6 +13,8 @@
 
 #include <Engine/Utility/Locator/InputLocator.h>
 
+#include <Engine/Utility/TranslationTable.h>
+
 #if defined( IMGUI_ENABLED )
 #include <ThirdParty/imgui-1.70/imgui.h>
 #include "imgui_impl_glfw.h"
@@ -25,11 +27,46 @@
 // #define KHRDebug // This crashes people when the debug context happens to be enabled on some systems.
 #endif
 
+static const auto GLSourceTable = Translate<GLenum, std::string>( {
+	{ GL_DEBUG_SOURCE_API, "API"},
+	{ GL_DEBUG_SOURCE_WINDOW_SYSTEM, "Window System" },
+	{ GL_DEBUG_SOURCE_SHADER_COMPILER, "Shader Compiler" },
+	{ GL_DEBUG_SOURCE_THIRD_PARTY, "Third Party" },
+	{ GL_DEBUG_SOURCE_APPLICATION, "Application" },
+	{ GL_DEBUG_SOURCE_OTHER, "Other" }
+	} 
+);
+
+static const auto GLSeverityTable = Translate<GLenum, std::string>( {
+	{ GL_DEBUG_SEVERITY_NOTIFICATION, "Info"},
+	{ GL_DEBUG_SEVERITY_LOW, "Low" },
+	{ GL_DEBUG_SEVERITY_MEDIUM, "Medium" },
+	{ GL_DEBUG_SEVERITY_HIGH, "High" }
+	}
+);
+
 static void DebugCallbackOpenGL( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam )
 {
+	if( severity != GL_DEBUG_SEVERITY_HIGH )
+		return;
+
+	const auto Source = GLSourceTable.To( source );
+	const auto Severity = GLSeverityTable.To( severity );
 	if( type == GL_DEBUG_TYPE_ERROR )
 	{
-		Log::Event( "OpenGL: %s\n", message );
+		Log::Event( Log::Error, "OpenGL %s Error (%u) (%s):\n\t%s\n", Source.c_str(), id, Severity.c_str(), message );
+	}
+	else if ( type == GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR )
+	{
+		Log::Event( Log::Warning, "OpenGL %s Deprecated Behavior (%u) (%s):\n\t%s\n", Source.c_str(), id, Severity.c_str(), message );
+	}
+	else if( type == GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR )
+	{
+		Log::Event( Log::Warning, "OpenGL %s Undefined Behavior (%u) (%s):\n\t%s\n", Source.c_str(), id, Severity.c_str(), message );
+	}
+	else if( type == GL_DEBUG_TYPE_PERFORMANCE )
+	{
+		Log::Event( Log::Warning, "OpenGL %s Performance (%u) (%s):\n\t%s\n", Source.c_str(), id, Severity.c_str(), message );
 	}
 }
 
@@ -167,6 +204,17 @@ void CWindow::Create( const char* Title )
 		glDebugMessageControlKHR( GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH_KHR, 0, nullptr, true );
 		glDebugMessageCallbackKHR( DebugCallbackOpenGL, nullptr );
 	}
+#else
+	if( DebugContext )
+	{
+		Log::Event( "Standard debug extention enabled.\n" );
+		glEnable( GL_DEBUG_OUTPUT_SYNCHRONOUS );
+		/*glDebugMessageControl( GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_HIGH, 0, nullptr, true );
+		glDebugMessageControl( GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_MEDIUM, 0, nullptr, false );
+		glDebugMessageControl( GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_LOW, 0, nullptr, false );
+		glDebugMessageControl( GL_DONT_CARE, GL_DONT_CARE, GL_DEBUG_SEVERITY_NOTIFICATION, 0, nullptr, false );*/
+		glDebugMessageCallback( DebugCallbackOpenGL, nullptr );
+	}
 #endif
 
 	// const int SwapInterval = FullScreen ? config.GetInteger( "vsync", 0 ) : 0;
@@ -269,8 +317,8 @@ void CWindow::ProcessInput()
 	if( IsWindowless() )
 		return;
 
-	ProfileAlways( "Input" );
-	OptickCategory( "Input", Optick::Category::Input );
+	// ProfileAlways( "Input" );
+	// OptickCategory( "Input", Optick::Category::Input );
 
 	glfwPollEvents();
 

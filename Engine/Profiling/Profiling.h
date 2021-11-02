@@ -124,6 +124,10 @@ private:
 #define ProfileFrame( Name ) OPTICK_FRAME( Name )
 #define OptickEvent() OPTICK_EVENT()
 #define OptickCategory( Name, Category ) OPTICK_CATEGORY( Name, Category )
+#define OptickCallback( Function ) OPTICK_SET_STATE_CHANGED_CALLBACK( Function )
+#define OptickStart() OPTICK_START_CAPTURE()
+#define OptickStop() OPTICK_STOP_CAPTURE()
+#define OptickSave( Path ) OPTICK_SAVE_CAPTURE( Path )
 #elif ProfileBuild
 #define ProfileScope() _PROFILE_( __FUNCTION__, false )
 #define Profile( Name ) _PROFILE_( Name, false )
@@ -133,6 +137,7 @@ private:
 #define ProfileFrame( Name ) (void(0))
 #define OptickEvent() (void(0))
 #define OptickCategory() (void(0))
+#define OptickCallback() (void(0))
 #else
 #define ProfileScope() (void(0))
 #define Profile( Name ) (void(0))
@@ -142,4 +147,5 @@ private:
 #define ProfileFrame( Name ) (void(0))
 #define OptickEvent() (void(0))
 #define OptickCategory() (void(0))
+#define OptickCallback() (void(0))
 #endif

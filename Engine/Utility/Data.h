@@ -205,12 +205,12 @@ public:
 		Data.seekg( Position );
 	}
 
-	const size_t Size()
+	size_t Size()
 	{
 		return Data.tellp();
 	}
 
-	const bool Valid() const
+	bool Valid() const
 	{
 		return !Invalid;
 	}
@@ -218,7 +218,9 @@ public:
 	void Invalidate()
 	{
 		Invalid = true;
-		__debugbreak();
+
+		// If this break is triggered, try checking the data that was extracted before the current extraction attempt. (sometimes in a parent's Export/Import function)
+		BreakDebugger();
 	}
 
 private:

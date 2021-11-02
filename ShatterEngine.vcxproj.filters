@@ -165,6 +165,9 @@
     <Filter Include="Source Files\Engine\World\Entity\LightEntity">
       <UniqueIdentifier>{e1bf181d-1c53-4de4-9714-8f3b02f291d7}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\Network">
+      <UniqueIdentifier>{bc347ac5-6ef0-4b81-b4c3-2a1f41871fef}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -427,6 +430,21 @@
     </ClCompile>
     <ClCompile Include="Engine\Utility\Gizmo.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\Geometry.cpp">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\Solvers.cpp">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Network\Network.cpp">
+      <Filter>Source Files\Engine\Network</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Application\EngineAssetLoaders.cpp">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Structures\SpatialHash.cpp">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -727,9 +745,6 @@
     <ClInclude Include="Engine\Utility\Iterate.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Utility\Geometry.h">
-      <Filter>Source Files\Engine\Utility</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Sequencer\Events\ImageEvent.h">
       <Filter>Source Files\Engine\Sequencer\Events</Filter>
     </ClInclude>
@@ -801,6 +816,30 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\BuildTime.h">
       <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\Geometry.h">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\GeometryResult.h">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\Solvers.h">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Network\Network.h">
+      <Filter>Source Files\Engine\Network</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Application\EngineAssetLoaders.h">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\SpatialHash.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\Testable.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\QueryResult.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

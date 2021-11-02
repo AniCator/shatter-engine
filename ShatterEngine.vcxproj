@@ -75,11 +75,12 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>ProfileBuild;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;ThirdParty\asio-1.18.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>OptickBuild;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
+      <MinimalRebuild>false</MinimalRebuild>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -101,7 +102,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;ThirdParty\asio-1.18.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>false</ShowIncludes>
       <PreprocessorDefinitions>OptickBuild;DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -132,7 +133,7 @@
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;ThirdParty\asio-1.18.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>false</ShowIncludes>
       <PreprocessorDefinitions>DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
@@ -160,6 +161,7 @@
     <ClCompile Include="Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Engine\Application\Application.cpp" />
     <ClCompile Include="Engine\Application\ApplicationMenu.cpp" />
+    <ClCompile Include="Engine\Application\EngineAssetLoaders.cpp" />
     <ClCompile Include="Engine\Audio\SimpleSound.cpp" />
     <ClCompile Include="Engine\Audio\SoLoudSound.cpp" />
     <ClCompile Include="Engine\Audio\Sound.cpp" />
@@ -189,10 +191,13 @@
     <ClCompile Include="Engine\Display\Window.cpp" />
     <ClCompile Include="Engine\Input\Input.cpp" />
     <ClCompile Include="Engine\Input\NullInput.cpp" />
+    <ClCompile Include="Engine\Network\Network.cpp" />
     <ClCompile Include="Engine\Physics\Body\Body.cpp" />
     <ClCompile Include="Engine\Physics\Body\Plane.cpp" />
+    <ClCompile Include="Engine\Physics\Geometry.cpp" />
     <ClCompile Include="Engine\Physics\Physics.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsComponent.cpp" />
+    <ClCompile Include="Engine\Physics\Solvers.cpp" />
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
     <ClCompile Include="Engine\Resource\Assets.cpp" />
@@ -216,6 +221,7 @@
     <ClCompile Include="Engine\Utility\Structures\BoundingVolumeHierarchy.cpp" />
     <ClCompile Include="Engine\Utility\Structures\JSON.cpp" />
     <ClCompile Include="Engine\Utility\Structures\Name.cpp" />
+    <ClCompile Include="Engine\Utility\Structures\SpatialHash.cpp" />
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Engine\Utility\Thread.cpp" />
     <ClCompile Include="Engine\World\Entity\CameraEntity\CameraEntity.cpp" />
@@ -250,6 +256,7 @@
     <ClInclude Include="Engine\Animation\Skeleton.h" />
     <ClInclude Include="Engine\Application\Application.h" />
     <ClInclude Include="Engine\Application\ApplicationMenu.h" />
+    <ClInclude Include="Engine\Application\EngineAssetLoaders.h" />
     <ClInclude Include="Engine\Audio\SimpleSound.h" />
     <ClInclude Include="Engine\Audio\SoLoudSound.h" />
     <ClInclude Include="Engine\Audio\SoLoud\Bus.h" />
@@ -289,11 +296,15 @@
     <ClInclude Include="Engine\Input\InputMap.h" />
     <ClInclude Include="Engine\Input\InputMapGLFW.h" />
     <ClInclude Include="Engine\Input\NullInput.h" />
+    <ClInclude Include="Engine\Network\Network.h" />
     <ClInclude Include="Engine\Physics\Body\Body.h" />
     <ClInclude Include="Engine\Physics\Body\Plane.h" />
     <ClInclude Include="Engine\Physics\Body\Shared.h" />
+    <ClInclude Include="Engine\Physics\Geometry.h" />
+    <ClInclude Include="Engine\Physics\GeometryResult.h" />
     <ClInclude Include="Engine\Physics\Physics.h" />
     <ClInclude Include="Engine\Physics\PhysicsComponent.h" />
+    <ClInclude Include="Engine\Physics\Solvers.h" />
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
     <ClInclude Include="Engine\Resource\Asset.h" />
@@ -307,7 +318,6 @@
     <ClInclude Include="Engine\Utility\DataString.h" />
     <ClInclude Include="Engine\Utility\Definitions.h" />
     <ClInclude Include="Engine\Utility\File.h" />
-    <ClInclude Include="Engine\Utility\Geometry.h" />
     <ClInclude Include="Engine\Utility\Gizmo.h" />
     <ClInclude Include="Engine\Utility\Iterate.h" />
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
@@ -332,7 +342,10 @@
     <ClInclude Include="Engine\Utility\Structures\JSON.h" />
     <ClInclude Include="Engine\Utility\Structures\KeyValue.h" />
     <ClInclude Include="Engine\Utility\Structures\Name.h" />
+    <ClInclude Include="Engine\Utility\Structures\QueryResult.h" />
     <ClInclude Include="Engine\Utility\Structures\SpatialGrid.h" />
+    <ClInclude Include="Engine\Utility\Structures\SpatialHash.h" />
+    <ClInclude Include="Engine\Utility\Structures\Testable.h" />
     <ClInclude Include="Engine\Utility\Test.h" />
     <ClInclude Include="Engine\Utility\TestResult.h" />
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />

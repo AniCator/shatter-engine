@@ -174,8 +174,6 @@ public:
 		}
 
 		BuildDynamicScene();
-
-		// DynamicScene->Debug();
 		
 		for( auto* BodyA : Bodies )
 		{
@@ -241,6 +239,11 @@ public:
 	void UpdateBodies()
 	{
 		OptickEvent();
+
+		// BoundingVolumeHierarchy::Node::Depth = 0;
+		// StaticScene->Debug();
+		// BoundingVolumeHierarchy::Node::Depth = 0;
+		// DynamicScene->Debug();
 
 		size_t QueryIndex = 0;
 		for( auto* BodyA : Bodies )
@@ -331,6 +334,8 @@ public:
 		Geometry::Result StaticResult;
 		Geometry::Result DynamicResult;
 
+		// UI::AddLine( Start, End, Color::Green );
+
 		if( PollStaticScene )
 		{
 			StaticResult = StaticScene->Cast( Start, End, IgnoreList );
@@ -362,6 +367,8 @@ public:
 		{
 			return DynamicResult;
 		}
+
+		// UI::AddLine( Start, End, Color::Red );
 		
 		for( auto* Body : Bodies )
 		{
@@ -419,6 +426,7 @@ public:
 			DynamicScene->Query( AABB, Query );
 		}
 
+		Result.reserve( Query.Objects.size() );
 		for( auto* Object : Query.Objects )
 		{
 			if( auto* Body = ::Cast<CBody>( Object ) )

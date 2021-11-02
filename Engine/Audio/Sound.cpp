@@ -23,6 +23,8 @@ void SoundInstance::Start( const Spatial Information )
 	if( !Asset )
 		return;
 
+	Stop();
+
 	Handle = Asset->Start( Information );
 	SoundHandle.Handle = Handle;
 	StreamHandle.Handle = Handle;

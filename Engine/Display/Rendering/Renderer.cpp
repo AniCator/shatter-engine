@@ -207,6 +207,9 @@ void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 void CRenderer::DrawQueuedRenderables()
 {
 	UI::SetCamera( Camera );
+
+	// Make sure memory transactions have occured. (for shader storage buffers)
+	glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT );
 	
 	int FramebufferWidth = ViewportWidth;
 	int FramebufferHeight = ViewportHeight;
@@ -291,26 +294,42 @@ void CRenderer::DrawQueuedRenderables()
 		auto ShaderA = A->GetShader();
 		auto ShaderB = B->GetShader();
 		bool Distance = false;
+		bool BlendMode = false;
 		if( ShaderA && ShaderB )
 		{
+			int BlendModeA = 0;
+			int BlendModeB = 0;
 			if( ShaderA->GetBlendMode() == EBlendMode::Alpha )
 			{
-				return false;
+				BlendModeA = 1;
 			}
 
 			if( ShaderB->GetBlendMode() == EBlendMode::Alpha )
 			{
-				return true;
+				BlendModeB = 1;
 			}
+
+			if( ShaderA->GetBlendMode() == EBlendMode::Additive )
+			{
+				BlendModeA = 2;
+			}
+
+			if( ShaderB->GetBlendMode() == EBlendMode::Additive )
+			{
+				BlendModeB = 2;
+			}
+
+			BlendMode = ExclusiveComparison( BlendModeA, BlendModeB );
 		}
 
-		return ShaderProgram && VertexBufferObject && IndexBufferObject;
+		return ShaderProgram && VertexBufferObject && IndexBufferObject && BlendMode;
 	};
 
 	// Create the render queue for this frame.
 	UpdateQueue();
 
-	std::sort( RenderQueue.begin(), RenderQueue.end(), SortRenderables );
+	std::sort( RenderQueueOpaque.begin(), RenderQueueOpaque.end(), SortRenderables );
+	std::sort( RenderQueueTranslucent.begin(), RenderQueueTranslucent.end(), SortRenderables );
 
 	MainPass.ClearTarget();
 
@@ -322,13 +341,23 @@ void CRenderer::DrawQueuedRenderables()
 	}
 
 	{
-		Profile( "Main Pass" );
-		DrawCalls += MainPass.Render( RenderQueue, GlobalUniformBuffers );
+		Profile( "Main Pass (Opaque)" );
+		DrawCalls += MainPass.Render( RenderQueueOpaque, GlobalUniformBuffers );
 	}
 
 	{
 		Profile( "ERenderPassLocation::Scene" );
 		DrawPasses( ERenderPassLocation::Scene );
+	}
+
+	{
+		Profile( "Main Pass (Translucent)" );
+		DrawCalls += MainPass.Render( RenderQueueTranslucent, GlobalUniformBuffers );
+	}
+
+	{
+		Profile( "ERenderPassLocation::Translucent" );
+		DrawPasses( ERenderPassLocation::Translucent );
 	}
 
 	Framebuffer.Resolve();
@@ -444,8 +473,11 @@ void CRenderer::DrawQueuedRenderables()
 	CProfiler& Profiler = CProfiler::Get();
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
-	const int64_t RenderQueueSize = static_cast<int64_t>( RenderQueue.size() );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Render Queue", RenderQueueSize ), true );
+	const int64_t RenderQueueOpaqueSize = static_cast<int64_t>( RenderQueueOpaque.size() );
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Render Queue (Opaque)", RenderQueueOpaqueSize ), true );
+
+	const int64_t RenderQueueTranslucentSize = static_cast<int64_t>( RenderQueueTranslucent.size() );
+	Profiler.AddCounterEntry( FProfileTimeEntry( "Render Queue (Translucent)", RenderQueueTranslucentSize ), true );
 
 	const int64_t RenderablesSize = static_cast<int64_t>( Renderables.size() );
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables", RenderablesSize ), true );
@@ -599,9 +631,9 @@ void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location, CRenderTe
 
 			if( Pass.Pass->SendQueuedRenderables )
 			{
-				if( !RenderQueue.empty() )
+				if( !RenderQueueOpaque.empty() )
 				{
-					DrawCalls += Pass.Pass->Render( RenderQueue, GlobalUniformBuffers );
+					DrawCalls += Pass.Pass->Render( RenderQueueOpaque, GlobalUniformBuffers );
 				}
 			}
 			else
@@ -612,10 +644,45 @@ void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location, CRenderTe
 	}
 }
 
+void AddOpaque( std::vector<CRenderable*>& Renderables, const std::vector<CRenderable*>& Input )
+{
+	for( auto* Renderable : Input )
+	{
+		if( !Renderable )
+			continue;
+
+		const auto* Shader = Renderable->GetShader();
+		if( Shader->GetBlendMode() == EBlendMode::Opaque )
+		{
+			Renderables.emplace_back( Renderable );
+		}
+	}
+}
+
+void AddTranslucent( std::vector<CRenderable*>& Renderables, const std::vector<CRenderable*>& Input )
+{
+	for( auto* Renderable : Input )
+	{
+		if( !Renderable )
+			continue;
+
+		const auto* Shader = Renderable->GetShader();
+		if( Shader->GetBlendMode() != EBlendMode::Opaque )
+		{
+			Renderables.emplace_back( Renderable );
+		}
+	}
+}
+
 void CRenderer::UpdateQueue()
 {
-	RenderQueue.clear();
-	RenderQueue.insert( RenderQueue.end(), Renderables.begin(), Renderables.end() );
-	RenderQueue.insert( RenderQueue.end(), RenderablesPerFrame.begin(), RenderablesPerFrame.end() );
-	RenderQueue.insert( RenderQueue.end(), DynamicRenderables.begin(), DynamicRenderables.end() );
+	RenderQueueOpaque.clear();
+	AddOpaque( RenderQueueOpaque, Renderables );
+	AddOpaque( RenderQueueOpaque, RenderablesPerFrame );
+	AddOpaque( RenderQueueOpaque, DynamicRenderables );
+
+	RenderQueueTranslucent.clear();
+	AddTranslucent( RenderQueueTranslucent, Renderables );
+	AddTranslucent( RenderQueueTranslucent, RenderablesPerFrame );
+	AddTranslucent( RenderQueueTranslucent, DynamicRenderables );
 }

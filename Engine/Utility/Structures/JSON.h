@@ -13,7 +13,8 @@ namespace JSON
 {
 	struct Container;
 
-	Container GenerateTree( const CFile& File );
+	Container Tree( const CFile& File );
+	Container Tree( const std::string& Data );
 	void PrintTree( const Container& Tree );
 
 	struct Object;
@@ -145,6 +146,15 @@ namespace JSON
 		}
 	}
 
+	inline void Assign( const Vector& Objects, const std::string& Search, unsigned int& Target )
+	{
+		const auto* Object = JSON::Find( Objects, Search );
+		if( Object )
+		{
+			Target = std::stoul( Object->Value );
+		}
+	}
+
 	inline void Assign( const Vector& Objects, const std::string& Search, float& Target )
 	{
 		const auto* Object = JSON::Find( Objects, Search );
@@ -160,6 +170,118 @@ namespace JSON
 		if( Object )
 		{
 			Extract( Object->Value, Target );
+		}
+	}
+
+	struct SearchEntry
+	{
+		SearchEntry() = delete;
+
+		SearchEntry( const std::string& Entry, std::string& Data )
+		{
+			Search = Entry;
+			Target = &Data;
+			Type = String;
+		}
+
+		SearchEntry( const std::string& Entry, bool& Data )
+		{
+			Search = Entry;
+			Target = &Data;
+			Type = Boolean;
+		}
+
+		SearchEntry( const std::string& Entry, int& Data )
+		{
+			Search = Entry;
+			Target = &Data;
+			Type = Integer;
+		}
+
+		SearchEntry( const std::string& Entry, unsigned int& Data )
+		{
+			Search = Entry;
+			Target = &Data;
+			Type = Unsigned;
+		}
+
+		SearchEntry( const std::string& Entry, float& Data )
+		{
+			Search = Entry;
+			Target = &Data;
+			Type = Float;
+		}
+
+		SearchEntry( const std::string& Entry, Vector3D& Data )
+		{
+			Search = Entry;
+			Target = &Data;
+			Type = Vector3D;
+		}
+
+		std::string Search;
+		void* Target = nullptr;
+
+		enum
+		{
+			String,
+			Boolean,
+			Integer,
+			Unsigned,
+			Float,
+			Vector3D
+		} Type;
+	};
+
+	// Assign function that can extract most types sequentially.
+	// You can use an initializer list to configure the vector array.
+	//	JSON::Assign(
+	//	Objects,
+	//	{
+	//		{ "item1", Item1 },
+	//		{ "item2", Item2 },
+	//		{ "item3", Item3 },
+	//		{ "item4", Item4 },
+	//		{ "item5", Item5 }
+	//	} );
+	inline void Assign( const Vector& Objects, const std::vector<SearchEntry>& Entries )
+	{
+		for( auto& Entry : Entries )
+		{
+			const auto* Object = JSON::Find( Objects, Entry.Search );
+			if( Object && Entry.Target )
+			{
+				if( Entry.Type == SearchEntry::String )
+				{
+					const auto Target = static_cast<std::string*>( Entry.Target );
+					*Target = Object->Value;
+				}
+				else if( Entry.Type == SearchEntry::Boolean )
+				{
+					const auto Target = static_cast<bool*>( Entry.Target );
+					Extract( Object->Value, *Target );
+				}
+				else if( Entry.Type == SearchEntry::Integer )
+				{
+					const auto Target = static_cast<int*>( Entry.Target );
+					Extract( Object->Value, *Target );
+				}
+				else if( Entry.Type == SearchEntry::Unsigned )
+				{
+					const auto Target = static_cast<unsigned int*>( Entry.Target );
+					Extract( Object->Value, *Target );
+				}
+				else if( Entry.Type == SearchEntry::Float )
+				{
+					const auto Target = static_cast<float*>( Entry.Target );
+					Extract( Object->Value, *Target );
+				}
+				else if( Entry.Type == SearchEntry::Vector3D )
+				{
+					const auto Target = static_cast<Vector3D*>( Entry.Target );
+					Extract( Object->Value, *Target );
+				}
+			}
 		}
 	}
 

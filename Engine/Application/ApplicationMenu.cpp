@@ -256,6 +256,7 @@ void ShowTexture( CTexture* Texture )
 }
 
 CTexture* UIFileSpeaker = nullptr; // Textures/UI/round_volume_up_black_48.png
+CTexture* UIFileGeneric = nullptr; // Textures/UI/twotone_radio_button_unchecked_black_48.png
 
 CTexture* CreateUIIcon( const char* Name, const char* Location )
 {
@@ -268,7 +269,8 @@ void CreateIcons()
 	if( IconsCreated )
 		return;
 	
-	UIFileSpeaker = CreateUIIcon( "ui_speaker", "Textures/UI/round_volume_up_black_48.png" );
+	UIFileSpeaker = CreateUIIcon( "ui_icon_speaker", "Textures/UI/round_volume_up_black_48.png" );
+	UIFileGeneric = CreateUIIcon( "ui_icon_generic", "Textures/UI/twotone_radio_button_unchecked_black_48.png" );
 
 	IconsCreated = true;
 }
@@ -291,6 +293,7 @@ void ContentBrowserUI()
 	ImGui::Columns( Columns );
 
 	const auto FilterLength = std::strlen( FilterText );
+	const bool ValidFilter = FilterLength > 0;
 
 	auto& Assets = CAssets::Get();
 	if( ShowTextures )
@@ -298,7 +301,7 @@ void ContentBrowserUI()
 		const auto& Textures = Assets.GetTextures();
 		for( const auto& Pair : Textures )
 		{
-			if( FilterLength > 0 && !MatchFilter( Pair.first.c_str() ) )
+			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 				continue;
 			
 			CTexture* Texture = Pair.second;
@@ -334,7 +337,7 @@ void ContentBrowserUI()
 		const auto& Sounds = Assets.GetSounds();
 		for( const auto& Pair : Sounds )
 		{
-			if( FilterLength > 0 && !MatchFilter( Pair.first.c_str() ) )
+			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 				continue;
 			
 			CSound* Sound = Pair.second;
@@ -354,7 +357,7 @@ void ContentBrowserUI()
 					Tint ) )
 				{
 					PreviewName = Pair.first;
-					PreviewTexture = nullptr;
+					PreviewTexture = UIFileSpeaker;
 					PreviewMesh = nullptr;
 
 					if( !Playing )
@@ -401,7 +404,7 @@ void ContentBrowserUI()
 		const auto& Meshes = Assets.GetMeshes();
 		for( const auto& Pair : Meshes )
 		{
-			if( FilterLength > 0 && !MatchFilter( Pair.first.c_str() ) )
+			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 				continue;
 
 			CMesh* Mesh = Pair.second;
@@ -419,7 +422,7 @@ void ContentBrowserUI()
 
 			if( !Thumbnail )
 			{
-				Thumbnail = UIFileSpeaker;
+				Thumbnail = UIFileGeneric;
 			}
 			
 			auto* TextureID = reinterpret_cast<ImTextureID>( Thumbnail->GetHandle() );
@@ -452,6 +455,51 @@ void ContentBrowserUI()
 			ImGui::PopID();
 
 			ImGui::NextColumn();
+		}
+	}
+
+	
+	if( true )
+	{
+		const auto& CustomAssets = Assets.GetAssets();
+		for( const auto& Pair : CustomAssets )
+		{
+			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+				continue;
+
+			CAsset* Asset = Pair.second;
+			if( Asset )
+			{
+				auto ImageSize = ImVec2( 64, 64 );
+
+				auto* TextureID = reinterpret_cast<ImTextureID>( UIFileGeneric->GetHandle() );
+				const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
+				const ImVec4 Tint = ImVec4( 0.25f, 0.5f, 1.0f, 1.0f );
+
+				ImGui::PushID( Pair.first.c_str() );
+				if( ImGui::ImageButton(
+					TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
+					Background,
+					Tint ) )
+				{
+					PreviewName = Pair.first;
+					PreviewTexture = UIFileGeneric;
+					PreviewMesh = nullptr;
+				}
+
+				if( ImGui::IsItemHovered() )
+				{
+					ImGui::BeginTooltip();
+					ImGui::Text( "%s", Pair.first.c_str() );
+					ImGui::Text( "Type: %s", Asset->GetType().c_str() );
+
+					ImGui::EndTooltip();
+				}
+
+				ImGui::PopID();
+
+				ImGui::NextColumn();
+			}
 		}
 	}
 
@@ -636,12 +684,18 @@ void AssetUI()
 			ImGui::Separator();
 			ImGui::Separator();
 
+			const auto FilterLength = std::strlen( FilterText );
+			const bool ValidFilter = FilterLength > 0;
+
 			auto* World = CWorld::GetPrimaryWorld();
 			if( World )
 			{
 				auto& Levels = World->GetLevels();
 				for( auto& Level : Levels )
 				{
+					if( ValidFilter && !MatchFilter( Level.GetName().c_str() ) )
+						continue;
+
 					if( ImGui::Selectable( Level.GetName().c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
 						Level.Reload();
@@ -658,6 +712,9 @@ void AssetUI()
 			const auto& CustomAssets = Assets.GetAssets();
 			for( const auto& Pair : CustomAssets )
 			{
+				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+					continue;
+
 				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 
@@ -674,6 +731,9 @@ void AssetUI()
 			const auto& Meshes = Assets.GetMeshes();
 			for( const auto& Pair : Meshes )
 			{
+				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+					continue;
+
 				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					if( Pair.second && Assets.FindMesh( Pair.first ) )
@@ -691,11 +751,26 @@ void AssetUI()
 			const auto& Shaders = Assets.GetShaders();
 			for( const auto& Pair : Shaders )
 			{
+				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+					continue;
+
 				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				std::string Label = Pair.first;
+				if( Pair.second->AutoReload() )
+				{
+					Label += "( Auto Reload )";
+				}
+
+				if( ImGui::Selectable( Label.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					Pair.second->Reload();
 				}
+
+				if( ImGui::IsItemClicked( 1 ) )
+				{
+					Pair.second->AutoReload( !Pair.second->AutoReload() );
+				}
+
 				ImGui::NextColumn();
 
 				ImGui::Text( "Shader" ); ImGui::NextColumn();
@@ -707,6 +782,9 @@ void AssetUI()
 			const auto& Textures = Assets.GetTextures();
 			for( const auto& Pair : Textures )
 			{
+				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+					continue;
+
 				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
 				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
@@ -723,6 +801,9 @@ void AssetUI()
 			const auto& Sounds = Assets.GetSounds();
 			for( const auto& Pair : Sounds )
 			{
+				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+					continue;
+
 				if( ImGui::Selectable( Pair.first.c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					if( Pair.second->Playing() )
@@ -752,6 +833,9 @@ void AssetUI()
 			const auto& Sequences = Assets.GetSequences();
 			for( const auto& Pair : Sequences )
 			{
+				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+					continue;
+
 				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					Pair.second->Draw();
@@ -840,6 +924,12 @@ static bool ShowShaderToy = false;
 bool* DisplayShaderToy()
 {
 	return &ShowShaderToy;
+}
+
+static bool ShowTagList = false;
+bool* DisplayTagList()
+{
+	return &ShowTagList;
 }
 
 static auto TranslateBus = Translate<std::string, Bus::Type>( {
@@ -1425,6 +1515,74 @@ void ShaderToyUI()
 	CWindow::Get().GetRenderer().AddRenderPass( &ShaderToyPass, ERenderPassLocation::PreScene );
 }
 
+void TagListUI()
+{
+	if( !ShowTagList )
+		return;
+
+	if( ImGui::Begin( "Tag List", &ShowTagList, ImVec2( 500.0f, 700.0f ) ) )
+	{
+		// Fetch all of the tags from the primary world.
+		std::unordered_map<std::string, std::vector<CEntity*>> Tags;
+		if( const auto* World = CWorld::GetPrimaryWorld() )
+		{
+			Tags = World->GetTags();
+		}
+
+		ImGui::Columns( 2 );
+
+		ImGui::Separator();
+		ImGui::Text( "Tag" ); ImGui::NextColumn();
+		ImGui::Text( "Entity" ); ImGui::NextColumn();
+
+		ImGui::Separator();
+		ImGui::Separator();
+
+		for( const auto& Pair : Tags )
+		{
+			if( ImGui::TreeNode( Pair.first.c_str() ) )
+			{
+				ImGui::NextColumn();
+				ImGui::NextColumn();
+
+				for( auto* Entity : Pair.second )
+				{
+					if( Entity )
+					{
+						ImGui::Text( "%s", Entity->Identifier.ID );
+						ImGui::NextColumn();
+
+						if( ImGui::Selectable( Entity->Name.String().c_str(), Entity->IsDebugEnabled() ) )
+						{
+							Entity->EnableDebug( !Entity->IsDebugEnabled() );
+						}
+						ImGui::NextColumn();
+					}
+					else
+					{
+						ImGui::NextColumn();
+						ImGui::Text( "nullptr" ); ImGui::NextColumn();
+					}
+
+					ImGui::Separator();
+				}
+
+				ImGui::TreePop();
+			}
+
+			ImGui::NextColumn();
+			ImGui::NextColumn();
+		}
+
+		ImGui::Separator();
+		ImGui::Separator();
+
+		ImGui::Columns( 1 );
+	}
+
+	ImGui::End();
+}
+
 void RenderMenuItems()
 {
 	if( MenuItem( "Assets", DisplayAssets() ) )
@@ -1436,6 +1594,7 @@ void RenderMenuItems()
 	MenuItem( "Mixer", DisplayMixer() );
 	MenuItem( "Audio Player", DisplayAudioPlayer() );
 	MenuItem( "Shader Toy", DisplayShaderToy() );
+	MenuItem( "Tag List", DisplayTagList() );
 }
 
 void RenderMenuPanels()
@@ -1445,6 +1604,7 @@ void RenderMenuPanels()
 	MixerUI();
 	AudioPlayerUI();
 	ShaderToyUI();
+	TagListUI();
 }
 
 #if defined(_WIN32)

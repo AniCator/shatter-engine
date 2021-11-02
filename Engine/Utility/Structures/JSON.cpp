@@ -46,13 +46,13 @@ namespace JSON
 		}
 	}
 
-	Container GenerateTree( const CFile& File )
+	Container Tree( const char* Data, const size_t& Length )
 	{
 		Container Container;
 
-		const char* Data = File.Fetch<char>();
+		// const char* Data = File.Fetch<char>();
 		size_t Count = 0;
-		const size_t Length = File.Size();
+		// const size_t Length = File.Size();
 
 		char LastSpecialToken = ' ';
 		size_t Line = 0;
@@ -104,7 +104,7 @@ namespace JSON
 
 						// Parent = Current->Parent;
 					}
-					
+
 					Parent = Current;
 					Current = nullptr;
 				}
@@ -153,7 +153,7 @@ namespace JSON
 					if( Current )
 					{
 						Current->IsField = true;
-						
+
 						Current->Key = std::string( Start, End );
 
 						if( Parent )
@@ -222,6 +222,16 @@ namespace JSON
 		Container.Regenerate();
 
 		return Container;
+	}
+
+	Container Tree( const CFile& File )
+	{
+		return Tree( File.Fetch<char>(), File.Size() );
+	}
+
+	Container Tree( const std::string& Data )
+	{
+		return Tree( Data.c_str(), Data.size() );
 	}
 
 	void StringifyObject( std::stringstream& Stream, Object* Object, const uint32_t Offset, const bool Last )

@@ -58,10 +58,10 @@ struct Worker
 		return Running;
 	}
 
-	void Start( const std::shared_ptr<Task>& ToExecute )
+	bool Start( const std::shared_ptr<Task>& ToExecute )
 	{
 		if( Ready )
-			return;
+			return false;
 
 		std::unique_lock<std::mutex> Lock( Mutex );
 
@@ -69,6 +69,8 @@ struct Worker
 		Ready = true;
 
 		Notify.notify_one();
+
+		return true;
 	}
 
 	void SetName( const std::string& Name );

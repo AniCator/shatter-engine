@@ -101,12 +101,15 @@ public:
 	CWorld* GetWorld() const;
 
 	void SetParent( CEntity* Entity );
-	CEntity* GetParent();
+	CEntity* GetParent() const;
 
 	virtual void Construct();
 	virtual void Tick() {};
 	virtual void Frame() {};
 	virtual void Destroy();
+
+	// Traverse the hierarchy of this entity.
+	void Traverse();
 
 	virtual void Load( const JSON::Vector& Objects ) {};
 	virtual void Reload() {};
@@ -130,8 +133,18 @@ public:
 
 	std::string ClassName;
 
+	// Associates an entity with a tag name.
+	void Tag( const std::string& TagName );
+
+	// Unregisters an entity from a tag name.
+	void Untag( const std::string& TagName );
+
 protected:
-	CEntity* Parent;
+	CEntity* Parent = nullptr;
+	std::vector<CEntity*> Children;
+
+	// Temporary string used while loading serialized parents.
+	std::string ParentName;
 private:
 	std::vector<size_t> TrackedEntityIDs;
 
@@ -139,6 +152,9 @@ protected:
 	CLevel* Level;
 	bool Enabled;
 	bool ShouldDebug;
+
+	// Tags this entity registered;
+	std::set<std::string> Tags;
 
 public:
 	// Called to export an entire entity.

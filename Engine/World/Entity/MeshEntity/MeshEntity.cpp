@@ -28,7 +28,7 @@ CMeshEntity::CMeshEntity()
 	Renderable = nullptr;
 	PhysicsBody = nullptr;
 	Static = true;
-	Stationary = true;
+	Stationary = false;
 	Contact = false;
 	Collision = true;
 	Visible = true;
@@ -71,7 +71,7 @@ void CMeshEntity::Construct()
 		if( Textures.size() > 0 )
 		{
 			size_t Index = 0;
-			for( auto Texture : Textures )
+			for( auto* Texture : Textures )
 			{
 				if( Texture )
 				{
@@ -92,10 +92,10 @@ void CMeshEntity::Construct()
 		RenderData.Color = Color;
 		RenderData.WorldBounds = WorldBounds;
 
-		auto World = GetWorld();
+		auto* World = GetWorld();
 		if( World && Collision )
 		{
-			auto Physics = World->GetPhysics();
+			auto* Physics = World->GetPhysics();
 			if( Physics )
 			{
 				if( !PhysicsBody )
@@ -165,7 +165,7 @@ void CMeshEntity::Tick()
 		RenderData.Color = Color;
 		RenderData.WorldBounds = WorldBounds;
 
-		if( RenderData.LightIndex.Index[0] == -1 || !Static )
+		if( RenderData.LightIndex.Index[0] == -1 || !Static || true )
 		{
 			RenderData.LightIndex = LightEntity::Fetch( RenderData.Transform.GetPosition() );
 		}
@@ -230,17 +230,7 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 
 	const auto RotationKeyIndex = NearestKey( Time, Animation.Duration, Bone, Animation.RotationKeys );
 	const auto RotationKey = Animation.RotationKeys[RotationKeyIndex];
-	auto Quaternion = glm::quat( RotationKey.Value.X, RotationKey.Value.Y, RotationKey.Value.Z, RotationKey.Value.W );
-
-	// auto Euler = glm::eulerAngles( Quaternion );
-	// Euler.x *= -1.0f;
-	// Quaternion = glm::quat( Euler );
-	
-	/*if( Bone->ParentIndex < 0 || true )
-	{
-		auto Correction = glm::quat( glm::vec3( Math::ToRadians( -90.0f ), 0.0f, Math::ToRadians( 180.0f ) ) );
-		Quaternion = Quaternion * Correction;
-	}*/
+	auto Quaternion = glm::quat( RotationKey.Value.W, RotationKey.Value.X, RotationKey.Value.Y, RotationKey.Value.Z );
 	
 	RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
 
@@ -274,18 +264,16 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 	
 	Result[Bone->Index].LocalTransform = LocalTransform;
 
-	// Create the global transform.
-	Result[Bone->Index].GlobalTransform = LocalTransform;
-
 	// Look up the parent matrix.
 	if( Parent )
 	{
-		// TODO: It seems like the rotation is being applied twice.
-		// TODO: See the SkeletonTest model for reference, its tip Root.001 cube is rotate multiple times.
 		Result[Bone->Index].GlobalTransform = Parent->GlobalTransform * LocalTransform;
 	}
-
-	Result[Bone->Index].GlobalTransform = Result[Bone->Index].GlobalTransform;
+	else
+	{
+		// Set the global transform to just the local transform if no parent is found.
+		Result[Bone->Index].GlobalTransform = LocalTransform;
+	}
 
 	Result[Bone->Index].BoneTransform = Result[Bone->Index].GlobalTransform * ModelToBone;
 
@@ -790,6 +778,16 @@ void CMeshEntity::SetAnimation( const std::string& Name )
 const std::string& CMeshEntity::GetAnimation() const
 {
 	return CurrentAnimation;
+}
+
+float CMeshEntity::GetPlayRate() const
+{
+	return PlayRate;
+}
+
+void CMeshEntity::SetPlayRate( const float& PlayRate )
+{
+	this->PlayRate = PlayRate;
 }
 
 void CMeshEntity::SetPosition( const Vector3D& Position, const bool& Teleport )

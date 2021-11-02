@@ -20,7 +20,8 @@ namespace ERenderPassLocation
 	{
 		Standard = 0,
 		PreScene,
-		Scene,
+		Scene, // After the opaque scene has rendered.
+		Translucent, // After the translucent scene has rendered.
 		PostProcess
 	};
 }
@@ -82,7 +83,10 @@ private:
 	int64_t DrawCalls = 0;
 	
 	// Render queue for a single frame. Used to concatenate renderable vectors.
-	std::vector<CRenderable*> RenderQueue;
+	std::vector<CRenderable*> RenderQueueOpaque;
+
+	// Translucent queue for a single frame. Used to concatenate renderable vectors.
+	std::vector<CRenderable*> RenderQueueTranslucent;
 	
 	// Persistent renderables that are added in tick functions.
 	std::vector<CRenderable*> Renderables;

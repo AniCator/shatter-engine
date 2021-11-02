@@ -40,13 +40,15 @@ namespace Node
 	public:
 		Entity() = default;
 
-		virtual void Load( const JSON::Vector& Objects ) override;
-		virtual void Reload() override;
+		void Construct() override;
 
-		virtual void Debug() override;
+		void Load( const JSON::Vector& Objects ) override;
+		void Reload() override;
 
-		virtual void Import( CData& Data ) override;
-		virtual void Export( CData& Data ) override;
+		void Debug() override;
+
+		void Import( CData& Data ) override;
+		void Export( CData& Data ) override;
 
 	protected:
 		Data NodeData;

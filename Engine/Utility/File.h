@@ -39,7 +39,7 @@ public:
 		return FileExtension;
 	}
 
-	const size_t Size() const
+	size_t Size() const
 	{
 		return FileSize;
 	}
@@ -109,6 +109,8 @@ void Extract( const char* Start, class Vector3D& Out );
 void Extract( const std::string& String, class Vector3D& Out );
 void Extract( const char* Start, class Vector4D& Out );
 void Extract( const std::string& String, class Vector4D& Out );
+void Extract( const char* Start, struct BoundingBox& Out );
+void Extract( const std::string& String, struct BoundingBox& Out );
 
 std::vector<std::string> ExtractTokens( const char* Start, char Delimiter, const size_t ExpectedTokens = 3 );
 float* ExtractTokensFloat( const char* Start, char Delimiter, size_t& OutTokenCount, const size_t ExpectedTokens = 3 );

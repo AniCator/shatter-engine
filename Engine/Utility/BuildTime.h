@@ -17,12 +17,13 @@ struct Date
 inline Date GetDate()
 {
 	Date Date;
-	Date.Year = ( __DATE__[7] - '0' ) * 1000 +
+	Date.Year = 
+		( __DATE__[7] - '0' ) * 1000 +
 		( __DATE__[8] - '0' ) * 100 +
 		( __DATE__[9] - '0' ) * 10 +
 		( __DATE__[10] - '0' );
 
-	Date.Month =
+	Date.Month = 
 		( __DATE__[0] == 'J' ) && ( __DATE__[1] == 'a' ) && ( __DATE__[2] == 'n' ) ? 1 :
 		( __DATE__[0] == 'F' ) && ( __DATE__[1] == 'e' ) && ( __DATE__[2] == 'b' ) ? 2 :
 		( __DATE__[0] == 'M' ) && ( __DATE__[1] == 'a' ) && ( __DATE__[2] == 'r' ) ? 3 :
@@ -36,16 +37,20 @@ inline Date GetDate()
 		( __DATE__[0] == 'N' ) && ( __DATE__[1] == 'o' ) && ( __DATE__[2] == 'v' ) ? 11 :
 		( __DATE__[0] == 'D' ) && ( __DATE__[1] == 'e' ) && ( __DATE__[2] == 'c' ) ? 12 : 0;
 
-	Date.Day = ( ( __DATE__[4] >= '0' ? __DATE__[4] : '0' ) - '0' ) * 10 +
+	Date.Day = 
+		( ( __DATE__[4] >= '0' ? __DATE__[4] : '0' ) - '0' ) * 10 +
 		( __DATE__[5] - '0' );
 
-	Date.Hour = ( __TIME__[0] - '0' ) * 10 +
+	Date.Hour = 
+		( __TIME__[0] - '0' ) * 10 +
 		( __TIME__[1] - '0' );
 
-	Date.Minute = ( __TIME__[3] - '0' ) * 10 +
+	Date.Minute = 
+		( __TIME__[3] - '0' ) * 10 +
 		( __TIME__[4] - '0' );
 
-	Date.Second = ( __TIME__[6] - '0' ) * 10 +
+	Date.Second = 
+		( __TIME__[6] - '0' ) * 10 +
 		( __TIME__[7] - '0' );
 
 	return Date;

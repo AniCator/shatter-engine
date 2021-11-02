@@ -28,7 +28,7 @@ public:
 	CRenderTexture();
 	CRenderTexture( const std::string& Name, int TextureWidth, int TextureHeight, const bool DepthOnly = false );
 	CRenderTexture( const std::string& Name, const RenderTextureConfiguration Configuration );
-	~CRenderTexture();
+	~CRenderTexture() override;
 
 	void BindDepth( ETextureSlot Slot ) const;
 

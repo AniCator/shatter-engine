@@ -2,9 +2,14 @@
 #include "BoundingVolumeHierarchy.h"
 
 #include <Engine/Display/UserInterface.h>
-#include <Engine/Utility/Geometry.h>
+#include <Engine/Physics/Geometry.h>
 
 #include <Engine/Profiling/Profiling.h>
+
+QueryResult::QueryResult()
+{
+	Objects.reserve( 8192 );
+}
 
 void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const size_t& Start, const size_t& End )
 {
@@ -102,31 +107,54 @@ Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, con
 
 	const float& Distance = Result.Distance;
 
-	Geometry::Result SplitResult;
-
 	// If our bounds were hit, check if our children got hit.
-	if( Cast( Left, Start, End, SplitResult ) )
-	{
-		if( SplitResult.Distance < Distance )
-			return SplitResult;
-	}
+	Geometry::Result SplitResultA;
+	const auto HitA = Cast( Left, Start, End, Ignore, SplitResultA );
 
-	Cast( Right, Start, End, SplitResult );
-	if( SplitResult.Distance < Distance )
-		return SplitResult;
+	Geometry::Result SplitResultB;
+	const auto HitB = Cast( Right, Start, End, Ignore, SplitResultB );
+
+	auto& Closest = SplitResultA.Distance < SplitResultB.Distance ? SplitResultA : SplitResultB;
+	if( Closest.Distance < Distance )
+		return Closest;
 	
 	return Result;
 }
 
+Color DebugLeft = Color( 255, 0, 255 );
+Color DebugRight = Color( 0, 255, 255 );
+Color DebugColor = DebugLeft;
+
+Color DebugColors[6] = {
+	Color( 255, 0, 0 ),
+	Color( 255, 255, 0 ),
+	Color( 0, 255, 0 ),
+	Color( 0, 255, 255 ),
+	Color( 0, 0, 255 ),
+	Color( 255, 0, 255 )
+};
+
+size_t BoundingVolumeHierarchy::Node::Depth = 0;
 void BoundingVolumeHierarchy::Node::Debug() const
 {
+	const size_t DebugIndex = Depth % 6;
+
+	const uint32_t InverseDepth = 100 / ( Depth + 1 );
+	Color ActualColor = DebugColor;
+	ActualColor.R *= InverseDepth;
+	ActualColor.G *= InverseDepth;
+	ActualColor.B *= InverseDepth;
+	UI::AddAABB( Bounds.Minimum, Bounds.Maximum, ActualColor );
+
+	Depth++;
+
+	DebugColor = DebugLeft;
 	if( Left )
 		Left->Debug();
 
+	DebugColor = DebugRight;
 	if( Right )
 		Right->Debug();
-
-	UI::AddAABB( Bounds.Minimum, Bounds.Maximum, Color( 255, 0, 255 ) );
 }
 
 const BoundingBox& BoundingVolumeHierarchy::Node::GetBounds() const
@@ -134,12 +162,12 @@ const BoundingBox& BoundingVolumeHierarchy::Node::GetBounds() const
 	return Bounds;
 }
 
-bool BoundingVolumeHierarchy::Node::Cast( const RawObject& Node, const Vector3D& Start, const Vector3D& End,
+bool BoundingVolumeHierarchy::Node::Cast( const RawObject& Node, const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore,
 	Geometry::Result& Result )
 {
 	if( Node )
 	{
-		Result = Node->Cast( Start, End );
+		Result = Node->Cast( Start, End, Ignore );
 		if( Result.Hit )
 			return true;
 	}

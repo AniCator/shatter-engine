@@ -189,10 +189,13 @@ void CCamera::Update()
 	CameraSetup.CameraUpVector = CameraSetup.CameraDirection.Cross( CameraSetup.CameraRightVector ).Normalized() - glm::radians( CameraOrientation[2] ) * CameraSetup.CameraRightVector;
 
 	ViewMatrix = glm::lookAt(
-		CameraPosition,
-		CameraPosition + Math::ToGLM( CameraSetup.CameraDirection ),
+		glm::vec3( 0.0f ),
+		Math::ToGLM( CameraSetup.CameraDirection ),
 		Math::ToGLM( CameraSetup.CameraUpVector )
 	);
+
+	// Translate afterwards because it could cause precision issues if we do it in lookAt.
+	ViewMatrix = glm::translate( ViewMatrix, -CameraPosition );
 
 	ProjectionViewInverseMatrix = glm::inverse( ProjectionMatrix * ViewMatrix );
 

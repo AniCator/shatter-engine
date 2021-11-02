@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Application.h"
 #include "ApplicationMenu.h"
+#include "EngineAssetLoaders.h"
 
 #if defined(_WIN32)
 #include <Windows.h>
@@ -59,6 +60,11 @@ bool FrameStep = false;
 bool ScaleTime = false;
 bool CursorVisible = true;
 bool RestartLayers = false;
+
+#ifdef OptickBuild
+bool CaptureFrame = false;
+bool Capturing = false;
+#endif
 
 double ScaledGameTime = 0.0;
 
@@ -448,6 +454,13 @@ void DebugMenu( CApplication* Application )
 				MainWindow.GetRenderer().ForceWireFrame = !Enabled;
 			}
 
+#ifdef OptickBuild
+			if( ImGui::MenuItem( "Capture Optick Frame" ) )
+			{
+				CaptureFrame = true;
+			}
+#endif
+
 			ImGui::Separator();
 
 			for( const auto& Iterator : Themes )
@@ -750,6 +763,15 @@ void CApplication::Run()
 	{
 		ProfileFrame( "Main Thread" );
 
+#ifdef OptickBuild
+		if( CaptureFrame )
+		{
+			Capturing = true;
+			CaptureFrame = false;
+			OptickStart();
+		}
+#endif
+
 		if( RestartLayers )
 			InputRestartGameLayers( this );
 
@@ -787,6 +809,14 @@ void CApplication::Run()
 				// Tick all game layers
 				GameLayersInstance->Tick();
 
+#ifdef OptickBuild
+				if( Capturing )
+				{
+					Capturing = false;
+					OptickSave("OptickCapture.opt");
+				}
+#endif
+
 				GameTimer.Start();
 
 				if( FrameStep )
@@ -801,7 +831,15 @@ void CApplication::Run()
 			GameTimer.Start();
 		}
 
-		const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
+		// Always poll input.
+		if( !MainWindow.IsWindowless() )
+		{
+			SetMouseWheel( ImGui::GetIO().MouseWheel );
+		}
+
+		MainWindow.ProcessInput();
+
+		/*const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
 		if( InputDeltaTime >= MaximumInputTime )
 		{
 			if( !MainWindow.IsWindowless() )
@@ -812,7 +850,7 @@ void CApplication::Run()
 			MainWindow.ProcessInput();
 
 			InputTimer.Start();
-		}
+		}*/
 
 		const uint64_t MaximumFrameTime = FPSLimit > 0 ? 1000 / FPSLimit : 999;
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
@@ -1234,7 +1272,7 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 	}
 }
 
-const bool CApplication::ToolsEnabled() const
+bool CApplication::ToolsEnabled() const
 {
 	return Tools;
 }
@@ -1252,7 +1290,7 @@ void CApplication::EnableTools( const bool Enable )
 	}
 }
 
-const bool CApplication::DefaultExitEnabled() const
+bool CApplication::DefaultExitEnabled() const
 {
 	return DefaultExit;
 }
@@ -1280,14 +1318,14 @@ void CApplication::UnregisterDebugUI()
 	DebugUIFunctions.clear();
 }
 
-const glm::size_t CApplication::DebugFunctions() const
+size_t CApplication::DebugFunctions() const
 {
 	return DebugUIFunctions.size();
 }
 
 bool CApplication::HasCommand( const std::string& Command )
 {
-	auto Result = CommandLine.find( Command );
+	const auto Result = CommandLine.find( Command );
 	return Result != CommandLine.end();
 }
 
@@ -1511,6 +1549,9 @@ void CApplication::Initialize()
 	UnregisterDebugUI();
 
 	// CAngelEngine::Get().Initialize();
+
+	// Initialize engine asset types.
+	InitializeEngineAssetLoaders();
 
 	if( WaitForInput && !MainWindow.IsWindowless() )
 	{
