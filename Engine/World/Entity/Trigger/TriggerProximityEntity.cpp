@@ -7,9 +7,11 @@ static CEntityFactory<CTriggerProximityEntity> Factory( "trigger_proximity" );
 
 CTriggerProximityEntity::CTriggerProximityEntity()
 {
-	Inputs["Trigger"] = [&] ()
+	Inputs["Trigger"] = [&] ( CEntity* Origin )
 	{
 		Send( "OnTrigger" );
+
+		return true;
 	};
 }
 
@@ -21,28 +23,28 @@ void CTriggerProximityEntity::Construct()
 void CTriggerProximityEntity::Tick()
 {
 	auto* World = GetWorld();
-	if( World )
+	if( !World )
+		return;
+
+	const auto& CameraSetup = World->GetActiveCameraSetup();
+	const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+
+	const float Length = Delta.Length();
+	if( Length < Radius )
 	{
-		const auto& CameraSetup = World->GetActiveCameraSetup();
-		const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
-
-		const float Length = Delta.Length();
-		if( Length < Radius )
+		if( !Latched && ( Frequency < 0 || Count < Frequency ) )
 		{
-			if( !Latched && ( Frequency < 0 || Count < Frequency ) )
-			{
-				Send( "OnTrigger" );
-				Latched = true;
+			Send( "OnTrigger" );
+			Latched = true;
 
-				Count++;
-			}
+			Count++;
 		}
-		else
+	}
+	else
+	{
+		if( Latched )
 		{
-			if( Latched )
-			{
-				Latched = false;
-			}
+			Latched = false;
 		}
 	}
 }
@@ -56,7 +58,7 @@ void CTriggerProximityEntity::Load( const JSON::Vector& Objects )
 {
 	CPointEntity::Load( Objects );
 
-	for( auto Property : Objects )
+	for( const auto* Property : Objects )
 	{
 		if( Property->Key == "radius" )
 		{

@@ -6,6 +6,7 @@
 #include <ThirdParty/glad/include/glad/glad.h>
 #include <ThirdParty/glfw-3.3.2.bin.WIN64/include/GLFW/glfw3.h>
 
+#include <Engine/Application/Application.h>
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Profiling/Logging.h>
@@ -102,6 +103,8 @@ void CWindow::Create( const char* Title )
 	if( IsWindowless() )
 		return;
 
+	WindowTitle = Title;
+
 	if( !glfwInit() )
 	{
 		Log::Event( Log::Fatal, "Failed to initialize GLFW\n" );
@@ -145,7 +148,7 @@ void CWindow::Create( const char* Title )
 	CurrentDimensions = GetMonitorDimensions( Monitor );
 
 	// Increase the height by 1 pixel to avoid the exclusive no border behavior.
-	if( FullScreen && !EnableBorder )
+	if( !EnableBorder )
 	{
 		CurrentDimensions.Height += 1;
 	}
@@ -236,6 +239,50 @@ void CWindow::Create( const char* Title )
 	Renderer.Initialize();
 }
 
+void CWindow::Recreate()
+{
+	return; // TODO: Causes issues with ImGui.
+
+	ShouldRecreate = false;
+
+	if( IsWindowless() )
+		return;
+
+	glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
+
+	// auto* Context = glfwCreateWindow( 1, 1, "RecreateContext", NULL, NULL );
+	auto* Context = ThreadContext( true );
+	// glfwMakeContextCurrent( Context );
+
+	glfwDestroyWindow( WindowHandle );
+
+	const bool EnableBorder = !CConfiguration::Get().IsEnabled( "noborder", true );
+	const bool FullScreen = EnableBorder && CConfiguration::Get().IsEnabled( "fullscreen", false );
+
+	glfwWindowHint( GLFW_RESIZABLE, false );
+	glfwWindowHint( GLFW_DECORATED, EnableBorder );
+	// glfwWindowHint( GLFW_FLOATING, FullScreen );
+
+	auto* Monitor = GetTargetMonitor();
+	WindowHandle = glfwCreateWindow( 
+		CurrentDimensions.Width, CurrentDimensions.Height, 
+		WindowTitle.c_str(), 
+		FullScreen ? Monitor : nullptr, 
+		Context 
+	);
+
+	glfwMakeContextCurrent( WindowHandle );
+
+	if( !WindowHandle )
+	{
+		Log::Event( Log::Fatal, "Failed to recreate the window.\n" );
+	}
+
+#if defined( IMGUI_ENABLED )
+	CApplication::ResetImGui();
+#endif
+}
+
 void CWindow::Resize( const ViewDimensions& Dimensions )
 {
 	if( IsWindowless() ) 
@@ -248,8 +295,14 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 	}
 	else
 	{
-		auto Monitor = GetTargetMonitor();
+		auto* Monitor = GetTargetMonitor();
 		NewDimensions = GetMonitorDimensions( Monitor );
+	}
+
+	// Nudge the height so that the borderless window isn't made exclusive by the OS/graphics driver.
+	if( IsBorderless() )
+	{
+		NewDimensions.Height += 1;
 	}
 
 	if( CurrentDimensions.Width != NewDimensions.Width && CurrentDimensions.Height != NewDimensions.Height )
@@ -262,6 +315,8 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 		Configuration.Store( "height", CurrentDimensions.Height );
 
 		Renderer.DestroyBuffers();
+
+		glfwFocusWindow( WindowHandle );
 	}
 }
 
@@ -270,27 +325,66 @@ void CWindow::Fullscreen( const bool Enable )
 	if( IsWindowless() )
 		return;
 
+	const int AsInteger = Enable ? 1 : 0;
+
+	CConfiguration::Get().Store( "fullscreen", AsInteger );
+	CConfiguration::Get().Store( "noborder", 0 );
+	CConfiguration::Get().Save();
+
+	GLFWmonitor* Monitor = GetTargetMonitor();
+
 	if( Enable )
 	{
-		GLFWmonitor* Monitor = GetTargetMonitor();
 		const GLFWvidmode* VideoMode = glfwGetVideoMode( Monitor );
 		const auto Dimensions = ViewDimensions( VideoMode->width, VideoMode->height );
 
 		glfwSetWindowMonitor( WindowHandle, Monitor, 0, 0, Dimensions.Width, Dimensions.Height, VideoMode->refreshRate );
 		Resize( Dimensions );
-
-		CConfiguration::Get().Store( "fullscreen", 1 );
-		CConfiguration::Get().Store( "noborder", 0 );
 	}
 	else
 	{
-		GLFWmonitor* Monitor = GetTargetMonitor();
 		const auto Dimensions = GetMonitorDimensions( Monitor );
 
 		glfwSetWindowMonitor( WindowHandle, nullptr, 100, 100, Dimensions.Width, Dimensions.Height, GLFW_DONT_CARE );
-		CConfiguration::Get().Store( "fullscreen", 0 );
-		CConfiguration::Get().Store( "noborder", 0 );
 	}
+
+	glfwSetWindowAttrib( WindowHandle, GLFW_FLOATING, AsInteger );
+	glfwSetWindowAttrib( WindowHandle, GLFW_DECORATED, 1 );
+}
+
+void CWindow::Borderless( const bool Enable )
+{
+	if( IsWindowless() )
+		return;
+
+	const int AsInteger = Enable ? 1 : 0;
+
+	auto& Configuration = CConfiguration::Get();
+	Configuration.Store( "fullscreen", 0 );
+	Configuration.Store( "noborder", AsInteger );
+	Configuration.Save();
+
+	if( Enable )
+	{
+		Configuration.Store( "width", -1 );
+		Configuration.Store( "height", -1 );
+	}
+
+	GLFWmonitor* Monitor = GetTargetMonitor();
+	const auto Dimensions = GetMonitorDimensions( Monitor );
+
+	const int Offset = Enable ? 0 : 100;
+
+	glfwSetWindowMonitor( WindowHandle, nullptr, Offset, Offset, Dimensions.Width, Dimensions.Height + 1, GLFW_DONT_CARE );
+
+	glfwSetWindowAttrib( WindowHandle, GLFW_FLOATING, 0 );
+	glfwSetWindowAttrib( WindowHandle, GLFW_DECORATED, 1 - AsInteger );
+
+	// Nudge the window by resizing it twice so that it is on top.
+	Resize( ViewDimensions( 800, 600 ) );
+	Resize( Dimensions );
+
+	glfwFocusWindow( WindowHandle );
 }
 
 void CWindow::Terminate()
@@ -322,7 +416,7 @@ void CWindow::ProcessInput()
 
 	glfwPollEvents();
 
-	CInputLocator::Get().Tick();
+	// CInputLocator::Get().Tick();
 }
 
 void CWindow::BeginFrame()
@@ -365,6 +459,11 @@ void CWindow::RenderFrame()
 	glfwSwapBuffers( WindowHandle );
 
 	RenderingFrame = false;
+
+	if( ShouldRecreate )
+	{
+		Recreate();
+	}
 }
 
 void CWindow::FlushFrame()
@@ -457,7 +556,21 @@ void CWindow::SetWindowless( const bool Enable )
 
 bool CWindow::IsFullscreen() const
 {
-	return glfwGetWindowMonitor( WindowHandle ) != nullptr;
+	const auto Monitor = glfwGetWindowMonitor( WindowHandle );
+	return Monitor != nullptr;
+}
+
+bool CWindow::IsBorderless() const
+{
+	return glfwGetWindowAttrib( WindowHandle, GLFW_DECORATED ) == 0;
+}
+
+bool CWindow::IsFullscreenBorderless() const
+{
+	auto* Monitor = GetTargetMonitor();
+	const auto Dimensions = GetMonitorDimensions( Monitor );
+	const bool Match = Dimensions.Width == CurrentDimensions.Width && Dimensions.Height == CurrentDimensions.Height;
+	return IsBorderless() && Match;
 }
 
 void CWindow::SetVSYNC( const bool& Enable )
@@ -465,7 +578,7 @@ void CWindow::SetVSYNC( const bool& Enable )
 	glfwSwapInterval( Enable ? 1 : 0 );
 }
 
-GLFWmonitor* CWindow::GetTargetMonitor()
+GLFWmonitor* CWindow::GetTargetMonitor() const
 {
 	const int TargetMonitor = CConfiguration::Get().GetInteger( "monitor", -1 );
 
@@ -484,7 +597,7 @@ GLFWmonitor* CWindow::GetTargetMonitor()
 	return Monitor;
 }
 
-ViewDimensions CWindow::GetMonitorDimensions( GLFWmonitor* Monitor )
+ViewDimensions CWindow::GetMonitorDimensions( GLFWmonitor* Monitor ) const
 {
 	auto& Configuration = CConfiguration::Get();
 

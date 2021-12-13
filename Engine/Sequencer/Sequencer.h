@@ -7,12 +7,16 @@
 typedef uint64_t Timecode;
 static const Timecode Timebase = 1536;
 
+double MarkerToTime( const Timecode& Marker );
+double MarkerRangeToTime( const Timecode& StartMarker, const Timecode& EndMarker );
+
 struct TrackEvent
 {
 	virtual void Evaluate( const Timecode& Marker );
 	virtual void Execute() = 0;
 	virtual void Reset() = 0;
 	virtual void Context();
+	virtual void Visualize() {};
 
 	template<typename T>
 	static T* Create()

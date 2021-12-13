@@ -10,7 +10,7 @@
 #include <Engine/Utility/Structures/JSON.h>
 #include <Engine/Utility/Math.h>
 
-static const uint32_t LevelVersion = 1;
+static constexpr uint32_t LevelVersion = 1;
 
 CLevel::CLevel()
 {
@@ -33,7 +33,7 @@ CLevel::~CLevel()
 
 void CLevel::Construct()
 {
-	for( const auto Entity : Entities )
+	for( auto* Entity : Entities )
 	{
 		if( !Entity )
 			continue;
@@ -45,7 +45,7 @@ void CLevel::Construct()
 
 void CLevel::Frame()
 {
-	for( const auto Entity : Entities )
+	for( auto* Entity : Entities )
 	{
 		if( !Entity )
 			continue;
@@ -56,25 +56,26 @@ void CLevel::Frame()
 
 void CLevel::Tick()
 {
-	for( const auto Entity : Entities )
+	for( auto* Entity : Entities )
 	{
+		// Only iterate over entities that have no parent.
+		// Further traversal of children is handled by the parents.
 		if( !Entity || Entity->GetParent() )
 			continue;
 
+		// Traverse into the parent and its children.
 		Entity->Traverse();
 	}
 }
 
 void CLevel::Destroy()
 {
-	for( const auto& Entity : Entities )
+	for( auto* Entity : Entities )
 	{
 		if( !Entity )
 			continue;
 
 		Entity->Destroy();
-		// delete Entities[Index];
-		// Entities[Index] = nullptr;
 	}
 
 	World = nullptr;
@@ -82,7 +83,7 @@ void CLevel::Destroy()
 
 void CLevel::Reload()
 {
-	for( const auto& Entity : Entities )
+	for( auto* Entity : Entities )
 	{
 		if( !Entity )
 			continue;
@@ -92,7 +93,7 @@ void CLevel::Reload()
 
 	Entities.clear();
 
-	CFile File = CFile( Name.c_str() );
+	CFile File = CFile( Name );
 	File.Load();
 	Load( File, false );
 
@@ -101,7 +102,9 @@ void CLevel::Reload()
 
 void CLevel::Load( const CFile& File, const bool AssetsOnly )
 {
-	Log::Event( "Parsing level \"%s\".\n", File.Location().c_str() );
+	OptickEvent();
+
+	// Log::Event( "Parsing level \"%s\".\n", File.Location().c_str() );
 	JSON::Container JSON = JSON::Tree( File );
 
 	SetName( File.Location() );
@@ -260,7 +263,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									Extract( LevelOrientationString.c_str(), LevelOrientation );
 									Extract(LevelSizeString.c_str(), LevelSize );
 
-									CFile SubLevelFile( LevelPath.c_str() );
+									CFile SubLevelFile( LevelPath );
 									if( SubLevelFile.Exists() )
 									{
 										LevelStruct Level;
@@ -276,7 +279,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 						for( auto& Level : SubLevels )
 						{
-							CFile SubLevelFile( Level.Path.c_str() );
+							CFile SubLevelFile( Level.Path );
 							SubLevelFile.Load();
 
 							if( AssetsOnly )
@@ -342,7 +345,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 		}
 		
 		const std::string Data = JSON.Export();
-		CFile Save = CFile( File.Location().c_str() );
+		CFile Save = CFile( File.Location() );
 		Save.Load( Data );
 		Save.Save();
 	}
@@ -488,6 +491,8 @@ CData& operator<<( CData& Data, CLevel& Level )
 
 CData& operator>> ( CData& Data, CLevel& Level )
 {
+	OptickEvent();
+
 	Chunk Chunk( "LEVEL" );
 	Data >> Chunk;
 

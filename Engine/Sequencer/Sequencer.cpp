@@ -13,6 +13,7 @@
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/DataString.h>
+#include <Engine/Utility/Gizmo.h>
 #include <Engine/World/World.h>
 
 #include <Engine/Sequencer/Events/ImageEvent.h>
@@ -30,6 +31,8 @@ static CCamera* ActiveTimelineCamera = nullptr;
 
 // True if the mouse is held down while dragging on the timeline bar.
 static bool Scrubbing = false;
+
+constexpr uint32_t SequenceCameraPriority = 200000;
 
 double MarkerToTime( const Timecode& Marker )
 {
@@ -284,8 +287,59 @@ struct FEventAudio : TrackEvent
 	}
 };
 
+CCamera CopiedCamera;
 struct FEventCamera : TrackEvent
 {
+	static CCamera CreateControlPoint( const CCamera& Setup, const float& Tangent )
+	{
+		CCamera ControlPoint = Setup;
+
+		auto& ControlPointSetup = ControlPoint.GetCameraSetup();
+		ControlPointSetup.CameraPosition += ControlPointSetup.CameraDirection * Tangent;
+
+		return ControlPoint;
+	}
+
+	static CCamera LerpCamera( const CCamera& A, const CCamera& B, const float& Factor )
+	{
+		CCamera Blended = A;
+
+		FCameraSetup& BlendSetup = Blended.GetCameraSetup();
+		const auto& SetupA = A.GetCameraSetup();
+		const auto& SetupB = B.GetCameraSetup();
+
+		BlendSetup.CameraPosition = Math::Lerp( SetupA.CameraPosition, SetupB.CameraPosition, Factor );
+		BlendSetup.FieldOfView = Math::Lerp( SetupA.FieldOfView, SetupB.FieldOfView, Factor );
+		Blended.SetCameraOrientation( Math::Lerp( A.CameraOrientation, B.CameraOrientation, Factor ) );
+		BlendSetup.CameraDirection = Math::Lerp( SetupA.CameraDirection, SetupB.CameraDirection, Factor );
+
+		Blended.Update();
+
+		return Blended;
+	}
+
+	static CCamera BezierBlend( const CCamera& A, const float& TangentA, const CCamera& B, const float& TangentB, const float& Factor )
+	{
+		const auto ControlPointA = CreateControlPoint( A, TangentA );
+		const auto ControlPointB = CreateControlPoint( B, TangentB );
+
+		// De Casteljau blending.
+		const auto BlendA = A.Lerp( ControlPointA, Factor );
+		const auto BlendB = ControlPointA.Lerp( ControlPointB, Factor );
+		const auto BlendC = ControlPointB.Lerp( B, Factor );
+
+		const auto BlendD = BlendA.Lerp( BlendB, Factor );
+		const auto BlendE = BlendB.Lerp( BlendC, Factor );
+
+		return BlendD.Lerp( BlendE, Factor );
+	}
+
+	void BezierBlendCameras()
+	{
+		const auto Factor = static_cast<float>( MarkerToTime( Offset ) / MarkerToTime( Length ) );
+		BlendResult = BezierBlend( Camera, Tangent, CameraB, TangentB, Factor );
+	}
+
 	void BlendCameras()
 	{
 		BlendResult = Camera;
@@ -295,10 +349,16 @@ struct FEventCamera : TrackEvent
 			return;
 		}
 
+		if( Bezier )
+		{
+			BezierBlendCameras();
+			return;
+		}
+
 		auto& BlendSetup = BlendResult.GetCameraSetup();
 		const auto& CameraSetupA = Camera.GetCameraSetup();
 		const auto& CameraSetupB = CameraB.GetCameraSetup();
-		const float Factor = MarkerToTime( Offset ) / MarkerToTime( Length );
+		const auto Factor = static_cast<float>( MarkerToTime( Offset ) / MarkerToTime( Length ) );
 		
 		BlendSetup.CameraPosition = Math::Lerp( CameraSetupA.CameraPosition, CameraSetupB.CameraPosition, Factor );
 		BlendSetup.FieldOfView = Math::Lerp( CameraSetupA.FieldOfView, CameraSetupB.FieldOfView, Factor );
@@ -319,7 +379,7 @@ struct FEventCamera : TrackEvent
 
 		if( TimelineCamera && World->GetActiveCamera() != &BlendResult )
 		{
-			World->SetActiveCamera( &BlendResult, 200000 );
+			World->SetActiveCamera( &BlendResult, SequenceCameraPriority );
 		}
 	}
 
@@ -370,7 +430,7 @@ struct FEventCamera : TrackEvent
 			{
 				if( World->GetActiveCamera() != &Camera )
 				{
-					World->SetActiveCamera( &Camera, 200000 );
+					World->SetActiveCamera( &Camera, SequenceCameraPriority );
 				}
 			}
 		}
@@ -380,9 +440,54 @@ struct FEventCamera : TrackEvent
 			CameraB = Camera;
 		}
 
+		if( Blend )
+		{
+			ImGui::Checkbox( "Enable Bezier Blending", &Bezier );
+		}
+
 		if( ImGui::Button( "Update Camera" ) )
 		{
 			ActiveCameraToTarget( Camera );
+		}
+
+		ImGui::SameLine();
+		if( ImGui::Button( "Copy##CopyA" ) )
+		{
+			CopiedCamera = Camera;
+		}
+
+		ImGui::SameLine();
+		if( ImGui::Button( "Paste##PasteA" ) )
+		{
+			Camera = CopiedCamera;
+		}
+
+		if( Bezier )
+		{
+			ImGui::SameLine();
+			ImGui::DragFloat( "Tangent", &Tangent, 0.1f );
+		}
+
+		bool ShouldUpdateA = false;
+		if( ImGui::DragFloat3( "Position##CamPosA", &Camera.GetCameraSetup().CameraPosition[0] ) )
+		{
+			ShouldUpdateA = true;
+		}
+
+		if( ImGui::DragFloat3( "Orientation##CamRotA", &Camera.CameraOrientation[0] ) )
+		{
+			ShouldUpdateA = true;
+			Camera.SetCameraOrientation( Camera.CameraOrientation );
+		}
+
+		if( ImGui::DragFloat( "Field of View##CamFOVA", &Camera.GetCameraSetup().FieldOfView ) )
+		{
+			ShouldUpdateA = true;
+		}
+
+		if( ShouldUpdateA )
+		{
+			Camera.Update();
 		}
 
 		ImGui::Separator();
@@ -392,6 +497,60 @@ struct FEventCamera : TrackEvent
 			if( ImGui::Button( "Update Camera B" ) )
 			{
 				ActiveCameraToTarget( CameraB );
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Copy##CopyB" ) )
+			{
+				CopiedCamera = CameraB;
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Paste##PasteB" ) )
+			{
+				CameraB = CopiedCamera;
+			}
+
+			if( Bezier )
+			{
+				ImGui::SameLine();
+				ImGui::DragFloat( "Tangent##TangentB", &TangentB, 0.1f );
+			}
+
+			bool ShouldUpdateB = false;
+			if( ImGui::DragFloat3( "Position##CamPosB", &CameraB.GetCameraSetup().CameraPosition[0] ) )
+			{
+				ShouldUpdateB = true;
+			}
+
+			if( ImGui::DragFloat3( "Orientation##CamRotB", &CameraB.CameraOrientation[0] ) )
+			{
+				ShouldUpdateB = true;
+				CameraB.SetCameraOrientation( CameraB.CameraOrientation );
+			}
+
+			if( ImGui::DragFloat( "Field of View##CamFOVB", &CameraB.GetCameraSetup().FieldOfView ) )
+			{
+				ShouldUpdateB = true;
+			}
+
+			if( ShouldUpdateB )
+			{
+				CameraB.Update();
+			}
+
+			if( ImGui::Button( "Swap Cameras" ) )
+			{
+				const auto CameraTemp = Camera;
+				Camera = CameraB;
+				CameraB = CameraTemp;
+			}
+
+			if( ImGui::IsItemHovered() )
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text( "Swaps the two cameras." );
+				ImGui::EndTooltip();
 			}
 		}
 
@@ -418,6 +577,47 @@ struct FEventCamera : TrackEvent
 		ImGui::Separator();
 	}
 
+	void Visualize() override
+	{
+		if( Blend )
+		{
+			CCamera Visualization = Camera;
+			CCamera VisualizationPrevious = Camera;
+			constexpr Timecode Iterations = 20;
+			const auto Delta = Length / Iterations;
+			for( Timecode Index = 0; Index < Iterations; Index++ )
+			{
+				const auto Factor = static_cast<float>( MarkerToTime( Index * Delta ) / MarkerToTime( Length ) );
+
+				if( Bezier )
+				{
+					Visualization = BezierBlend( Camera, Tangent, CameraB, TangentB, Factor );
+				}
+				else
+				{
+					Visualization = Camera.Lerp( CameraB, Factor );
+				}
+
+				const auto PositionA = VisualizationPrevious.GetCameraPosition();
+				const auto PositionB = Visualization.GetCameraPosition();
+
+				UI::AddLine( PositionA, PositionB, Color::Green );
+				UI::AddLine( PositionB, PositionB + Visualization.GetCameraSetup().CameraDirection * 5.0f, Color::Red );
+				UI::AddCircle( Visualization.GetCameraPosition(), 3.0f, Color::Yellow );
+
+				VisualizationPrevious = Visualization;
+			}
+
+			PointGizmo( &CameraB.GetCameraSetup().CameraPosition, CameraDragGizmoB );
+		}
+
+		UI::AddLine( BlendResult.GetCameraPosition(), BlendResult.GetCameraPosition() + BlendResult.GetCameraSetup().CameraDirection * 5.0f, Color::Purple );
+		UI::AddCircle( BlendResult.GetCameraPosition(), 3.0f, Color::Blue );
+		BlendResult.DrawFrustum();
+
+		PointGizmo( &Camera.GetCameraSetup().CameraPosition, CameraDragGizmoA );
+	}
+
 	virtual const char* GetName() override
 	{
 		return "Camera";
@@ -430,9 +630,14 @@ struct FEventCamera : TrackEvent
 
 	std::string Name = std::string();
 	CCamera Camera;
+	float Tangent = 1.0f;
+
 	CCamera CameraB;
+	float TangentB = 1.0f;
+
 	CCamera BlendResult;
 	bool Blend = false;
+	bool Bezier = false;
 
 	virtual void Export( CData& Data )
 	{
@@ -442,6 +647,11 @@ struct FEventCamera : TrackEvent
 		Data << Camera;
 		Data << CameraB;
 		Data << Blend;
+
+		// Bezier blending.
+		Serialize::Export( Data, "bz", Bezier );
+		Serialize::Export( Data, "tn", Tangent );
+		Serialize::Export( Data, "tn", TangentB );
 	}
 
 	virtual void Import( CData& Data )
@@ -452,7 +662,19 @@ struct FEventCamera : TrackEvent
 		Data >> Camera;
 		Data >> CameraB;
 		Data >> Blend;
+
+		// Bezier blending.
+		Serialize::Import( Data, "bz", Bezier );
+		Serialize::Import( Data, "tn", Tangent );
+		Serialize::Import( Data, "tn", TangentB );
 	}
+
+private:
+	// For editing.
+	DragVector CameraDragGizmoA;
+
+	// For editing.
+	DragVector CameraDragGizmoB;
 };
 
 struct FEventRenderable : TrackEvent
@@ -746,7 +968,7 @@ public:
 			return false;
 		
 		Location = FileLocation;
-		CFile File( Location.c_str() );
+		CFile File( Location );
 		if( File.Exists() )
 		{
 			File.Load( true );
@@ -962,7 +1184,8 @@ public:
 		{
 			LastDrag = TrackState();
 			AutoFit = false;
-			SnapToHandles = true;
+			SnapToHandles = false;
+			Visualize = false;
 		}
 
 		Feed();
@@ -1030,7 +1253,7 @@ public:
 				CData Data;
 				Data << *this;
 
-				CFile File( Location.c_str() );
+				CFile File( Location );
 				File.Load( Data );
 				File.Save();
 			}
@@ -1104,6 +1327,17 @@ public:
 			{
 				ImGui::BeginTooltip();
 				ImGui::Text( "When enabled, the timeline will automatically update to fit all events." );
+				ImGui::EndTooltip();
+			}
+
+			ImGui::SameLine();
+
+			ImGui::Checkbox( "Visualize All", &Visualize );
+
+			if( ImGui::IsItemHovered() )
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text( "Enables visualization for all events." );
 				ImGui::EndTooltip();
 			}
 
@@ -1303,7 +1537,7 @@ public:
 						}
 					}
 
-					const float Brightness = SelectedEvent ? 0.75f : 0.6f;
+					const float Brightness = SelectedEvent ? 0.75f : 0.4f;
 					ImGui::PushStyleColor( ImGuiCol_Button, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, Brightness ) ) );
 					ImGui::PushStyleColor( ImGuiCol_ButtonHovered, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, 0.9f ) ) );
 					ImGui::PushStyleColor( ImGuiCol_ButtonActive, static_cast<ImVec4>( ImColor::HSV( Hue, 0.4f, 0.9f ) ) );
@@ -1400,6 +1634,11 @@ public:
 
 						Event->Context();
 						ImGui::EndPopup();
+					}
+
+					if( Visualize )
+					{
+						Event->Visualize();
 					}
 
 					if( ImGui::IsItemClicked() )
@@ -1944,6 +2183,18 @@ public:
 					}
 				}
 			}
+
+			// Enable visualization just for active events when it's off.
+			if( !Visualize )
+			{
+				for( auto* Event : ActiveEvents )
+				{
+					if( !Event )
+						continue;
+
+					Event->Visualize();
+				}
+			}
 		}
 
 		ImGui::End();
@@ -2121,7 +2372,10 @@ protected:
 	bool AutoFit = false;
 
 	// Snap events to each other when stretching.
-	bool SnapToHandles = true;
+	bool SnapToHandles = false;
+
+	// Enable visualization for all tracks.
+	bool Visualize = false;
 };
 
 CSequence::CSequence()

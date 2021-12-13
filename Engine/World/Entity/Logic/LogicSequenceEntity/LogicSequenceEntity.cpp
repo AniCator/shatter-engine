@@ -8,22 +8,37 @@ static CEntityFactory<CLogicSequenceEntity> Factory( "logic_sequence" );
 
 CLogicSequenceEntity::CLogicSequenceEntity()
 {
-	Inputs["Play"] = [&]
+	Inputs["Play"] = [&] ( CEntity * Source )
 	{
 		if( Sequence )
+		{
 			Sequence->Play();
+			return true;
+		}
+
+		return false;
 	};
 
-	Inputs["Stop"] = [&]
+	Inputs["Stop"] = [&] ( CEntity* Origin )
 	{
 		if( Sequence )
+		{
 			Sequence->Stop();
+			return true;
+		}
+
+		return false;
 	};
 
-	Inputs["Pause"] = [&]
+	Inputs["Pause"] = [&] ( CEntity* Origin )
 	{
 		if( Sequence )
+		{
 			Sequence->Pause();
+			return true;
+		}
+
+		return false;
 	};
 }
 

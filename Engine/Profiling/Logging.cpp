@@ -250,9 +250,14 @@ namespace Log
 	{
 		Print( Severity, Format, Arguments );
 
-		if( Severity >= Error )
+		if( Severity >= Error && Severity != Assert )
 		{
-			BreakDebugger();
+#ifdef _WIN32
+			if( IsDebuggerPresent() )
+			{
+				__debugbreak();
+			}
+#endif
 		}
 
 		if( Severity >= Fatal )
@@ -262,12 +267,23 @@ namespace Log
 			vsprintf_s( FullMessage, Format, Arguments );
 
 			const bool ValidName = Name[0] != '\0';
-			static const char* DefaultCaption = "Shatter Engine Error";
 
-			MessageBox( nullptr, FullMessage, ValidName ? Name : DefaultCaption, MB_ICONERROR | MB_OK );
+			static std::string FatalMessage = "Shatter Engine Fatal Error";
+
+			const char* Caption = FatalMessage.c_str();
+			if( Severity == Assert )
+			{
+				static std::string AssertMessage = "Shatter Engine Warning";
+				Caption = AssertMessage.c_str();
+			}
+
+			MessageBox( nullptr, FullMessage, ValidName ? Name : Caption, MB_ICONERROR | MB_OK );
 #endif
 
-			exit( EXIT_FAILURE );
+			if( Severity != Assert )
+			{
+				exit( EXIT_FAILURE );
+			}
 		}
 	}
 

@@ -529,7 +529,8 @@ void DebugMenu( CApplication* Application )
 				"",
 				"Warning",
 				"Error",
-				"Fatal"
+				"Fatal",
+				"Assert"
 			};
 
 			static const ImVec4 SeverityToColor[Log::LogMax] =
@@ -538,6 +539,7 @@ void DebugMenu( CApplication* Application )
 				ImVec4( 1.0f,1.0f,0.0f,1.0f ),
 				ImVec4( 1.0f,0.0f,0.0f,1.0f ),
 				ImVec4( 1.0f,0.0f,0.0f,1.0f ),
+				ImVec4( 0.1f,0.4f,1.0f,1.0f ),
 			};
 
 			const auto& LogHistory = Log::History();
@@ -592,7 +594,7 @@ void DebugMenu( CApplication* Application )
 						std::stringstream Location;
 						Location << "Models/" << Entry.first << ".lm";
 
-						CFile File( Location.str().c_str() );
+						CFile File( Location.str() );
 						File.Load( Data );
 						File.Save();
 					}
@@ -806,6 +808,8 @@ void CApplication::Run()
 				// Update the renderable stage for tick functions.
 				Renderer.UpdateRenderableStage( RenderableStage::Tick );
 
+				CInputLocator::Get().Tick();
+
 				// Tick all game layers
 				GameLayersInstance->Tick();
 
@@ -829,6 +833,7 @@ void CApplication::Run()
 		if( PauseGame && !FrameStep )
 		{
 			GameTimer.Start();
+			CInputLocator::Get().Tick();
 		}
 
 		// Always poll input.
@@ -965,6 +970,8 @@ void CApplication::ResetImGui()
 #if defined( IMGUI_ENABLED )
 	ImGuiIO& IO = ImGui::GetIO();
 	IO.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;
+	IO.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
+	IO.ConfigFlags &= ~ImGuiConfigFlags_NavEnableSetMousePos;
 
 	static const char* FontLocation = "Resources/Roboto-Medium.ttf";
 	const bool FileExists = CFile::Exists( FontLocation );
@@ -1151,7 +1158,7 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 					ExportPath = ExportPath.substr( 0, ExportPath.length() - 3 );
 					ExportPath.append( "lm" );
 
-					CFile File( ExportPath.c_str() );
+					CFile File( ExportPath );
 					File.Load( Data );
 					File.Save();
 

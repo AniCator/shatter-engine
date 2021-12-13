@@ -162,7 +162,7 @@ void Print( const std::string& Name, const aiMatrix4x4& Matrix )
 // This function is run in AddMesh and takes in an IndexOffset that is used to determine where the sub-mesh indices are located.
 void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* Mesh, const aiNode* Node, FMeshData& MeshData, const size_t& IndexOffset )
 {
-	if( !Scene->HasAnimations() || !MeshData.Skeleton )
+	if( !Scene->HasAnimations() || !Mesh->HasBones() || !MeshData.Skeleton )
 		return;
 
 	// Log::Event( "Calculating bone weights.\n" );
@@ -175,12 +175,10 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 	// Assign the bone weights for each vertex.
 	for( uint32_t BoneIndex = 0; BoneIndex < Mesh->mNumBones; BoneIndex++ )
 	{
-		auto* Bone = Mesh->mBones[BoneIndex];
-		// Log::Event( "Importing bone \"%s\" (%i).\n", Bone->mName.C_Str(), BoneIndex );
-
+		const auto* Bone = Mesh->mBones[BoneIndex];
 		for( uint32_t WeightIndex = 0; WeightIndex < Bone->mNumWeights; WeightIndex++ )
 		{
-			const size_t VertexID = IndexOffset + Bone->mWeights[WeightIndex].mVertexId;
+			const size_t VertexID = Bone->mWeights[WeightIndex].mVertexId; // Note: Originally IndexOffset was added to this.
 			VertexWeight& Weight = Skeleton.Weights[VertexID];
 			Weight.Add( BoneIndex, Bone->mWeights[WeightIndex].mWeight );
 		}
@@ -203,7 +201,6 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 			Weight.Weight[3] );
 	}*/
 
-	// Log::Event( "Calculating bone matrices.\n" );
 	if( Skeleton.Bones.size() != Mesh->mNumBones )
 	{
 		Skeleton.Bones.resize( Mesh->mNumBones );
@@ -274,12 +271,11 @@ void UpdateBoneHierarchy( const aiNode* Node, FMeshData& MeshData )
 
 	if( Node->mParent )
 	{
-		const bool ValidBone = MeshData.NodeToBone.find( Node->mName.C_Str() ) != MeshData.NodeToBone.end();
 		const bool ValidParent = MeshData.NodeToBone.find( Node->mParent->mName.C_Str() ) != MeshData.NodeToBone.end();
 		if( ValidBone && ValidParent )
 		{
-			auto& Bone = MeshData.NodeToBone[Node->mName.C_Str()];
-			auto& Parent = MeshData.NodeToBone[Node->mParent->mName.C_Str()];
+			const auto& Bone = MeshData.NodeToBone[Node->mName.C_Str()];
+			const auto& Parent = MeshData.NodeToBone[Node->mParent->mName.C_Str()];
 
 			if( Parent.Bone )
 			{
@@ -295,7 +291,7 @@ void UpdateBoneHierarchy( const aiNode* Node, FMeshData& MeshData )
 
 	for( size_t ChildIndex = 0; ChildIndex < Node->mNumChildren; ChildIndex++ )
 	{
-		auto Child = Node->mChildren[ChildIndex];
+		const auto Child = Node->mChildren[ChildIndex];
 		UpdateBoneHierarchy( Child, MeshData );
 	}
 }
@@ -518,7 +514,7 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 			std::sort( NewAnimation.ScalingKeys.begin(), NewAnimation.ScalingKeys.end(), CompareAnimationKeys );
 
 			MeshData.Animations.insert_or_assign( NewAnimation.Name, NewAnimation );
-			Log::Event( "Imported animation \"%s\" (%i keys)\n", NewAnimation.Name.c_str(), NewAnimation.PositionKeys.size() + NewAnimation.RotationKeys.size() + NewAnimation.ScalingKeys.size() );
+			// Log::Event( "Imported animation \"%s\" (%i keys)\n", NewAnimation.Name.c_str(), NewAnimation.PositionKeys.size() + NewAnimation.RotationKeys.size() + NewAnimation.ScalingKeys.size() );
 		}
 	}
 
@@ -565,7 +561,7 @@ void FinishSkeleton( FMeshData& MeshData )
 
 void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile& File )
 {
-	Log::Event( "Running ASSIMP to import \"%s\"\n", File.Location().c_str() );
+	// Log::Event( "Running ASSIMP to import \"%s\"\n", File.Location().c_str() );
 
 	Assimp::Importer Importer;
     const aiScene* Scene = Importer.ReadFile( File.Location().c_str(), 

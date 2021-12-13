@@ -17,7 +17,7 @@
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int ActionInput, int Modifiers )
 {
 #if defined( IMGUI_ENABLED )
-	if( ImGui::IsAnyItemActive() || ImGui::IsAnyItemFocused() || ImGui::IsAnyItemHovered() )
+	if( ImGui::IsAnyItemActive() || ImGui::IsAnyItemHovered() )
 	{
 		ImGui_ImplGlfw_KeyCallback( window, KeyInput, ScanCode, ActionInput, Modifiers );
 		return;
@@ -239,7 +239,13 @@ void CInput::PollJoystick( int Joystick )
 		// Check all the axis states.
 		const auto& State = std::powf( GamepadState.axes[Index], 3.0f );
 		const EGamepad Gamepad = InputGLFW::CodeToGamepadAxis( Index );
-		const EAction Action = std::fabs( State ) > 0.001f ? EAction::Press : EAction::Release;
+		EAction Action = std::fabs( State ) > 0.01f ? EAction::Press : EAction::Release;
+
+		// Edge case for articulated gamepad triggers.
+		if( Gamepad == EGamepad::GamepadLeftTrigger || Gamepad == EGamepad::GamepadRightTrigger )
+		{
+			Action = State > -1.0f ? EAction::Press : EAction::Release;
+		}
 
 		FGamepadInput& Input = GamepadInput[static_cast<EGamepadType>( Gamepad )];
 		Input.Input = Gamepad;
@@ -437,4 +443,19 @@ void CInput::SetMousePosition( const FFixedPosition2D& Position )
 {
 	MousePosition = Position;
 	glfwSetCursorPos( CWindow::Get().Handle(), MousePosition.X, MousePosition.Y );
+}
+
+const FKeyInput* CInput::GetKeys() const
+{
+	return KeyboardInput;
+}
+
+const FGamepadInput* CInput::GetGamepad() const
+{
+	return GamepadInput;
+}
+
+const FMouseInput* CInput::GetMouse() const
+{
+	return MouseInput;
 }

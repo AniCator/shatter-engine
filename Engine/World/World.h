@@ -3,11 +3,13 @@
 
 #include <vector>
 #include <deque>
+#include <type_traits>
 
 #include <Engine/World/Level/Level.h>
 #include <Engine/Utility/Math.h>
 
 #include <Engine/Display/Rendering/Camera.h>
+#include <Engine/World/EventQueue.h>
 
 class CEntity;
 class CPhysics;
@@ -31,6 +33,19 @@ public:
 	void Destroy();
 
 	void Reload();
+
+	/// <returns>If this world has ticked at least once.</returns>
+	bool HasTicked() const
+	{
+		return Ticks > 0;
+	}
+
+	/// <returns>The amount of ticks this world has completed.</returns>
+	///	<remarks>The tick counter is incremented at the end of every world tick.</remarks>
+	uint32_t GetTicks() const
+	{
+		return Ticks;
+	}
 
 	template<typename T>
 	T* Spawn()
@@ -67,6 +82,8 @@ public:
 	CCamera* GetActiveCamera() const;
 	const FCameraSetup& GetActiveCameraSetup() const;
 
+	uint32_t GetCameraPriority() const;
+
 	CCamera* GetPreviousCamera() const;
 
 	CPhysics* GetPhysics() const;
@@ -90,6 +107,58 @@ public:
 	// Find an entity in a specific tag category.
 	CEntity* Find( const std::string& TagName, const std::string& EntityName ) const;
 
+	/// <summary>
+	/// Subscribes a listener to an event.
+	/// </summary>
+	/// <typeparam name="T">Enum class derived from EventType</typeparam>
+	/// <param name="ID">Event type the listener is subscribing to.</param>
+	///	<param name="Notify">Called when the event is triggered.</param>
+	///	<remarks>
+	///	Entities should subscribe either during or after their Construct method has been called, not when constructed.
+	///	<para>Don't forget to unsubscribe during the entity's lifetime.</para>
+	///	</remarks>
+	template<class T,
+		class = std::enable_if_t<std::is_same<std::underlying_type<T>::type, EventType>::value>,
+		class = std::enable_if_t<std::is_enum<T>::value>
+	>
+	Event::Listener* Subscribe( const T& ID, const std::function<void( Event::PayloadData )>& Notify )
+	{
+		return EventQueue.Subscribe( static_cast<EventType>( ID ), Notify );
+	}
+
+	/// <summary>
+	/// Unsubscribes a listener from an event if it has been subscribed.
+	/// </summary>
+	/// <typeparam name="T">Enum class derived from EventType</typeparam>
+	/// <param name="ID">Event type the listener is unsubscribing from.</param>
+	/// <param name="Listener">Listener to be added.</param>
+	template<class T,
+		class = std::enable_if_t<std::is_same<std::underlying_type<T>::type, EventType>::value>,
+		class = std::enable_if_t<std::is_enum<T>::value>
+	>
+	void Unsubscribe( const T& ID, Event::Listener*& Listener )
+	{
+		EventQueue.Unsubscribe( static_cast<EventType>( ID ), Listener );
+	}
+
+	/// <summary>
+	/// Pushes an event onto the world's event queue.
+	/// </summary>
+	/// <typeparam name="T">Enum class derived from EventType</typeparam>
+	/// <param name="ID">Event identifier that should be broadcasted.</param>
+	/// <param name="Payload">Map of properties.</param>
+	template<class T,
+		class = std::enable_if_t<std::is_same<std::underlying_type<T>::type, EventType>::value>,
+		class = std::enable_if_t<std::is_enum<T>::value>
+	>
+	void Broadcast( const T& ID, Event::PayloadData Payload = {} )
+	{
+		Event::Message Message;
+		Message.ID = static_cast<EventType>( ID );
+		Message.Payload = Payload;
+		EventQueue.Push( Message );
+	}
+
 private:
 	std::deque<CLevel> Levels;
 	CLevel* ActiveLevel;
@@ -105,6 +174,10 @@ private:
 	std::unordered_map<std::string, std::vector<CEntity*>> Tags;
 
 	static CWorld* PrimaryWorld;
+
+	uint32_t Ticks = 0;
+
+	Event::Queue EventQueue;
 
 public:
 	friend CData& operator<<( CData& Data, CWorld* World );

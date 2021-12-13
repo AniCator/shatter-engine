@@ -18,7 +18,7 @@ public:
 	void Close();
 
 	void InitializeDefaultInputs();
-	void ResetImGui();
+	static void ResetImGui();
 
 	static const std::string& GetName();
 	static void SetName( const char* Name );

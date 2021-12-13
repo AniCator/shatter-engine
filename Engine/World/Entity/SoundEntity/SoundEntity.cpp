@@ -5,9 +5,9 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/World/World.h>
 
-static CEntityFactory<CSoundEntity> Factory( "sound" );
+static CEntityFactory<SoundEntity> Factory( "sound" );
 
-CSoundEntity::CSoundEntity() : CPointEntity()
+SoundEntity::SoundEntity() : CPointEntity()
 {
 	Falloff = EFalloff::None;
 	Radius = 5.0f;
@@ -19,42 +19,54 @@ CSoundEntity::CSoundEntity() : CPointEntity()
 	AutoPlayed = false;
 	Loop = false;
 
-	Inputs["Play"] = [&] () { Play(); };
-	Inputs["Stop"] = [&] () { Stop(); };
+	Inputs["Play"] = [&] ( CEntity* Origin )
+	{
+		Play();
+
+		return true;
+	};
+
+	Inputs["Stop"] = [&] ( CEntity* Origin )
+	{
+		Stop();
+
+		return true;
+	};
+
 }
 
-CSoundEntity::CSoundEntity( FTransform& Transform ) : CPointEntity()
+SoundEntity::SoundEntity( FTransform& Transform ) : CPointEntity()
 {
 	Spawn( Transform );
 }
 
-CSoundEntity::~CSoundEntity()
+SoundEntity::~SoundEntity()
 {
 
 }
 
-void CSoundEntity::Spawn( FTransform& Transform )
+void SoundEntity::Spawn( FTransform& Transform )
 {
 	this->Transform = Transform;
 }
 
-void CSoundEntity::Construct()
+void SoundEntity::Construct()
 {
 	AutoPlayed = false;
 	UpdateSound();
 }
 
-void CSoundEntity::Tick()
+void SoundEntity::Tick()
 {
 	UpdateSound();
 }
 
-void CSoundEntity::Destroy()
+void SoundEntity::Destroy()
 {
 	Stop();
 }
 
-void CSoundEntity::Load( const JSON::Vector& Objects )
+void SoundEntity::Load( const JSON::Vector& Objects )
 {
 	CPointEntity::Load( Objects );
 	CAssets& Assets = CAssets::Get();
@@ -140,14 +152,14 @@ void CSoundEntity::Load( const JSON::Vector& Objects )
 	Spawn( Transform );
 }
 
-void CSoundEntity::Reload()
+void SoundEntity::Reload()
 {
 	Asset = CAssets::Get().FindSound( SoundName );
 
 	CPointEntity::Reload();
 }
 
-void CSoundEntity::Play()
+void SoundEntity::Play()
 {
 	if( Asset )
 	{
@@ -187,12 +199,12 @@ void CSoundEntity::Play()
 	}
 }
 
-void CSoundEntity::Stop()
+void SoundEntity::Stop()
 {
 	Sound.Stop( FadeOut );
 }
 
-void CSoundEntity::UpdateSound()
+void SoundEntity::UpdateSound()
 {
 	if( !Asset )
 		return;
@@ -206,38 +218,41 @@ void CSoundEntity::UpdateSound()
 		return;
 	
 	float Length = -1.0f;
-	if( Falloff == EFalloff::Linear )
+	if( !Is3D ) // We only need to calculate the length if it's not handled by SoLoud.
 	{
-		const auto& CameraSetup = ActiveCamera->GetCameraSetup();
-		const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+		if( Falloff == EFalloff::Linear )
+		{
+			const auto& CameraSetup = ActiveCamera->GetCameraSetup();
+			const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
 
-		Length = Delta.Length();
-		Length /= Radius;
+			Length = Delta.Length();
+			Length /= Radius;
 
-		OutOfRange = Length > 1.0f;
-		
-		Length = 1.0f - glm::clamp( Length, 0.0f, 1.0f );
+			OutOfRange = Length > 1.0f;
+
+			Length = 1.0f - glm::clamp( Length, 0.0f, 1.0f );
+		}
+		else if( Falloff == EFalloff::InverseSquare )
+		{
+			const auto& CameraSetup = ActiveCamera->GetCameraSetup();
+			const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
+
+			const float Factor = 1.0f / Radius;
+			Length = Delta.Length() * Factor;
+
+			Length = 1.0f / ( Length * Length );
+			Length = glm::clamp( Length, 0.0f, 1.0f );
+
+			OutOfRange = Length < 0.02f;
+		}
+		else
+		{
+			OutOfRange = false;
+			Length = 1.0f;
+		}
+
+		Range = Length;
 	}
-	else if( Falloff == EFalloff::InverseSquare )
-	{
-		const auto& CameraSetup = ActiveCamera->GetCameraSetup();
-		const Vector3D Delta = CameraSetup.CameraPosition - Transform.GetPosition();
-
-		const float Factor = 1.0f / Radius;
-		Length = Delta.Length() * Factor;
-		
-		Length = 1.0f / ( Length * Length );
-		Length = glm::clamp( Length, 0.0f, 1.0f );
-
-		OutOfRange = Length < 0.02f;
-	}
-	else
-	{
-		OutOfRange = false;
-		Length = 1.0f;
-	}
-
-	Range = Length;
 
 	if( AutoPlay && !AutoPlayed && !OutOfRange )
 	{
@@ -264,7 +279,7 @@ void CSoundEntity::UpdateSound()
 	}
 }
 
-void CSoundEntity::Import( CData& Data )
+void SoundEntity::Import( CData& Data )
 {
 	CPointEntity::Import( Data );
 
@@ -279,7 +294,7 @@ void CSoundEntity::Import( CData& Data )
 	Data >> Bus;
 }
 
-void CSoundEntity::Export( CData& Data )
+void SoundEntity::Export( CData& Data )
 {
 	CPointEntity::Export( Data );
 

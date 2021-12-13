@@ -446,6 +446,12 @@
     <ClCompile Include="Engine\Utility\Structures\SpatialHash.cpp">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\RunLengthEncoding.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\EventQueue.cpp">
+      <Filter>Source Files\Engine\World</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -840,6 +846,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Structures\QueryResult.h">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\RunLengthEncoding.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\EventQueue.h">
+      <Filter>Source Files\Engine\World</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

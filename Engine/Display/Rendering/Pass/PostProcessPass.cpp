@@ -15,6 +15,11 @@ uint32_t CRenderPassPostProcess::Render( const UniformMap& Uniforms )
 {
 	if( !Shader || !Texture )
 		return 0;
+
+	// HACK: Reset the blend mode to ensure it is set in the pass.
+	BlendMode = static_cast<EBlendMode::Type>( ( BlendMode + 1 ) % EBlendMode::Additive );
+	DepthMask = static_cast<EDepthMask::Type>( ( DepthMask + 1 ) % EDepthMask::Write );
+	DepthTest = static_cast<EDepthTest::Type>( ( DepthTest + 1 ) % EDepthTest::Always );
 	
 	Renderable.SetMesh( Mesh );
 	Renderable.SetShader( Shader );

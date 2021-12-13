@@ -67,6 +67,10 @@ public:
 	virtual FFixedPosition2D GetMousePosition() const override;
 	virtual void SetMousePosition( const FFixedPosition2D& Position ) override;
 
+	const FKeyInput* GetKeys() const;
+	const FGamepadInput* GetGamepad() const;
+	const FMouseInput* GetMouse() const;
+
 private:
 	void PollJoystick( int Joystick );
 	void AddActionBinding( const FActionBinding& Binding );

@@ -63,19 +63,19 @@ void ParsePayload( FPrimitivePayload* Payload )
 
 	Payload->Native = false;
 
-	CFile File( Payload->Location.c_str() );
+	CFile File( Payload->Location );
 	if( File.Extension() != "lm" )
 	{
 		std::stringstream ExportLocation;
 		ExportLocation << "Models/" << Payload->Name << ".lm";
 		std::string ExportPath = ExportLocation.str();
 
-		File = CFile( ExportPath.c_str() );
+		File = CFile( ExportPath );
 	}
 
 	if( !File.Exists() )
 	{
-		File = CFile( Payload->Location.c_str() );
+		File = CFile( Payload->Location );
 	}
 
 	if( File.Exists() )
@@ -168,7 +168,7 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 
 		if( !FindMesh( Payload.Name ) )
 		{
-			Log::Event( "Queued mesh \"%s\".\n", Payload.Name.c_str() );
+			// Log::Event( "Queued mesh \"%s\".\n", Payload.Name.c_str() );
 			Futures.emplace_back( std::async( std::launch::async, ParsePayload, &Payload ) );
 		}
 	}
@@ -177,7 +177,7 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 	{
 		if( Payload.Type == EAsset::Mesh )
 		{
-			Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
+			// Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
 			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Locations[0].c_str() );
 			if( Mesh )
 			{
@@ -187,7 +187,7 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 		}
 		else if( Payload.Type == EAsset::Shader )
 		{
-			Log::Event( "Loading shader \"%s\".\n", Payload.Name.c_str() );
+			// Log::Event( "Loading shader \"%s\".\n", Payload.Name.c_str() );
 
 			EShaderType ShaderType = EShaderType::Fragment;
 
@@ -219,7 +219,7 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 		}
 		else if( Payload.Type == EAsset::Texture )
 		{
-			Log::Event( "Loading texture \"%s\".\n", Payload.Name.c_str() );
+			// Log::Event( "Loading texture \"%s\".\n", Payload.Name.c_str() );
 
 			EFilteringMode Mode = EFilteringMode::Linear;
 			EImageFormat ImageFormat = EImageFormat::RGB8;
@@ -275,7 +275,7 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 	{
 		if( Payload.Native && Payload.Primitive.Vertices && Payload.Primitive.VertexCount > 0 )
 		{
-			Log::Event( "Loading mesh (2nd pass) \"%s\".\n", Payload.Name.c_str() );
+			// Log::Event( "Loading mesh (2nd pass) \"%s\".\n", Payload.Name.c_str() );
 			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Primitive );
 			if( Mesh )
 			{
@@ -285,7 +285,7 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 		}
 		else if( !Payload.Native )
 		{
-			Log::Event( "Loading non-native mesh \"%s\".\n", Payload.Name.c_str() );
+			// Log::Event( "Loading non-native mesh \"%s\".\n", Payload.Name.c_str() );
 			// Try to load the mesh synchronously.
 			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
 			if( Mesh )
@@ -298,7 +298,7 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 
 	LoadTimer.Stop();
 
-	Log::Event( "Asset list load time: %ims\n", LoadTimer.GetElapsedTimeMilliseconds() );
+	// Log::Event( "Asset list load time: %ims\n", LoadTimer.GetElapsedTimeMilliseconds() );
 }
 
 CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad )
@@ -321,7 +321,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 		ExportLocation << "Models/" << Name << ".lm";
 		ExportPath = ExportLocation.str();
 
-		File = CFile( ExportPath.c_str() );
+		File = CFile( ExportPath );
 	}
 
 	
@@ -351,10 +351,10 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 				File.Load();
 				const auto SetData = JSON::Tree( File );
 				const auto& MeshLocation = JSON::Find( SetData.Tree, "path" );
-				if( MeshLocation && CFile::Exists( MeshLocation->Value.c_str() ) )
+				if( MeshLocation && CFile::Exists( MeshLocation->Value ) )
 				{
 					// Update the accessed file so that ASSIMP can load it.
-					File = CFile( MeshLocation->Value.c_str() );
+					File = CFile( MeshLocation->Value );
 
 					// Load the animation set lookup table.
 					Set = AnimationSet::Generate( JSON::Find( SetData.Tree, "animations" ) );
@@ -409,7 +409,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 				Data << ExportPrimitive;
 				Data << Mesh->GetSkeleton();
 
-				CFile File( ExportPath.c_str() );
+				CFile File( ExportPath );
 				File.Load( Data );
 				File.Save();
 			}
@@ -454,7 +454,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 		int64_t Mesh = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Meshes", Mesh ), false );
 
-		Log::Event( "Created mesh \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created mesh \"%s\".\n", NameString.c_str() );
 
 		return NewMesh;
 	}
@@ -491,7 +491,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation,
 		int64_t Shader = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
 
-		Log::Event( "Created shader \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created shader \"%s\".\n", NameString.c_str() );
 
 		return NewShader;
 	}
@@ -528,7 +528,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 		int64_t Shader = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
 
-		Log::Event( "Created shader \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created shader \"%s\".\n", NameString.c_str() );
 
 		return NewShader;
 	}
@@ -565,7 +565,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 		int64_t Texture = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", Texture ), false );
 
-		Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
 
 		return NewTexture;
 	}
@@ -606,7 +606,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 		int64_t Texture = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", Texture ), false );
 
-		Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
 
 		return NewTexture;
 	}
@@ -645,7 +645,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
 			Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", TextureCount ), false );
 		}
 
-		Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
 
 		return Texture;
 	}
@@ -685,7 +685,7 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 		int64_t Sound = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
 
-		Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
 
 		return NewSound;
 	}
@@ -718,7 +718,7 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 	int64_t Sound = 1;
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
 
-	Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
+	// Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
 
 	return NewSound;
 }
@@ -751,7 +751,7 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 		int64_t Sound = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
 
-		Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
 
 		return NewSound;
 	}
@@ -784,7 +784,7 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 	int64_t Sound = 1;
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
 
-	Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
+	// Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
 
 	return NewSound;
 }
@@ -817,7 +817,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocat
 		int64_t Sequence = 1;
 		Profiler.AddCounterEntry( FProfileTimeEntry( "Sequences", Sequence ), false );
 
-		Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
+		// Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
 
 		return NewSequence;
 	}
@@ -849,7 +849,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 	int64_t Sequence = 1;
 	Profiler.AddCounterEntry( FProfileTimeEntry( "Sequences", Sequence ), false );
 
-	Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
+	// Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
 
 	return NewSequence;
 }

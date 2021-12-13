@@ -459,47 +459,44 @@ void ContentBrowserUI()
 	}
 
 	
-	if( true )
+	const auto& CustomAssets = Assets.GetAssets();
+	for( const auto& Pair : CustomAssets )
 	{
-		const auto& CustomAssets = Assets.GetAssets();
-		for( const auto& Pair : CustomAssets )
+		if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+			continue;
+
+		CAsset* Asset = Pair.second;
+		if( Asset )
 		{
-			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
-				continue;
+			auto ImageSize = ImVec2( 64, 64 );
 
-			CAsset* Asset = Pair.second;
-			if( Asset )
+			auto* TextureID = reinterpret_cast<ImTextureID>( UIFileGeneric->GetHandle() );
+			const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
+			const ImVec4 Tint = ImVec4( 0.25f, 0.5f, 1.0f, 1.0f );
+
+			ImGui::PushID( Pair.first.c_str() );
+			if( ImGui::ImageButton(
+				TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
+				Background,
+				Tint ) )
 			{
-				auto ImageSize = ImVec2( 64, 64 );
-
-				auto* TextureID = reinterpret_cast<ImTextureID>( UIFileGeneric->GetHandle() );
-				const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
-				const ImVec4 Tint = ImVec4( 0.25f, 0.5f, 1.0f, 1.0f );
-
-				ImGui::PushID( Pair.first.c_str() );
-				if( ImGui::ImageButton(
-					TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
-					Background,
-					Tint ) )
-				{
-					PreviewName = Pair.first;
-					PreviewTexture = UIFileGeneric;
-					PreviewMesh = nullptr;
-				}
-
-				if( ImGui::IsItemHovered() )
-				{
-					ImGui::BeginTooltip();
-					ImGui::Text( "%s", Pair.first.c_str() );
-					ImGui::Text( "Type: %s", Asset->GetType().c_str() );
-
-					ImGui::EndTooltip();
-				}
-
-				ImGui::PopID();
-
-				ImGui::NextColumn();
+				PreviewName = Pair.first;
+				PreviewTexture = UIFileGeneric;
+				PreviewMesh = nullptr;
 			}
+
+			if( ImGui::IsItemHovered() )
+			{
+				ImGui::BeginTooltip();
+				ImGui::Text( "%s", Pair.first.c_str() );
+				ImGui::Text( "Type: %s", Asset->GetType().c_str() );
+
+				ImGui::EndTooltip();
+			}
+
+			ImGui::PopID();
+
+			ImGui::NextColumn();
 		}
 	}
 
@@ -1417,7 +1414,7 @@ void ShaderToyUI()
 			DialogFormats Formats;
 			Formats.insert_or_assign( L"Shader", L"*.fs;" );
 			const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
-			const CFile File( Path.c_str() );
+			const CFile File( Path );
 			if( File.Exists() )
 			{
 				auto* Shader = CAssets::Get().CreateNamedShader( "shadertoy", "Shaders/FullScreenQuad", File.Location( false ).c_str() );
@@ -1444,7 +1441,7 @@ void ShaderToyUI()
 				DialogFormats Formats;
 				Formats.insert_or_assign( L"Texture", L"*.png;*.jpg;*.tga;" );
 				const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
-				const CFile File( Path.c_str() );
+				const CFile File( Path );
 				if( File.Exists() )
 				{
 					delete Slot0;
@@ -1460,7 +1457,7 @@ void ShaderToyUI()
 				DialogFormats Formats;
 				Formats.insert_or_assign( L"Texture", L"*.png;*.jpg;*.tga;" );
 				const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
-				const CFile File( Path.c_str() );
+				const CFile File( Path );
 				if( File.Exists() )
 				{
 					delete Slot1;
@@ -1476,7 +1473,7 @@ void ShaderToyUI()
 				DialogFormats Formats;
 				Formats.insert_or_assign( L"Texture", L"*.png;*.jpg;*.tga;" );
 				const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
-				const CFile File( Path.c_str() );
+				const CFile File( Path );
 				if( File.Exists() )
 				{
 					delete Slot2;

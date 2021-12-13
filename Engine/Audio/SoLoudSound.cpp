@@ -99,7 +99,7 @@ void FilterStack::SetForBus( const Bus::Type& Bus )
 		return;
 	
 	uint32_t FilterID = 1;
-	for( auto& Effect : Stack )
+	for( const auto& Effect : Stack )
 	{
 		if( Bus == Bus::Maximum )
 		{

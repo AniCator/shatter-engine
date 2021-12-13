@@ -73,27 +73,27 @@ CRenderer::~CRenderer()
 	GlobalUniformBuffers.clear();
 }
 
-static const int ErrorSize = 64;
-static const int ErrorChannels = 3;
+constexpr int GeneratedSize = 64;
+constexpr int GeneratedChannels = 3;
 
-static unsigned char OddColor[ErrorChannels] = {
+static unsigned char OddColor[GeneratedChannels] = {
 	255,0,255
 };
 
-static unsigned char EvenColor[ErrorChannels] = {
+static unsigned char EvenColor[GeneratedChannels] = {
 	0,0,0
 };
 
 unsigned char* GenerateErrorTexture()
 {
-	const size_t ErrorLength = ErrorSize * ErrorSize * ErrorChannels;
-	unsigned char* ErrorData = new unsigned char[ErrorLength];
+	constexpr size_t ErrorLength = GeneratedSize * GeneratedSize * GeneratedChannels;
+	auto* ErrorData = new unsigned char[ErrorLength];
 
 	bool Odd = false;
 	for( size_t Index = 0; Index < ErrorLength; Index++ )
 	{
-		size_t Offset = Index % ( ErrorSize * ErrorChannels );
-		const size_t Channel = ( Index ) % ErrorChannels;
+		size_t Offset = Index % ( GeneratedSize * GeneratedChannels );
+		const size_t Channel = ( Index ) % GeneratedChannels;
 		if( Channel == 0 )
 		{
 			Odd = !Odd;
@@ -118,6 +118,21 @@ unsigned char* GenerateErrorTexture()
 }
 
 static unsigned char* ErrorData = GenerateErrorTexture();
+
+unsigned char* GenerateBlackTexture()
+{
+	constexpr size_t TextureLength = GeneratedSize * GeneratedSize * GeneratedChannels;
+	auto* TextureData = new unsigned char[TextureLength];
+
+	for( size_t Index = 0; Index < TextureLength; Index++ )
+	{
+		TextureData[Index] = 0;
+	}
+
+	return TextureData;
+}
+
+static unsigned char* BlackTextureData = GenerateBlackTexture();
 
 void CRenderer::Initialize()
 {
@@ -145,7 +160,8 @@ void CRenderer::Initialize()
 
 	Assets.CreateNamedMesh( "pyramid", Pyramid );
 
-	Assets.CreateNamedTexture( "error", ErrorData, ErrorSize, ErrorSize, ErrorChannels, EFilteringMode::Nearest );
+	Assets.CreateNamedTexture( "error", ErrorData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
+	Assets.CreateNamedTexture( "black", BlackTextureData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
 
 	SuperSampleBicubicShader = Assets.CreateNamedShader( "SuperSampleBicubic", "Shaders/FullScreenQuad", "Shaders/SuperSampleBicubic" );
 	FramebufferRenderable.SetMesh( SquareMesh );
@@ -397,6 +413,8 @@ void CRenderer::DrawQueuedRenderables()
 				{
 					BufferB = CRenderTexture( "BufferB", ViewportWidth, ViewportHeight );
 					BufferB.Initialize();
+
+					CAssets::Get().CreateNamedTexture( "rt_bufferb", &BufferB );
 				}
 			}
 

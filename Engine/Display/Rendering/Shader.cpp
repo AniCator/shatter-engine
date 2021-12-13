@@ -10,7 +10,7 @@
 // Returns true when the file is newer than the given time.
 bool IsModified( const std::string& Location, const time_t& Time )
 {
-	const CFile File( Location.c_str() );
+	const CFile File( Location );
 	if( File.Exists() && File.ModificationDate() > Time )
 	{
 		return true;
@@ -38,7 +38,7 @@ bool CShader::Load( const bool& ShouldLink )
 	bool CanLink = true;
 	if( BuildGeometryShader )
 	{
-		Log::Event( "Building geometry shader.\n" );
+		// Log::Event( "Building geometry shader.\n" );
 		if( !Load( GeometryLocation, Handles.GeometryShader, EShaderType::Geometry ) )
 		{
 			CanLink = false;
@@ -47,7 +47,7 @@ bool CShader::Load( const bool& ShouldLink )
 	
 	if( BuildVertexShader )
 	{
-		Log::Event( "Building vertex shader.\n" );
+		// Log::Event( "Building vertex shader.\n" );
 		if( !Load( VertexLocation, Handles.VertexShader, EShaderType::Vertex ) )
 		{
 			CanLink = false;
@@ -56,7 +56,7 @@ bool CShader::Load( const bool& ShouldLink )
 
 	if( BuildFragmentShader )
 	{
-		Log::Event( "Building fragment shader.\n" );
+		// Log::Event( "Building fragment shader.\n" );
 		if( !Load( FragmentLocation, Handles.FragmentShader, EShaderType::Fragment ) )
 		{
 			CanLink = false;
@@ -65,7 +65,7 @@ bool CShader::Load( const bool& ShouldLink )
 
 	if( BuildComputeShader )
 	{
-		Log::Event( "Building compute shader.\n" );
+		// Log::Event( "Building compute shader.\n" );
 		if( !Load( ComputeLocation, Handles.ComputeShader, EShaderType::Compute ) )
 		{
 			CanLink = false;
@@ -130,7 +130,7 @@ bool CShader::Load( const char* VertexLocationIn, const char* FragmentLocationIn
 
 bool CShader::Load( const std::string& FileLocation, GLuint& HandleIn, const EShaderType& Type )
 {
-	CFile ShaderSource( FileLocation.c_str() );
+	CFile ShaderSource( FileLocation );
 	if( !ShaderSource.Exists() )
 		return false;
 	
@@ -346,7 +346,7 @@ std::string CShader::Process( std::stringstream& Stream )
 
 				std::stringstream ShaderPath;
 				ShaderPath << "Shaders/" << Path;
-				CFile IncludeSource( ShaderPath.str().c_str() );
+				CFile IncludeSource( ShaderPath.str() );
 				const bool Loaded = IncludeSource.Load();
 
 				if( Loaded )

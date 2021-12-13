@@ -1,4 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
+#pragma warning( disable:4996 ) // Disable std::basic_string::copy warning.
+
 #include "File.h"
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Utility/Math.h>
@@ -7,9 +9,7 @@
 #include <fstream>
 #include <algorithm>
 
-#pragma warning(disable:4996)
-
-CFile::CFile( const char* FileLocationIn )
+CFile::CFile( const std::string& FileLocationIn )
 {
 	Data = nullptr;
 	FileLocation = FileLocationIn;
@@ -46,6 +46,12 @@ bool CFile::Load( bool InBinary )
 	{
 		delete [] Data;
 		Data = nullptr;
+	}
+
+	if( !Exists() )
+	{
+		Log::Event( Log::Warning, "File does not exist \"%s\"\n", FileLocation.c_str() );
+		return false;
 	}
 
 	Binary = InBinary;
@@ -198,12 +204,28 @@ bool CFile::Exists( const char* FileLocation )
 	struct stat Buffer;
 	const bool Exists = stat( FileLocation, &Buffer ) == 0 || errno == 132;
 
-	if( !Exists )
+	return Exists;
+}
+
+bool CFile::Exists( const std::string& FileLocation )
+{
+	return Exists( FileLocation.c_str() );
+}
+
+bool CFile::Extract( CData& Data ) const
+{
+	const char* RawData = Fetch<char>();
+	const size_t DataSize = Size();
+
+	Data.Load( RawData, DataSize );
+
+	if( !Data.Valid() )
 	{
-		Log::Event( Log::Warning, "Could not find file at location \"%s\"\n", FileLocation );
+		Log::Event( Log::Warning, "Couldn't extract data from \"%s\".\n", FileLocation.c_str() );
+		return false;
 	}
 
-	return Exists;
+	return true;
 }
 
 bool CFile::Modified() const

@@ -4,6 +4,7 @@
 #include <stdint.h>
 #include <math.h>
 #include <algorithm>
+#include <intrin.h>
 
 class Vector2D
 {
@@ -212,7 +213,13 @@ public:
 		struct { float Pitch, Roll, Yaw; };
 	};
 
-	Vector3D() = default;
+	Vector3D()
+	{
+		X = 0.0f;
+		Y = 0.0f;
+		Z = 0.0f;
+	}
+
 	Vector3D( const float& X, const float& Y, const float& Z )
 	{
 		this->X = X;

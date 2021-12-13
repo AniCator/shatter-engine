@@ -34,6 +34,21 @@ CMeshEntity::CMeshEntity()
 	Visible = true;
 
 	Color = Vector4D( 1.0f, 1.0f, 1.0f, 1.0f );
+
+	Inputs["PlayAnimation"] = [&] ( CEntity* Origin )
+	{
+		SetAnimation( CurrentAnimation );
+
+		return true;
+	};
+
+	Inputs["LoopAnimation"] = [&] ( CEntity* Origin )
+	{
+		SetAnimation( CurrentAnimation, true );
+
+		return true;
+	};
+
 }
 
 CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CPointEntity()
@@ -136,9 +151,11 @@ void CMeshEntity::Construct()
 		if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
 		{
 			const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
-			SetAnimation( FirstAnimation );
+			SetAnimation( FirstAnimation, LoopAnimation );
 		}
 	}
+
+	CPointEntity::Construct();
 }
 
 void CMeshEntity::Tick()
@@ -172,6 +189,8 @@ void CMeshEntity::Tick()
 
 		QueueRenderable( Renderable );
 	}
+
+	CPointEntity::Tick();
 }
 
 void PrintColumn( const Vector4D& Column )
@@ -223,7 +242,7 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 	Position = glm::translate( Position, glm::vec3( PositionKey.Value.X, PositionKey.Value.Y, PositionKey.Value.Z ) );
 	TranslationMatrix = Math::FromGLM( Position );
 
-	if( Entity && Entity->IsDebugEnabled() )
+	if( Entity && Entity->IsDebugEnabled() && false )
 	{
 		UI::AddCircle( TranslationMatrix.Transform( Vector3D::Zero ), 3.0f, Color( 255, 0, 0 ) );
 	}
@@ -234,7 +253,7 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 	
 	RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
 
-	if( Entity && Entity->IsDebugEnabled() )
+	if( Entity && Entity->IsDebugEnabled() && false )
 	{
 		UI::AddCircle( RotationMatrix.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), 3.0f, Color( 0, 255, 0 ) );
 		UI::AddLine( RotationMatrix.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), Vector3D::Zero );
@@ -246,7 +265,7 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 	Scale = glm::scale( Scale, glm::vec3( ScalingKey.Value.X, ScalingKey.Value.Y, ScalingKey.Value.Z ) );
 	ScaleMatrix = Math::FromGLM( Scale );
 
-	if( Entity && Entity->IsDebugEnabled() )
+	if( Entity && Entity->IsDebugEnabled() && false )
 	{
 		UI::AddCircle( ScaleMatrix.Transform( Vector3D( 1.0f, 1.0f, 1.0f ) ), 3.0f, Color( 0, 0, 255 ) );
 	}
@@ -275,7 +294,7 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 		Result[Bone->Index].GlobalTransform = LocalTransform;
 	}
 
-	Result[Bone->Index].BoneTransform = Result[Bone->Index].GlobalTransform * ModelToBone;
+	Result[Bone->Index].BoneTransform = Skeleton.GlobalMatrixInverse * Result[Bone->Index].GlobalTransform * ModelToBone;
 
 	for( const int& ChildIndex : Bone->Children )
 	{
@@ -310,11 +329,19 @@ void CMeshEntity::TickAnimation()
 	Animation Animation;
 	if( !Set.Lookup( CurrentAnimation, Animation ) )
 	{
+		CurrentAnimation = "";
 		return;
 	}
 
 	const float DeltaTime = static_cast<float>( GameLayersInstance->GetDeltaTime() ) * PlayRate;
-	AnimationTime = fmod( AnimationTime + DeltaTime, Animation.Duration );
+	const auto NewTime = AnimationTime + DeltaTime;
+	if( !LoopAnimation && NewTime > Animation.Duration )
+	{
+		AnimationFinished = true;
+		return;
+	}
+
+	AnimationTime = fmod( NewTime, Animation.Duration );
 	
 
 	if( IsDebugEnabled() )
@@ -372,7 +399,7 @@ void CMeshEntity::TickAnimation()
 		// Matrix = Skeleton.GlobalMatrixInverse * Matrix;
 		// ParentMatrix = Skeleton.GlobalMatrixInverse * ParentMatrix;
 		
-		if( ( MatrixIndex < 1 || true ) && IsDebugEnabled() )
+		if( ( MatrixIndex < 1 || true ) && false )
 		{
 			Vector3D RandomJitter = Vector3D( Math::Random(), Math::Random(), Math::Random() ) * 0.001f;
 			const auto Parent = ParentMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
@@ -430,10 +457,17 @@ void CMeshEntity::TickAnimation()
 
 void CMeshEntity::Frame()
 {
-	/*if( Renderable && IsVisible() )
+	if( Renderable && IsVisible() )
 	{
-		TickAnimation();
-	}*/
+		// TickAnimation();
+
+		/*for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
+		{
+			const std::string BoneLocationNamePrefix = "Bones[";
+			const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
+			Renderable->SetUniform( BoneLocationName, Bones[MatrixIndex].BoneTransform );
+		}*/
+	}
 }
 
 void CMeshEntity::Destroy()
@@ -509,11 +543,11 @@ void CMeshEntity::Debug()
 
 		if( PhysicsBody )
 		{
-			PhysicsBody->Debug();
+			// PhysicsBody->Debug();
 		}
 	}
 
-	if( Renderable )
+	if( Renderable && false )
 	{
 		const auto& RenderData = Renderable->GetRenderData();
 		DebugLight( Position, RenderData.LightIndex.Index[0] );
@@ -632,6 +666,10 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "playrate" && Property->Value.length() > 0 )
 		{
 			PlayRate = ParseFloat( Property->Value.c_str() );
+		}
+		else if( Property->Key == "loop" && Property->Value.length() > 0 )
+		{
+			Extract( Property->Value, LoopAnimation );
 		}
 	}
 
@@ -770,14 +808,25 @@ const FTransform& CMeshEntity::GetTransform()
 	return WorldTransform;
 }
 
-void CMeshEntity::SetAnimation( const std::string& Name )
+void CMeshEntity::SetAnimation( const std::string& Name, const bool& Loop )
 {
 	CurrentAnimation = Name;
+	LoopAnimation = Loop;
+	AnimationFinished = false;
+	AnimationTime = 0.0f;
 }
 
 const std::string& CMeshEntity::GetAnimation() const
 {
 	return CurrentAnimation;
+}
+
+bool CMeshEntity::IsAnimationFinished() const
+{
+	if( LoopAnimation )
+		return true;
+
+	return AnimationFinished;
 }
 
 float CMeshEntity::GetPlayRate() const

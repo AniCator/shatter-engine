@@ -9,7 +9,7 @@
 class CFile
 {
 public:
-	CFile( const char* FileLocation );
+	CFile( const std::string& FileLocation );
 	~CFile();
 
 	virtual bool Load( bool Binary = false );
@@ -23,6 +23,7 @@ public:
 
 	bool Exists() const;
 	static bool Exists( const char* FileLocation );
+	static bool Exists( const std::string& FileLocation );
 
 	const std::string& Location(const bool IncludeExtension = true) const
 	{
@@ -63,21 +64,7 @@ public:
 		return true;
 	}
 
-	CData& Extract() const
-	{
-		const char* RawData = Fetch<char>();
-		const size_t FileSize = Size();
-
-		CData Data;
-		Data.Load( RawData, FileSize );
-
-		if( !Data.Valid() )
-		{
-			Log::Event( Log::Warning, "Couldn't extract data from \"%s\", possible format mismatch.\n", FileLocation.c_str() );
-		}
-
-		return Data;
-	}
+	bool Extract( CData& Data ) const;
 
 	bool Modified() const;
 	time_t ModificationDate() const;

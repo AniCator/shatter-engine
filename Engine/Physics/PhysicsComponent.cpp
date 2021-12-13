@@ -513,14 +513,10 @@ void CBody::Simulate()
 	if( AffectedByGravity )
 	{
 		const Vector3D EnvironmentalAcceleration = -Gravity;
-		EnvironmentalForce += ( EnvironmentalAcceleration ) * InverseMass * DeltaTime;
+		EnvironmentalForce += ( EnvironmentalAcceleration ) * InverseMass * Math::Min( 0.05f, DeltaTime );
 	}
 
 	Velocity += EnvironmentalForce;
-
-	// Temporary friction factor that only applies to the XY plane.
-	Velocity.X *= 0.9f;
-	Velocity.Y *= 0.9f;
 
 	// auto Transform = GetTransform();
 	// Transform.SetPosition( Transform.GetPosition() + EnvironmentalForce );
@@ -675,7 +671,7 @@ bool CBody::Collision( CBody* Body )
 	}
 #endif
 
-	if( Collided && Owner && Owner->IsDebugEnabled() )
+	/*if( Collided && Owner && Owner->IsDebugEnabled() )
 	{
 		const Vector3D& CenterA = ( BoundsA.Maximum + BoundsA.Minimum ) * 0.5f;
 		const Vector3D& CenterB = ( BoundsB.Maximum + BoundsB.Minimum ) * 0.5f;
@@ -686,7 +682,7 @@ bool CBody::Collision( CBody* Body )
 		{
 			UI::AddText( CenterB, Body->Owner->Name.String().c_str() );
 		}
-	}
+	}*/
 
 	return Collided;
 }
@@ -1010,6 +1006,9 @@ void CBody::Tick()
 		else
 		{
 			Velocity = NewPosition - PreviousTransform.GetPosition();
+			// Temporary friction factor that only applies to the XY plane.
+			Velocity.X *= 0.91f;
+			Velocity.Y *= 0.91f;
 		}
 
 		// Apply depenetration.

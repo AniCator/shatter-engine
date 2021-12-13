@@ -73,6 +73,8 @@ void CWorld::Tick()
 {
 	OptickEvent();
 
+	EventQueue.Poll();
+
 	for( auto Level : Levels )
 	{
 		Level.Tick();
@@ -108,6 +110,9 @@ void CWorld::Tick()
 	{
 		Physics->Tick();
 	}
+
+	// Increment the tick counter.
+	Ticks++;
 }
 
 void CWorld::Destroy()
@@ -235,6 +240,11 @@ const FCameraSetup& CWorld::GetActiveCameraSetup() const
 	}
 
 	return DummySetup;
+}
+
+uint32_t CWorld::GetCameraPriority() const
+{
+	return CameraPriority;
 }
 
 CCamera* CWorld::GetPreviousCamera() const

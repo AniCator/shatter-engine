@@ -24,5 +24,9 @@ void Uniform::Bind( const unsigned int& Program, const std::string& Location ) c
 		{
 			glUniform1ui( UniformBufferLocation, UniformUnsigned );
 		}
+		else if( Type == Float )
+		{
+			glUniform1f( UniformBufferLocation, UniformFloat );
+		}
 	}
 }

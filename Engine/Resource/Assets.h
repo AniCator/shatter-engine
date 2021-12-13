@@ -82,7 +82,7 @@ public:
 	T* CreateNamedAsset( const char* Name )
 	{
 		// Check if we can cast from T to CAsset.
-		static_assert( std::is_convertible<T, CAsset>(), "Trying to create asset that doesn't derive from CAsset." );
+		static_assert( std::is_base_of<CAsset, T>(), "Trying to create asset that doesn't derive from CAsset." );
 		
 		// Transform given name into lower case string
 		std::string NameString = Name;

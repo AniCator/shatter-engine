@@ -7,9 +7,11 @@ static CEntityFactory<CTriggerBoxEntity> Factory( "trigger_box" );
 
 CTriggerBoxEntity::CTriggerBoxEntity()
 {
-	Inputs["Trigger"] = [&] ()
+	Inputs["Trigger"] = [&] ( CEntity* Origin )
 	{
 		Send( "OnTrigger" );
+
+		return true;
 	};
 }
 

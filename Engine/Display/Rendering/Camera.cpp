@@ -342,7 +342,29 @@ FCameraSetup& CCamera::GetCameraSetup()
 	return CameraSetup;
 }
 
+FCameraSetup CCamera::GetCameraSetup() const
+{
+	return CameraSetup;
+}
+
 Frustum CCamera::GetFrustum() const
 {
 	return Frustum;
+}
+
+CCamera CCamera::Lerp( const CCamera& B, const float& Alpha ) const
+{
+	CCamera Blended = *this;
+
+	FCameraSetup& BlendSetup = Blended.GetCameraSetup();
+	const auto& SetupA = GetCameraSetup();
+	const auto& SetupB = B.GetCameraSetup();
+
+	BlendSetup.CameraPosition = Math::Lerp( SetupA.CameraPosition, SetupB.CameraPosition, Alpha );
+	BlendSetup.FieldOfView = Math::Lerp( SetupA.FieldOfView, SetupB.FieldOfView, Alpha );
+	Blended.SetCameraOrientation( Math::Lerp( CameraOrientation, B.CameraOrientation, Alpha ) );
+	BlendSetup.CameraDirection = Math::Lerp( SetupA.CameraDirection, SetupB.CameraDirection, Alpha );
+
+	Blended.Update();
+	return Blended;
 }

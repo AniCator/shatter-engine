@@ -41,6 +41,7 @@ public:
 	void Create( const char* Title );
 	void Resize( const ViewDimensions& Dimensions = ViewDimensions() );
 	void Fullscreen( const bool Enable );
+	void Borderless( const bool Enable );
 	void Terminate();
 	GLFWwindow* Handle() const;
 
@@ -79,17 +80,22 @@ public:
 	}
 
 	bool IsFullscreen() const;
+	bool IsBorderless() const;
+	bool IsFullscreenBorderless() const;
 	void SetVSYNC( const bool& Enable );
 
 private:
-	struct GLFWmonitor* GetTargetMonitor();
-	ViewDimensions GetMonitorDimensions( struct GLFWmonitor* Monitor );
+	void Recreate();
+
+	struct GLFWmonitor* GetTargetMonitor() const;
+	ViewDimensions GetMonitorDimensions( struct GLFWmonitor* Monitor ) const;
 
 	struct GLFWwindow* WindowHandle = nullptr;
 	CRenderer Renderer;
 
 	bool Initialized = false;
 	bool ShowCursor = false;
+	bool ShouldRecreate = false;
 
 	ViewDimensions CurrentDimensions;
 
@@ -98,6 +104,8 @@ private:
 
 	// Application icon
 	GLFWimage Icon;
+
+	std::string WindowTitle;
 
 public:
 

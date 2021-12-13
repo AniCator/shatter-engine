@@ -50,8 +50,10 @@ public:
 
 	virtual const FTransform& GetTransform() override;
 
-	void SetAnimation( const std::string& Name );
+	void SetAnimation( const std::string& Name, const bool& Loop = false );
 	const std::string& GetAnimation() const;
+
+	bool IsAnimationFinished() const;
 
 	float GetPlayRate() const;
 	void SetPlayRate( const float& PlayRate );
@@ -90,6 +92,8 @@ protected:
 
 	// Name of the current animation.
 	std::string CurrentAnimation;
+	bool LoopAnimation = false;
+	bool AnimationFinished = true;
 
 	// Current bone transformations, updated by TickAnimation.
 	std::vector<Bone> Bones;

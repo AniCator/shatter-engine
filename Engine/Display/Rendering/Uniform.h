@@ -13,13 +13,15 @@ struct Uniform
 		Component4 = 0,
 		Component3,
 		Component4x4,
-		Unsigned
+		Unsigned,
+		Float
 	} Type;
 
 	Vector3D Uniform3;
 	Vector4D Uniform4;
 	Matrix4D Uniform4x4;
 	unsigned int UniformUnsigned;
+	float UniformFloat;
 
 	Uniform( const Vector4D& Vector )
 	{
@@ -43,6 +45,12 @@ struct Uniform
 	{
 		Type = Unsigned;
 		UniformUnsigned = Value;
+	}
+
+	Uniform( const float& Value )
+	{
+		Type = Float;
+		UniformFloat = Value;
 	}
 
 	void Bind( const unsigned int& Program, const std::string& Location ) const;

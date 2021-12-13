@@ -16,7 +16,11 @@ static constexpr uint32_t MaximumInfluences = 4;
 
 struct VertexWeight
 {
-	uint32_t Index[MaximumInfluences]{};
+	uint32_t Index[MaximumInfluences]
+	{
+		0, 0, 0, 0
+	};
+
 	float Weight[MaximumInfluences]
 	{
 		0.0f,0.0f,0.0f,0.0f

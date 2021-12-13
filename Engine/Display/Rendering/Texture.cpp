@@ -49,7 +49,7 @@ CTexture::~CTexture()
 
 bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredFormat, const bool& GenerateMipMaps )
 {
-	CFile TextureSource( Location.c_str() );
+	CFile TextureSource( Location );
 	const std::string Extension = TextureSource.Extension();
 
 	// The STB header supports more than these types but we want to refrain from loading them since they're generally inefficient to load.

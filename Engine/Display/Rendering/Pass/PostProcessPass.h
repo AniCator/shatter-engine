@@ -9,7 +9,7 @@ class CRenderPassPostProcess : public CRenderPass
 {
 public:
 	CRenderPassPostProcess( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
-	virtual uint32_t Render( const UniformMap& Uniforms ) override;
+	uint32_t Render( const UniformMap& Uniforms ) override;
 
 	void SetShader( class CShader* ShaderIn )
 	{
@@ -19,6 +19,16 @@ public:
 	void SetTexture( class CTexture* TextureIn )
 	{
 		Texture = TextureIn;
+	}
+
+	void SetUniform( const std::string& Name, const Uniform& Value )
+	{
+		Renderable.SetUniform( Name, Value );
+	}
+
+	CRenderable& GetRenderable()
+	{
+		return Renderable;
 	}
 
 protected:

@@ -18,7 +18,7 @@ namespace ERenderPassLocation
 {
 	enum Type
 	{
-		Standard = 0,
+		Standard = 0, // Always renders last and directly to the window's framebuffer.
 		PreScene,
 		Scene, // After the opaque scene has rendered.
 		Translucent, // After the translucent scene has rendered.

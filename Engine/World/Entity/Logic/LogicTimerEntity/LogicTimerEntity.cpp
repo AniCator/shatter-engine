@@ -11,9 +11,26 @@ CLogicTimerEntity::CLogicTimerEntity()
 	Frequency = -1;
 	TriggerCount = 0;
 
-	Inputs["Start"] = [this] { this->Start(); };
-	Inputs["Stop"] = [this] { this->Stop(); };
-	Inputs["Reset"] = [this] { this->Reset(); };
+	Inputs["Start"] = [&] ( CEntity* Source )
+	{
+		Start();
+
+		return true;
+	};
+
+	Inputs["Stop"] = [&] ( CEntity* Source )
+	{
+		Stop();
+
+		return true;
+	};
+
+	Inputs["Reset"] = [&] ( CEntity* Source )
+	{
+		Reset();
+
+		return true;
+	};
 }
 
 void CLogicTimerEntity::Construct()

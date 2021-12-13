@@ -11,7 +11,7 @@ struct AnimationSet
 {
 	static AnimationSet Generate( const std::string& Path )
 	{
-		CFile File( Path.c_str() );
+		CFile File( Path );
 		if( File.Exists() )
 		{
 			File.Load();

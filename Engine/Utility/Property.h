@@ -4,11 +4,15 @@
 #include <string>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/Structures/Name.h>
+#include <Engine/Utility/Math/Vector.h>
 
 enum class PropertyType : uint8_t
 {
 	Unknown,
+
 	String,
+	Float,
+	Vector3D,
 
 	U64,
 	U32,
@@ -25,9 +29,14 @@ enum class PropertyType : uint8_t
 
 struct Property
 {
-public:
 	Property();
+	Property( const Property& Copy );
+	Property& operator=( const Property& RHS );
+
 	Property( const std::string& Value );
+	Property( const char* Value );
+	Property( const float& Value );
+	Property( const Vector3D& Value );
 
 	Property( const uint64_t& Value );
 	Property( const uint32_t& Value );
@@ -41,9 +50,11 @@ public:
 
 	Property( const bool& Value );
 
-	~Property() {};
+	~Property() {}
 
 	const std::string& GetString() const;
+	const float& GetFloat() const;
+	const Vector3D& GetVector3D() const;
 
 	const uint64_t& GetU64() const;
 	const uint32_t& GetU32() const;
@@ -57,15 +68,20 @@ public:
 
 	const bool& GetBoolean() const;
 
+	friend CData& operator<<( CData& Data, const Property& Value );
 	friend CData& operator<<( CData& Data, Property& Value );
 	friend CData& operator>>( CData& Data, Property& Value );
 
-private:
+protected:
 	PropertyType Type;
+
+	// Strings cannot be a part of the union.
+	std::string String;
 
 	union
 	{
-		std::string String;
+		float Float;
+		Vector3D Vector3D;
 
 		uint64_t Unsigned64;
 		uint32_t Unsigned32;

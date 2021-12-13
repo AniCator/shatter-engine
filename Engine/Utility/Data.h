@@ -84,7 +84,7 @@ public:
 			Data.clear();
 			Data.seekg( Position );
 
-			Log::Event( Log::Error, "Could not extract data stream to object.\n" );
+			Log::Event( Log::Warning, "Could not extract data stream to object.\n" );
 
 			return 0;
 		}

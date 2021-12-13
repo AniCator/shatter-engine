@@ -55,7 +55,7 @@ std::vector<ParticleSystem> ParticleSystem::LoadDefinitions( const std::string& 
 {
 	std::vector<ParticleSystem> Systems;
 
-	const auto DefinitionFile = CFile( Location.c_str() );
+	const auto DefinitionFile = CFile( Location );
 	if( !DefinitionFile.Exists() )
 		return Systems;
 
@@ -81,7 +81,7 @@ CAsset* ParticleAssetLoader( AssetParameters& Parameters )
 
 	const auto& Location = Parameters[0];
 
-	auto ParticleFile = CFile( Location.c_str() );
+	auto ParticleFile = CFile( Location );
 	if( !ParticleFile.Exists() )
 		return nullptr;
 
@@ -103,7 +103,7 @@ CAsset* ParticleDefinitionLoader( AssetParameters& Parameters )
 
 	const auto& Location = Parameters[0];
 
-	auto DefinitionFile = CFile( Location.c_str() );
+	auto DefinitionFile = CFile( Location );
 	if( !DefinitionFile.Exists() )
 		return nullptr;
 
@@ -149,7 +149,11 @@ CAsset* ParticleDefinitionLoader( AssetParameters& Parameters )
 		{
 			// The asset has been registered, time to load it.
 			Asset->System.Load();
-			Log::Event( "Registered particle asset \"%s\".\n", NameObject->Value.c_str() );
+			// Log::Event( "Registered particle asset \"%s\".\n", NameObject->Value.c_str() );
+		}
+		else
+		{
+			Log::Event( Log::Warning, "Failed to load particle asset \"%s\".\n", NameObject->Value.c_str() );
 		}
 	}
 

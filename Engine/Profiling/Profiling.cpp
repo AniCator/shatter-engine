@@ -6,6 +6,65 @@
 
 #include <ThirdParty/imgui-1.70/imgui.h>
 
+#include <Engine/Input/Input.h>
+#include <Engine/Utility/Locator/InputLocator.h>
+
+const char* MouseLabels[] = 
+{
+	"Unknown",
+
+	"MouseX",
+	"MouseY",
+	
+	"MouseScrollUp",
+	"MouseScrollDown",
+	
+	"LeftMouseButton",
+	"RightMouseButton",
+	"MiddleMouseButton",
+	
+	"MouseButton4",
+	"MouseButton5",
+	"MouseButton6",
+	"MouseButton7",
+	"MouseButton8",
+	
+	"Maximum"
+};
+
+const char* GamepadLabels[] =
+{
+	"Unknown",
+
+	"GamepadFaceButtonUp",
+	"GamepadFaceButtonDown",
+	"GamepadFaceButtonLeft",
+	"GamepadFaceButtonRight",
+
+	"GamepadDirectionalButtonUp",
+	"GamepadDirectionalButtonDown",
+	"GamepadDirectionalButtonLeft",
+	"GamepadDirectionalButtonRight",
+
+	"GamepadLeftStickX",
+	"GamepadLeftStickY",
+	"GamepadLeftStickTrigger",
+
+	"GamepadLeftTrigger",
+	"GamepadLeftShoulder",
+	"GamepadLeftSpecial",
+
+	"GamepadRightStickX",
+	"GamepadRightStickY",
+	"GamepadRightStickTrigger",
+
+	"GamepadRightTrigger",
+	"GamepadRightShoulder",
+	"GamepadRightSpecial",
+
+	"Maximum"
+};
+
 // NOTE: Crappy memory tracker.
 static size_t MemoryUsageBytes = 0;
 static size_t LargestAllocation = 0;
@@ -324,7 +383,7 @@ void CProfiler::Display()
 				{
 					if( Enabled )
 					{
-						ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Peak): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
+						ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Stutter/Low): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
 						ImGui::PushItemWidth( -1 );
 
 						unsigned int ColorAverage = std::min( 255, std::max( 0, int( 2300.0f / Peak ) ) );
@@ -425,6 +484,42 @@ void CProfiler::Display()
 					const char* DebugMessageName = DebugMessage.first.c_str();
 					const char* DebugMessageBody = DebugMessage.second.c_str();
 					ImGui::Text( "%s: %s", DebugMessageName, DebugMessageBody );
+				}
+			}
+
+			auto& InputInterface = CInputLocator::Get();
+			if( auto* Input = dynamic_cast<CInput*>( &InputInterface ) )
+			{
+				ImGui::Separator();
+
+				auto* GamepadButtons = Input->GetGamepad();
+				for( EGamepadType Index = 0; Index < MaximumGamepadButtons; Index++ )
+				{
+					const auto& Button = GamepadButtons[Index];
+					if( Button.Action == EAction::Press )
+					{
+						ImGui::Text( "%s", GamepadLabels[Index] );
+					}
+				}
+
+				auto* Keys = Input->GetKeys();
+				for( EKeyType Index = 0; Index < MaximumKeyboardInputs; Index++ )
+				{
+					const auto& Key = Keys[Index];
+					if( Key.Action == EAction::Press )
+					{
+						ImGui::Text( "Key %i", Index );
+					}
+				}
+
+				auto* Mouse = Input->GetMouse();
+				for( EMouseType Index = 0; Index < MaximumMouseButtons; Index++ )
+				{
+					const auto& Button = Mouse[Index];
+					if( Button.Action == EAction::Press )
+					{
+						ImGui::Text( "%s", MouseLabels[Index] );
+					}
 				}
 			}
 		}

@@ -7,14 +7,18 @@ static CEntityFactory<CCameraEntity> Factory( "camera" );
 
 CCameraEntity::CCameraEntity()
 {
-	Inputs["Activate"] = [&] ()
+	Inputs["Activate"] = [&] ( CEntity* Origin )
 	{
 		Activate();
+
+		return true;
 	};
 
-	Inputs["Deactivate"] = [&] ()
+	Inputs["Deactivate"] = [&] ( CEntity* Origin )
 	{
 		Deactivate();
+
+		return true;
 	};
 }
 

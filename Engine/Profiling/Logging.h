@@ -18,10 +18,11 @@ namespace Log
 {
 	enum LogSeverity
 	{
-		Standard = 0,
-		Warning,
-		Error,
-		Fatal,
+		Standard = 0, // Writes a standard message.
+		Warning, // Writes a warning message.
+		Error, // Debug breaks if attached and logs the error.
+		Fatal, // Debug breaks if attached, displays a message box and exits the programs.
+		Assert, // Logs the assertion message and displays a message box.
 
 		LogMax
 	};

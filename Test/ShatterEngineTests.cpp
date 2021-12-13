@@ -9,6 +9,7 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
+#include <Engine/Utility/RunLengthEncoding.h>
 #include <string>
 #include <vector>
 
@@ -94,7 +95,7 @@ namespace EngineTest
 		if( JSONFile.Exists() )
 		{
 			JSONFile.Load();
-			return JSON::GenerateTree( JSONFile );
+			return JSON::Tree( JSONFile );
 		}
 
 		return JSON::Container();
@@ -577,6 +578,26 @@ namespace EngineTest
 				Assert::Fail( L"Identifier invalid." );
 			}
 		}
+
+		TEST_METHOD( RunLengthEncoding )
+		{
+			const std::string Test = "0000000000000000000000000000000000000000000000000000000000000000000fsdfdsagaweadaf65464";
+
+			const auto Encoded = RunLength::Encode( Test.data(), Test.size() );
+			const auto Decoded = RunLength::Decode( Encoded.data(), Encoded.size() );
+
+			const auto Result = std::string( Decoded.begin(), Decoded.end() );
+
+			if( Test != Result || Encoded.size() > Test.size() )
+			{
+				const auto Source = std::string( Encoded.begin(), Encoded.end() );
+
+				Logger::WriteMessage( Test.c_str() );
+				Logger::WriteMessage( Source.c_str() );
+				Logger::WriteMessage( Result.c_str() );
+				Assert::Fail( L"Decoded data differs." );
+			}
+		}
 	};
 
 	TEST_CLASS( Mathematics )
@@ -619,7 +640,7 @@ namespace EngineTest
 			return Equal;
 		}
 
-		TEST_METHOD( EulerToRotationMatrix )
+		/*TEST_METHOD( EulerToRotationMatrix )
 		{
 			const bool Equal =
 				TestEuler( Vector3D( 90.0f, 0.0f, 0.0f ) ) &&
@@ -631,6 +652,6 @@ namespace EngineTest
 			;
 			
 			Assert::IsTrue( Equal, L"Failed to convert Euler angles to rotation matrix." );
-		}
+		}*/
 	};
 }

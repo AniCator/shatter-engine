@@ -105,7 +105,10 @@ public:
 	const glm::mat4& GetViewProjectionInverse() const;
 
 	FCameraSetup& GetCameraSetup();
+	FCameraSetup GetCameraSetup() const;
 	Frustum GetFrustum() const;
+
+	CCamera Lerp( const CCamera& B, const float& Alpha ) const;
 
 	Vector3D CameraOrientation;
 private:

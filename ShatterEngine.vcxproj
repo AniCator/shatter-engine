@@ -215,6 +215,7 @@
     <ClCompile Include="Engine\Utility\MeshBuilderASSIMP.cpp" />
     <ClCompile Include="Engine\Utility\Presence\Presence.cpp" />
     <ClCompile Include="Engine\Utility\Property.cpp" />
+    <ClCompile Include="Engine\Utility\RunLengthEncoding.cpp" />
     <ClCompile Include="Engine\Utility\Script\AngelEngine.cpp" />
     <ClCompile Include="Engine\Utility\Service\ServiceRegistry.cpp" />
     <ClCompile Include="Engine\Utility\StringPool.cpp" />
@@ -240,6 +241,7 @@
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Trigger\TriggerBoxEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Trigger\TriggerProximityEntity.cpp" />
+    <ClCompile Include="Engine\World\EventQueue.cpp" />
     <ClCompile Include="Engine\World\Level\Level.cpp" />
     <ClCompile Include="Engine\World\World.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
@@ -332,6 +334,7 @@
     <ClInclude Include="Engine\Utility\Primitive.h" />
     <ClInclude Include="Engine\Utility\Property.h" />
     <ClInclude Include="Engine\Utility\RingBuffer.h" />
+    <ClInclude Include="Engine\Utility\RunLengthEncoding.h" />
     <ClInclude Include="Engine\Utility\Script\AngelEngine.h" />
     <ClInclude Include="Engine\Utility\Serialize.h" />
     <ClInclude Include="Engine\Utility\Service\Service.h" />
@@ -368,6 +371,7 @@
     <ClInclude Include="Engine\World\Entity\SoundEntity\SoundEntity.h" />
     <ClInclude Include="Engine\World\Entity\Trigger\TriggerBoxEntity.h" />
     <ClInclude Include="Engine\World\Entity\Trigger\TriggerProximityEntity.h" />
+    <ClInclude Include="Engine\World\EventQueue.h" />
     <ClInclude Include="Engine\World\Level\Level.h" />
     <ClInclude Include="Engine\World\World.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />

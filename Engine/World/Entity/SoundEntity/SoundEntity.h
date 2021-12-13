@@ -6,12 +6,12 @@
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math.h>
 
-class CSoundEntity : public CPointEntity
+class SoundEntity : public CPointEntity
 {
 public:
-	CSoundEntity();
-	CSoundEntity( FTransform& Transform );
-	virtual ~CSoundEntity() override;
+	SoundEntity();
+	SoundEntity( FTransform& Transform );
+	virtual ~SoundEntity() override;
 
 	virtual void Spawn( FTransform& Transform );
 

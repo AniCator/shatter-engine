@@ -1,6 +1,8 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Entity.h"
 
+#include <Game/Game.h>
+
 #include <Engine/World/Level/Level.h>
 #include <Engine/World/World.h>
 
@@ -128,9 +130,10 @@ void CEntity::Destroy()
 
 	if( Level )
 	{
+		// TODO: Is this actually used/useful?
 		for( const auto& TrackedEntityID : TrackedEntityIDs )
 		{
-			auto Entity = Level->Find( TrackedEntityID );
+			auto* Entity = Level->Find( TrackedEntityID );
 			if( Entity )
 			{
 				Entity->Unlink( GetEntityID() );
@@ -159,13 +162,31 @@ void CEntity::Traverse()
 		}
 	}
 
-	Tick();
+	const auto CurrentTime = GameLayersInstance->GetCurrentTime();
+	const bool ShouldTick = NextTickTime < CurrentTime;
+	if( ShouldTick )
+	{
+		if( Math::Equal( LastTickTime, 0.0 ) )
+		{
+			LastTickTime = CurrentTime;
+		}
 
+		// Update this entity's delta time.
+		DeltaTime = CurrentTime - LastTickTime;
+
+		// Call the entity's tick function. (may be overridden)
+		Tick();
+
+		LastTickTime = CurrentTime;
+	}
+
+	// Display debug information, if requested.
 	if( IsDebugEnabled() )
 	{
 		Debug();
 	}
 
+	// Traverse through the children of the entity.
 	const auto HasChildren = !Children.empty();
 	if( HasChildren )
 	{
@@ -249,7 +270,7 @@ void CEntity::Relink()
 	}
 }
 
-void CEntity::Send( const char* Output )
+void CEntity::Send( const char* Output, CEntity* Origin )
 {
 	if( Level )
 	{
@@ -258,12 +279,12 @@ void CEntity::Send( const char* Output )
 			Log::Event( "Broadcasting output \"%s\".\n", Output );
 			for( auto& Message : Outputs[Output] )
 			{
-				auto Entity = Level->GetWorld()->Find( Message.TargetID );
+				const auto Entity = Level->GetWorld()->Find( Message.TargetID );
 				if( Entity )
 				{
 					for( const auto& Input : Message.Inputs )
 					{
-						Entity->Receive( Input.c_str() );
+						Entity->Receive( Input.c_str(), Origin );
 					}
 				}
 			}
@@ -271,13 +292,24 @@ void CEntity::Send( const char* Output )
 	}
 }
 
-void CEntity::Receive( const char* Input )
+bool CEntity::Receive( const char* Input, CEntity* Origin )
 {
 	if( Inputs.find( Input ) != Inputs.end() )
 	{
-		Log::Event( "Receiving input \"%s\" on entity \"%s\".\n", Input, Name.String().c_str() );
-		Inputs[Input]();
+		if( Origin )
+		{
+			Log::Event( "Receiving input \"%s\" on entity \"%s\" from \"%s\".\n", Input, Name.String().c_str(), Origin->Name.String().c_str() );
+		}
+		else
+		{
+			Log::Event( "Receiving input \"%s\" on entity \"%s\".\n", Input, Name.String().c_str() );
+		}
+
+		return Inputs[Input]( Origin );
 	}
+
+	// By default we assume we were succesful.
+	return true;
 }
 
 void CEntity::Track( const CEntity* Entity )
@@ -290,7 +322,21 @@ void CEntity::Track( const CEntity* Entity )
 
 void CEntity::Unlink( const EntityUID EntityID )
 {
-	// Find target input and unlink it.
+	// If this entity ID is associated with any message outputs, remove those messages to prevent them from being called on removed entities.
+	for( auto& Output : Outputs )
+	{
+		for( auto MessageIterator = Output.second.begin(); MessageIterator != Output.second.end();)
+		{
+			if( MessageIterator->TargetID == EntityID )
+			{
+				MessageIterator = Output.second.erase( MessageIterator );
+			}
+			else
+			{
+				++MessageIterator;
+			}			
+		}
+	}
 }
 
 void CEntity::Debug()

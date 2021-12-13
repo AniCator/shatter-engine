@@ -17,11 +17,19 @@ CPointEntity::CPointEntity( const FTransform& Transform ) : CEntity()
 {
 	this->Transform = Transform;
 	ShouldUpdateTransform = true;
+	PreviousWorldTransform = Transform;
 }
 
 CPointEntity::~CPointEntity()
 {
 
+}
+
+void CPointEntity::Tick()
+{
+	// Update the absolute velocity based on the difference between the previous world transform and the current world transform.
+	Velocity = GetTransform().GetPosition() - PreviousWorldTransform.GetPosition();
+	PreviousWorldTransform = WorldTransform;
 }
 
 const FTransform& CPointEntity::GetTransform()
@@ -70,6 +78,8 @@ void CPointEntity::SetTransform( const FTransform& TransformIn )
 
 	Transform = TransformIn;
 	ShouldUpdateTransform = true;
+
+	// PreviousWorldTransform = Transform;
 }
 
 void CPointEntity::Load( const JSON::Vector& Objects )
@@ -104,12 +114,20 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 	{
 		Transform = Level->GetTransform().Transform( Transform );
 	}
+
+	PreviousWorldTransform = Transform;
 }
 
 void CPointEntity::Debug()
 {
 	UI::AddCircle( Transform.GetPosition(), 2.0f, Color::White );
 	UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, -1.0f ), Name.String().c_str() );
+	UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, 0.5f ), "Velocity", Velocity, Color::Blue );
+}
+
+Vector3D CPointEntity::GetVelocity() const
+{
+	return Velocity;
 }
 
 void CPointEntity::Import( CData& Data )
@@ -118,6 +136,7 @@ void CPointEntity::Import( CData& Data )
 	Data >> WorldTransform;
 
 	ShouldUpdateTransform = true;
+	PreviousWorldTransform = WorldTransform;
 }
 
 void CPointEntity::Export( CData& Data )
