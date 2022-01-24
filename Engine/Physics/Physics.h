@@ -42,7 +42,7 @@ public:
 	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const;
 
 	double CurrentTime = -1.0;
-	double TimeStep = 1.0 / 120.0;
+	double TimeStep = 1.0 / 60.0;
 	double ActualDeltaTime = -1.0;
 private:
 	CPhysicsScene* Scene;

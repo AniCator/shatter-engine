@@ -483,11 +483,9 @@ void CBody::Construct( CPhysics* Physics )
 	CalculateBounds();
 
 	PreviousTransform = GetTransform();
-	Velocity = { 0.0f, 0.0f, 0.0f };
-
-	Acceleration = { 0.0f, 0.0f, 0.0f };
-	LinearVelocity = { 0.0f, 0.0f, 0.0f };
-	Depenetration = { 0.0f, 0.0f, 0.0f };
+	LinearVelocity = Vector3D( 0.0f, 0.0f, 0.0f );
+	Velocity = Vector3D( 0.0f, 0.0f, 0.0f );
+	Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
 
 	auto Transform = GetTransform();
 
@@ -603,14 +601,14 @@ bool CBody::Collision( CBody* Body )
 	if( !TriangleMesh && Response.Distance > 0.0f && !Body->Static && !Body->Stationary )
 	{
 		auto Penetration = ( Response.Normal * Response.Distance );
-		// Body->Depenetration += Penetration;
+		Body->Depenetration += Penetration;
 		Collided = true;
 	}
 
 	// Check if the bodies are moving away from each other.
 	if( VelocityAlongNormal > 0.0f )
 	{
-		constexpr float Restitution = 1.0001f;
+		constexpr float Restitution = 1.01f;
 		const float DeltaVelocity = Restitution * VelocityAlongNormal;
 		const auto InverseMassTotal = InverseMass + Body->InverseMass;
 		float ImpulseScale = DeltaVelocity / InverseMassTotal;
@@ -632,8 +630,8 @@ bool CBody::Collision( CBody* Body )
 
 		if( !Collided )
 		{
-			Velocity += InverseMass * Impulse;
-			Body->Velocity -= Body->InverseMass * Impulse;
+			// Velocity -= InverseMass * Impulse;
+			// Body->Velocity += Body->InverseMass * Impulse;
 		}
 
 		Collided = true;
@@ -650,7 +648,7 @@ bool CBody::Collision( CBody* Body )
 			const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
 			if( ValidFrictionScale )
 			{
-				constexpr float FixedFriction = 1.0f;
+				constexpr float FixedFriction = 0.01f;
 				const auto Friction = sqrtf( FixedFriction );
 				if( FrictionScale > ImpulseScale * Friction )
 				{
@@ -661,8 +659,8 @@ bool CBody::Collision( CBody* Body )
 					FrictionScale = -ImpulseScale * Friction;
 				}
 
-				const auto TangentImpulse = Tangent * FrictionScale;
-				// const auto TangentImpulse = Tangent * ( RelativeVelocity.Dot( Tangent ) * -1.0f * 0.0f );
+				// const auto TangentImpulse = Tangent * FrictionScale;
+				const auto TangentImpulse = Tangent * ( RelativeVelocity.Dot( Tangent ) * -1.0f * 0.0f );
 				Velocity -= InverseMass * TangentImpulse;
 				Body->Velocity += Body->InverseMass * TangentImpulse;
 			}
@@ -1048,8 +1046,7 @@ void CBody::Tick()
 			// UI::AddLine( NewPosition, NewPosition + Velocity.Normalized(), Color( 255, 0, 255 ) );
 			// UI::AddLine( NewPosition, NewPosition - Depenetration.Normalized(), Color( 0, 255, 255 ) );
 			// UI::AddText( NewPosition, std::to_string( Factor ).c_str() );
-			constexpr float BaseLineTime = ( 1.0f / 60.0f );
-			// Velocity *= Math::Min( 1.0f, Factor * ( BaseLineTime / DeltaTime ) );
+			Velocity *= Factor;
 		}
 		else
 		{
@@ -1062,8 +1059,9 @@ void CBody::Tick()
 		}
 
 		// Apply depenetration.
-		// NewPosition -= Depenetration;
-		// Normal = Depenetration.Normalized() * -1.0f;
+		NewPosition -= Depenetration;
+		Normal = Depenetration.Normalized() * -1.0f;
+		Depenetration = { 0.0f, 0.0f, 0.0f };
 	}
 
 	const auto Difference = NewPosition - PreviousTransform.GetPosition();
@@ -1094,6 +1092,8 @@ void CBody::Tick()
 	}
 
 	CalculateBounds();
+	Acceleration = { 0.0f, 0.0f, 0.0f };
+	LinearVelocity = { 0.0f, 0.0f, 0.0f };
 	TextPosition = 0;
 }
 
