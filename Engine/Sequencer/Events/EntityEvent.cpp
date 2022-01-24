@@ -12,6 +12,12 @@
 
 DragTransform Drag;
 
+void EventEntity::Evaluate( const Timecode& Marker )
+{
+	StoredMarker = Marker;
+	TrackEvent::Evaluate( Marker );
+}
+
 void EventEntity::Execute()
 {
 	if( !Entity )
@@ -42,9 +48,19 @@ void EventEntity::Execute()
 			Body->Velocity = Vector3D::Zero;
 		}
 
-		if( OverrideAnimation && Entity->GetAnimation() != Animation )
+		if( OverrideAnimation )
 		{
-			Entity->SetAnimation( Animation );
+			if( Entity->GetAnimation() != Animation )
+			{
+				Entity->SetAnimation( Animation );
+			}
+
+			// Calculate the animation time relative to the event.
+			const auto MarkerTime = StoredMarker - Start;
+			const auto AnimationTime = MarkerToTime( MarkerTime );
+
+			// Apply the event-relative animation time.
+			Entity->SetAnimationTime( static_cast<float>( AnimationTime ) );
 		}
 	}
 
@@ -57,7 +73,8 @@ void EventEntity::Execute()
 
 void EventEntity::Reset()
 {
-	
+	Entity = nullptr;
+	TargetEntity = nullptr;
 }
 
 void EventEntity::Context()

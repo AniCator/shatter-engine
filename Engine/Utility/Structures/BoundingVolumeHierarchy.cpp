@@ -16,6 +16,12 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 	// Invalid span.
 	if( Start == End )
 		return;
+
+	// Increment the depth value.
+	Depth++;
+
+	// If a maximum depth is defined, we want to consider this to be the final node if we exceed this depth value.
+	const auto ForceFinalNode = MaximumDepth > 0 ? Depth > MaximumDepth : false;
 	
 	const auto Axis = Math::RandomRangeInteger( 0, 2 );
 	const auto Span = End - Start;
@@ -26,7 +32,7 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 
 		Bounds = Left->GetBounds();
 	}
-	else if( Span == 2 )
+	else if( Span == 2 || ForceFinalNode )
 	{
 		// Determine which of the two objects goes on which side.
 		if( Compare( Source[Start], Source[Start + 1], Axis ) )
@@ -74,11 +80,17 @@ void BoundingVolumeHierarchy::Node::Destroy()
 {
 	auto* LeftNode = dynamic_cast<Node*>( Left );
 	if( LeftNode )
+	{
+		LeftNode->Destroy();
 		delete Left;
+	}
 
 	auto* RightNode = dynamic_cast<Node*>( Right );
 	if( RightNode )
+	{
+		RightNode->Destroy();
 		delete Right;
+	}
 }
 
 void BoundingVolumeHierarchy::Node::Query( const BoundingBox& Box, QueryResult& Result ) const
@@ -180,12 +192,20 @@ bool BoundingVolumeHierarchy::Node::Compare( const RawObject& A, const RawObject
 	return A->GetBounds().Minimum[Axis] < B->GetBounds().Minimum[Axis];
 }
 
+size_t BoundingVolumeHierarchy::MaximumDepth = 0; // Default to 0, which means no maximum depth.
 std::shared_ptr<Testable> BoundingVolumeHierarchy::Build( const RawObjectList& Source )
 {
 	OptickEvent();
 
+	// Reset the node depth.
+	Node::Depth = 0;
+
+	// Configure the maximum depth.
+	MaximumDepth = 0;
+
 	const auto Result = std::make_shared<Node>();
 	Result->Build( Source, 0, Source.size() );
+
 	return Result;
 }
 

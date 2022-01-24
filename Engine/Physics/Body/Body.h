@@ -96,8 +96,14 @@ public:
 	BoundingBox LocalBounds;
 	BoundingBox WorldBounds;
 	BoundingBox WorldBoundsSwept;
-	Vector3D DeltaPosition = Vector3D::Zero;
+
+	// Velocity that is applied to the body multiplied by the time delta.
+	Vector3D LinearVelocity = Vector3D::Zero;
+
+	// Acceleration over time.
 	Vector3D Acceleration = Vector3D::Zero;
+
+	// Velocity.
 	Vector3D Velocity = Vector3D::Zero;
 
 	// Offset vector that determines where the body will be projected to when penetrating surfaces.

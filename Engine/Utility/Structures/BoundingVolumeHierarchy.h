@@ -42,4 +42,5 @@ public:
 
 	static std::shared_ptr<Testable> Build( const RawObjectList& Source );
 	static void Destroy( std::shared_ptr<Testable>& Hierarchy );
+	static size_t MaximumDepth;
 };

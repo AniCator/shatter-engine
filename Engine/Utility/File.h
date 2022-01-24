@@ -12,11 +12,14 @@ public:
 	CFile( const std::string& FileLocation );
 	~CFile();
 
-	virtual bool Load( bool Binary = false );
-	virtual bool Load( char* DataSource, const size_t SizeIn );
-	virtual bool Load( const std::string& Data );
-	virtual bool Load( CData& Data );
-	virtual bool Save( const bool& CreateDirectory = false );
+	bool Load( bool Binary = false );
+	bool Load( char* DataSource, const size_t SizeIn );
+	bool Load( const std::string& Data );
+	bool Load( CData& Data );
+	bool Save( const bool& CreateDirectory = false );
+
+	// Deletes the file from disk and by default also from memory.
+	void Delete( const bool& DeleteFromMemory = true );
 
 	template<typename T>
 	const T* Fetch() const { return reinterpret_cast<T*>( Data ); };

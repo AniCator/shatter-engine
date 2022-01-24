@@ -43,6 +43,33 @@ bool IsType( Type* Object )
 	return Match != nullptr ? true : false;
 }
 
+template<typename T>
+bool ExclusiveComparison( const T& A, const T& B )
+{
+	return A < B && !( A > B );
+}
+
+inline bool ExclusiveComparison( const Vector2D& A, const Vector2D& B )
+{
+	return ExclusiveComparison( A.X, B.X )
+		&& ExclusiveComparison( A.Y, B.Y );
+}
+
+inline bool ExclusiveComparison( const Vector3D& A, const Vector3D& B )
+{
+	return ExclusiveComparison( A.X, B.X )
+	&& ExclusiveComparison( A.Y, B.Y )
+	&& ExclusiveComparison( A.Z, B.Z );
+}
+
+inline bool ExclusiveComparison( const Vector4D& A, const Vector4D& B )
+{
+	return ExclusiveComparison( A.X, B.X )
+	&& ExclusiveComparison( A.Y, B.Y )
+	&& ExclusiveComparison( A.Z, B.Z )
+	&& ExclusiveComparison( A.W, B.W );
+}
+
 namespace Math
 {
 	inline float Pi()
@@ -383,6 +410,15 @@ namespace Math
 		return Difference < Tolerance;
 	}
 
+	inline bool Equal( const Vector2D& A, const Vector2D& B, const float& Tolerance = 0.001f )
+	{
+		Vector2D Difference = A - B;
+		Difference.X = std::fabs( Difference.X );
+		Difference.Y = std::fabs( Difference.Y );
+		return Difference.X < Tolerance&&
+			Difference.Y < Tolerance;
+	}
+
 	inline bool Equal( const Vector3D& A, const Vector3D& B, const float& Tolerance = 0.001f )
 	{
 		Vector3D Difference = A - B;
@@ -392,6 +428,19 @@ namespace Math
 		return Difference.X < Tolerance &&
 			Difference.Y < Tolerance &&
 			Difference.Z < Tolerance;
+	}
+
+	inline bool Equal( const Vector4D& A, const Vector4D& B, const float& Tolerance = 0.001f )
+	{
+		Vector4D Difference = A - B;
+		Difference.X = std::fabs( Difference.X );
+		Difference.Y = std::fabs( Difference.Y );
+		Difference.Z = std::fabs( Difference.Z );
+		Difference.W = std::fabs( Difference.W );
+		return Difference.X < Tolerance&&
+			Difference.Y < Tolerance&&
+			Difference.Z < Tolerance&&
+			Difference.W < Tolerance;
 	}
 
 	inline Vector3D HSVToRGB( const Vector3D& HSV )
@@ -410,7 +459,7 @@ namespace Math
 		Color.B = Math::Clamp( Color.B, 0.0f, 1.0f );
 
 		// Apply the saturation and value components.
-		Vector3D RGB = ( Color - 1.0f * HSV.Y + 1.0f ) * HSV.Z;
+		Vector3D RGB = Math::Lerp( Vector3D( 1.0f ), Color, HSV.Y ) * HSV.Z;
 		return RGB;
 	}
 
@@ -481,7 +530,7 @@ namespace Math
 		return AABB;
 	}
 
-	inline BoundingBox AABB( const BoundingBox& AABB, FTransform& Transform )
+	inline BoundingBox AABB( const BoundingBox& AABB, const FTransform& Transform )
 	{
 		const auto& Minimum = AABB.Minimum;
 		const auto& Maximum = AABB.Maximum;
@@ -612,24 +661,78 @@ namespace Math
 		return DistanceRatio >= 0.0f;
 	}
 
+	// https://en.wikipedia.org/wiki/Lehmer_random_number_generator
+	struct Lehmer
+	{
+		void Seed( const uint32_t& Value )
+		{
+			State = Value + 1;
+		}
+
+		uint32_t Random()
+		{
+			State = static_cast<uint64_t>( State * 48271 % 0x7fffffff );
+			return State;
+		}
+
+	private:
+		uint32_t State = 1;
+	};
+
+	// https://en.wikipedia.org/wiki/Permuted_congruential_generator
+	/*struct PCG
+	{
+		void Seed( const uint32_t& Value )
+		{
+			State = Value + Increment;
+			Random();
+		}
+
+		uint32_t Random()
+		{
+			uint64_t X = State;
+			const auto Count = static_cast<unsigned>( X >> 59 );
+
+			State = X * Multiplier + Increment;
+			X ^= X >> 21;
+			return rotr32( static_cast<uint32_t>( X >> 27 ), Count );
+		}
+
+	private:
+		static uint32_t rotr32( uint32_t x, unsigned r )
+		{
+			return x >> r | x << ( -r & 31 );
+		}
+
+		uint64_t State = 0x4d595df4d0f33173;
+		uint64_t Multiplier = 6364136223846793005u;
+		uint64_t Increment = 1442695040888963407u;
+	};*/
+
+	static Lehmer Generator;
+	constexpr uint32_t RandomMaximum = -1;
+
 	inline void Seed( uint32_t Value )
 	{
 		std::srand( Value );
+		// Generator.Seed( Value );
 	}
 
 	inline float Random()
 	{
 		return static_cast<float>( std::rand() ) / static_cast<float>( RAND_MAX );
+		// return static_cast<float>( Generator.Random() ) / static_cast<float>( RandomMaximum );
 	}
 
 	inline float RandomRange( const float Minimum, const float Maximum )
 	{
-		return ( Maximum - Minimum ) * static_cast<float>( std::rand() ) / static_cast<float>( RAND_MAX ) + Minimum;
+		return ( Maximum - Minimum ) * Random() + Minimum;
 	}
 
 	inline int32_t RandomRangeInteger( const int32_t Minimum, const int32_t Maximum )
 	{
 		return Minimum + ( std::rand() % ( Maximum - Minimum + 1 ) );
+		// return Minimum + ( Generator.Random() % ( Maximum - Minimum + 1 ) );
 	}
 
 	inline Vector4D FromGLM( const glm::vec4& Vector )

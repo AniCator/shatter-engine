@@ -300,8 +300,8 @@ void CRenderer::DrawQueuedRenderables()
 	}
 
 	auto SortRenderables = [&] ( CRenderable* A, CRenderable* B ) {
-		auto& RenderDataA = A->GetRenderData();
-		auto& RenderDataB = B->GetRenderData();
+		const auto& RenderDataA = A->GetRenderData();
+		const auto& RenderDataB = B->GetRenderData();
 
 		const bool ShaderProgram = ExclusiveComparison( RenderDataA.ShaderProgram, RenderDataB.ShaderProgram );
 		const bool VertexBufferObject = ExclusiveComparison( RenderDataA.VertexBufferObject, RenderDataB.VertexBufferObject );
@@ -338,7 +338,7 @@ void CRenderer::DrawQueuedRenderables()
 			BlendMode = ExclusiveComparison( BlendModeA, BlendModeB );
 		}
 
-		return ShaderProgram && VertexBufferObject && IndexBufferObject && BlendMode;
+		return VertexBufferObject && IndexBufferObject;
 	};
 
 	// Create the render queue for this frame.
@@ -489,22 +489,22 @@ void CRenderer::DrawQueuedRenderables()
 	}
 
 	CProfiler& Profiler = CProfiler::Get();
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
 	const int64_t RenderQueueOpaqueSize = static_cast<int64_t>( RenderQueueOpaque.size() );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Render Queue (Opaque)", RenderQueueOpaqueSize ), true );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Render Queue (Opaque)", RenderQueueOpaqueSize ), true );
 
 	const int64_t RenderQueueTranslucentSize = static_cast<int64_t>( RenderQueueTranslucent.size() );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Render Queue (Translucent)", RenderQueueTranslucentSize ), true );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Render Queue (Translucent)", RenderQueueTranslucentSize ), true );
 
 	const int64_t RenderablesSize = static_cast<int64_t>( Renderables.size() );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables", RenderablesSize ), true );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Renderables", RenderablesSize ), true );
 
 	const int64_t RenderablesPerFrameSize = static_cast<int64_t>( RenderablesPerFrame.size() );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Frame)", RenderablesPerFrameSize ), true );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Renderables (Frame)", RenderablesPerFrameSize ), true );
 
 	const int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
 
 	// Clean up render passes.
 	Passes.clear();

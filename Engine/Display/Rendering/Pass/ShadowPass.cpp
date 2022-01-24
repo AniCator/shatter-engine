@@ -10,6 +10,7 @@ CRenderPassShadow::CRenderPassShadow( int Width, int Height, const CCamera& Came
 {
 	auto& Assets = CAssets::Get();
 	ShadowShader = Assets.CreateNamedShader( "Shadow", "Shaders/Shadow", EShaderType::Vertex );
+	SkinnedShadowShader = Assets.CreateNamedShader( "ShadowSkinned", "Shaders/ShadowSkinned", EShaderType::Vertex );
 	ShadowMap = nullptr;
 
 	SendQueuedRenderables = true;
@@ -38,7 +39,7 @@ void CRenderPassShadow::Clear()
 	glClear( GL_DEPTH_BUFFER_BIT );
 }
 
-void CRenderPassShadow::Draw( CRenderable* Renderable )
+void CRenderPassShadow::Draw( CRenderable* Renderable, CShader* ShadowShader )
 {
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 	auto* Shader = Renderable->GetShader();
@@ -49,14 +50,36 @@ void CRenderPassShadow::Draw( CRenderable* Renderable )
 	RenderData.ShaderProgram = ShadowShader->GetHandles().Program;
 
 	const auto ModelMatrix = RenderData.Transform.GetTransformationMatrix();
-	GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
+
+	if( ModelMatrixLocation < 0 || LastProgram != RenderData.ShaderProgram )
+	{
+		ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
+		LastProgram = RenderData.ShaderProgram;
+	}
+	
 	glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
+
+	if( Renderable->HasSkeleton )
+	{
+		// Skeletons have to submit bone data.
+		for( auto& UniformBuffer : Renderable->GetUniforms() )
+		{
+			UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
+		}
+	}
 
 	auto* Mesh = Renderable->GetMesh();
 	if( Mesh )
 	{
-		const FVertexBufferData& Data = Mesh->GetVertexBufferData();
-		const bool BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
+		bool BindBuffers = true;
+		if( PreviousRenderable )
+		{
+			const FVertexBufferData& Data = Mesh->GetVertexBufferData();
+			const auto& PreviousRenderData = PreviousRenderable->GetRenderData();
+			BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject ||
+				PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
+		}
+
 		if( BindBuffers )
 		{
 			Mesh->Prepare( RenderData.DrawMode );
@@ -67,17 +90,17 @@ void CRenderPassShadow::Draw( CRenderable* Renderable )
 		Calls++;
 	}
 
-	PreviousRenderData = RenderData;
+	PreviousRenderable = Renderable;
 }
 
-uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables, const UniformMap& Uniforms )
+uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables, UniformMap& Uniforms )
 {
 	Profile( PassName.c_str() );
 
 	if( !ShadowShader )
 		return 0;
 
-	auto& CreateRenderTexture = [&] ( CRenderTexture*& Texture, const std::string& Name, float Factor, const bool DepthOnly )
+	const auto& CreateRenderTexture = [&] ( CRenderTexture*& Texture, const std::string& Name, float Factor, const bool DepthOnly )
 	{
 		if( !Texture )
 		{
@@ -127,21 +150,17 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 	Begin();
 
 	ShadowShader->Activate();
+	ConfigureShader( ShadowShader );
 
-	ConfigureBlendMode( ShadowShader );
-	ConfigureDepthMask( ShadowShader );
-	ConfigureDepthTest( ShadowShader );
-
-	const GLint ProjectionViewMatrixLocation = glGetUniformLocation( ShadowShader->GetHandles().Program, "ProjectionView" );
-	if( ProjectionViewMatrixLocation > -1 )
+	// For double sided rendering we have to render the front faces as well as the back faces.
+	if( DoubleSided )
 	{
-		glUniformMatrix4fv( ProjectionViewMatrixLocation, 1, GL_FALSE, &ProjectionView[0][0] );
+		glCullFace( GL_FRONT );
+		DrawShadowMeshes( Renderables );
 	}
 
-	for( auto Renderable : Renderables )
-	{
-		Draw( Renderable );
-	}
+	glCullFace( GL_BACK );
+	DrawShadowMeshes( Renderables );
 
 	End();
 
@@ -155,4 +174,52 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 	}
 
 	return Calls;
+}
+
+void CRenderPassShadow::ConfigureShader( CShader* Shader )
+{
+	ConfigureBlendMode( Shader );
+	ConfigureDepthMask( Shader );
+	ConfigureDepthTest( Shader );
+
+	if( ProjectionViewMatrixLocation < 0 || LastProgram != Shader->GetHandles().Program )
+	{
+		ProjectionViewMatrixLocation = glGetUniformLocation( Shader->GetHandles().Program, "ProjectionView" );
+	}
+
+	if( ProjectionViewMatrixLocation > -1 )
+	{
+		glUniformMatrix4fv( ProjectionViewMatrixLocation, 1, GL_FALSE, &ProjectionView[0][0] );
+	}
+}
+
+void CRenderPassShadow::DrawShadowMeshes( const std::vector<CRenderable*>& Renderables )
+{
+	auto* PreviousShader = ShadowShader;
+	auto* CurrentShader = ShadowShader;
+	auto* SkinnedShader = SkinnedShadowShader ? SkinnedShadowShader : ShadowShader;
+
+	for( const auto Renderable : Renderables )
+	{
+		// Check if the renderable is classified as having a skeleton.
+		if( Renderable->HasSkeleton )
+		{
+			// Switch to the skinned shadow vertex shader for animation support.
+			CurrentShader = SkinnedShader;
+		}
+		else
+		{
+			// Use the plain shadow shader if the renderable is deemed to not have a skeleton.
+			CurrentShader = ShadowShader;
+		}
+
+		if( CurrentShader != PreviousShader )
+		{
+			CurrentShader->Activate();
+			ConfigureShader( CurrentShader );
+			PreviousShader = CurrentShader;
+		}
+
+		Draw( Renderable, CurrentShader );
+	}
 }

@@ -3,6 +3,7 @@
 
 #include <Game/Game.h>
 
+#include <Engine/Profiling/Profiling.h>
 #include <Engine/World/Level/Level.h>
 #include <Engine/World/World.h>
 
@@ -166,6 +167,8 @@ void CEntity::Traverse()
 	const bool ShouldTick = NextTickTime < CurrentTime;
 	if( ShouldTick )
 	{
+		OptickEvent();
+
 		if( Math::Equal( LastTickTime, 0.0 ) )
 		{
 			LastTickTime = CurrentTime;

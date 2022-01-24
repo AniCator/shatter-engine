@@ -314,7 +314,7 @@ void    ImGui_ImplOpenGL3_RenderDrawData(ImDrawData* draw_data)
     }
 
 	CProfiler& Profiler = CProfiler::Get();
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Draw Calls", DrawCalls ), true );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Draw Calls", DrawCalls ), true );
 
     // Destroy the temporary VAO
 #ifndef IMGUI_IMPL_OPENGL_ES2

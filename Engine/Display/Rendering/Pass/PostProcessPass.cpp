@@ -11,7 +11,7 @@ CRenderPassPostProcess::CRenderPassPostProcess( int Width, int Height, const CCa
 	Shader = Assets.CreateNamedShader( "fullscreenquad", "Shaders/FullScreenQuad" );
 }
 
-uint32_t CRenderPassPostProcess::Render( const UniformMap& Uniforms )
+uint32_t CRenderPassPostProcess::Render( UniformMap& Uniforms )
 {
 	if( !Shader || !Texture )
 		return 0;

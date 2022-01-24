@@ -303,6 +303,60 @@ public:
 		return Matrix;
 	}
 
+	Vector3D GetTranslation() const
+	{
+		// Fetch the translation information from the 4th column.
+		return {
+			Columns[W].X,
+			Columns[W].Y,
+			Columns[W].Z
+		};
+	}
+
+	Vector3D GetScale() const
+	{
+		// The scale is the length of the sum of each column's 3D vectors.
+		return {
+			Vector3D( Columns[X].X, Columns[X].Y, Columns[X].Z ).Length(),
+			Vector3D( Columns[Y].X, Columns[Y].Y, Columns[Y].Z ).Length(),
+			Vector3D( Columns[Z].X, Columns[Z].Y, Columns[Z].Z ).Length(),
+		};
+	}
+
+	Matrix3D GetRotation( const Vector3D& Scale ) const
+	{
+		// Fetch the 3x3 matrix.
+		auto Rotation = To3D();
+
+		// Divide all of the columns by the scale.
+		Rotation.Columns[X].X /= Scale.X;
+		Rotation.Columns[X].Y /= Scale.X;
+		Rotation.Columns[X].Z /= Scale.X;
+
+		Rotation.Columns[Y].X /= Scale.Y;
+		Rotation.Columns[Y].Y /= Scale.Y;
+		Rotation.Columns[Y].Z /= Scale.Y;
+
+		Rotation.Columns[Y].Z /= Scale.Z;
+		Rotation.Columns[Y].Z /= Scale.Z;
+		Rotation.Columns[Y].Z /= Scale.Z;
+
+		return Rotation;
+	}
+
+	Matrix3D GetRotation() const
+	{
+		const auto Scale = GetScale();
+		return GetRotation( Scale );
+	}
+
+	void Decompose( Vector3D& Position, Matrix3D& Rotation, Vector3D& Scale ) const
+	{
+		Position = GetTranslation();
+		Scale = GetScale();
+		Rotation = GetRotation( Scale );
+	}
+
 	Matrix4D operator*( const Matrix4D& B ) const
 	{
 		Matrix4D Result;

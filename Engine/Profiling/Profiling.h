@@ -10,18 +10,12 @@
 #include <Engine/Utility/Structures/Name.h>
 #include <Engine/Utility/Singleton.h>
 
-template<typename T>
-bool ExclusiveComparison( const T& A, const T& B )
-{
-	return A < B && !( A > B );
-}
-
 static const size_t TimeWindow = 512;
-struct FProfileTimeEntry
+struct ProfileTimeEntry
 {
-	FProfileTimeEntry() = default;
+	ProfileTimeEntry() = default;
 	
-	FProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn, const int64_t& StartTimeIn, const size_t& DepthIn )
+	ProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn, const int64_t& StartTimeIn, const size_t& DepthIn )
 	{
 		Name = NameIn;
 		Time = TimeIn;
@@ -29,7 +23,7 @@ struct FProfileTimeEntry
 		Depth = DepthIn;
 	}
 
-	FProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn, const size_t& DepthIn )
+	ProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn, const size_t& DepthIn )
 	{
 		Name = NameIn;
 		Time = TimeIn;
@@ -37,7 +31,7 @@ struct FProfileTimeEntry
 		Depth = DepthIn;
 	}
 
-	FProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn )
+	ProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn )
 	{
 		Name = NameIn;
 		Time = TimeIn;
@@ -45,7 +39,7 @@ struct FProfileTimeEntry
 		Depth = 0;
 	}
 
-	bool operator<( const FProfileTimeEntry& Entry ) const;
+	bool operator<( const ProfileTimeEntry& Entry ) const;
 
 	FName Name = FName::Invalid;
 	int64_t Time = 0;
@@ -58,10 +52,16 @@ class CProfiler : public Singleton<CProfiler>
 public:
 	~CProfiler();
 
-	void AddTimeEntry( const FProfileTimeEntry& TimeEntry );
-	void AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool& PerFrame = false, const bool& Assign = false );
+	void AddTimeEntry( const ProfileTimeEntry& TimeEntry );
+
+	void AddCounterEntry( const ProfileTimeEntry& TimeEntry, const bool& PerFrame = false, const bool& Assign = false );
 	void AddCounterEntry( const char* NameIn, int TimeIn );
+
 	void AddDebugMessage( const char* NameIn, const char* Body );
+
+	void AddMemoryEntry( const FName& Name, const size_t& Bytes );
+	void ClearMemoryEntry( const FName& Name );
+
 	void Display();
 	void Clear();
 	void ClearFrame();
@@ -76,11 +76,13 @@ public:
 	static std::string GetMemoryUsageAsString();
 
 private:
-	std::map<FName, RingBuffer<FProfileTimeEntry, TimeWindow>> TimeEntries;
+	std::map<FName, RingBuffer<ProfileTimeEntry, TimeWindow>> TimeEntries;
 
 	std::map<FName, int64_t> TimeCounters;
 	std::map<FName, int64_t> TimeCountersFrame;
 	std::map<std::string, std::string> DebugMessages;
+
+	std::map<FName, size_t> MemoryCounters;
 
 #ifdef ProfileBuild
 	bool Enabled = true;
@@ -91,12 +93,13 @@ private:
 	void PlotPerformance();
 };
 
-class CTimerScope
+class TimerScope
 {
 public:
-	CTimerScope( const FName& ScopeNameIn, bool TextOnly = true );
-	CTimerScope( const FName& ScopeNameIn, const uint64_t& Delta );
-	~CTimerScope();
+	TimerScope() = delete;
+	TimerScope( const FName& ScopeNameIn, bool TextOnly = true );
+	TimerScope( const FName& ScopeNameIn, const uint64_t& Delta );
+	~TimerScope();
 
 private:
 	FName ScopeName = FName::Invalid;
@@ -107,10 +110,24 @@ private:
 	static std::atomic<size_t> Depth;
 };
 
+class ProfileMemory
+{
+public:
+	ProfileMemory() = delete;
+	ProfileMemory( const FName& ScopeNameIn, const bool& ClearPrevious );
+	~ProfileMemory();
+private:
+	FName ScopeName = FName::Invalid;
+	size_t MemoryStartSize = 0;
+	bool Clear = false;
+};
+
 #define CONCAT_(x,y) x##y
 #define CONCAT(x,y) CONCAT_(x,y)
 #define _PROFILENAME_(x) CONCAT(x, __LINE__)
-#define _PROFILE_(Name, Bare) static FName _PROFILENAME_(ScopeName_)( Name ); CTimerScope _PROFILENAME_(Scope_)( Name, Bare )
+#define _PROFILE_(Name, Bare) static FName _PROFILENAME_(ScopeName_)( Name ); TimerScope _PROFILENAME_(Scope_)( Name, Bare )
+
+#define _PROFILEMEMORY_( Name, Clear ) static FName _PROFILENAME_(ScopeName_)( Name ); ProfileMemory _PROFILENAME_(Scope_)( Name, Clear )
 
 #define ProfileAlways( Name ) _PROFILE_( Name, false )
 
@@ -122,7 +139,11 @@ private:
 #define ProfileBare( Name ) OPTICK_EVENT()
 #define ProfileThread( Name ) OPTICK_THREAD( Name )
 #define ProfileFrame( Name ) OPTICK_FRAME( Name )
-#define OptickEvent() OPTICK_EVENT()
+
+#define ProfileMemory( Name ) _PROFILEMEMORY_( Name, false )
+#define ProfileMemoryClear( Name ) _PROFILEMEMORY_( Name, true )
+
+#define OptickEvent( ... ) OPTICK_EVENT( ##__VA_ARGS__ )
 #define OptickCategory( Name, Category ) OPTICK_CATEGORY( Name, Category )
 #define OptickCallback( Function ) OPTICK_SET_STATE_CHANGED_CALLBACK( Function )
 #define OptickStart() OPTICK_START_CAPTURE()
@@ -135,9 +156,16 @@ private:
 #define ProfileBare( Name ) _PROFILE_( Name, true )
 #define ProfileThread( Name ) (void(0))
 #define ProfileFrame( Name ) (void(0))
-#define OptickEvent() (void(0))
+
+#define ProfileMemory( Name ) _PROFILEMEMORY_( Name, false )
+#define ProfileMemoryClear( Name ) _PROFILEMEMORY_( Name, true )
+
+#define OptickEvent( ... ) (void(0))
 #define OptickCategory() (void(0))
 #define OptickCallback() (void(0))
+#define OptickStart() (void(0))
+#define OptickStop() (void(0))
+#define OptickSave( Path ) (void(0))
 #else
 #define ProfileScope() (void(0))
 #define Profile( Name ) (void(0))
@@ -145,7 +173,14 @@ private:
 #define ProfileBare( Name ) (void(0))
 #define ProfileThread( Name ) (void(0))
 #define ProfileFrame( Name ) (void(0))
-#define OptickEvent() (void(0))
+
+#define ProfileMemory( Name ) (void(0))
+#define ProfileMemoryClear( Name ) (void(0))
+
+#define OptickEvent( ... ) (void(0))
 #define OptickCategory() (void(0))
 #define OptickCallback() (void(0))
+#define OptickStart() (void(0))
+#define OptickStop() (void(0))
+#define OptickSave( Path ) (void(0))
 #endif

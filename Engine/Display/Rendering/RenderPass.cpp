@@ -44,7 +44,6 @@ CRenderPass::CRenderPass( const std::string& Name, int Width, int Height, const 
 	PassName = Name;
 	SendQueuedRenderables = false;
 	Calls = 0;
-	PreviousRenderData = FRenderDataInstanced();
 }
 
 uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable )
@@ -62,7 +61,7 @@ uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable )
 	return Calls;
 }
 
-uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable, const std::unordered_map<std::string, Uniform>& Uniforms )
+uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable, std::unordered_map<std::string, Uniform>& Uniforms )
 {
 	if( !Renderable )
 		return 0;
@@ -99,7 +98,7 @@ uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables )
 	return Calls;
 }
 
-uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, const std::unordered_map<std::string, Uniform>& Uniforms )
+uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, std::unordered_map<std::string, Uniform>& Uniforms )
 {
 	if( Renderables.size() < 1 )
 		return 0;
@@ -121,7 +120,7 @@ uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, cons
 	return Calls;
 }
 
-uint32_t CRenderPass::Render( const std::unordered_map<std::string, Uniform>& Uniforms )
+uint32_t CRenderPass::Render( std::unordered_map<std::string, Uniform>& Uniforms )
 {
 	Log::Event( Log::Warning, "CRenderPass doesn't have a Render() implementation.\n" );
 	return 0;
@@ -151,8 +150,8 @@ void CRenderPass::Begin()
 	Calls = 0;
 	glViewport( 0, 0, ViewportWidth, ViewportHeight );
 
-	// Reset the render data.
-	PreviousRenderData = FRenderDataInstanced();
+	// Reset the previous renderable.
+	PreviousRenderable = nullptr;
 
 	if( Target )
 	{
@@ -193,7 +192,7 @@ void CRenderPass::End()
 #endif
 }
 
-void CRenderPass::Setup( CRenderable* Renderable, const std::unordered_map<std::string, Uniform>& Uniforms )
+void CRenderPass::Setup( CRenderable* Renderable, std::unordered_map<std::string, Uniform>& Uniforms )
 {
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 	if( !RenderData.ShouldRender )
@@ -209,7 +208,7 @@ void CRenderPass::Setup( CRenderable* Renderable, const std::unordered_map<std::
 
 			RenderData.ShaderProgram = ShaderProgramHandle;
 
-			for( const auto& UniformBuffer : Uniforms )
+			for( auto& UniformBuffer : Uniforms )
 			{
 				UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
 			}
@@ -298,8 +297,8 @@ void CRenderPass::Draw( CRenderable* Renderable )
 		ConfigureDepthMask( Shader );
 		ConfigureDepthTest( Shader );
 
-		Renderable->Draw( RenderData, PreviousRenderData );
-		PreviousRenderData = RenderData;
+		Renderable->Draw( RenderData, PreviousRenderable );
+		PreviousRenderable = Renderable;
 
 		Calls++;
 	}
@@ -360,33 +359,7 @@ void CRenderPass::ConfigureDepthTest( CShader* Shader )
 	}
 }
 
-void PointCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
-{
-	const auto& Frustum = Camera.GetFrustum();
-	for( auto* Renderable : Renderables )
-	{
-		auto& RenderData = Renderable->GetRenderData();
-		RenderData.ShouldRender = false;
-
-		const auto& Bounds = RenderData.WorldBounds;
-		
-		const auto Minimum = Math::Abs( Bounds.Minimum );
-		const auto& Maximum = Math::Abs( Bounds.Maximum );
-		
-		const float X = Math::Max( Minimum.X, Maximum.X );
-		const float Y = Math::Max( Minimum.Y, Maximum.Y );
-		const float Z = Math::Max( Minimum.Z, Maximum.Z );
-		
-		const float Radius = Math::VectorMax( X, Y, Z );
-		Vector3D Position3D = RenderData.Transform.GetPosition();
-		if( Frustum.Contains( Position3D, Radius ) )
-		{
-			RenderData.ShouldRender = true;
-		}
-	}
-}
-
-void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
+void SphereCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
 	return;
 	
@@ -466,14 +439,13 @@ void SphereCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 	}
 }
 
-void CRenderPass::FrustumCull( CCamera& Camera, const std::vector<CRenderable*>& Renderables )
+void CRenderPass::FrustumCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
 	OptickEvent();
-	// SphereCull( Camera, Renderables );
-	PointCull( Camera, Renderables );
+	CRenderable::FrustumCull( Camera, Renderables );
 }
 
-uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )
+uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, UniformMap& Uniforms )
 {
 	static CRenderPassCopy Copy( Width, Height, Camera, AlwaysClear );
 	Copy.ViewportWidth = Width;
@@ -484,7 +456,7 @@ uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width,
 	return Copy.Render( Uniforms );
 }
 
-uint32_t DownsampleTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, const UniformMap& Uniforms )
+uint32_t DownsampleTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, UniformMap& Uniforms )
 {
 	static CRenderPassDownsample Downsample( Width, Height, Camera, AlwaysClear );
 	Downsample.ViewportWidth = Width;

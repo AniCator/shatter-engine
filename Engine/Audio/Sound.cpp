@@ -249,13 +249,21 @@ bool CSound::Load( const std::vector<std::string>& Locations )
 	return Loaded;
 }
 
-void CSound::Clear()
+void CSound::Clear( const bool& Unload )
 {
 	Stop();
 	Location = 0;
-	// BufferHandles.clear();
+	
 	SoundHandles.clear();
 	StreamHandles.clear();
+
+	if( Unload )
+	{
+		Loaded = false;
+
+		BufferHandles.clear();
+		StreamBufferHandles.clear();
+	}
 }
 
 int32_t CSound::Start( const Spatial Information )
@@ -492,29 +500,29 @@ void CSound::Update( const int32_t& HandleIn, const Vector3D& Position, const Ve
 
 SoundBufferHandle CSound::Select()
 {
-	if( BufferHandles.size() > 0 )
+	if( BufferHandles.empty() )
+		return EmptyHandle<SoundBufferHandle>();
+
+	if( PlayMode == ESoundPlayMode::Unknown || PlayMode == ESoundPlayMode::Sequential )
 	{
-		if( PlayMode == ESoundPlayMode::Unknown || PlayMode == ESoundPlayMode::Sequential )
+		if( Location >= BufferHandles.size() )
 		{
-			if( Location >= BufferHandles.size() )
-			{
-				Location = 0;
-			}
-
-			return BufferHandles[Location++];
+			Location = 0;
 		}
-		else if( PlayMode == ESoundPlayMode::Random )
+
+		return BufferHandles[Location++];
+	}
+	else if( PlayMode == ESoundPlayMode::Random )
+	{
+		uint32_t NewLocation = static_cast<uint32_t>( Math::RandomRangeInteger( 0, BufferHandles.size() - 1 ) );
+		while( NewLocation == Location )
 		{
-			uint32_t NewLocation = static_cast<uint32_t>( Math::RandomRangeInteger( 0, BufferHandles.size() - 1 ) );
-			while( NewLocation == Location )
-			{
-				// NewLocation = ( NewLocation + 1 ) % BufferHandles.size();
-				NewLocation = static_cast<uint32_t>( Math::RandomRangeInteger( 0, BufferHandles.size() - 1 ) );
-			}
-
-			Location = NewLocation;
-			return BufferHandles[Location];
+			// NewLocation = ( NewLocation + 1 ) % BufferHandles.size();
+			NewLocation = static_cast<uint32_t>( Math::RandomRangeInteger( 0, BufferHandles.size() - 1 ) );
 		}
+
+		Location = NewLocation;
+		return BufferHandles[Location];
 	}
 
 	return EmptyHandle<SoundBufferHandle>();

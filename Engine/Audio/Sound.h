@@ -42,7 +42,7 @@ public:
 	bool Load( const char* FileLocation );
 	bool Load( const std::vector<std::string>& Locations );
 
-	void Clear();
+	void Clear( const bool& Unload = false );
 
 	int32_t Start( const Spatial Information = Spatial() );
 	void Stop( const float FadeOut = -1.0f );

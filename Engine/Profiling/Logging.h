@@ -6,7 +6,7 @@
 #include <stdarg.h>
 #include <fstream>
 #include <vector>
-#include <mutex>
+#include <shared_mutex>
 
 #if defined(_WIN32)
 #define ConsoleWindowDisabled
@@ -83,6 +83,6 @@ namespace Log
 		CTimer Timer;
 		static std::vector<FHistory> LogHistory;
 
-		mutable std::mutex LogMutex;
+		mutable std::shared_mutex LogMutex;
 	};
 }

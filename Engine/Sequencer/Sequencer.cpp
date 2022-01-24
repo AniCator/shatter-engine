@@ -7,6 +7,7 @@
 
 #include <Engine/Audio/Sound.h>
 #include <Engine/Application/ApplicationMenu.h>
+#include <Engine/Application/AssetHelper.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Display/Window.h>
@@ -185,7 +186,7 @@ struct FEventAudio : TrackEvent
 
 		ImGui::Separator();
 
-		if( ImGui::BeginCombo( "##SoundAssets", Name.c_str() ) )
+		/*if( ImGui::BeginCombo( "##SoundAssets", Name.c_str() ) )
 		{
 			auto& Assets = CAssets::Get();
 			auto& Sounds = Assets.GetSounds();
@@ -201,6 +202,24 @@ struct FEventAudio : TrackEvent
 			}
 
 			ImGui::EndCombo();
+		}*/
+
+		static AssetDropdownData Data;
+		Data.Name = Name;
+		DisplayAssetDropdown( EAsset::Sound, Data );
+		if( Data.Asset )
+		{
+			Name = Data.Name;
+			Sound = reinterpret_cast<CSound*>( Data.Asset );
+			Data = AssetDropdownData(); // Clear the data.
+			Data.PreviewName = Name;
+		}
+
+		if( Data.Clear )
+		{
+			Name = "";
+			Sound = nullptr;
+			Data = AssetDropdownData(); // Clear the data.
 		}
 	}
 
@@ -469,7 +488,7 @@ struct FEventCamera : TrackEvent
 		}
 
 		bool ShouldUpdateA = false;
-		if( ImGui::DragFloat3( "Position##CamPosA", &Camera.GetCameraSetup().CameraPosition[0] ) )
+		if( ImGui::DragFloat3( "Position##CamPosA", &Camera.GetCameraSetup().CameraPosition[0], 0.1f ) )
 		{
 			ShouldUpdateA = true;
 		}
@@ -518,7 +537,7 @@ struct FEventCamera : TrackEvent
 			}
 
 			bool ShouldUpdateB = false;
-			if( ImGui::DragFloat3( "Position##CamPosB", &CameraB.GetCameraSetup().CameraPosition[0] ) )
+			if( ImGui::DragFloat3( "Position##CamPosB", &CameraB.GetCameraSetup().CameraPosition[0], 0.1f ) )
 			{
 				ShouldUpdateB = true;
 			}
@@ -1671,7 +1690,7 @@ public:
 					const std::string StretchHandleLeftLabel = "##StretchLeft" + std::to_string( GlobalIndex );
 					ImGui::Button( StretchHandleLeftLabel.c_str(), ImVec2( HandleWidth, 30.0f ) );
 
-					if( ImGui::IsItemHovered( ImGuiHoveredFlags_RectOnly ) || ImGui::IsItemClicked() )
+					if( !Scrubbing && ( ImGui::IsItemHovered( ImGuiHoveredFlags_RectOnly ) || ImGui::IsItemClicked() ) )
 					{
 						ImGui::BeginTooltip();
 						if( LastDrag.Event && LastDrag.Stretch && LastDrag.Left )
@@ -1708,7 +1727,7 @@ public:
 
 					const std::string StretchHandleRightLabel = "##StretchRight" + std::to_string( GlobalIndex );
 					ImGui::Button( StretchHandleRightLabel.c_str(), ImVec2( HandleWidth, 30.0f ) );
-					if( ImGui::IsItemHovered( ImGuiHoveredFlags_RectOnly ) || ImGui::IsItemClicked() )
+					if( !Scrubbing && ( ImGui::IsItemHovered( ImGuiHoveredFlags_RectOnly ) || ImGui::IsItemClicked() ) )
 					{
 						ImGui::BeginTooltip();
 						if( LastDrag.Event && LastDrag.Stretch && !LastDrag.Left )
@@ -1943,7 +1962,7 @@ public:
 						}
 
 						Stretch.Event = LastDrag.Event;
-						Stretch.TrackIndex = TrackIndex;
+						Stretch.TrackIndex = TrackIndex - 1;
 					}
 				}
 				else
@@ -2376,6 +2395,9 @@ protected:
 
 	// Enable visualization for all tracks.
 	bool Visualize = false;
+
+	// True if the sequencer is skipping through the sequence and only wants to fire important events.
+	bool Skipping = false;
 };
 
 CSequence::CSequence()

@@ -22,6 +22,11 @@ public:
 	void Fade( const float Volume, const float Time ) const;
 	void Update( const Vector3D& Position, const Vector3D& Velocity ) const;
 
+	explicit operator bool() const
+	{
+		return Asset != nullptr;
+	}
+
 protected:
 	class CSound* Asset = nullptr;
 	int32_t Handle = -1;

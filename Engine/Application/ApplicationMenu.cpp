@@ -2,6 +2,8 @@
 #include "ApplicationMenu.h"
 
 #include <Engine/Application/Application.h>
+#include <Engine/Application/AssetHelper.h>
+#include <Engine/Application/FileDialog.h>
 #include <Engine/Audio/Sound.h>
 #include <Engine/Audio/SoundInstance.h>
 #include <Engine/Audio/SoLoud/EffectStack.h>
@@ -35,7 +37,7 @@ public:
 		
 	}
 
-	uint32_t Render( const UniformMap& Uniforms ) override
+	uint32_t Render( UniformMap& Uniforms ) override
 	{
 		if( !Mesh )
 			return 0;
@@ -112,8 +114,18 @@ CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh )
 	Configuration.Height = 64;
 	Configuration.Format = EImageFormat::RGBA8;
 
-	auto* ThumbnailTexture = new CRenderTexture( "ModelThumbnail", Configuration );
-	Thumbnails.insert_or_assign( Name, ThumbnailTexture );
+	CRenderTexture* ThumbnailTexture = nullptr;
+
+	const auto Iterator = Thumbnails.find( Name );
+	if( Iterator == Thumbnails.end() )
+	{
+		ThumbnailTexture = new CRenderTexture( "ModelThumbnail", Configuration );
+		Thumbnails.insert_or_assign( Name, ThumbnailTexture );
+	}
+	else
+	{
+		ThumbnailTexture = dynamic_cast<CRenderTexture*>( Iterator->second );
+	}
 
 	static CModelPass ModelPass;
 	ModelPass.Target = ThumbnailTexture;
@@ -121,7 +133,7 @@ CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh )
 
 	auto& Window = CWindow::Get();
 	CRenderer& Renderer = Window.GetRenderer();
-	Renderer.AddRenderPass( &ModelPass, ERenderPassLocation::PreScene );
+	Renderer.AddRenderPass( &ModelPass, ERenderPassLocation::Translucent );
 	
 	return GetThumbnail( Name );
 }
@@ -197,7 +209,10 @@ void ShowTexture( CTexture* Texture )
 		float TextureX = ( ( ImGui::GetMousePos().x - CursorPosition.x ) / ImageSize.x ) * Texture->GetWidth();
 		float TextureY = ( ( ImGui::GetMousePos().y - CursorPosition.y ) / ImageSize.y ) * Texture->GetHeight();
 
+		ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
 		ImGui::BeginTooltip();
+		ImGui::PopStyleVar();
+
 		ImGui::Text( "X: %i Y: %i", (int) TextureX, (int) TextureY );
 		ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
 		ImGui::Text( "%s", CAssets::Get().GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
@@ -275,9 +290,11 @@ void CreateIcons()
 	IconsCreated = true;
 }
 
+static bool ShowPreview = false;
 static bool ShowTextures = true;
 static bool ShowSounds = true;
 static bool ShowMeshes = true;
+static bool ShowSequences = true;
 static char FilterText[512] = {};
 
 bool MatchFilter( const char* Name )
@@ -288,7 +305,12 @@ bool MatchFilter( const char* Name )
 void ContentBrowserUI()
 {
 	CreateIcons();
-	ImGui::BeginChild( "Content Panel", ImVec2( 0, ImGui::GetContentRegionAvail().y * 0.5f ) );
+
+	auto ContentHeight = ImGui::GetContentRegionAvail().y;
+	if( ShowPreview )
+		ContentHeight *= 0.5f;
+
+	ImGui::BeginChild( "Content Panel", ImVec2( 0, ContentHeight ) );
 	const int Columns = std::max( static_cast<int>( ImGui::GetWindowWidth() / 66 ), 1 );
 	ImGui::Columns( Columns );
 
@@ -315,84 +337,21 @@ void ContentBrowserUI()
 					PreviewName = Pair.first;
 					PreviewTexture = Texture;
 					PreviewMesh = nullptr;
+					ShowPreview = true;
 				}
 
 				if( ImGui::IsItemHovered() )
 				{
+					ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
 					ImGui::BeginTooltip();
+					ImGui::PopStyleVar();
+
 					ImGui::Text( "%s", Pair.first.c_str() );
 					ImGui::Text( "%s", Texture->GetLocation().c_str() );
 					ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
 					ImGui::Text( "%s", Assets.GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
 					ImGui::EndTooltip();
 				}
-
-				ImGui::NextColumn();
-			}
-		}
-	}
-
-	if( ShowSounds )
-	{
-		const auto& Sounds = Assets.GetSounds();
-		for( const auto& Pair : Sounds )
-		{
-			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
-				continue;
-			
-			CSound* Sound = Pair.second;
-			if( Sound )
-			{
-				auto ImageSize = ImVec2( 64, 64 );
-
-				auto* TextureID = reinterpret_cast<ImTextureID>( UIFileSpeaker->GetHandle() );
-				const bool Playing = Sound->Playing();
-				const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
-				const ImVec4 Tint = Playing ? ImVec4( 1.0f, 0, 0, 1.0f ) : ImVec4( 0.65f, 0.1f, 0.1f, 1.0f );
-
-				ImGui::PushID( Pair.first.c_str() );
-				if( ImGui::ImageButton(
-					TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
-					Background,
-					Tint ) )
-				{
-					PreviewName = Pair.first;
-					PreviewTexture = UIFileSpeaker;
-					PreviewMesh = nullptr;
-
-					if( !Playing )
-					{
-						auto Information = Spatial::CreateUI();
-
-						static uint32_t BusIndex = Bus::Auxilery3;
-						if( BusIndex == Bus::Maximum )
-							BusIndex = Bus::Auxilery3;
-
-						Information.Bus = Bus::Type( BusIndex++ );
-						
-						Sound->Start( Information );
-					}
-					else
-					{
-						Sound->Stop();
-					}
-				}
-
-				if( ImGui::IsItemHovered() )
-				{
-					ImGui::BeginTooltip();
-					ImGui::Text( "%s", Pair.first.c_str() );
-					ImGui::Text( "Type: %s", Sound->GetSoundType() == ESoundType::Stream ? "Stream" : "Memory" );
-
-					if( Sound->GetSoundType() == ESoundType::Memory )
-					{
-						ImGui::Text( "Sounds: %llu", Sound->GetSoundBufferHandles().size() );
-					}
-					
-					ImGui::EndTooltip();
-				}
-
-				ImGui::PopID();
 
 				ImGui::NextColumn();
 			}
@@ -431,25 +390,65 @@ void ContentBrowserUI()
 
 			ImGui::PushID( Pair.first.c_str() );
 			if( ImGui::ImageButton(
-				TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
+				TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 0,
 				Background,
 				Tint ) )
 			{
 				PreviewName = Pair.first;
 				PreviewTexture = nullptr;
 				PreviewMesh = Mesh;
+				ShowPreview = true;
 			}
 
 			if( ImGui::IsItemHovered() )
 			{
+				ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
 				ImGui::BeginTooltip();
+				ImGui::PopStyleVar();
 				ImGui::Text( "%s", Pair.first.c_str() );
+				ImGui::Text( "%s", Mesh->GetLocation().c_str() );
+
+				ImGui::Separator();
+
+				const auto& Bounds = Mesh->GetBounds();
+				auto Size = ( Bounds.Maximum - Bounds.Minimum );
+				const auto Meters = Size.X > 1.0f && Size.Y > 1.0f && Size.Z > 1.0f;
+				if( !Meters )
+				{
+					Size *= 100.0f;
+					ImGui::Text( "%.0fcm %.0fcm %.0fcm", Size.X, Size.Y, Size.Z );
+				}
+				else
+				{
+					ImGui::Text( "%.1fm %.1fm %.1fm", Size.X, Size.Y, Size.Z );
+				}
+				ImGui::Separator();
+
+				// ImGui::Text( "Vertices: %llu", Mesh->GetVertexData().Vertices );
+
+				const auto& AnimationSet = Mesh->GetAnimationSet();
+				if( !AnimationSet.Skeleton.Bones.empty() )
+					ImGui::Text( "Bones: %llu", Mesh->GetAnimationSet().Skeleton.Bones.size() );
+				if( !AnimationSet.Skeleton.Animations.empty() )
+				{
+					ImGui::Text( "Animations: %llu", Mesh->GetAnimationSet().Skeleton.Animations.size() );
+
+					ImGui::Separator();
+					ImGui::Columns( 2 );
+					for( auto& Animation : AnimationSet.Set )
+					{
+						ImGui::Text( "%s", Animation.first.c_str() );
+						ImGui::NextColumn();
+
+						ImGui::Text( "(%s)", Animation.second.c_str() );
+						ImGui::NextColumn();
+					}
+					ImGui::Columns( 1 );
+				}
+
 				ImGui::EndTooltip();
 
-				if( ShouldGenerateThumbnail )
-				{
-					GenerateThumbnail( Pair.first, Pair.second );
-				}
+				GenerateThumbnail( Pair.first, Pair.second );
 			}
 
 			ImGui::PopID();
@@ -458,7 +457,6 @@ void ContentBrowserUI()
 		}
 	}
 
-	
 	const auto& CustomAssets = Assets.GetAssets();
 	for( const auto& Pair : CustomAssets )
 	{
@@ -483,11 +481,15 @@ void ContentBrowserUI()
 				PreviewName = Pair.first;
 				PreviewTexture = UIFileGeneric;
 				PreviewMesh = nullptr;
+				ShowPreview = true;
 			}
 
 			if( ImGui::IsItemHovered() )
 			{
+				ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
 				ImGui::BeginTooltip();
+				ImGui::PopStyleVar();
+
 				ImGui::Text( "%s", Pair.first.c_str() );
 				ImGui::Text( "Type: %s", Asset->GetType().c_str() );
 
@@ -500,8 +502,82 @@ void ContentBrowserUI()
 		}
 	}
 
+	if( ShowSounds )
+	{
+		const auto& Sounds = Assets.GetSounds();
+		for( const auto& Pair : Sounds )
+		{
+			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+				continue;
+
+			CSound* Sound = Pair.second;
+			if( Sound )
+			{
+				auto ImageSize = ImVec2( 64, 64 );
+
+				auto* TextureID = reinterpret_cast<ImTextureID>( UIFileSpeaker->GetHandle() );
+				const bool Playing = Sound->Playing();
+				const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
+				const ImVec4 Tint = Playing ? ImVec4( 1.0f, 0, 0, 1.0f ) : ImVec4( 0.65f, 0.1f, 0.1f, 1.0f );
+
+				ImGui::PushID( Pair.first.c_str() );
+				if( ImGui::ImageButton(
+					TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
+					Background,
+					Tint ) )
+				{
+					PreviewName = Pair.first;
+					PreviewTexture = UIFileSpeaker;
+					PreviewMesh = nullptr;
+					ShowPreview = true;
+
+					if( !Playing )
+					{
+						auto Information = Spatial::CreateUI();
+
+						static uint32_t BusIndex = Bus::Auxilery3;
+						if( BusIndex == Bus::Maximum )
+							BusIndex = Bus::Auxilery3;
+
+						Information.Bus = Bus::Type( BusIndex++ );
+
+						Sound->Start( Information );
+					}
+					else
+					{
+						Sound->Stop();
+					}
+				}
+
+				if( ImGui::IsItemHovered() )
+				{
+					ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
+					ImGui::BeginTooltip();
+					ImGui::PopStyleVar();
+
+					ImGui::Text( "%s", Pair.first.c_str() );
+					ImGui::Text( "Type: %s", Sound->GetSoundType() == ESoundType::Stream ? "Stream" : "Memory" );
+
+					if( Sound->GetSoundType() == ESoundType::Memory )
+					{
+						ImGui::Text( "Sounds: %llu", Sound->GetSoundBufferHandles().size() );
+					}
+
+					ImGui::EndTooltip();
+				}
+
+				ImGui::PopID();
+
+				ImGui::NextColumn();
+			}
+		}
+	}
+
 	ImGui::Columns( 1 );
 	ImGui::EndChild();
+
+	if( !ShowPreview )
+		return;
 
 	ImGui::BeginChild( "Texture Preview", ImVec2( 0, 0 ), false, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse );
 	ShowTexture( PreviewTexture );
@@ -512,8 +588,12 @@ static bool ShowNewAssetPopup = false;
 static std::string NewAssetType = "Sequence";
 static std::string NewAssetName = "NewAsset";
 
+AssetNewPopup AssetPopup;
+
 void NewAssetUI()
 {
+	DisplayAssetWindow( AssetPopup );
+	return;
 	if( ShowNewAssetPopup )
 	{
 		if( ImGui::BeginPopupContextItem( "New Asset", 0 ) )
@@ -649,7 +729,8 @@ void AssetUI()
 		{
 			if( ImGui::Button( "New##NewAssetPopup" ) )
 			{
-				ShowNewAssetPopup = true;
+				// ShowNewAssetPopup = true;
+				OpenAssetWindow( AssetPopup.Window );
 			}
 
 			ImGui::SameLine();
@@ -663,6 +744,7 @@ void AssetUI()
 
 			ImGui::SameLine();
 
+			ImGui::SameLine(); ImGui::Checkbox( "Toggle Preview", &ShowPreview );
 			ImGui::SameLine(); ImGui::Checkbox( "Textures", &ShowTextures );
 			ImGui::SameLine(); ImGui::Checkbox( "Sounds", &ShowSounds );
 			ImGui::SameLine(); ImGui::Checkbox( "Meshes", &ShowMeshes );
@@ -712,7 +794,7 @@ void AssetUI()
 				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 					continue;
 
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				if( ImGui::Selectable( ( Pair.first + "##Custom" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 
 				}
@@ -731,7 +813,7 @@ void AssetUI()
 				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 					continue;
 
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				if( ImGui::Selectable( ( Pair.first + "##Mesh" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					if( Pair.second && Assets.FindMesh( Pair.first ) )
 					{
@@ -758,6 +840,8 @@ void AssetUI()
 					Label += "( Auto Reload )";
 				}
 
+				Label += "##Shader";
+
 				if( ImGui::Selectable( Label.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					Pair.second->Reload();
@@ -766,6 +850,16 @@ void AssetUI()
 				if( ImGui::IsItemClicked( 1 ) )
 				{
 					Pair.second->AutoReload( !Pair.second->AutoReload() );
+				}
+
+				if( ImGui::IsItemHovered() )
+				{
+					ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
+					ImGui::BeginTooltip();
+					ImGui::PopStyleVar();
+
+					ImGui::Text( "Left click to reload.\nRight click to enable auto-reload." );
+					ImGui::EndTooltip();
 				}
 
 				ImGui::NextColumn();
@@ -783,7 +877,7 @@ void AssetUI()
 					continue;
 
 				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				if( ImGui::Selectable( ( Pair.first + "##Texture" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					PreviewTexture = Pair.second;
 				}
@@ -801,7 +895,7 @@ void AssetUI()
 				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 					continue;
 
-				if( ImGui::Selectable( Pair.first.c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
+				if( ImGui::Selectable( ( Pair.first + "##Audio" ).c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					if( Pair.second->Playing() )
 					{
@@ -833,7 +927,7 @@ void AssetUI()
 				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 					continue;
 
-				if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				if( ImGui::Selectable( ( Pair.first + "##Sequence" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 				{
 					Pair.second->Draw();
 				}
@@ -878,7 +972,7 @@ void StringUI()
 			ImGui::Separator();
 			ImGui::Separator();
 
-			for( const auto& Pair : FName::Pool() )
+			for( const auto& Pair : NamePool::Get().Pool() )
 			{
 				ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
 				ImGui::Text( "%i", Pair.second ); ImGui::NextColumn();
@@ -1019,9 +1113,25 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 	auto* DrawList = ImGui::GetWindowDrawList();
 	const auto Position = ImGui::GetCursorScreenPos();
 	const auto ButtonText = Name + "##Volume";
-	auto BaseColor = ImColor( 0.0f, 0.0f, 0.25f, 0.25f );
-	auto LeftColor = ImColor( Math::Lerp( 0.0f, 1.0f, std::powf( ScaleLeft, 2.2f ) ), 0.0f, Math::Lerp( 2.0f, 0.0f, std::powf( ScaleLeft, 2.2f ) ), 0.75f );
-	auto RightColor = ImColor( Math::Lerp( 0.0f, 1.0f, std::powf( ScaleRight, 2.2f ) ), 0.0f, Math::Lerp( 2.0f, 0.0f, std::powf( ScaleRight, 2.2f ) ), 0.75f );
+
+	const auto BusStyle = ImGui::GetStyleColorVec4( ImGuiCol_PlotHistogram );
+
+	ImColor BaseColor = ImColor(
+		BusStyle.x,
+		BusStyle.y,
+		BusStyle.z,
+		0.1f );
+
+	auto LeftColor = ImColor( 
+		BusStyle.x,
+		BusStyle.y,
+		BusStyle.z,
+		0.85f );
+	auto RightColor = ImColor( 
+		BusStyle.x,
+		BusStyle.y,
+		BusStyle.z,
+		0.85f );
 	
 	if( DecibelLeft > -0.5f )
 	{
@@ -1218,6 +1328,7 @@ float LastPlayPosition = 0.0f;
 float ActualPosition = 0.0f;
 
 bool AudioPlayerFirstOpen = true;
+static CSound* AudioPlayerStream = nullptr;
 
 void AudioPlayerUI()
 {
@@ -1239,29 +1350,26 @@ void AudioPlayerUI()
 		{
 			DialogFormats Formats;
 			Formats.insert_or_assign( L"Audio", L"*.ogg;*.flac;*.wav;" );
+
 			const std::string Path = CApplication::Relative( OpenFileDialog( Formats ) );
-
-			static std::string AudioPlayerAssetPrefix = "audio_player_asset";
-			static uint64_t AudioPlayerAssetIndex = 0;
-
 			if( Path.length() > 0 )
 			{
 				AudioPlayerLocation = Path;
-				
-				auto* Sound = CAssets::Get().CreateNamedStream(
-					(
-						AudioPlayerAssetPrefix + std::to_string( AudioPlayerAssetIndex++ )
-						).c_str()
-				);
 
-				Sound->Load( Path.c_str() );
+				if( !AudioPlayerStream )
+				{
+					AudioPlayerStream = new CSound( ESoundType::Stream );
+				}
+
+				AudioPlayerStream->Clear( true );
+				AudioPlayerStream->Load( Path.c_str() );
 
 				PlayPosition = 0.0f;
 				LastPlayPosition = 0.0f;
 				ActualPosition = 0.0f;
 
 				AudioPlayerInstance.Stop( 0.1f );
-				AudioPlayerInstance = SoundInstance( Sound );
+				AudioPlayerInstance = SoundInstance( AudioPlayerStream );
 				AudioPlayerInstance.Start( AudioPlayerSpatial );
 				AudioPlayerInstance.Loop( AudioPlayerLoop );
 			}
@@ -1326,7 +1434,8 @@ void AudioPlayerUI()
 
 		const bool Playing = AudioPlayerInstance.Playing();
 
-		if( ImGui::SliderFloat( "Time", &ActualPosition, 0.0f, AudioPlayerInstance.Length(), "%.1f" ) )
+		ImGui::SetNextItemWidth( -1.0f );
+		if( ImGui::SliderFloat( "##TimeBar", &ActualPosition, 0.0f, AudioPlayerInstance.Length(), "%.1f" ) )
 		{
 			if( Playing )
 			{
@@ -1367,7 +1476,7 @@ public:
 		
 	}
 
-	virtual uint32_t Render( const UniformMap& Uniforms ) override
+	virtual uint32_t Render( UniformMap& Uniforms ) override
 	{
 		auto& Assets = CAssets::Get();
 		auto* Shader = Assets.FindShader( "shadertoy" );
@@ -1537,7 +1646,8 @@ void TagListUI()
 
 		for( const auto& Pair : Tags )
 		{
-			if( ImGui::TreeNode( Pair.first.c_str() ) )
+			std::string NodeName = Pair.first + " (" + std::to_string( Pair.second.size() ) + ")";
+			if( ImGui::TreeNode( NodeName.c_str() ) )
 			{
 				ImGui::NextColumn();
 				ImGui::NextColumn();

@@ -16,17 +16,21 @@
 
 void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int ActionInput, int Modifiers )
 {
+	const EKey Key = InputGLFW::CodeToKey( KeyInput );
 #if defined( IMGUI_ENABLED )
 	if( ImGui::IsAnyItemActive() || ImGui::IsAnyItemHovered() )
 	{
 		ImGui_ImplGlfw_KeyCallback( window, KeyInput, ScanCode, ActionInput, Modifiers );
-		return;
+		if( Key != EKey::NumpadSubtract )
+		{
+			return;
+		}
 	}
 #endif
 
 	if( !ImGui::GetIO().WantCaptureKeyboard )
 	{
-		const EKey Key = InputGLFW::CodeToKey( KeyInput );
+		// const EKey Key = InputGLFW::CodeToKey( KeyInput );
 		const EAction Action = InputGLFW::CodeToAction( ActionInput );
 		CInputLocator::Get().RegisterKeyInput( Key, ScanCode, Action, Modifiers );
 	}
@@ -119,7 +123,7 @@ void CInput::RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, int 
 	Input.Input = KeyInput;
 
 	// Ignore key repeat messages, toggle between press and release to latch states
-	if( Input.Action == EAction::Unknown )
+	if( Input.Action == EAction::Unknown || Input.Action == EAction::Repeat )
 	{
 		Input.Action = Action;
 	}
@@ -395,6 +399,10 @@ void CInput::Tick()
 		{
 			Input.Action = EAction::Unknown;
 		}
+		else if( Input.Action == EAction::Press )
+		{
+			AnyKey = true;
+		}
 	}
 
 	for( int i = 1; i < static_cast<int>( EGamepad::Maximum ); i++ )
@@ -403,6 +411,10 @@ void CInput::Tick()
 		if( Input.Action == EAction::Release )
 		{
 			Input.Action = EAction::Unknown;
+		}
+		else if( Input.Action == EAction::Press )
+		{
+			AnyKey = true;
 		}
 	}
 }

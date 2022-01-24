@@ -3,7 +3,7 @@
 
 #include <cstdint>
 #include <vector>
-#include <map>
+#include <unordered_map>
 #include <string>
 
 #include <Engine/Utility/DataString.h>
@@ -16,9 +16,9 @@ static constexpr uint32_t MaximumInfluences = 4;
 
 struct VertexWeight
 {
-	uint32_t Index[MaximumInfluences]
+	int32_t Index[MaximumInfluences]
 	{
-		0, 0, 0, 0
+		0, -1, -1, -1
 	};
 
 	float Weight[MaximumInfluences]
@@ -42,9 +42,9 @@ namespace AnimationKey
 
 struct Key
 {
-	uint32_t BoneIndex;
-	float Time;
-	Vector4D Value;
+	uint32_t BoneIndex = 0;
+	float Time = 0.0f;
+	Vector4D Value{ 0.0f,0.0f,0.0f,0.0f };
 };
 
 struct Animation
@@ -106,7 +106,7 @@ public:
 	std::vector<VertexWeight> Weights;
 	std::vector<Bone> Bones;
 	std::vector<std::string> MatrixNames;
-	std::map<std::string, Animation> Animations;
+	std::unordered_map<std::string, Animation> Animations;
 
 	friend CData& operator<<( CData& Data, Skeleton& Skeleton )
 	{

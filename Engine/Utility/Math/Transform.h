@@ -33,6 +33,11 @@ public:
 	Vector3D Scale( const Vector3D& Position );
 
 	glm::vec3 Transform( const glm::vec3& Position );
+
+	// Transforms the given position, does not update the transform if it's out of date;
+	Vector3D Transform( const Vector3D& Position ) const;
+
+	// Updates the transform if needed, then transforms the given position.
 	Vector3D Transform( const Vector3D& Position );
 
 	FTransform Transform( const FTransform& B );
@@ -48,9 +53,10 @@ public:
 		return *this;
 	};
 
+	void Update();
+
 private:
 	void Dirty();
-	void Update();
 
 	Matrix4D TranslationMatrix;
 	Matrix4D RotationMatrix;

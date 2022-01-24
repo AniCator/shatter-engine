@@ -12,6 +12,8 @@
 #include <Engine/World/Entity/LightEntity/LightEntity.h>
 #include <Engine/Utility/Chunk.h>
 
+#include <Game/Game.h>
+
 static const char WorldIdentifier[5] = "LLWF"; // Lofty Lagoon World Format
 static const size_t WorldVersion = 0;
 
@@ -22,6 +24,8 @@ CWorld::CWorld()
 	ActiveLevel = nullptr;
 	Physics = nullptr;
 	Camera = nullptr;
+
+	Tags = std::unordered_map<std::string, std::vector<CEntity*>>();
 }
 
 CWorld::~CWorld()
@@ -73,6 +77,13 @@ void CWorld::Tick()
 {
 	OptickEvent();
 
+	// Make sure the physics scene has finished its tasks.
+	if( Physics )
+	{
+		OptickEvent( "Waiting for Physics" );
+		Physics->Guard();
+	}
+
 	EventQueue.Poll();
 
 	for( auto Level : Levels )
@@ -108,7 +119,7 @@ void CWorld::Tick()
 
 	if( Physics )
 	{
-		Physics->Tick();
+		Physics->Tick( GameLayersInstance->GetCurrentTime() );
 	}
 
 	// Increment the tick counter.
@@ -159,6 +170,51 @@ CLevel& CWorld::Add()
 
 	const auto LevelIndex = Levels.size() - 1;
 	return Levels[LevelIndex];
+}
+
+bool CWorld::Transfer( CEntity* Entity )
+{
+	if( !ActiveLevel )
+	{
+		Log::Event( Log::Error, "This world doesn't have an active level.\n" );
+		return false;
+	}
+
+	if( !ActiveLevel->Transfer( Entity ) )
+	{
+		Log::Event(
+			Log::Warning,
+			"Failed to transfer entity %u \"%s\".\n",
+			Entity->GetEntityID().ID,
+			Entity->Name.String().c_str()
+		);
+
+		return false; // Failed to transfer the entity.
+	}
+
+	return true;
+}
+
+void CWorld::Transfer( const std::vector<CEntity*>& Entities )
+{
+	if( !ActiveLevel )
+	{
+		Log::Event( Log::Error, "This world doesn't have an active level.\n" );
+		return;
+	}
+
+	for( auto* Entity : Entities )
+	{
+		if( !ActiveLevel->Transfer( Entity ) )
+		{
+			Log::Event( 
+				Log::Warning, 
+				"Failed to transfer entity %u \"%s\".\n", 
+				Entity->GetEntityID().ID, 
+				Entity->Name.String().c_str() 
+			);
+		}
+	}
 }
 
 CEntity* CWorld::Find( const std::string& Name ) const
@@ -231,7 +287,6 @@ CCamera* CWorld::GetActiveCamera() const
 	return Camera;
 }
 
-static const FCameraSetup DummySetup = FCameraSetup();
 const FCameraSetup& CWorld::GetActiveCameraSetup() const
 {
 	if( Camera )
@@ -239,7 +294,7 @@ const FCameraSetup& CWorld::GetActiveCameraSetup() const
 		return Camera->GetCameraSetup();
 	}
 
-	return DummySetup;
+	return {};
 }
 
 uint32_t CWorld::GetCameraPriority() const

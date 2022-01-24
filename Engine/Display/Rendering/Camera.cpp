@@ -49,7 +49,12 @@ Plane::Plane( const Vector3D& A, const Vector3D& B, const Vector3D& C )
 
 float HalfSpace( const Plane& Plane, const Vector3D& Point )
 {
-	return Plane.Normal.X * Point.X + Plane.Normal.Y * Point.Y + Plane.Normal.Z * Point.Z + Plane.Distance;
+	return Plane.Normal.Dot( Point ) + Plane.Distance;
+}
+
+float Dot( const Plane& Plane, const Vector3D& Point )
+{
+	return Plane.Normal.X * Point.X + Plane.Normal.Y * Point.Y + Plane.Normal.Z * Point.Z;
 }
 
 bool HalfSpaceTest( const Plane& Plane, const Vector3D& Point, const float& Radius = 0.0f )
@@ -180,7 +185,7 @@ void CCamera::Update()
 	}
 	else
 	{
-		ProjectionMatrix = glm::ortho( -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
+		ProjectionMatrix = glm::ortho( -CameraSetup.OrthographicScale * CameraSetup.AspectRatio, CameraSetup.OrthographicScale * CameraSetup.AspectRatio, -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
 	}
 
 	const glm::vec3 CameraPosition = Math::ToGLM( CameraSetup.CameraPosition );

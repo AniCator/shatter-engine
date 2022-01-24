@@ -18,6 +18,7 @@ using VerifyEnum = std::enable_if_t<std::is_enum<T>::value>;
 
 struct Event
 {
+	using PayloadType = std::unordered_map<std::string, Property>;
 	using PayloadData = const std::unordered_map<std::string, Property>&;
 	struct Message
 	{
@@ -138,6 +139,10 @@ struct Event
 
 			// Check if the ID is actually set.
 			if( Event.ID == NoneEventType )
+				return;
+
+			// Event has no listeners at the moment.
+			if( Listeners[Event.ID].empty() )
 				return;
 
 			// Notify all subscribed listeners.

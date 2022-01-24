@@ -9,7 +9,7 @@ class CRenderPassCopy : public CRenderPass
 {
 public:
 	CRenderPassCopy( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
-	virtual uint32_t Render( const UniformMap& Uniforms ) override;
+	virtual uint32_t Render( UniformMap& Uniforms ) override;
 
 	class CRenderTexture* Source = nullptr;
 	class CMesh* Mesh = nullptr;

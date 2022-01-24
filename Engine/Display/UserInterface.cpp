@@ -711,7 +711,7 @@ namespace UI
 			return Calls;
 		}
 
-		virtual uint32_t Render( const UniformMap& Uniforms ) override
+		virtual uint32_t Render( UniformMap& Uniforms ) override
 		{
 			if( !LineShader )
 				return Calls;
@@ -785,8 +785,8 @@ namespace UI
 				EndIndex = StartIndex + Math::Min( Points - StartIndex, BatchSize );
 			}
 
-			CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Debug Lines", static_cast<int64_t>( Lines.size() ) ), true );
-			CProfiler::Get().AddCounterEntry( FProfileTimeEntry( "Debug Line Batches", static_cast<int64_t>( EndIndex / BatchSize ) ), true );
+			CProfiler::Get().AddCounterEntry( ProfileTimeEntry( "Debug Lines", static_cast<int64_t>( Lines.size() ) ), true );
+			CProfiler::Get().AddCounterEntry( ProfileTimeEntry( "Debug Line Batches", static_cast<int64_t>( EndIndex / BatchSize ) ), true );
 
 			End();
 

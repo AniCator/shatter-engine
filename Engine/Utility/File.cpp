@@ -194,6 +194,20 @@ bool CFile::Save( const bool& CreateDirectory )
 	return false;
 }
 
+void CFile::Delete( const bool& DeleteFromMemory )
+{
+	if( Exists() )
+	{
+		std::experimental::filesystem::remove( FileLocation );
+	}
+
+	if( DeleteFromMemory && Data )
+	{
+		delete[] Data;
+		Data = nullptr;
+	}
+}
+
 bool CFile::Exists() const
 {
 	return Exists( FileLocation.c_str() );

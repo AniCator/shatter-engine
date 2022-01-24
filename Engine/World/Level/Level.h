@@ -5,7 +5,6 @@
 
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/Utility/Data.h>
-#include <Engine/Utility/DataString.h>
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
 
@@ -15,7 +14,7 @@ class CLevel
 {
 public:
 	CLevel();
-	CLevel(CWorld* NewWorld);
+	CLevel( CWorld* NewWorld );
 	~CLevel();
 
 	void Construct();
@@ -81,9 +80,12 @@ public:
 	const std::vector<CEntity*>& GetEntities() const
 	{ 
 		return Entities;
-	};
+	}
 
 	void Remove( CEntity* Entity );
+
+	// Moves an entity from their original level to this level.
+	bool Transfer( CEntity* Entity );
 
 	CEntity* Find( const std::string& Name ) const;
 	CEntity* Find( const size_t& ID ) const;
@@ -126,6 +128,9 @@ public:
 
 	// Used to indicate if the level was loaded as a sub-level in a level script.
 	bool Prefab = false;
+
+	// The bounding box of the level's static geometry.
+	BoundingBox Bounds;
 
 private:
 	std::vector<CEntity*> Entities;

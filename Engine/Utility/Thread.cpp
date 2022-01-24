@@ -49,6 +49,11 @@ void SetThreadName( std::thread& Thread, const std::string& Name )
 }
 #endif
 
+void LambdaTask::Execute()
+{
+	Function();
+}
+
 void Worker::SetName( const std::string& Name )
 {
 	SetThreadName( Thread, Name );
@@ -66,6 +71,7 @@ void Worker::Work()
 
 		if( Task )
 		{
+			OptickEvent( "Thread Task" );
 			Task->Execute();
 		}
 

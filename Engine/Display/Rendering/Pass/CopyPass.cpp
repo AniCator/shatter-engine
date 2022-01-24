@@ -12,7 +12,7 @@ CRenderPassCopy::CRenderPassCopy( int Width, int Height, const CCamera& Camera, 
 	Shader = Assets.CreateNamedShader( "Copy", "Shaders/FullScreenQuad", "Shaders/Copy" );
 }
 
-uint32_t CRenderPassCopy::Render( const UniformMap& Uniforms )
+uint32_t CRenderPassCopy::Render( UniformMap& Uniforms )
 {
 	CRenderable Copy;
 	Copy.SetMesh( Mesh );

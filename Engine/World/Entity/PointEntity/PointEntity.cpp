@@ -36,6 +36,8 @@ const FTransform& CPointEntity::GetTransform()
 {
 	if( ShouldUpdateTransform )
 	{
+		Transform.Update();
+
 		if( Level && false )
 		{
 			WorldTransform = Level->GetTransform().Transform( Transform );
@@ -122,7 +124,7 @@ void CPointEntity::Debug()
 {
 	UI::AddCircle( Transform.GetPosition(), 2.0f, Color::White );
 	UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, -1.0f ), Name.String().c_str() );
-	UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, 0.5f ), "Velocity", Velocity, Color::Blue );
+	// UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, 0.5f ), "Velocity", Velocity, Color::Blue );
 }
 
 Vector3D CPointEntity::GetVelocity() const

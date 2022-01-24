@@ -3,6 +3,7 @@
 
 #include <Game/Game.h>
 
+#include <Engine/Animation/Animator.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Physics/Physics.h>
@@ -75,84 +76,8 @@ void CMeshEntity::Construct()
 {
 	if( Mesh )
 	{
-		Renderable = new CRenderable();
-		Renderable->SetMesh( Mesh );
-
-		if( Shader )
-		{
-			Renderable->SetShader( Shader );
-		}
-
-		if( Textures.size() > 0 )
-		{
-			size_t Index = 0;
-			for( auto* Texture : Textures )
-			{
-				if( Texture )
-				{
-					Renderable->SetTexture( Texture, static_cast<ETextureSlot>( Index ) );
-				}
-
-				Index++;
-
-				if( Index >= static_cast<size_t>( ETextureSlot::Maximum ) )
-				{
-					break;
-				}
-			}
-		}
-
-		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
-		RenderData.Transform = Transform;
-		RenderData.Color = Color;
-		RenderData.WorldBounds = WorldBounds;
-
-		auto* World = GetWorld();
-		if( World && Collision )
-		{
-			auto* Physics = World->GetPhysics();
-			if( Physics )
-			{
-				if( !PhysicsBody )
-				{
-					if( CollisionType == BodyType::Plane )
-					{
-						auto* PlaneBody = new CPlaneBody();
-						PlaneBody->TwoSidedCollision = true;
-						PlaneBody->ProjectToSurface = ShouldProject;
-						PhysicsBody = PlaneBody;
-					}
-					else if( CollisionType == BodyType::AABB )
-					{
-						PhysicsBody = new CBody();
-					}
-					else
-					{
-						PhysicsBody = new CBody();
-						PhysicsBody->TriangleMesh = true;
-					}
-
-					PhysicsBody->Owner = this;
-					PhysicsBody->Static = Static;
-					PhysicsBody->Stationary = Stationary;
-					PhysicsBody->Block = true;
-					PhysicsBody->LocalBounds = Mesh->GetBounds();
-
-					if( PhysicsBody )
-					{
-						PhysicsBody->Construct( Physics );
-					}
-				}
-			}
-		}
-
-		const auto& Set = Mesh->GetAnimationSet();
-		const auto& Skeleton = Set.Skeleton;
-		if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
-		{
-			const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
-			SetAnimation( FirstAnimation, LoopAnimation );
-		}
+		ConstructRenderable();
+		ConstructPhysics();
 	}
 
 	CPointEntity::Construct();
@@ -168,7 +93,22 @@ void CMeshEntity::Tick()
 		}
 	}
 
-	if( IsVisible() && Renderable )
+	bool IsCulled = !IsVisible();
+	if( !IsCulled && MaximumRenderDistance > 0.0f )
+	{
+		if( const auto* Camera = GetWorld()->GetActiveCamera() )
+		{
+			const auto RenderDistanceSquared = MaximumRenderDistance * MaximumRenderDistance;
+			const auto DistanceSquared = Transform.GetPosition().DistanceSquared( Camera->GetCameraPosition() );
+			if( DistanceSquared > RenderDistanceSquared )
+			{
+				IsCulled = true;
+			}
+		}
+	}
+	
+
+	if( !IsCulled && Renderable )
 	{
 		if( ShouldUpdateTransform )
 		{
@@ -225,50 +165,38 @@ size_t NearestKey( const float& Time, const float& Duration, const Bone* Bone, c
 	return Output;
 }
 
-void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleton& Skeleton, const Animation& Animation, const Bone* Parent, const Bone* Bone, std::vector<::Bone>& Result )
+size_t GetNextKey( const size_t& CurrentIndex, const std::vector<Key>& Keys )
+{
+	const auto& CurrentKey = Keys[CurrentIndex];
+	for( size_t KeyIndex = CurrentIndex; KeyIndex < Keys.size(); KeyIndex++ )
+	{
+		if( CurrentKey.BoneIndex != Keys[KeyIndex].BoneIndex )
+			continue;
+
+		if( CurrentIndex == KeyIndex )
+			continue;
+
+		return KeyIndex;
+	}
+
+	return CurrentIndex;
+}
+
+void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleton& Skeleton, const std::vector<AnimationBlendEntry>& Animations, const Bone* Parent, const Bone* Bone, std::vector<::Bone>& Result )
 {
 	if( !Bone )
 	{
 		return;
 	}
 
-	Matrix4D TranslationMatrix = Matrix4D();
-	Matrix4D RotationMatrix = Matrix4D();
-	Matrix4D ScaleMatrix = Matrix4D();
-
-	const auto PositionKeyIndex = NearestKey( Time, Animation.Duration, Bone, Animation.PositionKeys );
-	const auto PositionKey = Animation.PositionKeys[PositionKeyIndex];
-	auto Position = glm::mat4();
-	Position = glm::translate( Position, glm::vec3( PositionKey.Value.X, PositionKey.Value.Y, PositionKey.Value.Z ) );
-	TranslationMatrix = Math::FromGLM( Position );
-
-	if( Entity && Entity->IsDebugEnabled() && false )
+	Animator::CompoundKey Blend;
+	for( auto& Array : Animations )
 	{
-		UI::AddCircle( TranslationMatrix.Transform( Vector3D::Zero ), 3.0f, Color( 255, 0, 0 ) );
+		const auto Key = Animator::Get( Array.Animation, fmod( Time, Array.Animation.Duration ), Bone->Index );
+		Blend = Animator::Blend( Blend, Key, Array.Weight );
 	}
-
-	const auto RotationKeyIndex = NearestKey( Time, Animation.Duration, Bone, Animation.RotationKeys );
-	const auto RotationKey = Animation.RotationKeys[RotationKeyIndex];
-	auto Quaternion = glm::quat( RotationKey.Value.W, RotationKey.Value.X, RotationKey.Value.Y, RotationKey.Value.Z );
 	
-	RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
-
-	if( Entity && Entity->IsDebugEnabled() && false )
-	{
-		UI::AddCircle( RotationMatrix.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), 3.0f, Color( 0, 255, 0 ) );
-		UI::AddLine( RotationMatrix.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), Vector3D::Zero );
-	}
-
-	const auto ScalingKeyIndex = NearestKey( Time, Animation.Duration, Bone, Animation.ScalingKeys );
-	const auto ScalingKey = Animation.ScalingKeys[ScalingKeyIndex];
-	auto Scale = glm::mat4();
-	Scale = glm::scale( Scale, glm::vec3( ScalingKey.Value.X, ScalingKey.Value.Y, ScalingKey.Value.Z ) );
-	ScaleMatrix = Math::FromGLM( Scale );
-
-	if( Entity && Entity->IsDebugEnabled() && false )
-	{
-		UI::AddCircle( ScaleMatrix.Transform( Vector3D( 1.0f, 1.0f, 1.0f ) ), 3.0f, Color( 0, 0, 255 ) );
-	}
+	const auto Matrices = Animator::Get( Blend );
 
 	Result[Bone->Index] = *Bone;
 
@@ -279,7 +207,7 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 	const auto& InverseModelMatrix = Bone->InverseModelMatrix;
 	
 	// Concatenate all the keyframe transformations.
-	auto LocalTransform = TranslationMatrix * RotationMatrix * ScaleMatrix;
+	const auto LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
 	
 	Result[Bone->Index].LocalTransform = LocalTransform;
 
@@ -300,11 +228,24 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 	{
 		if( ChildIndex > -1 && ChildIndex < Result.size() )
 		{
-			TransformBones( Entity, Time, Skeleton, Animation, &Result[Bone->Index], &Skeleton.Bones[ChildIndex], Result );
+			TransformBones( Entity, Time, Skeleton, Animations, &Result[Bone->Index], &Skeleton.Bones[ChildIndex], Result );
 		}
 	}
+
+#if 0
+	if( Entity && Entity->IsDebugEnabled() )
+	{
+		UI::AddCircle( Matrices.Translation.Transform( Vector3D::Zero ), 3.0f, Color( 255, 0, 0 ) );
+
+		UI::AddCircle( Matrices.Rotation.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), 3.0f, Color( 0, 255, 0 ) );
+		UI::AddLine( Matrices.Rotation.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), Vector3D::Zero );
+
+		UI::AddCircle( Matrices.Scale.Transform( Vector3D( 1.0f, 1.0f, 1.0f ) ), 3.0f, Color( 0, 0, 255 ) );
+	}
+#endif
 };
 
+const std::string BoneLocationNamePrefix = "Bones[";
 void CMeshEntity::TickAnimation()
 {
 	if( !Mesh )
@@ -324,8 +265,6 @@ void CMeshEntity::TickAnimation()
 		return;
 	}
 
-	Profile( "Animation" );
-
 	Animation Animation;
 	if( !Set.Lookup( CurrentAnimation, Animation ) )
 	{
@@ -341,14 +280,39 @@ void CMeshEntity::TickAnimation()
 		return;
 	}
 
+	// Update the animation time before throttling
 	AnimationTime = fmod( NewTime, Animation.Duration );
-	
 
-	if( IsDebugEnabled() )
+	if( AnimationTickRate == 0 && !ForceAnimationTick )
+		return; // Animation disabled.
+
+	if( !Renderable->GetRenderData().ShouldRender )
+		return; // Mesh is invisible.
+
+	// Perform a reduced amount of animation updates when the tick rate is staggered above 1 tick.
+	if( AnimationTickRate > 1 && !ForceAnimationTick )
+	{
+		// Stagger using the entity ID.
+		const auto TickDelta = ( GetWorld()->GetTicks() + GetEntityID().ID ) % AnimationTickRate;
+		if( TickDelta != 0 )
+		{
+			// Skip this tick.
+			return;
+		}
+	}
+
+	if( ForceAnimationTick )
+	{
+		ForceAnimationTick = false;
+	}
+
+	Profile( "Animation" );
+
+	/*if( IsDebugEnabled() )
 	{
 		const auto TimeText = "Animation time: " + std::to_string( AnimationTime ) + "\nAnimation duration: " + std::to_string( Animation.Duration );
 		UI::AddText( Transform.GetPosition() + Vector3D( 0.5f, 0.0f, -0.1f ), TimeText.c_str() );
-	}
+	}*/
 
 	Bones.clear();
 	Bones.resize( Skeleton.Bones.size() );
@@ -370,16 +334,35 @@ void CMeshEntity::TickAnimation()
 		}
 	}
 
+	// Re-weigh the blend stack.
+	/*float TotalWeight = 0.0f;
+	float Sum = 0.0f;
+	for( const auto& Entry : BlendStack )
+	{
+		TotalWeight += Entry.Weight;
+		Sum += 1.0f;
+	}
+
+	const auto Ratio = Sum / TotalWeight;
+	for( auto& Entry : BlendStack )
+	{
+		Entry.Weight *= Ratio;
+	}*/
+
+	// Ensure the first weight is always present.
+	if( !BlendStack.empty() )
+	{
+		BlendStack.front().Weight = 1.0f;
+	}
+
 	// Transform all of the bones in the skeletal hierarchy.
 	for( const auto* Bone : RootBones )
 	{
-		TransformBones( this, AnimationTime, Skeleton, Animation, nullptr, Bone, Bones );
+		TransformBones( this, AnimationTime, Skeleton, BlendStack, nullptr, Bone, Bones );
 	}
 
 	// Set global transform
 	// Bones[Skeleton.RootIndex].Matrix = WorldTransform.GetTransformationMatrix() * Skeleton.Bones[Skeleton.RootIndex].Matrix;
-
-	const std::string BoneLocationNamePrefix = "Bones[";
 
 	static int DebugIndex = 0;
 	DebugIndex++;
@@ -446,28 +429,14 @@ void CMeshEntity::TickAnimation()
 		// Bones[Bones[MatrixIndex].ParentIndex]
 
 		// UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
-
-		if( Renderable )
-		{
-			const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
-			Renderable->SetUniform( BoneLocationName, Bones[MatrixIndex].BoneTransform );
-		}
 	}
+
+	SubmitAnimation();
 }
 
 void CMeshEntity::Frame()
 {
-	if( Renderable && IsVisible() )
-	{
-		// TickAnimation();
-
-		/*for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
-		{
-			const std::string BoneLocationNamePrefix = "Bones[";
-			const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
-			Renderable->SetUniform( BoneLocationName, Bones[MatrixIndex].BoneTransform );
-		}*/
-	}
+	// 
 }
 
 void CMeshEntity::Destroy()
@@ -543,7 +512,7 @@ void CMeshEntity::Debug()
 
 		if( PhysicsBody )
 		{
-			// PhysicsBody->Debug();
+			PhysicsBody->Debug();
 		}
 	}
 
@@ -671,6 +640,10 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		{
 			Extract( Property->Value, LoopAnimation );
 		}
+		else if( Property->Key == "maximum_render_distance" && Property->Value.length() > 0 )
+		{
+			Extract( Property->Value, MaximumRenderDistance );
+		}
 	}
 
 	if( TextureNames.empty() )
@@ -731,6 +704,9 @@ void CMeshEntity::Import( CData& Data )
 	std::string CollisionTypeString;
 	DataString::Decode( Data, CollisionTypeString );
 	CollisionType = ToBodyType( CollisionTypeString );
+
+	Data >> Static;
+	Data >> Stationary;
 }
 
 void CMeshEntity::Export( CData& Data )
@@ -744,7 +720,7 @@ void CMeshEntity::Export( CData& Data )
 	size_t Size = TextureNames.size();
 	Data << Size;
 
-	for( auto TextureName : TextureNames )
+	for( const auto& TextureName : TextureNames )
 	{
 		DataString::Encode( Data, TextureName );
 	}
@@ -753,6 +729,9 @@ void CMeshEntity::Export( CData& Data )
 	Data << Collision;
 	Data << Visible;
 	DataString::Encode( Data, FromBodyType( CollisionType ) );
+
+	Data << Static;
+	Data << Stationary;
 }
 
 bool CMeshEntity::ShouldCollide() const
@@ -810,15 +789,44 @@ const FTransform& CMeshEntity::GetTransform()
 
 void CMeshEntity::SetAnimation( const std::string& Name, const bool& Loop )
 {
+	const auto SameAnimation = CurrentAnimation == Name;
 	CurrentAnimation = Name;
 	LoopAnimation = Loop;
 	AnimationFinished = false;
 	AnimationTime = 0.0f;
+
+	ForceAnimationTick = true;
+
+	if( !Mesh && !SameAnimation )
+		return;
+
+	AnimationBlendEntry Entry;
+	Entry.Weight = 1.0f;
+
+	const auto& Set = Mesh->GetAnimationSet();
+	if( !Set.Lookup( CurrentAnimation, Entry.Animation ) )
+		return;
+
+	BlendStack.clear();
+	BlendStack.emplace_back( Entry );
 }
 
 const std::string& CMeshEntity::GetAnimation() const
 {
 	return CurrentAnimation;
+}
+
+bool CMeshEntity::HasAnimation( const std::string& Name ) const
+{
+	if( !Mesh )
+		return false;
+
+	static auto Dummy = Animation();
+	const auto& Set = Mesh->GetAnimationSet();
+	if( Set.Lookup( Name, Dummy ) )
+		return true;
+
+	return false;
 }
 
 bool CMeshEntity::IsAnimationFinished() const
@@ -837,6 +845,16 @@ float CMeshEntity::GetPlayRate() const
 void CMeshEntity::SetPlayRate( const float& PlayRate )
 {
 	this->PlayRate = PlayRate;
+}
+
+float CMeshEntity::GetAnimationTime() const
+{
+	return AnimationTime;
+}
+
+void CMeshEntity::SetAnimationTime( const float& Value )
+{
+	AnimationTime = Value;
 }
 
 void CMeshEntity::SetPosition( const Vector3D& Position, const bool& Teleport )
@@ -873,6 +891,116 @@ void CMeshEntity::SetSize( const Vector3D& Size )
 	{
 		PhysicsBody->PreviousTransform = Transform;
 	}
+}
+
+void CMeshEntity::SubmitAnimation()
+{
+	if( !Renderable )
+		return;
+
+	for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
+	{
+		const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
+		Renderable->SetUniform( BoneLocationName, Bones[MatrixIndex].BoneTransform );
+	}
+
+	if( !Bones.empty() )
+	{
+		Renderable->HasSkeleton = true;
+	}
+}
+
+void CMeshEntity::ConstructRenderable()
+{
+	if( !Mesh )
+		return;
+
+	Renderable = new CRenderable();
+	Renderable->SetMesh( Mesh );
+
+	if( Shader )
+	{
+		Renderable->SetShader( Shader );
+	}
+
+	if( !Textures.empty() )
+	{
+		size_t Index = 0;
+		for( auto* Texture : Textures )
+		{
+			if( Texture )
+			{
+				Renderable->SetTexture( Texture, static_cast<ETextureSlot>( Index ) );
+			}
+
+			Index++;
+
+			if( Index >= static_cast<size_t>( ETextureSlot::Maximum ) )
+			{
+				break;
+			}
+		}
+	}
+
+	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+	RenderData.Transform = Transform;
+	RenderData.Color = Color;
+	RenderData.WorldBounds = WorldBounds;
+
+	const auto& Set = Mesh->GetAnimationSet();
+	const auto& Skeleton = Set.Skeleton;
+	if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
+	{
+		const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
+		SetAnimation( FirstAnimation, LoopAnimation );
+	}
+}
+
+void CMeshEntity::ConstructPhysics()
+{
+	if( !Mesh )
+		return;
+
+	if( !Collision )
+		return;
+
+	auto* World = GetWorld();
+	if( !World )
+		return;
+
+	auto* Physics = World->GetPhysics();
+	if( !Physics )
+		return;
+
+	if( PhysicsBody )
+	{
+		PhysicsBody->Destroy();
+		delete PhysicsBody;
+	}
+
+	if( CollisionType == BodyType::Plane )
+	{
+		auto* PlaneBody = new CPlaneBody();
+		PlaneBody->TwoSidedCollision = true;
+		PlaneBody->ProjectToSurface = ShouldProject;
+		PhysicsBody = PlaneBody;
+	}
+	else if( CollisionType == BodyType::AABB )
+	{
+		PhysicsBody = new CBody();
+	}
+	else
+	{
+		PhysicsBody = new CBody();
+		PhysicsBody->TriangleMesh = true;
+	}
+
+	PhysicsBody->Owner = this;
+	PhysicsBody->Static = Static;
+	PhysicsBody->Stationary = Stationary;
+	PhysicsBody->Block = true;
+	PhysicsBody->LocalBounds = Mesh->GetBounds();
+	PhysicsBody->Construct( Physics );
 }
 
 void CMeshEntity::QueueRenderable( CRenderable* Renderable )

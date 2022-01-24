@@ -2,7 +2,7 @@
 #pragma once
 
 #include <vector>
-#include <set>
+#include <unordered_set>
 
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Physics/Body/Body.h>
@@ -53,6 +53,7 @@ public:
 		Stationary = true;
 
 		Entities.clear();
+		Entities.reserve( 100 );
 		CBody::PreCollision();
 	}
 
@@ -100,7 +101,7 @@ public:
 		}*/
 	}
 
-	std::set<TriggerType> Entities;
+	std::unordered_set<TriggerType> Entities;
 
 	virtual const FTransform& GetTransform() const override
 	{
@@ -110,6 +111,7 @@ public:
 	virtual void SetTransform( const FTransform& Transform )
 	{
 		TriggerTransform = Transform;
+		TriggerTransform.Update();
 		CalculateBounds();
 	}
 

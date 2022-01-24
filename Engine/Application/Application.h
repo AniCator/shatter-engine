@@ -42,8 +42,8 @@ public:
 	void RedirectLogToConsole();
 	void ProcessCommandLine( int argc, char** argv );
 
-	bool ToolsEnabled() const;
-	void EnableTools( const bool Enable );
+	static bool ToolsEnabled();
+	static void EnableTools( const bool& Enable );
 
 	bool DefaultExitEnabled() const;
 	void EnableDefaultExit( const bool Enable );
@@ -67,7 +67,7 @@ private:
 
 	static std::string Name;
 	static std::wstring DirectoryName;
-	bool Tools;
+	static bool Tools;
 	bool DefaultExit;
 	bool WaitForInput;
 

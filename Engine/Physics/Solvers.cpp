@@ -16,7 +16,6 @@ void Solve::SolvePosition( CBody* Body, const CollisionResponse& Response )
 	if( Response.Distance > 0.0f && !Body->Static && !Body->Stationary )
 	{
 		const auto Penetration = ( Response.Normal * Response.Distance );
-		// Body->Depenetration += Penetration;
 
 		auto Transform = Body->GetTransform();
 		Transform.SetPosition( Transform.GetPosition() - Penetration );

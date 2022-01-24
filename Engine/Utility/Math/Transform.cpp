@@ -125,11 +125,15 @@ glm::vec3 FTransform::Transform( const glm::vec3& Position )
 	return Math::ToGLM( TransformationMatrix ) * glm::vec4( Position, 1.0f );
 }
 
+Vector3D FTransform::Transform( const Vector3D& Position ) const
+{
+	return TransformationMatrix.Transform( Position );
+}
+
 Vector3D FTransform::Transform( const Vector3D& Position )
 {
 	Update();
-	const Vector4D Vector = TransformationMatrix.Transform( Vector4D( Position, 1.0f ) );
-	return { Vector.X, Vector.Y, Vector.Z };
+	return TransformationMatrix.Transform( Position );
 }
 
 FTransform FTransform::Transform( const FTransform& B )

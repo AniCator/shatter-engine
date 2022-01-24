@@ -6,6 +6,7 @@
 
 struct EventEntity : TrackEvent
 {
+	void Evaluate( const Timecode& Marker ) override;
 	void Execute() override;
 	void Reset() override;
 	void Context() override;
@@ -32,4 +33,6 @@ protected:
 	std::string Animation;
 
 	bool MoveTransform = false;
+
+	Timecode StoredMarker = 0;
 };

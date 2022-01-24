@@ -4,6 +4,7 @@
 #include <Engine/Input/InputInterface.h>
 
 #include <vector>
+#include <map>
 
 static const constexpr EKeyType MaximumKeyboardInputs = static_cast<EKeyType>( EKey::Maximum );
 static const constexpr int MaximumJoysticks = 16;

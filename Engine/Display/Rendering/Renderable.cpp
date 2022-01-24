@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Renderable.h"
 
+#include <Engine/Display/Rendering/Culling.h>
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/World/Entity/LightEntity/LightEntity.h>
@@ -34,7 +35,7 @@ CMesh* CRenderable::GetMesh()
 
 void CRenderable::SetMesh( CMesh* Mesh )
 {
-	if( Mesh )
+	if( Mesh && this->Mesh != Mesh )
 	{
 		this->Mesh = Mesh;
 
@@ -51,7 +52,7 @@ CShader* CRenderable::GetShader()
 
 void CRenderable::SetShader( CShader* Shader )
 {
-	if( Shader )
+	if( Shader && this->Shader != Shader || Shader->GetHandles().Program != this->Shader->GetHandles().Program )
 	{
 		this->Shader = Shader;
 
@@ -60,7 +61,7 @@ void CRenderable::SetShader( CShader* Shader )
 
 		for( size_t Index = 0; Index < TextureSlots; Index++ )
 		{
-			TextureLocation[Index] = glGetUniformLocation( Handles.Program, TextureSlotName[Index] );;
+			TextureLocation[Index] = glGetUniformLocation( Handles.Program, TextureSlotName[Index] );
 		}
 	}
 }
@@ -90,64 +91,59 @@ void CRenderable::SetUniform( const std::string& Name, const Uniform& Uniform )
 	Uniforms.insert_or_assign( Name, Uniform );
 }
 
-void CRenderable::Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride )
+void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride )
 {
-	if( RenderData.ShouldRender )
+	if( !RenderData.ShouldRender )
+		return;
+	
+	const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
+	Prepare( RenderData, PreviousRenderable );
+
+	ObjectPosition.Set( RenderData.Transform.GetPosition() );
+	ObjectPosition.Bind( RenderData.ShaderProgram );
+
+	LightIndices.Set( RenderData.LightIndex.Index );
+	LightIndices.Bind( RenderData.ShaderProgram );
+
+	if( Mesh )
 	{
-		const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
-		Prepare( RenderData );
+		auto& AABB = Mesh->GetBounds();
 
-		const GLint ObjectPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectPosition" );
-		if( ObjectPositionLocation > -1 )
-		{
-			glUniform3fv( ObjectPositionLocation, 1, RenderData.Transform.GetPosition().Base() );
-		}
+		ObjectBoundsMinimum.Set( AABB.Minimum );
+		ObjectBoundsMinimum.Bind( RenderData.ShaderProgram );
 
-		const GLint LightIndicesLocation = glGetUniformLocation( RenderData.ShaderProgram, "LightIndices" );
-		if( LightIndicesLocation > -1 )
-		{
-			glUniform4iv( LightIndicesLocation, 1, RenderData.LightIndex.Index );
-		}
+		ObjectBoundsMaximum.Set( AABB.Maximum );
+		ObjectBoundsMaximum.Bind( RenderData.ShaderProgram );
+	}
 
-		if( Mesh )
-		{
-			auto& AABB = Mesh->GetBounds();
-			const GLint ObjectBoundsMinimumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMinimum" );
-			if( ObjectBoundsMinimumLocation > -1 )
-			{
-				glUniform3fv( ObjectBoundsMinimumLocation, 1, AABB.Minimum.Base() );
-			}
+	ModelMatrix.Set( RenderData.Transform.GetTransformationMatrix() );
+	ModelMatrix.Bind( RenderData.ShaderProgram );
 
-			const GLint ObjectBoundsMaximumLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectBoundsMaximum" );
-			if( ObjectBoundsMaximumLocation > -1 )
-			{
-				glUniform3fv( ObjectBoundsMaximumLocation, 1, AABB.Maximum.Base() );
-			}
-		}
+	ObjectColor.Set( RenderData.Color );
+	ObjectColor.Bind( RenderData.ShaderProgram );
 
-		const auto ModelMatrix = RenderData.Transform.GetTransformationMatrix();
-		const GLuint ModelMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Model" );
-		glUniformMatrix4fv( ModelMatrixLocation, 1, GL_FALSE, &ModelMatrix[0][0] );
+	for( auto& UniformBuffer : Uniforms )
+	{
+		UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
+	}
 
-		const GLuint ColorLocation = glGetUniformLocation( RenderData.ShaderProgram, "ObjectColor" );
-		glUniform4fv( ColorLocation, 1, RenderData.Color.Base() );
-
-		for( const auto& UniformBuffer : Uniforms )
-		{
-			UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
-		}
-
-		if( Mesh )
+	if( Mesh )
+	{
+		bool BindBuffers = true;
+		if( PreviousRenderable )
 		{
 			const FVertexBufferData& Data = Mesh->GetVertexBufferData();
-			const bool BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
-			if( BindBuffers )
-			{
-				Mesh->Prepare( DrawMode );
-			}
-
-			Mesh->Draw( DrawMode );
+			const auto& PreviousRenderData = PreviousRenderable->RenderData;
+			BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || 
+				PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
 		}
+
+		if( BindBuffers )
+		{
+			Mesh->Prepare( DrawMode );
+		}
+
+		Mesh->Draw( DrawMode );
 	}
 }
 
@@ -156,31 +152,71 @@ FRenderDataInstanced& CRenderable::GetRenderData()
 	return RenderData;
 }
 
-void CRenderable::Prepare( FRenderData& RenderData )
+void CRenderable::FrustumCull( const CCamera& Camera, CRenderable* Renderable )
 {
-	if( Shader )
+	Culling::Frustum( Camera, Renderable );
+}
+
+void CRenderable::FrustumCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
+{
+	Culling::Frustum( Camera, Renderables );
+}
+
+void CRenderable::Prepare( FRenderData& RenderData, const CRenderable* PreviousRenderable )
+{
+	if( !Shader )
+		return;
+
+	if( !ShouldBindTextures( PreviousRenderable ) )
+		return;
+
+	for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
 	{
-		const FProgramHandles& Handles = Shader->GetHandles();
-		if( Textures[0] )
+		const auto Index = static_cast<ETextureSlotType>( Slot );
+
+		CTexture* Texture = Textures[Index];
+		if( Texture )
 		{
-			for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
+			Texture->Bind( Slot );
+		}
+
+		const auto Location = TextureLocation[Index];
+		if( Location > -1 )
+		{
+			glUniform1i( Location, Index );
+		}
+
+		Slot = static_cast<ETextureSlot>( Index + 1 );
+	}
+}
+
+bool CRenderable::ShouldBindTextures( const CRenderable* PreviousRenderable )
+{
+	if( !Textures[0] )
+		return false;
+
+	// Check if the previous renderable was using the same textures.
+	bool TextureMatch = true;
+	if( PreviousRenderable )
+	{
+		for( ETextureSlot Slot = ETextureSlot::Slot0; Slot < ETextureSlot::Maximum; )
+		{
+			const auto Index = static_cast<ETextureSlotType>( Slot );
+			const auto* TextureA = Textures[Index];
+			const auto* TextureB = PreviousRenderable->Textures[Index];
+			if( TextureA != TextureB )
 			{
-				const auto Index = static_cast<ETextureSlotType>( Slot );
-
-				CTexture* Texture = Textures[Index];
-				if( Texture )
-				{
-					Texture->Bind( Slot );
-				}
-
-				const auto Location = TextureLocation[Index];
-				if( Location > -1 )
-				{
-					glUniform1i( Location, Index );
-				}
-
-				Slot = static_cast<ETextureSlot>( Index + 1 );
+				TextureMatch = false;
+				break;
 			}
+
+			Slot = static_cast<ETextureSlot>( Index + 1 );
 		}
 	}
+	else
+	{
+		TextureMatch = false;
+	}
+
+	return !TextureMatch;
 }

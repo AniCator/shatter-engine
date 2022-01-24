@@ -50,7 +50,7 @@ namespace JSON
 				return Value;
 			}
 
-			if( const auto & Object = this->operator[]( Key ) )
+			if( const auto* Object = this->operator[]( Key ) )
 			{
 				return Object->Value;
 			}
@@ -61,7 +61,7 @@ namespace JSON
 			}
 		}
 
-		Object* operator[](const std::string& Search) const
+		Object* operator[]( const std::string& Search ) const
 		{
 			if( !Objects.empty() )
 			{

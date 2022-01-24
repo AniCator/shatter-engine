@@ -30,11 +30,11 @@ void CInfoText::Tick()
 			{
 				if( Style == Mode::World )
 				{
-					UI::AddText( Transform.GetPosition(), Text.c_str(), nullptr, Color( 0, 128, 255 ) );
+					UI::AddText( Transform.GetPosition(), Text.c_str(), nullptr, Color( 255, 0, 0 ) );
 				}
 				else
 				{
-					UI::AddText( Vector2D( 0.0f, 0.0f ), Text.c_str(), nullptr, Color( 0, 128, 255 ) );
+					UI::AddText( Vector2D( 0.0f, 0.0f ), Text.c_str(), nullptr, Color( 255, 0, 0 ) );
 				}
 
 				if( Once )

@@ -16,6 +16,18 @@ class CMesh;
 class MeshBuilder
 {
 public:
+	enum ImportOptions
+	{
+		Standard = 0, // Import mesh and animations.
+		AnimationOnly = ( 1 << 0 ), // Import just the animations.
+		AppendAnimation = ( 1 << 1 ) // Append any new animations.
+	};
+
+	static ImportOptions Option( unsigned Flags )
+	{
+		return static_cast<ImportOptions>( Flags );
+	}
+
 	static void Triangle( FPrimitive& Primitive, const float Radius );
 	static void Plane( FPrimitive& Primitive, const float Radius );
 	static void Cube( FPrimitive& Primitive, const float Radius );
@@ -31,7 +43,7 @@ public:
 	static void Dragon( FPrimitive& Primitive, const float Radius );
 	static void Buddha( FPrimitive& Primitive, const float Radius );
 
-	static void ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile& File );
+	static void ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile& File, const ImportOptions& Options = Standard );
 	static void OBJ( FPrimitive& Primitive, const CFile& File );
 	static void LM( FPrimitive& Primitive, const CFile& File );
 

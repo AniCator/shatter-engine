@@ -158,17 +158,25 @@
     </ProjectReference>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="Engine\Animation\Animator.cpp" />
     <ClCompile Include="Engine\Animation\Skeleton.cpp" />
     <ClCompile Include="Engine\Application\Application.cpp" />
     <ClCompile Include="Engine\Application\ApplicationMenu.cpp" />
+    <ClCompile Include="Engine\Application\AssetHelper.cpp" />
     <ClCompile Include="Engine\Application\EngineAssetLoaders.cpp" />
+    <ClCompile Include="Engine\Application\ThemeCherry.cpp" />
+    <ClCompile Include="Engine\Application\ThemeDefault.cpp" />
+    <ClCompile Include="Engine\Application\ThemeDracula.cpp" />
+    <ClCompile Include="Engine\Application\ThemeGruvbox.cpp" />
     <ClCompile Include="Engine\Audio\SimpleSound.cpp" />
     <ClCompile Include="Engine\Audio\SoLoudSound.cpp" />
     <ClCompile Include="Engine\Audio\Sound.cpp" />
     <ClCompile Include="Engine\Configuration\Configuration.cpp" />
+    <ClCompile Include="Engine\Display\Color.cpp" />
     <ClCompile Include="Engine\Display\imgui_impl_glfw.cpp" />
     <ClCompile Include="Engine\Display\imgui_impl_opengl3.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Camera.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Culling.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Framebuffer.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Light\Light.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
@@ -255,10 +263,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Animation\AnimationSet.h" />
+    <ClInclude Include="Engine\Animation\Animator.h" />
     <ClInclude Include="Engine\Animation\Skeleton.h" />
     <ClInclude Include="Engine\Application\Application.h" />
     <ClInclude Include="Engine\Application\ApplicationMenu.h" />
+    <ClInclude Include="Engine\Application\AssetHelper.h" />
     <ClInclude Include="Engine\Application\EngineAssetLoaders.h" />
+    <ClInclude Include="Engine\Application\FileDialog.h" />
+    <ClInclude Include="Engine\Application\ThemeDefault.h" />
+    <ClInclude Include="Engine\Application\Themes.h" />
     <ClInclude Include="Engine\Audio\SimpleSound.h" />
     <ClInclude Include="Engine\Audio\SoLoudSound.h" />
     <ClInclude Include="Engine\Audio\SoLoud\Bus.h" />
@@ -267,9 +280,11 @@
     <ClInclude Include="Engine\Audio\Sound.h" />
     <ClInclude Include="Engine\Audio\SoundInstance.h" />
     <ClInclude Include="Engine\Configuration\Configuration.h" />
+    <ClInclude Include="Engine\Display\Color.h" />
     <ClInclude Include="Engine\Display\imgui_impl_glfw.h" />
     <ClInclude Include="Engine\Display\imgui_impl_opengl3.h" />
     <ClInclude Include="Engine\Display\Rendering\Camera.h" />
+    <ClInclude Include="Engine\Display\Rendering\Culling.h" />
     <ClInclude Include="Engine\Display\Rendering\Framebuffer.h" />
     <ClInclude Include="Engine\Display\Rendering\Light\Light.h" />
     <ClInclude Include="Engine\Display\Rendering\Mesh.h" />

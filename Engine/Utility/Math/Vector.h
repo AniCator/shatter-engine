@@ -43,7 +43,12 @@ public:
 		return ( &X )[Index];
 	}
 
-	Vector2D operator=( const Vector2D& Vector )
+	bool operator<( const Vector2D& B ) const
+	{
+		return X < B.X && Y < B.Y;
+	}
+
+	Vector2D& operator=( const Vector2D& Vector )
 	{
 		this->X = Vector.X;
 		this->Y = Vector.Y;
@@ -249,7 +254,12 @@ public:
 		return ( &X )[Index];
 	}
 
-	Vector3D operator=( const Vector3D& Vector )
+	bool operator<( const Vector3D& B ) const
+	{
+		return X < B.X && Y < B.Y && Z < B.Z;
+	}
+
+	Vector3D& operator=( const Vector3D& Vector )
 	{
 		this->X = Vector.X;
 		this->Y = Vector.Y;
@@ -544,7 +554,12 @@ public:
 		return ( &X )[Index];
 	}
 
-	Vector4D operator=( const Vector4D& Vector )
+	bool operator<( const Vector4D& B ) const
+	{
+		return X < B.X && Y < B.Y && Z < B.Z && W < B.W;
+	}
+
+	Vector4D& operator=( const Vector4D& Vector )
 	{
 		this->X = Vector.X;
 		this->Y = Vector.Y;

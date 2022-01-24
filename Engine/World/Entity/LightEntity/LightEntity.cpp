@@ -3,6 +3,7 @@
 
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Resource/Assets.h>
+#include <Engine/World/Level/Level.h>
 
 #include <Game/Game.h>
 
@@ -69,6 +70,8 @@ void LightEntity::Reload()
 
 void LightEntity::Load( const JSON::Vector& Objects )
 {
+	CPointEntity::Load( Objects );
+
 	int Type;
 	float Radius, Intensity, AngleInner, AngleOuter;
 	Vector3D Position, Orientation, Color;
@@ -85,6 +88,20 @@ void LightEntity::Load( const JSON::Vector& Objects )
 		{ "angle_inner", AngleInner },
 		{ "angle_outer", AngleOuter }
 		} );
+
+	ShouldUpdateTransform = true;
+
+	auto* Level = GetLevel();
+	if( Level )
+	{
+		FTransform LightTransform;
+		LightTransform.SetTransform( Position, Orientation, Vector3D::One );
+
+		LightTransform = Level->GetTransform().Transform( LightTransform );
+
+		Position = LightTransform.GetPosition();
+		Orientation = LightTransform.GetOrientation();
+	}
 
 	ConfigureLight( Information, Position, Color, Intensity, Radius, Type, Orientation, AngleInner, AngleOuter );
 }

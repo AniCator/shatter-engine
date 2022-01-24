@@ -44,10 +44,7 @@ struct ParticleSystem
 class ParticleAsset : public CAsset
 {
 public:
-	~ParticleAsset() override
-	{
-
-	}
+	~ParticleAsset() override = default;
 
 	const std::string& GetType() const override
 	{

@@ -442,21 +442,33 @@ void CWindow::RenderFrame()
 	OptickCategory( "Render", Optick::Category::Rendering );
 
 #if defined(IMGUI_ENABLED)
-	UI::Frame();
+	{
+		OptickEvent( "UI Frame" );
+		UI::Frame();
+	}
 #endif
 
 	Renderer.SetViewport( CurrentDimensions.Width, CurrentDimensions.Height );
 	Renderer.DrawQueuedRenderables();
 
 #if defined( IMGUI_ENABLED )
-	ImGui::Render();
+	{
+		OptickEvent( "ImGUI" );
+		ImGui::Render();
+	}
 
-	UI::Render();
+	{
+		OptickEvent( "UI Render" );
+		UI::Render();
+	}
 
 	ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 #endif
 
-	glfwSwapBuffers( WindowHandle );
+	{
+		OptickEvent( "Swap Buffers" );
+		glfwSwapBuffers( WindowHandle );
+	}
 
 	RenderingFrame = false;
 

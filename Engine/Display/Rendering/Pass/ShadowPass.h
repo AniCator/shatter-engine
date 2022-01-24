@@ -11,10 +11,22 @@ public:
 	~CRenderPassShadow();
 
 	virtual void Clear() override;
-	virtual void Draw( CRenderable* Renderable ) override;
-	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables, const UniformMap& Uniforms ) override;
+	void Draw( CRenderable* Renderable, CShader* Shader );
+	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables, UniformMap& Uniforms ) override;
 
 	class CShader* ShadowShader = nullptr;
+	class CShader* SkinnedShadowShader = nullptr;
 	class CRenderTexture* ShadowMap = nullptr;
 	glm::mat4 ProjectionView;
+
+	// Renders everything twice from both sides.
+	bool DoubleSided = false;
+
+protected:
+	void ConfigureShader( CShader* Shader );
+	void DrawShadowMeshes( const std::vector<CRenderable*>& Renderables );
+
+	int ModelMatrixLocation = -1;
+	int ProjectionViewMatrixLocation = -1;
+	unsigned int LastProgram = 0;
 };

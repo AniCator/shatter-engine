@@ -13,6 +13,19 @@ class CTexture;
 class CRenderable;
 class CBody;
 
+struct AnimationBlendEntry
+{
+	AnimationBlendEntry() = default;
+	AnimationBlendEntry( const Animation& Anim, const float& Weight )
+	{
+		this->Animation = Anim;
+		this->Weight = Weight;
+	}
+
+	Animation Animation{};
+	float Weight = 1.0f;
+};
+
 class CMeshEntity : public CPointEntity
 {
 public:
@@ -52,11 +65,15 @@ public:
 
 	void SetAnimation( const std::string& Name, const bool& Loop = false );
 	const std::string& GetAnimation() const;
+	bool HasAnimation( const std::string& Name ) const;
 
 	bool IsAnimationFinished() const;
 
 	float GetPlayRate() const;
 	void SetPlayRate( const float& PlayRate );
+
+	float GetAnimationTime() const;
+	void SetAnimationTime( const float& Value );
 
 	void SetPosition( const Vector3D& Position, const bool& Teleport = true );
 	void SetOrientation( const Vector3D& Orientation );
@@ -81,7 +98,18 @@ public:
 	bool Contact;
 	bool Visible;
 
+	// Animation blending stack.
+	std::vector<AnimationBlendEntry> BlendStack;
+
+	// Distance from the camera at which the object should be culled, infinite when negative.
+	float MaximumRenderDistance = -1.0f;
+
 protected:
+	void SubmitAnimation();
+
+	void ConstructRenderable();
+	void ConstructPhysics();
+
 	static void QueueRenderable( CRenderable* Renderable );
 	BoundingBox WorldBounds;
 
@@ -100,4 +128,10 @@ protected:
 
 	float AnimationTime = 0.0f;
 	float PlayRate = 1.0f;
+
+	// Determines how often animations should tick. (zero means, never)
+	uint32_t AnimationTickRate = 1;
+
+	// Ensures an animation tick will be performed on the next tick.
+	bool ForceAnimationTick = false;
 };

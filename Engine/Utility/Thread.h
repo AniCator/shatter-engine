@@ -7,6 +7,7 @@
 #include <mutex>
 #include <condition_variable>
 #include <atomic>
+#include <string>
 
 struct Task
 {
@@ -21,10 +22,7 @@ struct LambdaTask : public Task
 		Function = ToExecute;
 	}
 
-	void Execute() override
-	{
-		Function();
-	}
+	void Execute() override;
 
 private:
 	std::function<void()> Function;

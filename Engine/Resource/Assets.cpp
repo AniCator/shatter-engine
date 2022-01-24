@@ -20,13 +20,6 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
 
-static bool ExportOBJToLM = false;
-
-CAssets::CAssets()
-{
-	ExportOBJToLM = CConfiguration::Get().GetInteger( "ExportOBJToLM", 0 ) > 0;
-}
-
 void CAssets::Create( const std::string& Name, CMesh* NewMesh )
 {
 	Meshes.insert_or_assign( Name, NewMesh );
@@ -57,11 +50,37 @@ void CAssets::Create( const std::string& Name, CAsset* NewAsset )
 	Assets.insert_or_assign( Name, NewAsset );
 }
 
-void ParsePayload( FPrimitivePayload* Payload )
+void LoadASSIMPMesh( PrimitivePayload* Payload, AnimationSet& Set, CFile& File )
+{
+	if( File.Extension() == "ses" ) // Animation set
+	{
+		File.Load();
+		const auto SetData = JSON::Tree( File );
+		const auto& MeshLocation = JSON::Find( SetData.Tree, "path" );
+		if( MeshLocation && CFile::Exists( MeshLocation->Value ) )
+		{
+			// Update the accessed file so that ASSIMP can load it.
+			File = CFile( MeshLocation->Value );
+
+			// Load the animation set lookup table.
+			Set = AnimationSet::Generate( JSON::Find( SetData.Tree, "animations" ) );
+		}
+	}
+	
+	MeshBuilder::ASSIMP( Payload->Primitive, Set, File );
+}
+
+struct CompoundPayload
+{
+	PrimitivePayload* Payload = nullptr;
+	AnimationSet Set;
+};
+
+void ParsePayload( CompoundPayload* CompoundPayload )
 {
 	OptickEvent();
 
-	Payload->Native = false;
+	auto* Payload = CompoundPayload->Payload;
 
 	CFile File( Payload->Location );
 	if( File.Extension() != "lm" )
@@ -80,19 +99,19 @@ void ParsePayload( FPrimitivePayload* Payload )
 
 	if( File.Exists() )
 	{
-		std::string Extension = File.Extension();
+		// We're asynchronously loading these meshes.
+		Payload->Asynchronous = true;
 
 		// Shatter does not support parsing of OBJ files on multiple threads.
-		if( Extension == "lm" )
+		if( File.Extension() == "lm" )
 		{
 			File.Load( true );
 			MeshBuilder::LM( Payload->Primitive, File );
 		}
 		else
 		{
-			AnimationSet Set;
-			MeshBuilder::ASSIMP( Payload->Primitive, Set, File );
-		}
+			LoadASSIMPMesh( Payload, CompoundPayload->Set, File );
+		}		
 	}
 }
 
@@ -140,20 +159,7 @@ static const std::map<EImageFormat, std::string> StringToImageFormat = {
 	std::make_pair( EImageFormat::RGBA32F, "rgba32f" ),
 };
 
-void UpdateAnimationSet( CMesh* Mesh, const std::string& Path )
-{
-	if( Path.empty() )
-		return;
-
-	auto Set = AnimationSet::Generate( Path );
-	const auto& MeshSet = Mesh->GetAnimationSet();
-
-	// TODO: This is an extra copy for temporary reasons.
-	Set.Skeleton = MeshSet.Skeleton;
-	Mesh->SetAnimationSet( Set );
-}
-
-void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
+void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
 {
 	OptickEvent();
 
@@ -161,6 +167,10 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 	LoadTimer.Start();
 
 	std::vector<std::future<void>> Futures;
+	Futures.reserve( Meshes.size() );
+
+	std::vector<CompoundPayload> Payloads;
+	Payloads.reserve( Meshes.size() );
 	for( auto& Payload : Meshes )
 	{
 		// Transform given name into lower case string
@@ -168,9 +178,15 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 
 		if( !FindMesh( Payload.Name ) )
 		{
-			// Log::Event( "Queued mesh \"%s\".\n", Payload.Name.c_str() );
-			Futures.emplace_back( std::async( std::launch::async, ParsePayload, &Payload ) );
+			CompoundPayload Compound;
+			Compound.Payload = &Payload;
+			Payloads.emplace_back( Compound );
 		}
+	}
+
+	for( auto& Payload : Payloads )
+	{
+		Futures.emplace_back( std::async( std::launch::async, ParsePayload, &Payload ) );
 	}
 
 	for( auto& Payload : GenericAssets )
@@ -178,11 +194,10 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 		if( Payload.Type == EAsset::Mesh )
 		{
 			// Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
-			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Locations[0].c_str() );
+			auto* Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Data[0].c_str() );
 			if( Mesh )
 			{
-				Mesh->SetLocation( Payload.Locations[0] );
-				UpdateAnimationSet( Mesh, Payload.Locations[1] );
+				Mesh->SetLocation( Payload.Data[0] );
 			}
 		}
 		else if( Payload.Type == EAsset::Shader )
@@ -191,30 +206,30 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 
 			EShaderType ShaderType = EShaderType::Fragment;
 
-			const bool ShaderTypeInferrable = Payload.Locations.size() > 1;
+			const bool ShaderTypeInferrable = Payload.Data.size() > 1;
 			if( ShaderTypeInferrable )
 			{
-				if( Payload.Locations[0] == "vertex" )
+				if( Payload.Data[0] == "vertex" )
 				{
 					ShaderType = EShaderType::Vertex;
 				}
-				else if( Payload.Locations[0] == "compute" )
+				else if( Payload.Data[0] == "compute" )
 				{
 					ShaderType = EShaderType::Compute;
 				}
-				else if( Payload.Locations[0] == "geometry" )
+				else if( Payload.Data[0] == "geometry" )
 				{
 					ShaderType = EShaderType::Geometry;
 				}
 			}
 
-			if( Payload.Locations.size() == 3 && ShaderType == EShaderType::Fragment )
+			if( Payload.Data.size() == 3 && ShaderType == EShaderType::Fragment )
 			{
-				CreateNamedShader( Payload.Name.c_str(), Payload.Locations[1].c_str(), Payload.Locations[2].c_str() );
+				CreateNamedShader( Payload.Name.c_str(), Payload.Data[1].c_str(), Payload.Data[2].c_str() );
 			}
 			else
 			{
-				CreateNamedShader( Payload.Name.c_str(), Payload.Locations[1].c_str(), ShaderType );
+				CreateNamedShader( Payload.Name.c_str(), Payload.Data[1].c_str(), ShaderType );
 			} 
 		}
 		else if( Payload.Type == EAsset::Texture )
@@ -224,26 +239,26 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 			EFilteringMode Mode = EFilteringMode::Linear;
 			EImageFormat ImageFormat = EImageFormat::RGB8;
 
-			if( Payload.Locations.size() > 1 )
+			if( Payload.Data.size() > 1 )
 			{
 				// Transform given format into lower case string
-				std::transform( Payload.Locations[1].begin(), Payload.Locations[1].end(), Payload.Locations[1].begin(), ::tolower );
+				std::transform( Payload.Data[1].begin(), Payload.Data[1].end(), Payload.Data[1].begin(), ::tolower );
 
-				auto Format = ImageFormatFromString.find( Payload.Locations[1] );
+				auto Format = ImageFormatFromString.find( Payload.Data[1] );
 				if( Format != ImageFormatFromString.end() )
 				{
 					ImageFormat = Format->second;
 				}
 			}
 
-			CreateNamedTexture( Payload.Name.c_str(), Payload.Locations[0].c_str(), Mode, ImageFormat );
+			CreateNamedTexture( Payload.Name.c_str(), Payload.Data[0].c_str(), Mode, ImageFormat );
 		}
 		else if( Payload.Type == EAsset::Sound )
 		{
 			CSound* NewSound = FindSound( Payload.Name );
 			if( NewSound )
 			{
-				NewSound->Load( Payload.Locations );
+				NewSound->Load( Payload.Data );
 			}
 		}
 		else if( Payload.Type == EAsset::Sequence )
@@ -251,13 +266,13 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 			CSequence* NewSequence = FindSequence( Payload.Name );
 			if( NewSequence )
 			{
-				NewSequence->Load( Payload.Locations[0].c_str() );
+				NewSequence->Load( Payload.Data[0].c_str() );
 			}
 		}
 		else if( Payload.Type == EAsset::Generic )
 		{
-			const auto& SubType = Payload.Locations[0];
-			const auto& Path = Payload.Locations[1];
+			const auto& SubType = Payload.Data[0];
+			const auto& Path = Payload.Data[1];
 
 			std::vector<std::string> Parameters;
 			Parameters.emplace_back( Path );
@@ -271,29 +286,54 @@ void CAssets::CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::ve
 		Future.get();
 	}
 
-	for( auto& Payload : Meshes )
+	for( auto& CompoundPayload : Payloads )
 	{
-		if( Payload.Native && Payload.Primitive.Vertices && Payload.Primitive.VertexCount > 0 )
+		auto& Payload = *CompoundPayload.Payload;
+		if( Payload.Asynchronous && Payload.Primitive.Vertices && Payload.Primitive.VertexCount > 0 )
 		{
-			// Log::Event( "Loading mesh (2nd pass) \"%s\".\n", Payload.Name.c_str() );
-			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Primitive );
+			auto* Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Primitive );
 			if( Mesh )
 			{
 				Mesh->SetLocation( Payload.Location );
-				UpdateAnimationSet( Mesh, Payload.UserData );				
+				Mesh->SetAnimationSet( CompoundPayload.Set );
 			}
 		}
-		else if( !Payload.Native )
+		else if( !Payload.Asynchronous )
 		{
-			// Log::Event( "Loading non-native mesh \"%s\".\n", Payload.Name.c_str() );
 			// Try to load the mesh synchronously.
-			auto Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
+			auto* Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Location.c_str() );
 			if( Mesh )
 			{
 				Mesh->SetLocation( Payload.Location );
-				UpdateAnimationSet( Mesh, Payload.UserData );
+				Mesh->SetAnimationSet( CompoundPayload.Set );
 			}
 		}
+	}
+
+	// Animation append pass
+	for( auto& Payload : GenericAssets )
+	{
+		if( Payload.Type != EAsset::Animation )
+			continue;
+
+		auto* Mesh = FindMesh( Payload.Name );
+		if( !Mesh )
+		{
+			Log::Event( Log::Error, "Unable to append animation. Mesh doesn't exist (yet).\n" );
+			continue;
+		}
+
+		auto Set = Mesh->GetAnimationSet();
+
+		FPrimitive DummyPrimitive;
+		MeshBuilder::ASSIMP(
+			DummyPrimitive,
+			Set,
+			Payload.Data[0],
+			MeshBuilder::Option( MeshBuilder::AnimationOnly | MeshBuilder::AppendAnimation )
+		);
+
+		Mesh->SetAnimationSet( Set );
 	}
 
 	LoadTimer.Stop();
@@ -397,8 +437,9 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 				Mesh->SetAnimationSet( Set );
 			}
 
-			// Automatically export an LM file if the extension was OBJ.
-			if( ExportOBJToLM && Mesh && Extension != "lm" )
+			// Automatically export an LM file if the extension was not LM.
+			const auto ExportToNative = CConfiguration::Get().IsEnabled( "ExportOBJToLM" );
+			if( ExportToNative && Mesh && Extension != "lm" )
 			{
 				Log::Event( "Exporting Lofty Model mesh \"%s\".", Name );
 
@@ -431,6 +472,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 {
 	OptickEvent();
+	ProfileMemory( "Meshes" );
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -452,7 +494,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Mesh = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Meshes", Mesh ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Meshes", Mesh ), false );
 
 		// Log::Event( "Created mesh \"%s\".\n", NameString.c_str() );
 
@@ -489,7 +531,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation,
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Shader = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Shaders", Shader ), false );
 
 		// Log::Event( "Created shader \"%s\".\n", NameString.c_str() );
 
@@ -526,7 +568,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Shader = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Shaders", Shader ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Shaders", Shader ), false );
 
 		// Log::Event( "Created shader \"%s\".\n", NameString.c_str() );
 
@@ -554,6 +596,8 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 		return ExistingTexture;
 	}
 
+	ProfileMemory( "Texture" );
+
 	CTexture* NewTexture = new CTexture( FileLocation );
 	const bool bSuccessfulCreation = NewTexture->Load( Mode, Format, GenerateMipMaps );
 
@@ -563,7 +607,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Texture = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", Texture ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Textures", Texture ), false );
 
 		// Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
 
@@ -595,6 +639,8 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 		return ExistingTexture;
 	}
 
+	ProfileMemory( "Texture" );
+
 	CTexture* NewTexture = new CTexture();
 	const bool bSuccessfulCreation = NewTexture->Load( Data, Width, Height, Channels, Mode, Format, GenerateMipMaps );
 
@@ -604,7 +650,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Texture = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", Texture ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Textures", Texture ), false );
 
 		// Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
 
@@ -642,7 +688,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
 		{
 			CProfiler& Profiler = CProfiler::Get();
 			const int64_t TextureCount = 1;
-			Profiler.AddCounterEntry( FProfileTimeEntry( "Textures", TextureCount ), false );
+			Profiler.AddCounterEntry( ProfileTimeEntry( "Textures", TextureCount ), false );
 		}
 
 		// Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
@@ -663,6 +709,7 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 		return nullptr;
 
 	OptickEvent();
+	ProfileMemory( "Sounds" );
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -683,7 +730,7 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Sound = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Sounds", Sound ), false );
 
 		// Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
 
@@ -700,6 +747,7 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 		return nullptr;
 
 	OptickEvent();
+	ProfileMemory( "Sounds" );
 
 	// Transform given name into lower case string
 	std::string NameString = Name;
@@ -716,7 +764,7 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 
 	CProfiler& Profiler = CProfiler::Get();
 	int64_t Sound = 1;
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Sounds", Sound ), false );
 
 	// Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
 
@@ -749,7 +797,7 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Sound = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Sounds", Sound ), false );
 
 		// Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
 
@@ -782,7 +830,7 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 
 	CProfiler& Profiler = CProfiler::Get();
 	int64_t Sound = 1;
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Sounds", Sound ), false );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Sounds", Sound ), false );
 
 	// Log::Event( "Created sound \"%s\".\n", NameString.c_str() );
 
@@ -815,7 +863,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocat
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Sequence = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Sequences", Sequence ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Sequences", Sequence ), false );
 
 		// Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
 
@@ -847,7 +895,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 
 	CProfiler& Profiler = CProfiler::Get();
 	int64_t Sequence = 1;
-	Profiler.AddCounterEntry( FProfileTimeEntry( "Sequences", Sequence ), false );
+	Profiler.AddCounterEntry( ProfileTimeEntry( "Sequences", Sequence ), false );
 
 	// Log::Event( "Created sequence \"%s\".\n", NameString.c_str() );
 
@@ -943,9 +991,61 @@ CSequence* CAssets::FindSequence( const std::string& Name ) const
 	return Find<CSequence>( Name, Sequences );
 }
 
+// Returns false if the asset wasn't found.
+template<typename T>
+bool RenameAsset( std::unordered_map<std::string, T*>& Assets, const std::string& OldName, const std::string& Name )
+{
+	const auto Iterator = Assets.find( OldName );
+	if( Iterator == Assets.end() )
+		return false; // Asset doesn't exist.
+
+	auto* Asset = Iterator->second;
+	Assets.erase( Iterator );
+	Assets[Name] = Asset;
+
+	return true;
+}
+
+void CAssets::Rename( EAsset::Type Type, const std::string& OldName, const std::string& Name )
+{
+	// Unsupported types are ignored.
+	if( Type == EAsset::Unknown || Type == EAsset::Animation )
+		return;
+
+	bool Success = false;
+	switch( Type )
+	{
+	case EAsset::Mesh:
+		Success = RenameAsset( Meshes, OldName, Name );
+		break;	
+	case EAsset::Shader:
+		Success = RenameAsset( Shaders, OldName, Name );
+		break;
+	case EAsset::Texture:
+		Success = RenameAsset( Textures, OldName, Name );
+		break;
+	case EAsset::Sound:
+		Success = RenameAsset( Sounds, OldName, Name );
+		break;
+	case EAsset::Sequence:
+		Success = RenameAsset( Sequences, OldName, Name );
+		break;
+	case EAsset::Generic:
+		Success = RenameAsset( Assets, OldName, Name );
+		break;
+	default:
+		Log::Event( Log::Warning, "Unable to rename type.\n" );
+	}
+
+	if( !Success )
+	{
+		Log::Event( Log::Warning, "Could not rename asset \"%s\"\n", OldName.c_str() );
+	}
+}
+
 const std::string& CAssets::GetReadableImageFormat( EImageFormat Format )
 {
-	auto ImageFormat = StringToImageFormat.find( Format );
+	const auto ImageFormat = StringToImageFormat.find( Format );
 	if( ImageFormat != StringToImageFormat.end() )
 	{
 		return ImageFormat->second;
@@ -953,6 +1053,21 @@ const std::string& CAssets::GetReadableImageFormat( EImageFormat Format )
 
 	const static std::string Unknown = "unknown";
 	return Unknown;
+}
+
+EImageFormat CAssets::GetImageFormatFromString( const std::string& Format )
+{
+	// Transform the format into lowercase.
+	auto Transformed = Format;
+	std::transform( Transformed.begin(), Transformed.end(), Transformed.begin(), ::tolower );
+
+	const auto ImageFormat = ImageFormatFromString.find( Transformed );
+	if( ImageFormat != ImageFormatFromString.end() )
+	{
+		return ImageFormat->second;
+	}
+
+	return EImageFormat::RGB8;
 }
 
 void CAssets::ReloadShaders()
@@ -964,7 +1079,28 @@ void CAssets::ReloadShaders()
 	}
 }
 
-void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
+enum AssetType
+{
+	Unknown,
+	Mesh,
+	Animation,
+	Shader,
+	Texture,
+	Sound,
+	Stream,
+	Sequence,
+	Generic
+};
+
+void AssignType( AssetType& Type, const bool& Condition, const AssetType& Assign )
+{
+	if( Condition )
+	{
+		Type = Assign;
+	}
+}
+
+void CAssets::Load( const JSON::Object& AssetsIn )
 {
 	OptickEvent();
 
@@ -973,17 +1109,11 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 
 	auto& Assets = Get();
 	
-	std::vector<FPrimitivePayload> MeshList;
+	std::vector<PrimitivePayload> MeshList;
 	std::vector<FGenericAssetPayload> GenericAssets;
 	for( const auto* Asset : AssetsIn.Objects )
 	{
-		bool Mesh = false; // Is this a mesh?
-		bool Shader = false; // Is this a shader?
-		bool Texture = false; // Is this a texture?
-		bool Sound = false; // Is this an audio file?
-		bool Stream = false; // Is this an audio stream?
-		bool Sequence = false; // Is this a sequence?
-		bool Generic = false; // Is this a generic asset?
+		auto Type = Unknown;
 		std::string Name;
 		std::vector<std::string> Paths;
 		Paths.reserve( 10 );
@@ -1004,21 +1134,33 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 		{
 			if( Property->Key == "type" )
 			{
-				Mesh = Property->Value == "mesh";
-				Shader = Property->Value == "shader";
-				Texture = Property->Value == "texture";
-				Sound = Property->Value == "sound";
-
-				Stream = Property->Value == "music";
-
-				if( !Stream )
-				{
-					Stream = Property->Value == "stream";
-				}
-
-				Sequence = Property->Value == "sequence";
-
-				Generic = Property->Value == "asset" || Property->Value == "generic";
+				AssignType( Type, 
+					Property->Value == "mesh", 
+					Mesh );
+				AssignType( Type, 
+					Property->Value == "animation", 
+					Animation );
+				AssignType( Type, 
+					Property->Value == "shader", 
+					Shader );
+				AssignType( Type, 
+					Property->Value == "texture", 
+					Texture );
+				AssignType( Type, 
+					Property->Value == "sound", 
+					Sound );
+				AssignType( Type, 
+					Property->Value == "music", 
+					Stream );
+				AssignType( Type, 
+					Property->Value == "stream", 
+					Stream );
+				AssignType( Type, 
+					Property->Value == "sequence", 
+					Sequence );
+				AssignType( Type, 
+					Property->Value == "asset" || Property->Value == "generic", 
+					Generic );
 			}
 			else if( Property->Key == "name" )
 			{
@@ -1066,6 +1208,12 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 				// Path to animation set.
 				UserData = Property->Value;
 			}
+			else if( Property->Key == "skeleton" )
+			{
+				// Name of mesh that has the skeleton, for appending animations.
+				UserData = Property->Value;
+				Name = UserData;
+			}
 			else if( Property->Key == "stype" || Property->Key == "subtype" )
 			{
 				// String designation of a sub/shader type.
@@ -1075,27 +1223,38 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 
 		if( Name.length() > 0 && ( !Paths.empty() || ( !VertexPath.empty() && !FragmentPath.empty() ) ) )
 		{
-			if( Mesh )
+			if( Type == Mesh )
 			{
 				for( const auto& Path : Paths )
 				{
-					FPrimitivePayload Payload;
+					PrimitivePayload Payload;
 					Payload.Name = Name;
 					Payload.Location = Path;
 					Payload.UserData = UserData;
 					MeshList.emplace_back( Payload );
 				}
 			}
-			else if( Shader )
+			else if( Type == Animation )
+			{
+				for( const auto& Path : Paths )
+				{
+					FGenericAssetPayload Payload;
+					Payload.Type = EAsset::Animation;
+					Payload.Name = UserData; // Name of the mesh that has the relevant skeleton.
+					Payload.Data.emplace_back( Path ); // Path of the animation that should be appended.
+					GenericAssets.emplace_back( Payload );
+				}
+			}
+			else if( Type == Shader )
 			{
 				if( VertexPath.length() > 0 && FragmentPath.length() > 0 )
 				{
 					FGenericAssetPayload Payload;
 					Payload.Type = EAsset::Shader;
 					Payload.Name = Name;
-					Payload.Locations.emplace_back( "fragment" ); // Shader Type
-					Payload.Locations.emplace_back( VertexPath );
-					Payload.Locations.emplace_back( FragmentPath );
+					Payload.Data.emplace_back( "fragment" ); // Shader Type
+					Payload.Data.emplace_back( VertexPath );
+					Payload.Data.emplace_back( FragmentPath );
 					GenericAssets.emplace_back( Payload );
 				}
 				else
@@ -1103,30 +1262,30 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 					FGenericAssetPayload Payload;
 					Payload.Type = EAsset::Shader;
 					Payload.Name = Name;
-					Payload.Locations.emplace_back( UserData ); // Shader Type
+					Payload.Data.emplace_back( UserData ); // Shader Type
 					
 					for( const auto& Path : Paths )
 					{
-						Payload.Locations.emplace_back( Path );
+						Payload.Data.emplace_back( Path );
 						GenericAssets.emplace_back( Payload );
 					}
 				}
 			}
-			else if( Texture )
+			else if( Type == Texture )
 			{
 				for( const auto& Path : Paths )
 				{
 					FGenericAssetPayload Payload;
 					Payload.Type = EAsset::Texture;
 					Payload.Name = Name;
-					Payload.Locations.emplace_back( Path );
-					Payload.Locations.emplace_back( ImageFormat );
+					Payload.Data.emplace_back( Path );
+					Payload.Data.emplace_back( ImageFormat );
 					GenericAssets.emplace_back( Payload );
 				}
 			}
-			else if( Sound || Stream )
+			else if( Type == Sound || Type == Stream )
 			{
-				CSound* NewSound = Stream ? Assets.CreateNamedStream( Name.c_str() ) : Assets.CreateNamedSound( Name.c_str() );
+				CSound* NewSound = Type == Stream ? Assets.CreateNamedStream( Name.c_str() ) : Assets.CreateNamedSound( Name.c_str() );
 				if( NewSound )
 				{
 					NewSound->Clear();
@@ -1139,34 +1298,34 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 
 					for( const auto& Path : Paths )
 					{
-						Payload.Locations.emplace_back( Path );
+						Payload.Data.emplace_back( Path );
 					}
 
 					GenericAssets.emplace_back( Payload );
 				}
 			}
-			else if( Sequence )
+			else if( Type == Sequence )
 			{
 				Assets.CreateNamedSequence( Name.c_str() );
 				FGenericAssetPayload Payload;
 				Payload.Type = EAsset::Sequence;
 				Payload.Name = Name;
 
-				Payload.Locations.emplace_back( Paths[0] );
+				Payload.Data.emplace_back( Paths[0] );
 
 				GenericAssets.emplace_back( Payload );
 			}
-			else if ( Generic )
+			else if ( Type == Generic )
 			{
 				FGenericAssetPayload Payload;
 				Payload.Type = EAsset::Sequence;
 				Payload.Name = Name;
 
 				// Add the sub-type.
-				Payload.Locations.emplace_back( UserData );
+				Payload.Data.emplace_back( UserData );
 
 				// Add the first path, expected to be a definition file for the loader to use.
-				Payload.Locations.emplace_back( Paths[0] );
+				Payload.Data.emplace_back( Paths[0] );
 
 				GenericAssets.emplace_back( Payload );
 			}
@@ -1184,15 +1343,36 @@ void CAssets::ParseAndLoadJSON( const JSON::Object& AssetsIn )
 	Assets.CreateNamedAssets( MeshList, GenericAssets );
 }
 
-void CAssets::ParseAndLoadJSON( const JSON::Vector& Tree )
+void CAssets::Load( const JSON::Vector& Tree )
 {
 	if( const auto* Object = JSON::Find( Tree, "assets" ) )
 	{
-		ParseAndLoadJSON( *Object );
+		Load( *Object );
 	}
 }
 
-void CAssets::ParseAndLoadJSON( const JSON::Container& Container )
+void CAssets::Load( const JSON::Container& Container )
 {
-	ParseAndLoadJSON( Container.Tree );
+	Load( Container.Tree );
+}
+
+void CAssets::Load( CFile& File )
+{
+	if( !File.Exists() )
+		return;
+
+	const auto Loaded = File.Load();
+	if( !Loaded )
+		return;
+
+	const auto Container = JSON::Tree( File );
+	Load( Container );
+
+	Log::Event( "Loaded assets from file \"%s\".\n", File.Location( true ).c_str() );
+}
+
+void CAssets::Load( const std::string& Location )
+{
+	CFile File( Location );
+	Load( File );
 }

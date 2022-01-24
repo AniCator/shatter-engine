@@ -452,6 +452,30 @@
     <ClCompile Include="Engine\World\EventQueue.cpp">
       <Filter>Source Files\Engine\World</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Application\AssetHelper.cpp">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Application\ThemeGruvbox.cpp">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Application\ThemeDefault.cpp">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Application\ThemeCherry.cpp">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Application\ThemeDracula.cpp">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Color.cpp">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Animation\Animator.cpp">
+      <Filter>Source Files\Engine\Animation</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Culling.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -852,6 +876,27 @@
     </ClInclude>
     <ClInclude Include="Engine\World\EventQueue.h">
       <Filter>Source Files\Engine\World</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Application\AssetHelper.h">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Application\FileDialog.h">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Application\Themes.h">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Application\ThemeDefault.h">
+      <Filter>Source Files\Engine\Application</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Color.h">
+      <Filter>Source Files\Engine\Display</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Animation\Animator.h">
+      <Filter>Source Files\Engine\Animation</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Culling.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

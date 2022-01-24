@@ -1,14 +1,20 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Level.h"
 
-#include <Engine/Audio/Sound.h>
+#include <Engine/Display/Rendering/Culling.h>
 #include <Engine/Resource/Assets.h>
+#include <Engine/Physics/Body/Body.h>
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 #include <Engine/World/World.h>
 #include <Engine/Utility/Chunk.h>
+#include <Engine/Utility/DataString.h>
 #include <Engine/Utility/Structures/JSON.h>
 #include <Engine/Utility/Math.h>
+
+#include <Engine/Display/UserInterface.h>
+
+#include "Engine/Display/Rendering/Renderable.h"
 
 static constexpr uint32_t LevelVersion = 1;
 
@@ -40,6 +46,15 @@ void CLevel::Construct()
 
 		// Entity->SetLevel( this );
 		Entity->Construct();
+
+		// Combine the bounding boxes of all the static meshes.
+		if( const auto* MeshEntity = dynamic_cast<CMeshEntity*>( Entity ) )
+		{
+			if( MeshEntity->IsStatic() )
+			{
+				Bounds = Bounds.Combine( MeshEntity->GetWorldBounds() );
+			}
+		}
 	}
 }
 
@@ -51,6 +66,31 @@ void CLevel::Frame()
 			continue;
 
 		Entity->Frame();
+	}
+
+	if( !World )
+		return;
+
+	auto* Camera = World->GetActiveCamera();
+	if( !Camera )
+		return;
+
+	constexpr float MinimumSize = 20.0f;
+	const Vector3D Size = ( Bounds.Maximum - Bounds.Minimum );
+	if( Size.LengthSquared() > ( MinimumSize * MinimumSize ) )
+		return;
+
+	// Level bounds culling.
+	// const auto Visible = Culling::Frustum( *Camera, Bounds );
+	for( auto* Entity : Entities )
+	{
+		if( const auto* MeshEntity = dynamic_cast<CMeshEntity*>( Entity ) )
+		{
+			if( MeshEntity->IsStatic() && MeshEntity->Renderable )
+			{
+				// MeshEntity->Renderable->GetRenderData().DisableRender = !Visible;
+			}
+		}
 	}
 }
 
@@ -105,6 +145,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 	OptickEvent();
 
 	// Log::Event( "Parsing level \"%s\".\n", File.Location().c_str() );
+
 	JSON::Container JSON = JSON::Tree( File );
 
 	SetName( File.Location() );
@@ -116,7 +157,6 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 	};
 	std::vector<EntityIdentifier> Identifiers;
 
-	CAssets& Assets = CAssets::Get();
 	size_t Pass = 0;
 	while( Pass < 2 )
 	{
@@ -140,7 +180,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 					if( Object->Key == "assets" )
 					{
 						AssetsFound = !Object->Objects.empty();
-						CAssets::ParseAndLoadJSON( *Object );
+						CAssets::Load( *Object );
 						Pass++;
 					}
 				}
@@ -378,6 +418,53 @@ void CLevel::Remove( CEntity* MarkEntity )
 			}
 		}
 	}
+}
+
+bool CLevel::Transfer( CEntity* Entity )
+{
+	auto* Source = Entity->GetLevel();
+	if( Source == this )
+	{
+		Log::Event( Log::Error, "Entity already in this level.\n" );
+		return false;
+	}
+
+	const size_t ID = Entity->GetLevelID().ID;
+	if( ID >= Source->Entities.size() )
+	{
+		Log::Event( Log::Error, "Bad entity level ID for transfer.\n" );
+		return false;
+	}
+
+	// Move the entity pointer to the back of the vector if it isn't there already.
+	if( ( ID + 1 ) != Source->Entities.size() )
+	{
+		std::swap( Source->Entities[ID], Source->Entities.back() );
+	}
+
+	// Remove it from the original level's vector.
+	Source->Entities.pop_back();
+
+	// Add the entity to this level.
+	Entities.emplace_back( Entity );
+
+	// Update the entity's local level ID.
+	const auto NewID = Entities.size() - 1;
+	Entity->SetLevelID( NewID );
+	Entity->SetLevel( this );
+
+	if( const auto* Mesh = Cast<CMeshEntity>( Entity ) )
+	{
+		// Make sure any physics bodies are unregistered when transferring.
+		auto* Body = Mesh->GetBody();
+		if( Body )
+		{
+			Body->Destroy();
+			Body->Physics = nullptr;
+		}
+	}
+
+	return true;
 }
 
 template<typename T>

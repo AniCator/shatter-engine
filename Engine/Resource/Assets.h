@@ -18,13 +18,14 @@ class CSound;
 class CSequence;
 class CAsset;
 
-struct FPrimitivePayload
+struct PrimitivePayload
 {
 	std::string Name;
 	std::string Location;
 	std::string UserData;
 	FPrimitive Primitive;
-	bool Native;
+	bool Asynchronous = false;
+	bool Animation = false;
 };
 
 namespace EAsset
@@ -33,6 +34,7 @@ namespace EAsset
 	{
 		Unknown = 0,
 		Mesh,
+		Animation, // Animations that should be appended to existing skeletons.
 		Shader,
 		Texture,
 		Sound,
@@ -45,7 +47,7 @@ struct FGenericAssetPayload
 {
 	EAsset::Type Type;
 	std::string Name;
-	std::vector<std::string> Locations;
+	std::vector<std::string> Data;
 };
 
 typedef const std::vector<std::string> AssetParameters;
@@ -60,7 +62,7 @@ public:
 	void Create( const std::string& Name, CSequence* NewSequence );
 	void Create( const std::string& Name, CAsset* NewAsset );
 
-	void CreateNamedAssets( std::vector<FPrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
+	void CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
@@ -99,7 +101,7 @@ public:
 
 		CProfiler& Profiler = CProfiler::Get();
 		const int64_t Asset = 1;
-		Profiler.AddCounterEntry( FProfileTimeEntry( "Assets", Asset ), false );
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Assets", Asset ), false );
 
 		Log::Event( "Created asset \"%s\".\n", NameString.c_str() );
 
@@ -121,13 +123,22 @@ public:
 	CSound* FindSound( const std::string& Name ) const;
 	CSequence* FindSequence( const std::string& Name ) const;
 
+	// Allows you to change the name of an asset of the specified type.
+	void Rename( EAsset::Type Type, const std::string& OldName, const std::string& Name );
+
 	template<class T>
 	T* FindAsset( const std::string& Name ) const
 	{
 		return Cast<T>( Find<CAsset>( Name, Assets ) );
 	}
 
-	const std::string& GetReadableImageFormat( EImageFormat Format );
+	CAsset* FindAsset( const std::string& Name ) const
+	{
+		return Find<CAsset>( Name, Assets );
+	}
+
+	static const std::string& GetReadableImageFormat( EImageFormat Format );
+	static EImageFormat GetImageFormatFromString( const std::string& Format );
 
 	template<class T>
 	inline T* Find( const std::string& Name, std::unordered_map<std::string, T*> Data ) const
@@ -200,17 +211,19 @@ private:
 	// Generic asset loaders.
 	std::unordered_map<std::string, std::function<CAsset*( AssetParameters& )>> AssetLoaders;
 
-protected:
-	friend class Singleton<CAssets>;
-	CAssets();
-
 public:
 	// Loads any assets specified in the object.
-	static void ParseAndLoadJSON( const JSON::Object& Assets );
+	static void Load( const JSON::Object& Assets );
 
 	// Checks a tree for an "assets" entry and loads any assets specified in it.
-	static void ParseAndLoadJSON( const JSON::Vector& Tree );
+	static void Load( const JSON::Vector& Tree );
 
 	// Checks a container's tree for an "assets" entry and loads any assets specified in it.
-	static void ParseAndLoadJSON( const JSON::Container& Container );
+	static void Load( const JSON::Container& Container );
+
+	// Loads JSON data from a file and grabs all of its assets from the "assets" entry.
+	static void Load( CFile& File );
+
+	// Loads JSON data from a file and grabs all of its assets from the "assets" entry.
+	static void Load( const std::string& Location );
 };

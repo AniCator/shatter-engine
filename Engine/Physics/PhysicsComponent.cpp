@@ -14,7 +14,6 @@
 
 #include <Engine/Display/UserInterface.h>
 
-#include <Game/Game.h>
 #include <Engine/World/World.h>
 
 constexpr auto GravityAcceleration = 9.81f;
@@ -49,54 +48,69 @@ void EnsureVolume( BoundingBox& Bounds )
 	}
 }
 
-void VisualizeBounds( TriangleTree* Tree, FTransform* Transform = nullptr, Color BoundsColor = Color::Blue );
+void VisualizeBounds( TriangleTree* Tree, const FTransform* Transform = nullptr, const Color& BoundsColor = Color::Blue );
 
-bool SweptIntersection( const BoundingBox& A, const Vector3D& Velocity, const BoundingBox& B, Geometry::Result& Result )
+bool SweptIntersection( const BoundingBox& ContinuousBounds, Vector3D& ContinuousVelocity, const BoundingBox& B, Geometry::Result& Result )
 {
-	// Early out if we're already intersecting.
-	const bool Intersecting = Math::BoundingBoxIntersection( A.Minimum, A.Maximum, B.Minimum, B.Maximum );
-	/*if( Intersecting )
-	{
+	const bool Intersecting = Math::BoundingBoxIntersection( ContinuousBounds.Minimum, ContinuousBounds.Maximum, B.Minimum, B.Maximum );
+	if( Intersecting )
 		return true;
-	}*/
 
-	UI::AddLine( A.Minimum, A.Minimum + Velocity, Color::Blue );
+	UI::AddLine( ContinuousBounds.Minimum, ContinuousBounds.Minimum + ContinuousVelocity, Color::Blue, 0.5f );
 
+	// Calculate where we want to be.
 	auto Target = BoundingBox(
-		A.Minimum + Velocity,
-		A.Maximum + Velocity
+		ContinuousBounds.Minimum + ContinuousVelocity,
+		ContinuousBounds.Maximum + ContinuousVelocity
 	);
 
 	// Retrieve the points of the bounding box.
-	const auto SourceVertices = BoundingPoints( A );
+	const auto SourceVertices = BoundingPoints( ContinuousBounds );
 	const auto TargetVertices = BoundingPoints( Target );
 
 	// Test if the boxes intersect.
 	for( size_t Index = 0; Index < BoundingPoints::Count; Index++ )
 	{
+		UI::AddLine( SourceVertices.Position[Index], SourceVertices.Position[Index] + ContinuousVelocity, Color::White, 0.5f );
+		UI::AddLine( SourceVertices.Position[Index], TargetVertices.Position[Index], Color::Green, 0.5f );
+
 		Result = Geometry::LineInBoundingBox( SourceVertices.Position[Index], TargetVertices.Position[Index], B );
 		if( Result.Hit )
 		{
-			UI::AddLine( SourceVertices.Position[Index], TargetVertices.Position[Index], Color::Green, 1.0 );
+			// Update the velocity?
+			ContinuousVelocity = (Result.Position - SourceVertices.Position[Index]).Normalized() * ContinuousVelocity.Length();
+			UI::AddLine( SourceVertices.Position[Index], Result.Position, Color::Red, 10.0 );
 			break;
 		}
 	}
 
-	// const auto Offset = Target.Minimum - A.Minimum;
-	// const auto Unit = Offset.Normalized();
-
 	if( Result.Hit )
 	{
-		// UI::AddAABB( A.Minimum, A.Maximum, Color::Blue, 1.0 );
-		// UI::AddAABB( Target.Minimum, Target.Maximum, Color::Yellow, 1.0 );
-		// UI::AddAABB( B.Minimum, B.Maximum, Color::Red, 1.0 );
+		UI::AddAABB( ContinuousBounds.Minimum, ContinuousBounds.Maximum, Color::Blue, 10.0 );
+		UI::AddAABB( Target.Minimum, Target.Maximum, Color::Yellow, 10.0 );
+		UI::AddAABB( B.Minimum, B.Maximum, Color::Red, 10.0 );
+
+		// Recalculate the new target.
+		Target = BoundingBox(
+			ContinuousBounds.Minimum + ContinuousVelocity,
+			ContinuousBounds.Maximum + ContinuousVelocity
+		);
+
+		const auto Offset = Target.Minimum - ContinuousBounds.Minimum;
+		const auto Unit = Offset.Normalized();
 		
-		// Target = A;
-		// Target.Minimum += Unit * Result.Distance;
-		// Target.Maximum += Unit * Result.Distance;
-		// UI::AddAABB( Target.Minimum, Target.Maximum, Color::Purple, 10.0 );
+		Target = ContinuousBounds;
+		Target.Minimum += Unit * Result.Distance;
+		Target.Maximum += Unit * Result.Distance;
+		UI::AddAABB( Target.Minimum, Target.Maximum, Color::Purple, 10.0 );
+
+		UI::AddLine( Result.Position, Result.Position + WorldUp, Color::Green, 10.0 );
 
 		return true;
+	}
+	else
+	{
+		UI::AddAABB( ContinuousBounds.Minimum, ContinuousBounds.Maximum, Color::Black );
 	}
 
 	return Intersecting;
@@ -164,7 +178,7 @@ CollisionResponse CollisionResponseAABBAABBSwept( const BoundingBox& A, const Ve
 	const auto Offset = Target.Minimum - A.Minimum;
 	const auto Unit = Offset.Normalized();
 
-	Response.Distance = Result.Distance * 0.5f;
+	Response.Distance = Result.Distance;
 	Response.Normal = Unit;
 
 	// Target = A;
@@ -359,15 +373,16 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 				const FVertex& VertexC = Tree->Vertices[Index + 2];
 
 				CollisionResponse TriangleResponse = CollisionResponseTriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
-				if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
+				// if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
+				if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) )
 				{
 					Response.Normal = TriangleResponse.Normal;
 					Response.Distance = TriangleResponse.Distance;
 
 #if DrawDebugLines == 1
-					UI::AddLine( Transform.Transform( VertexA.Position ), Transform.Transform( VertexA.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 255, 0, 0 ) );
-					UI::AddLine( Transform.Transform( VertexB.Position ), Transform.Transform( VertexB.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 255, 0 ) );
-					UI::AddLine( Transform.Transform( VertexC.Position ), Transform.Transform( VertexC.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 255 ) );
+					// UI::AddLine( Transform.Transform( VertexA.Position ), Transform.Transform( VertexA.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 255, 0, 0 ) );
+					// UI::AddLine( Transform.Transform( VertexB.Position ), Transform.Transform( VertexB.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 255, 0 ) );
+					// UI::AddLine( Transform.Transform( VertexC.Position ), Transform.Transform( VertexC.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 255 ) );
 #endif
 				}
 #if DrawDebugLines == 1
@@ -388,7 +403,8 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 		if( Tree->Upper )
 		{
 			ResponseA = CollisionResponseTreeAABB( Tree->Upper, WorldBounds, Transform, OtherTransform );
-			if( Math::Abs( ResponseA.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
+			// if( Math::Abs( ResponseA.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
+			if( Math::Abs( ResponseA.Distance ) < Math::Abs( Response.Distance ) )
 			{
 				Response.Normal = ResponseA.Normal;
 				Response.Distance = ResponseA.Distance;
@@ -398,7 +414,8 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 		if( Tree->Lower )
 		{
 			ResponseB = CollisionResponseTreeAABB( Tree->Lower, WorldBounds, Transform, OtherTransform );
-			if( Math::Abs( ResponseB.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
+			// if( Math::Abs( ResponseB.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
+			if( Math::Abs( ResponseB.Distance ) < Math::Abs( Response.Distance ) )
 			{
 				Response.Normal = ResponseB.Normal;
 				Response.Distance = ResponseB.Distance;
@@ -412,21 +429,13 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 
 	Response.Normal = Response.Normal.Normalized();
 
+	if( Response.Distance < 0.0f )
+	{
+		Response.Distance = 0.0f;
+	}
+
 	return Response;
 }
-
-//MakeBody()
-//{
-//	Owner = OwnerIn;
-//	Block = true;
-//	DeltaPosition = Vector3D( 0.0f, 0.0f, 0.0f );
-//
-//	this->LocalBounds = LocalBounds;
-//	this->Static = Static;
-//	this->Stationary = Stationary;
-//
-//	Tree = nullptr;
-//}
 
 CBody::CBody()
 {
@@ -474,9 +483,11 @@ void CBody::Construct( CPhysics* Physics )
 	CalculateBounds();
 
 	PreviousTransform = GetTransform();
-	DeltaPosition = Vector3D( 0.0f, 0.0f, 0.0f );
-	Velocity = Vector3D( 0.0f, 0.0f, 0.0f );
-	Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
+	Velocity = { 0.0f, 0.0f, 0.0f };
+
+	Acceleration = { 0.0f, 0.0f, 0.0f };
+	LinearVelocity = { 0.0f, 0.0f, 0.0f };
+	Depenetration = { 0.0f, 0.0f, 0.0f };
 
 	auto Transform = GetTransform();
 
@@ -485,7 +496,7 @@ void CBody::Construct( CPhysics* Physics )
 		auto* Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
 
 		// TODO: Fix triangle tree and triangle collisions.
-		// CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
+		CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
 	}
 }
 
@@ -506,17 +517,15 @@ void CBody::Simulate()
 	if( !Owner )
 		return;
 
-	const auto DeltaTime = static_cast<float>( GameLayersInstance->GetDeltaTime() );
-
 	// Calculate and apply gravity.
 	Vector3D EnvironmentalForce = Vector3D::Zero;
 	if( AffectedByGravity )
 	{
 		const Vector3D EnvironmentalAcceleration = -Gravity;
-		EnvironmentalForce += ( EnvironmentalAcceleration ) * InverseMass * Math::Min( 0.05f, DeltaTime );
+		EnvironmentalForce += (EnvironmentalAcceleration) * InverseMass;
 	}
 
-	Velocity += EnvironmentalForce;
+	Acceleration += EnvironmentalForce;
 
 	// auto Transform = GetTransform();
 	// Transform.SetPosition( Transform.GetPosition() + EnvironmentalForce );
@@ -537,7 +546,7 @@ bool CBody::Collision( CBody* Body )
 	Geometry::Result SweptResult;
 	if( Body->Continuous )
 	{
-		if( !SweptIntersection( BoundsA, Body->Velocity, BoundsB, SweptResult ) )
+		if( !SweptIntersection( BoundsA, Body->LinearVelocity, BoundsB, SweptResult ) )
 			return false;
 	}
 	else
@@ -548,8 +557,6 @@ bool CBody::Collision( CBody* Body )
 
 	if( IsType<CPlaneBody>( Body ) )
 		return false;
-
-	const float DeltaTime = GameLayersInstance->GetDeltaTime();
 	auto Transform = GetTransform();
 
 	Contact = true;
@@ -587,41 +594,78 @@ bool CBody::Collision( CBody* Body )
 		}
 	}
 	
-	const Vector3D RelativeVelocity = Velocity - Body->Velocity;
-	float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal * -1.0f ) + Response.Distance * InverseMass;
+	const Vector3D RelativeVelocity = Body->Velocity - Velocity;
+	float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass;
 
 	bool Collided = false;
 
 	// Position solver?
-	if( Response.Distance > 0.0f && !Body->Static && !Body->Stationary )
+	if( !TriangleMesh && Response.Distance > 0.0f && !Body->Static && !Body->Stationary )
 	{
 		auto Penetration = ( Response.Normal * Response.Distance );
-		Body->Depenetration += Penetration;
+		// Body->Depenetration += Penetration;
 		Collided = true;
 	}
 
-	// Impulse solver?
+	// Check if the bodies are moving away from each other.
 	if( VelocityAlongNormal > 0.0f )
 	{
-		Collided = true;
-		Contacts++;
-		constexpr float Restitution = 1.01f;
+		constexpr float Restitution = 1.0001f;
 		const float DeltaVelocity = Restitution * VelocityAlongNormal;
-		const float Scale = DeltaVelocity / ( InverseMass + Body->InverseMass );
+		const auto InverseMassTotal = InverseMass + Body->InverseMass;
+		float ImpulseScale = DeltaVelocity / InverseMassTotal;
 
 		if( Body->Continuous && SweptResult.Hit )
 		{
 			// Body->Velocity = Vector3D::Zero;
 		}
 
-		Vector3D Impulse = Response.Normal * Scale - Response.Distance;
+		Vector3D Impulse = Response.Normal * ImpulseScale;// -Response.Distance;
 
 		Normal += Response.Normal;
 		// Velocity -= InverseMass * Impulse;
 
 		if( TriangleMesh )
 		{
+			// Body->Velocity -= Body->InverseMass * Impulse;
+		}
+
+		if( !Collided )
+		{
+			Velocity += InverseMass * Impulse;
 			Body->Velocity -= Body->InverseMass * Impulse;
+		}
+
+		Collided = true;
+		Contacts++;
+
+		// Tangent vector for friction
+		auto Tangent = RelativeVelocity - ( Response.Normal * RelativeVelocity.Dot( Response.Normal ) );
+		const auto ValidTangent = !Math::Equal( Tangent.LengthSquared(), 0.0f );
+		if( ValidTangent )
+		{
+			Tangent.Normalize();
+
+			auto FrictionScale = RelativeVelocity.Dot( Tangent ) * -1.0f / InverseMassTotal;
+			const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
+			if( ValidFrictionScale )
+			{
+				constexpr float FixedFriction = 1.0f;
+				const auto Friction = sqrtf( FixedFriction );
+				if( FrictionScale > ImpulseScale * Friction )
+				{
+					FrictionScale = ImpulseScale * Friction;
+				}
+				else if( FrictionScale < -ImpulseScale * Friction )
+				{
+					FrictionScale = -ImpulseScale * Friction;
+				}
+
+				const auto TangentImpulse = Tangent * FrictionScale;
+				// const auto TangentImpulse = Tangent * ( RelativeVelocity.Dot( Tangent ) * -1.0f * 0.0f );
+				Velocity -= InverseMass * TangentImpulse;
+				Body->Velocity += Body->InverseMass * TangentImpulse;
+			}
 		}
 
 #if DrawNormalAndDistance == 1
@@ -859,7 +903,7 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 	}
 }
 
-void VisualizeBounds( TriangleTree* Tree, FTransform* Transform, Color BoundsColor )
+void VisualizeBounds( TriangleTree* Tree, const FTransform* Transform, const Color& BoundsColor )
 {
 	if( Tree )
 	{
@@ -925,8 +969,8 @@ void VisualizeBounds( TriangleTree* Tree, FTransform* Transform, Color BoundsCol
 			}
 		}
 
-		VisualizeBounds( Tree->Upper, Transform );
-		VisualizeBounds( Tree->Lower, Transform );
+		VisualizeBounds( Tree->Upper, Transform, BoundsColor );
+		VisualizeBounds( Tree->Lower, Transform, BoundsColor );
 	}
 }
 
@@ -976,6 +1020,9 @@ void CBody::Tick()
 
 	if( !Stationary )
 	{
+		const auto DeltaTime = static_cast<float>( Physics->TimeStep );
+		Velocity += Acceleration * DeltaTime;
+		Velocity += LinearVelocity * DeltaTime;
 		NewPosition += Velocity;
 
 		const float MinimumHeight = -200.0f;
@@ -1001,30 +1048,32 @@ void CBody::Tick()
 			// UI::AddLine( NewPosition, NewPosition + Velocity.Normalized(), Color( 255, 0, 255 ) );
 			// UI::AddLine( NewPosition, NewPosition - Depenetration.Normalized(), Color( 0, 255, 255 ) );
 			// UI::AddText( NewPosition, std::to_string( Factor ).c_str() );
-			Velocity *= Factor;
+			constexpr float BaseLineTime = ( 1.0f / 60.0f );
+			// Velocity *= Math::Min( 1.0f, Factor * ( BaseLineTime / DeltaTime ) );
 		}
 		else
 		{
 			Velocity = NewPosition - PreviousTransform.GetPosition();
+
 			// Temporary friction factor that only applies to the XY plane.
-			Velocity.X *= 0.91f;
-			Velocity.Y *= 0.91f;
+			const auto AirDamping = powf( 0.001f, DeltaTime );
+			Velocity.X *= AirDamping;
+			Velocity.Y *= AirDamping;
 		}
 
 		// Apply depenetration.
-		NewPosition -= Depenetration;
-		Normal = Depenetration.Normalized() * -1.0f;
-		Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
+		// NewPosition -= Depenetration;
+		// Normal = Depenetration.Normalized() * -1.0f;
 	}
 
 	const auto Difference = NewPosition - PreviousTransform.GetPosition();
 	const auto DifferenceLengthSquared = Difference.LengthSquared();
 	if( DifferenceLengthSquared > 0.001f || LastActivity < 0.0 )
 	{
-		LastActivity = GameLayersInstance->GetCurrentTime();
+		LastActivity = Physics->CurrentTime;
 	}
 
-	const auto TimeSinceActivity = GameLayersInstance->GetCurrentTime() - LastActivity;
+	const auto TimeSinceActivity = Physics->CurrentTime - LastActivity;
 	Sleeping = TimeSinceActivity > 10.0;
 	if( Static || Stationary )
 	{
@@ -1045,7 +1094,6 @@ void CBody::Tick()
 	}
 
 	CalculateBounds();
-	Acceleration = Vector3D( 0.0f, 0.0f, 0.0f );
 	TextPosition = 0;
 }
 
@@ -1153,7 +1201,7 @@ void CBody::Debug() const
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
 	UI::AddText( WorldBounds.Minimum, "Mass", Mass );
 
-	// VisualizeBounds( Tree, &PreviousTransform );
+	VisualizeBounds( Tree, &PreviousTransform );
 }
 
 BodyType CBody::GetType() const

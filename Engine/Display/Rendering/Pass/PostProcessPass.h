@@ -9,7 +9,7 @@ class CRenderPassPostProcess : public CRenderPass
 {
 public:
 	CRenderPassPostProcess( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = true );
-	uint32_t Render( const UniformMap& Uniforms ) override;
+	uint32_t Render( UniformMap& Uniforms ) override;
 
 	void SetShader( class CShader* ShaderIn )
 	{

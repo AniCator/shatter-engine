@@ -42,6 +42,13 @@ struct FVertex
 
 	bool operator<( const FVertex& B ) const 
 	{
+		//const auto ComparePosition = !Math::Equal( Position, B.Position, 1.0f );
+		//const auto CompareCoordinate = TextureCoordinate < B.TextureCoordinate;
+		//const auto CompareNormal = Normal < B.Normal;
+		//const auto CompareColor = Color < B.Color;
+		//const auto CompareBone = Bone < B.Bone;
+		//const auto CompareWeight = Weight < B.Weight;
+		//return ComparePosition;//&& CompareCoordinate&& CompareNormal&& CompareColor&& CompareBone&& CompareWeight;
 		return memcmp( ( void*) this, ( void*) &B, sizeof( FVertex ) ) > 0;
 	};
 };

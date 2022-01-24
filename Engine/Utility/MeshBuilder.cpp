@@ -212,7 +212,7 @@ void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
 
 bool MeshBuilder::FindVertex( const FVertex& Vertex, const std::map<FVertex, uint32_t>& IndexMap, uint32_t& OutIndex )
 {
-	auto Iterator = IndexMap.find( Vertex );
+	const auto Iterator = IndexMap.find( Vertex );
 	if( Iterator == IndexMap.end() )
 	{
 		return false;
@@ -374,7 +374,9 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 			else
 			{
 				FatVertices.emplace_back( Vertex );
-				FatIndices.emplace_back( FatVertices.size() - 1 );
+				const auto NewIndex = FatVertices.size() - 1;
+				FatIndices.emplace_back( NewIndex );
+				IndexMap.insert_or_assign( Vertex, NewIndex );
 			}
 		}
 

@@ -12,7 +12,7 @@ CRenderPassDownsample::CRenderPassDownsample( int Width, int Height, const CCame
 	Shader = Assets.CreateNamedShader( "Downsample", "Shaders/FullScreenQuad", "Shaders/Downsample" );
 }
 
-uint32_t CRenderPassDownsample::Render( const UniformMap& Uniforms )
+uint32_t CRenderPassDownsample::Render( UniformMap& Uniforms )
 {
 	CRenderable Copy;
 	Copy.SetMesh( Mesh );

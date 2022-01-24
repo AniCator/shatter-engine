@@ -690,53 +690,64 @@ void CSoLoudSound::Tick()
 	const auto CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
 
 	size_t ActiveStreams = 0;
-	size_t StreamIndex = 0;
-	for( auto& Stream : Streams )
 	{
-		StreamIndex++;
-		
-		if( Stream.Stream && Stream.Playing )
-		{
-			ActiveStreams++;
-		
-			StreamHandle Handle;
-			Handle.Handle = StreamIndex - 1;
-			Stream.Playing = Playing( Handle );
-		}
-	}
+		OptickEvent( "Stream Update" );
 
-	size_t ActiveSounds = 0;
-	size_t SoundIndex = 0;
-	for( auto& Sound : Sounds )
-	{
-		SoundIndex++;
-		if( Sound.Voice && Sound.Playing )
+		size_t StreamIndex = 0;
+		for( auto& Stream : Streams )
 		{
-			ActiveSounds++;
+			StreamIndex++;
 
-			if( ActiveSounds > 200 )
+			if( Stream.Stream && Stream.Playing )
 			{
-				Engine.stop( Sound.Voice );
-				Sound.Playing = false;
-				continue;
-			}
+				ActiveStreams++;
 
-			SoundHandle Handle;
-			Handle.Handle = SoundIndex - 1;
-			Sound.Playing = Playing( Handle );
-			Engine.setVolume( Sound.Voice, Sound.Volume );
+				StreamHandle Handle;
+				Handle.Handle = StreamIndex - 1;
+				Stream.Playing = Playing( Handle );
+			}
 		}
 	}
 
-	Engine.update3dAudio();
+	/*size_t ActiveSounds = 0;
+	{
+		OptickEvent( "Sound Update" );
 
-	const auto SoundEntry = FProfileTimeEntry( "Active Sounds", ActiveSounds );
-	Profiler.AddCounterEntry( SoundEntry, false, true );
+		size_t SoundIndex = 0;
+		for( auto& Sound : Sounds )
+		{
+			SoundIndex++;
+			if( Sound.Voice && Sound.Playing )
+			{
+				ActiveSounds++;
 
-	const auto StreamEntry = FProfileTimeEntry( "Active Streams", ActiveStreams );
+				if( ActiveSounds > 200 )
+				{
+					Engine.stop( Sound.Voice );
+					Sound.Playing = false;
+					continue;
+				}
+
+				SoundHandle Handle;
+				Handle.Handle = SoundIndex - 1;
+				Sound.Playing = Playing( Handle );
+				Engine.setVolume( Sound.Voice, Sound.Volume );
+			}
+		}
+	}*/
+
+	{
+		OptickEvent( "3D Audio Update" );
+		Engine.update3dAudio();
+	}
+
+	/*const auto SoundEntry = FProfileTimeEntry( "Active Sounds", ActiveSounds );
+	Profiler.AddCounterEntry( SoundEntry, false, true );*/
+
+	const auto StreamEntry = ProfileTimeEntry( "Active Streams", ActiveStreams );
 	Profiler.AddCounterEntry( StreamEntry, false, true );
 
-	const auto VoiceEntry = FProfileTimeEntry( "Active Voices", Engine.getActiveVoiceCount() );
+	const auto VoiceEntry = ProfileTimeEntry( "Active Voices", Engine.getActiveVoiceCount() );
 	Profiler.AddCounterEntry( VoiceEntry, false, true );
 }
 
@@ -816,8 +827,13 @@ void CSoLoudSound::Initialize()
 
 void CSoLoudSound::Shutdown()
 {
-	StopAll();
 	Sounds.clear();
 	Streams.clear();
+
+	while( Engine.mInsideAudioThreadMutex )
+	{
+		// Wait for SoLoud to finish processing to avoid a potential crash on exit.
+	}
+
 	Engine.deinit();
 }

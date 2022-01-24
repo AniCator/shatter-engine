@@ -3,6 +3,7 @@
 
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/World/World.h>
 #include <Engine/Utility/Chunk.h>
@@ -596,6 +597,17 @@ namespace EngineTest
 				Logger::WriteMessage( Source.c_str() );
 				Logger::WriteMessage( Result.c_str() );
 				Assert::Fail( L"Decoded data differs." );
+			}
+		}
+
+		TEST_METHOD( HexStringToColor )
+		{
+			const std::string Test = "#00FF00";
+			const auto Result = Color::FromHex( Test );
+
+			if( Result.R != 0 || Result.G != 255 || Result.B != 0 )
+			{
+				Assert::Fail( L"String to Color failed." );
 			}
 		}
 	};

@@ -82,12 +82,12 @@ public:
 		glBindVertexArray( 0 );
 	}
 	
-	void Draw( FRenderData& RenderDataIn, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride ) override
+	void Draw( FRenderData& RenderDataIn, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride ) override
 	{
 		if( !Emitter || !Emitter->Render || !VAO )
 			return;
 
-		CRenderable::Draw( RenderDataIn, PreviousRenderData, DrawModeOverride );
+		CRenderable::Draw( RenderDataIn, PreviousRenderable, DrawModeOverride );
 
 		/*const auto* FFT = CSoLoudSound::GetBusFFT( Bus::Music );
 		std::memcpy( CurrentFFT, FFT, sizeof( float ) * 256 );
@@ -217,11 +217,11 @@ void ParticleEmitter::Tick()
 	for( uint32_t Index = 0; Index < TotalControlPoints; Index++ )
 	{
 		const auto Point = Index == 0 ? Location : ControlPoints[Index - 1];
-		const auto ControlPoint = Uniform( Point );
+		auto ControlPoint = Uniform( Point );
 		ControlPoint.Bind( Program, "ControlPoint" + std::to_string( Index ) );
 	}
 
-	const auto ParticleCount = Uniform( Count );
+	auto ParticleCount = Uniform( Count );
 	ParticleCount.Bind( Program, "ParticleCount" );
 
 	Vector4D Time;
@@ -229,7 +229,7 @@ void ParticleEmitter::Tick()
 	Time.Y = StaticCast<float>( GameLayersInstance->GetDeltaTime() );
 	Time.Z = StaticCast<float>( GameLayersInstance->GetPreviousTime() );
 	Time.W = StaticCast<float>( GameLayersInstance->GetTimeScale() );
-	const auto TimeUniform = Uniform( Time );
+	auto TimeUniform = Uniform( Time );
 	TimeUniform.Bind( Program, "Time" );
 	
 	glDispatchCompute( Count / WorkSize + 1, 1, 1 );

@@ -27,6 +27,7 @@ struct FRenderData
 	EDrawMode DrawMode = None;
 
 	bool ShouldRender = false;
+	bool DisableRender = false;
 };
 
 struct FRenderDataInstanced : public FRenderData
@@ -50,21 +51,43 @@ public:
 	CTexture* GetTexture( ETextureSlot Slot );
 	void SetTexture( CTexture* Texture, ETextureSlot Slot );
 
+	UniformMap GetUniforms() const
+	{
+			return Uniforms;
+	}
+
 	void SetUniform( const std::string& Name, const Uniform& Uniform );
 
-	virtual void Draw( FRenderData& RenderData, const FRenderData& PreviousRenderData, EDrawMode DrawModeOverride = None );
+	virtual void Draw( FRenderData& RenderData, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride = None );
 
 	FRenderDataInstanced& GetRenderData();
+
+	bool HasSkeleton = false;
+
+	static void FrustumCull( const class CCamera& Camera, CRenderable* Renderable );
+	static void FrustumCull( const class CCamera& Camera, const std::vector<CRenderable*>& Renderables );
+
 protected:
 	CTexture* Textures[TextureSlots];
 	CShader* Shader;
 	CMesh* Mesh;
 
-	void Prepare( FRenderData& RenderData );
+	void Prepare( FRenderData& RenderData, const CRenderable* PreviousRenderable );
+
+	// Checks if the renderable is using the same textures.
+	bool ShouldBindTextures( const CRenderable* PreviousRenderable );
 
 	// Uniform location
 	int TextureLocation[TextureSlots];
 
 	FRenderDataInstanced RenderData;
 	UniformMap Uniforms;
+
+	// Individual uniforms.
+	Uniform ObjectPosition = { "ObjectPosition" };
+	Uniform LightIndices = { "LightIndices" };
+	Uniform ObjectBoundsMinimum = { "ObjectBoundsMinimum" };
+	Uniform ObjectBoundsMaximum = { "ObjectBoundsMaximum" };
+	Uniform ModelMatrix = { "Model" };
+	Uniform ObjectColor = { "ObjectColor" };
 };

@@ -8,6 +8,26 @@
 
 #include <Engine/Input/Input.h>
 #include <Engine/Utility/Locator/InputLocator.h>
+#include <Engine/Utility/Math.h>
+
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+
+#include "Windows.h"
+#include "Psapi.h"
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
+#ifdef GetCurrentTime
+#undef GetCurrentTime
+#endif
+#endif
 
 const char* MouseLabels[] = 
 {
@@ -77,15 +97,45 @@ void* operator new( size_t Size )
 		LargestAllocation = Size;
 	}
 
-	return malloc( Size );
+	if( void* MemoryPointer = std::malloc( Size ) )
+		return MemoryPointer;
+
+	throw std::bad_alloc{};
 }
 
-void operator delete( void* Data, size_t Size )
+void operator delete( void* Data, size_t Size ) noexcept
 {
 	MemoryUsageBytes -= Size;
 
-	free( Data );
+	std::free( Data );
 }
+
+void operator delete[]( void* Data, size_t Size ) noexcept
+{
+	MemoryUsageBytes -= Size;
+
+	std::free( Data );
+}
+
+#ifdef _WIN32
+PROCESS_MEMORY_COUNTERS GetMemoryCounters()
+{
+	PROCESS_MEMORY_COUNTERS Memory;
+	BOOL Result = GetProcessMemoryInfo(
+		GetCurrentProcess(),
+		&Memory,
+		sizeof( Memory )
+	);
+
+	return Memory;
+}
+
+size_t GetMemoryUsageWorkingSet()
+{
+	const auto Memory = GetMemoryCounters();
+	return Memory.WorkingSetSize;
+}
+#endif
 
 size_t BytesToKiloBytes( const size_t& Bytes )
 {
@@ -115,12 +165,19 @@ std::string BytesToString( const size_t& Bytes )
 		{
 			Memory = BytesToKiloBytes( Bytes );
 			MemoryIdentifier = "KB";
+
+			if( Memory == 0 )
+			{
+				Memory = Bytes;
+				MemoryIdentifier = "bytes";
+			}
 		}
 	}
 
 	return std::to_string( Memory ) + " " + MemoryIdentifier;
 }
 
+size_t MemoryCounterGap = 0;
 size_t CounterGap = 0;
 size_t CounterGapFrame = 0;
 
@@ -129,12 +186,12 @@ CProfiler::~CProfiler()
 	Clear();
 }
 
-void CProfiler::AddTimeEntry( const FProfileTimeEntry& TimeEntry )
+void CProfiler::AddTimeEntry( const ProfileTimeEntry& TimeEntry )
 {
 	auto Iterator = TimeEntries.find( TimeEntry.Name );
 	if( Iterator == TimeEntries.end() )
 	{
-		RingBuffer<FProfileTimeEntry, TimeWindow> Buffer;
+		RingBuffer<ProfileTimeEntry, TimeWindow> Buffer;
 		Buffer.Insert( TimeEntry );
 		TimeEntries.insert_or_assign( Iterator, TimeEntry.Name, Buffer );
 	}
@@ -146,8 +203,8 @@ void CProfiler::AddTimeEntry( const FProfileTimeEntry& TimeEntry )
 
 void CProfiler::AddCounterEntry( const char* NameIn, int TimeIn )
 {
-	if( !Enabled )
-		return;
+	// if( !Enabled )
+	// 	return;
 
 	auto Iterator = TimeCounters.find( NameIn );
 	if( Iterator == TimeCounters.end() )
@@ -160,7 +217,7 @@ void CProfiler::AddCounterEntry( const char* NameIn, int TimeIn )
 	}
 }
 
-void CProfiler::AddCounterEntry( const FProfileTimeEntry& TimeEntry, const bool& PerFrame, const bool& Assign )
+void CProfiler::AddCounterEntry( const ProfileTimeEntry& TimeEntry, const bool& PerFrame, const bool& Assign )
 {
 	if( !Enabled && PerFrame )
 		return;
@@ -221,6 +278,34 @@ void CProfiler::AddDebugMessage( const char* NameIn, const char* Body )
 	}
 }
 
+void CProfiler::AddMemoryEntry( const FName& Name, const size_t& Bytes )
+{
+	// if( !Enabled )
+	// 	return;
+
+	const auto Iterator = MemoryCounters.find( Name );
+	if( Iterator == MemoryCounters.end() )
+	{
+		MemoryCounters.insert_or_assign( Iterator, Name, Bytes );
+	}
+	else
+	{
+		Iterator->second += Bytes;
+	}
+}
+
+void CProfiler::ClearMemoryEntry(const FName& Name)
+{
+	// if( !Enabled )
+	// 	return;
+
+	const auto Iterator = MemoryCounters.find( Name );
+	if( Iterator == MemoryCounters.end() )
+		return;
+
+	MemoryCounters.erase( Iterator );
+}
+
 void CProfiler::PlotPerformance()
 {
 	ImDrawList* DrawList = ImGui::GetWindowDrawList();
@@ -239,7 +324,7 @@ void CProfiler::PlotPerformance()
 		DrawList->PushClipRect( Position, ImVec2( Position.x + Size.x, Position.y + Size.y ) );
 
 		const auto CurrentTime = std::chrono::duration_cast<std::chrono::nanoseconds>( std::chrono::steady_clock::now().time_since_epoch() ).count();
-		static std::vector<RingBuffer<FProfileTimeEntry, TimeWindow>*> PlottableEntries;
+		static std::vector<RingBuffer<ProfileTimeEntry, TimeWindow>*> PlottableEntries;
 		PlottableEntries.clear();
 		
 		for( auto& Pair : TimeEntries )
@@ -253,7 +338,7 @@ void CProfiler::PlotPerformance()
 			PlottableEntries.emplace_back( &Buffer );
 		}
 
-		auto SortEntries = [&] ( RingBuffer<FProfileTimeEntry, TimeWindow>* A, RingBuffer<FProfileTimeEntry, TimeWindow>* B ) {
+		auto SortEntries = [&] ( RingBuffer<ProfileTimeEntry, TimeWindow>* A, RingBuffer<ProfileTimeEntry, TimeWindow>* B ) {
 			const auto& TimeEntryA = A->Get( A->Offset( -1 ) );
 			const auto& TimeEntryB = B->Get( B->Offset( -1 ) );
 			return ExclusiveComparison( TimeEntryA.StartTime, TimeEntryB.StartTime ) && ExclusiveComparison( TimeEntryA.Depth, TimeEntryB.Depth );
@@ -348,7 +433,7 @@ void CProfiler::Display()
 			{
 				const bool Frametime = TimeEntry.first == "Frametime";
 				const char* TimeEntryName = TimeEntry.first.String().c_str();
-				RingBuffer<FProfileTimeEntry, TimeWindow>& Buffer = TimeEntry.second;
+				RingBuffer<ProfileTimeEntry, TimeWindow>& Buffer = TimeEntry.second;
 
 				float TimeValues[TimeWindow];
 				for( size_t j = 0; j < TimeWindow; j++ )
@@ -402,18 +487,19 @@ void CProfiler::Display()
 			}
 
 			
-			ImGui::Text( "Memory Usage: %s", GetMemoryUsageAsString().c_str() );
+			ImGui::Text( "Memory Usage: %s (%s MB)", GetMemoryUsageAsString().c_str(), std::to_string( GetMemoryUsageInMegaBytes() ).c_str() );
 			ImGui::Text( "Largest Allocation: %s", BytesToString( LargestAllocation ).c_str() );
-			static RingBuffer<size_t, TimeWindow> MemoryBuffer;
+			constexpr size_t MemoryWindow = 4096;
+			static RingBuffer<size_t, MemoryWindow> MemoryBuffer;
 
 			MemoryBuffer.Insert( GetMemoryUsageInMegaBytes() );
 
 			static std::vector<float> MemoryValues;
 			MemoryValues.clear();
-			MemoryValues.resize( TimeWindow );
+			MemoryValues.resize( MemoryWindow );
 
 			size_t MemoryCeiling = 0;
-			for( size_t MemoryIndex = 0; MemoryIndex < TimeWindow; MemoryIndex++ )
+			for( size_t MemoryIndex = 0; MemoryIndex < MemoryWindow; MemoryIndex++ )
 			{
 				const auto& BufferValue = MemoryBuffer.Get( MemoryIndex );
 				MemoryValues[MemoryIndex] = static_cast<float>( BufferValue );
@@ -421,8 +507,13 @@ void CProfiler::Display()
 				MemoryCeiling = std::max( MemoryCeiling, BufferValue );
 			}
 
-			ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( 32, 64, 180, 255 ) );
-			ImGui::PlotHistogram( "", MemoryValues.data(), static_cast<int>( TimeWindow ), static_cast<int>( MemoryBuffer.Offset() ), "Memory Usage (MB)", 0.0f, static_cast<float>( MemoryCeiling ), ImVec2( 500.0f, 100.0f ) );
+#ifdef _WIN32
+			// Use the working set peak on Windows.
+			MemoryCeiling = BytesToMegaBytes( GetMemoryCounters().PeakWorkingSetSize );
+#endif
+
+			ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( 64, 128, 200, 255 ) );
+			ImGui::PlotHistogram( "", MemoryValues.data(), static_cast<int>( MemoryWindow ), static_cast<int>( MemoryBuffer.Offset() ), "Memory Usage (MB)", 0.0f, static_cast<float>( MemoryCeiling ), ImVec2( 500.0f, 100.0f ) );
 			ImGui::PopStyleColor();
 
 			ImGui::Text( "" );
@@ -432,6 +523,43 @@ void CProfiler::Display()
 
 		if( Enabled )
 		{
+			if( !MemoryCounters.empty() )
+			{
+				ImGui::Text( "\nMemory" );
+				ImGui::Separator();
+
+				// First pass, check how much memory we've accounted for.
+				size_t AccountedBytes = 0;
+				for( const auto& Counter : MemoryCounters )
+				{
+					AccountedBytes += Counter.second;
+				}
+
+				const auto& Unaccounted = BytesToString( GetMemoryUsageInBytes() - AccountedBytes );
+				ImGui::Text( "Unaccounted: %s", Unaccounted.c_str() );
+
+				const auto& Accounted = BytesToString( AccountedBytes );
+				ImGui::Text( "Accounted: %s", Accounted.c_str() );
+
+				for( const auto& Counter : MemoryCounters )
+				{
+					const char* CounterName = Counter.first.String().c_str();
+					const auto& CounterValue = BytesToString( Counter.second );
+					ImGui::Text( "%s: %s", CounterName, CounterValue.c_str() );
+				}
+
+				if( MemoryCounters.size() > MemoryCounterGap )
+				{
+					MemoryCounterGap = MemoryCounters.size();
+				}
+
+				const size_t CounterDelta = MemoryCounterGap - MemoryCounters.size();
+				for( size_t CounterIndex = 0; CounterIndex < CounterDelta; CounterIndex++ )
+				{
+					ImGui::Text( "" );
+				}
+			}
+
 			if( TimeCounters.size() > 0 || TimeCountersFrame.size() > 0 )
 			{
 				ImGui::Text( "\nCounters" );
@@ -553,38 +681,42 @@ void CProfiler::SetEnabled( const bool EnabledIn )
 
 size_t CProfiler::GetMemoryUsageInBytes()
 {	
+#ifdef _WIN32
+	return GetMemoryUsageWorkingSet();
+#else
 	return MemoryUsageBytes;
+#endif
 }
 
 size_t CProfiler::GetMemoryUsageInKiloBytes()
 {
-	return BytesToKiloBytes( MemoryUsageBytes );
+	return BytesToKiloBytes( GetMemoryUsageInBytes() );
 }
 
 size_t CProfiler::GetMemoryUsageInMegaBytes()
 {
-	return BytesToMegaBytes( MemoryUsageBytes );
+	return BytesToMegaBytes( GetMemoryUsageInBytes() );
 }
 
 size_t CProfiler::GetMemoryUsageInGigaBytes()
 {
-	return BytesToGigaBytes( MemoryUsageBytes );
+	return BytesToGigaBytes( GetMemoryUsageInBytes() );
 }
 
 std::string CProfiler::GetMemoryUsageAsString()
 {
-	return BytesToString( MemoryUsageBytes );
+	return BytesToString( GetMemoryUsageInBytes() );
 }
 
-std::atomic<size_t> CTimerScope::Depth = 0;
-CTimerScope::CTimerScope( const FName& ScopeNameIn, bool TextOnlyIn )
+std::atomic<size_t> TimerScope::Depth = 0;
+TimerScope::TimerScope( const FName& ScopeNameIn, bool TextOnlyIn )
 {
 	Depth++;
 	ScopeName = ScopeNameIn;
 	TextOnly = TextOnlyIn;
 	StartTime = std::chrono::steady_clock::now();
 }
-CTimerScope::CTimerScope( const FName& ScopeNameIn, const uint64_t& Milliseconds )
+TimerScope::TimerScope( const FName& ScopeNameIn, const uint64_t& Milliseconds )
 {
 	Depth++;
 	ScopeName = ScopeNameIn;
@@ -593,7 +725,7 @@ CTimerScope::CTimerScope( const FName& ScopeNameIn, const uint64_t& Milliseconds
 	StartTime = std::chrono::steady_clock::time_point( StartTime - std::chrono::milliseconds( Milliseconds ) );
 }
 
-CTimerScope::~CTimerScope()
+TimerScope::~TimerScope()
 {
 	std::chrono::steady_clock::time_point EndTime = std::chrono::steady_clock::now();
 	const auto DeltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>( EndTime - StartTime ).count();
@@ -604,11 +736,35 @@ CTimerScope::~CTimerScope()
 	else
 	{
 		const auto StartTimeValue = std::chrono::duration_cast<std::chrono::nanoseconds>( StartTime.time_since_epoch() ).count();
-		CProfiler::Get().AddTimeEntry( FProfileTimeEntry( ScopeName, int64_t( DeltaTime ), int64_t( StartTimeValue ), Depth ) );
+		CProfiler::Get().AddTimeEntry( ProfileTimeEntry( ScopeName, int64_t( DeltaTime ), int64_t( StartTimeValue ), Depth ) );
 	}
 
 	Depth--;
-};
+}
+
+#undef ProfileMemory
+ProfileMemory::ProfileMemory( const FName& ScopeNameIn, const bool& ClearPrevious )
+{
+	ScopeName = ScopeNameIn;
+	// MemoryStartSize = CProfiler::GetMemoryUsageInBytes();
+	MemoryStartSize = MemoryUsageBytes;
+	Clear = ClearPrevious;
+}
+
+ProfileMemory::~ProfileMemory()
+{
+	if( Clear )
+	{
+		CProfiler::Get().ClearMemoryEntry( ScopeName );
+	}
+
+	// const auto Difference = CProfiler::GetMemoryUsageInBytes() - MemoryStartSize;
+	const auto Difference = MemoryUsageBytes - MemoryStartSize;
+	if( Difference > 0 )
+	{
+		CProfiler::Get().AddMemoryEntry( ScopeName, Difference );
+	}
+}
 
 CTimer::CTimer( bool UpdateOnGetElapsed )
 {
@@ -698,7 +854,7 @@ double CTimer::GetElapsedTimeSeconds()
 	return static_cast<double>( Time ) / 1000.0;
 }
 
-bool FProfileTimeEntry::operator<( const FProfileTimeEntry& Entry ) const
+bool ProfileTimeEntry::operator<( const ProfileTimeEntry& Entry ) const
 {
 	Log::Event( "Comparing\n" );
 	return StartTime < Entry.StartTime;

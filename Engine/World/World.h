@@ -60,6 +60,12 @@ public:
 	std::deque<CLevel>& GetLevels() { return Levels; };
 	CLevel* GetActiveLevel() { return ActiveLevel; };
 
+	// Moves an entity from their original level to this world's active level.
+	bool Transfer( CEntity* Entity );
+
+	// Move multiple entities from their original level to this world's active level.
+	void Transfer( const std::vector<CEntity*>& Entities );
+
 	CEntity* Find( const std::string& Name ) const;
 	CEntity* Find( const size_t& ID ) const;
 	CEntity* Find( const EntityUID& ID ) const;

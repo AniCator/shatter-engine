@@ -11,7 +11,7 @@ public:
 	CRenderPassBloom( int Width, int Height, const CCamera& Camera, const bool AlwaysClear = false );
 	~CRenderPassBloom();
 
-	uint32_t Render( const UniformMap& Uniforms ) override;
+	uint32_t Render( UniformMap& Uniforms ) override;
 
 	class CMesh* Mesh = nullptr;
 

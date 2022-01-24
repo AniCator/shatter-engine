@@ -28,7 +28,10 @@ public:
 	CPhysics();
 	~CPhysics();
 
-	void Tick() const;
+	// Waits for the workers to finish their tasks.
+	void Guard() const;
+
+	void Tick( const double& Time );
 	void Destroy() const;
 
 	void Register( CBody* Body ) const;
@@ -37,6 +40,10 @@ public:
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const PollType& Type = PollType::All ) const;
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore, const PollType& Type = PollType::All ) const;
 	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const;
+
+	double CurrentTime = -1.0;
+	double TimeStep = 1.0 / 120.0;
+	double ActualDeltaTime = -1.0;
 private:
 	CPhysicsScene* Scene;
 };

@@ -42,7 +42,7 @@ CRenderPassBloom::~CRenderPassBloom()
 	delete TinySizeY;
 }
 
-uint32_t CRenderPassBloom::Render( const UniformMap& Uniforms )
+uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 {
 	if( !( BlurX && BlurY && BloomThreshold && BloomComposite ) )
 		return 0;
