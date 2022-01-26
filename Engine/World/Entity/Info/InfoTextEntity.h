@@ -15,6 +15,8 @@ public:
 	void Import( CData& Data ) override;
 	void Export( CData& Data ) override;
 
+	void Debug() override;
+
 protected:
 	float Distance = 10.0f;
 	std::string Title;

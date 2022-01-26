@@ -26,7 +26,8 @@ void CInfoText::Tick()
 		auto* Camera = World->GetActiveCamera();
 		if( Camera )
 		{
-			if( Camera->GetCameraSetup().CameraPosition.Distance(Transform.GetPosition()) < Distance )
+			const auto DistanceSquared = Distance * Distance;
+			if( Camera->GetCameraSetup().CameraPosition.DistanceSquared(Transform.GetPosition()) < DistanceSquared )
 			{
 				if( Style == Mode::World )
 				{
@@ -74,4 +75,11 @@ void CInfoText::Export( CData& Data )
 {
 	CPointEntity::Export( Data );
 	DataString::Encode( Data, Text );
+}
+
+void CInfoText::Debug()
+{
+	CPointEntity::Debug();
+
+	UI::AddSphere( Transform.GetPosition(), Distance );
 }
