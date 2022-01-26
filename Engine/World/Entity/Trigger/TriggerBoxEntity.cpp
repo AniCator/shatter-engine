@@ -50,6 +50,8 @@ void CTriggerBoxEntity::Tick()
 
 void CTriggerBoxEntity::Destroy()
 {
+	CPointEntity::Destroy();
+
 	if( Volume )
 	{
 		Volume->Destroy();
