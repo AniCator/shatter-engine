@@ -437,11 +437,6 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 	return Response;
 }
 
-CBody::CBody()
-{
-	CalculateBounds();
-}
-
 CBody::~CBody()
 {
 	delete Tree;
@@ -483,12 +478,8 @@ void CBody::Construct( CPhysics* Physics )
 	CalculateBounds();
 
 	PreviousTransform = GetTransform();
-	LinearVelocity = Vector3D( 0.0f, 0.0f, 0.0f );
-	Velocity = Vector3D( 0.0f, 0.0f, 0.0f );
-	Depenetration = Vector3D( 0.0f, 0.0f, 0.0f );
 
 	auto Transform = GetTransform();
-
 	if( Owner && ( Owner->IsStatic() || Owner->IsStationary() ) && TriangleMesh )
 	{
 		auto* Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
@@ -500,7 +491,7 @@ void CBody::Construct( CPhysics* Physics )
 
 void CBody::PreCollision()
 {
-	Normal = Vector3D( 0.0f, 0.0f, 0.0f );
+	Normal = Vector3D::Zero;
 	Contact = false;
 	Contacts = 0;
 }
@@ -517,17 +508,12 @@ void CBody::Simulate()
 
 	// Calculate and apply gravity.
 	Vector3D EnvironmentalForce = Vector3D::Zero;
-	if( AffectedByGravity )
+	if( AffectedByGravity && Math::Equal( Acceleration, Vector3D::Zero ) )
 	{
-		const Vector3D EnvironmentalAcceleration = -Gravity;
-		EnvironmentalForce += (EnvironmentalAcceleration) * InverseMass;
+		EnvironmentalForce -= Gravity;
 	}
 
 	Acceleration += EnvironmentalForce;
-
-	// auto Transform = GetTransform();
-	// Transform.SetPosition( Transform.GetPosition() + EnvironmentalForce );
-	// Owner->SetTransform( Transform );
 }
 
 bool CBody::Collision( CBody* Body )
@@ -591,9 +577,6 @@ bool CBody::Collision( CBody* Body )
 			Response = CollisionResponseAABBAABB( Body->WorldBounds, WorldBounds );
 		}
 	}
-	
-	const Vector3D RelativeVelocity = Body->Velocity - Velocity;
-	float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass;
 
 	bool Collided = false;
 
@@ -602,85 +585,104 @@ bool CBody::Collision( CBody* Body )
 	{
 		auto Penetration = ( Response.Normal * Response.Distance );
 		Body->Depenetration += Penetration;
+		Body->Velocity -= Penetration;
 		Collided = true;
 	}
 
+	const auto InverseMassTotal = InverseMass + Body->InverseMass;
+	if( InverseMassTotal <= 0.0f )
+		return false;
+
+	const Vector3D RelativeVelocity = Body->Velocity - Velocity;
+	// float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal );// +Response.Distance * InverseMass;
+
+	auto SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
+
+	const Vector3D& CenterA = ( BoundsA.Maximum + BoundsA.Minimum ) * 0.5f;
+	const Vector3D& CenterB = ( BoundsB.Maximum + BoundsB.Minimum ) * 0.5f;
+
 	// Check if the bodies are moving away from each other.
-	if( VelocityAlongNormal > 0.0f )
+	if( SeparatingVelocity < 0.0f )
+		return false;
+
+	float DeltaVelocity = -SeparatingVelocity * Restitution;
+
+	auto AccelerationCausedVelocity = ( Body->Acceleration - Acceleration ).Dot( Response.Normal ) * ( 1.0f / 60.0f );
+	if( AccelerationCausedVelocity < 0.0f )
 	{
-		constexpr float Restitution = 1.01f;
-		const float DeltaVelocity = Restitution * VelocityAlongNormal;
-		const auto InverseMassTotal = InverseMass + Body->InverseMass;
-		float ImpulseScale = DeltaVelocity / InverseMassTotal;
+		DeltaVelocity += Restitution * AccelerationCausedVelocity;
 
-		if( Body->Continuous && SweptResult.Hit )
+		DeltaVelocity = Math::Max( 0.0f, DeltaVelocity );
+	}
+
+	DeltaVelocity -= SeparatingVelocity;
+
+	float ImpulseScale = DeltaVelocity / InverseMassTotal;
+
+	Vector3D Impulse = Response.Normal * ImpulseScale;
+
+	Normal += Response.Normal;
+
+	// Position solver?
+	if( !TriangleMesh && Response.Distance > 0.001f && !Body->Static && !Body->Stationary )
+	{
+		auto Penetration = ( Response.Normal * Response.Distance );
+		Body->Depenetration += Penetration;
+		Body->Velocity -= Penetration;
+
+		Response.Distance *= -1.0f;
+	}
+
+	Velocity -= InverseMass * Impulse;
+	Body->Velocity += Body->InverseMass * Impulse;
+
+	Collided = true;
+	Contacts++;
+	Body->Contacts++;
+
+	// Tangent vector for friction
+	auto Tangent = RelativeVelocity - ( Response.Normal * RelativeVelocity.Dot( Response.Normal ) );
+	const auto ValidTangent = !Math::Equal( Tangent.LengthSquared(), 0.0f );
+	if( ValidTangent && false )
+	{
+		Tangent.Normalize();
+
+		auto FrictionScale = RelativeVelocity.Dot( Tangent ) * -1.0f / InverseMassTotal;
+		const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
+		if( ValidFrictionScale )
 		{
-			// Body->Velocity = Vector3D::Zero;
-		}
-
-		Vector3D Impulse = Response.Normal * ImpulseScale;// -Response.Distance;
-
-		Normal += Response.Normal;
-		// Velocity -= InverseMass * Impulse;
-
-		if( TriangleMesh )
-		{
-			// Body->Velocity -= Body->InverseMass * Impulse;
-		}
-
-		if( !Collided )
-		{
-			// Velocity -= InverseMass * Impulse;
-			// Body->Velocity += Body->InverseMass * Impulse;
-		}
-
-		Collided = true;
-		Contacts++;
-
-		// Tangent vector for friction
-		auto Tangent = RelativeVelocity - ( Response.Normal * RelativeVelocity.Dot( Response.Normal ) );
-		const auto ValidTangent = !Math::Equal( Tangent.LengthSquared(), 0.0f );
-		if( ValidTangent )
-		{
-			Tangent.Normalize();
-
-			auto FrictionScale = RelativeVelocity.Dot( Tangent ) * -1.0f / InverseMassTotal;
-			const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
-			if( ValidFrictionScale )
+			constexpr float FixedFriction = 1.0f;
+			const auto Friction = sqrtf( FixedFriction );
+			if( FrictionScale > ImpulseScale * Friction )
 			{
-				constexpr float FixedFriction = 0.01f;
-				const auto Friction = sqrtf( FixedFriction );
-				if( FrictionScale > ImpulseScale * Friction )
-				{
-					FrictionScale = ImpulseScale * Friction;
-				}
-				else if( FrictionScale < -ImpulseScale * Friction )
-				{
-					FrictionScale = -ImpulseScale * Friction;
-				}
-
-				// const auto TangentImpulse = Tangent * FrictionScale;
-				const auto TangentImpulse = Tangent * ( RelativeVelocity.Dot( Tangent ) * -1.0f * 0.0f );
-				Velocity -= InverseMass * TangentImpulse;
-				Body->Velocity += Body->InverseMass * TangentImpulse;
+				FrictionScale = ImpulseScale * Friction;
 			}
+			else if( FrictionScale < -ImpulseScale * Friction )
+			{
+				FrictionScale = -ImpulseScale * Friction;
+			}
+
+			const auto TangentImpulse = Tangent * FrictionScale;
+			// const auto TangentImpulse = Tangent * ( RelativeVelocity.Dot( Tangent ) * -1.0f * 0.0f );
+			Velocity -= InverseMass * TangentImpulse;
+			Body->Velocity += Body->InverseMass * TangentImpulse;
 		}
+	}
 
 #if DrawNormalAndDistance == 1
-		const auto BodyTransform = Body->GetTransform();
-		// UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Response.Normal * Response.Distance, Color( 255, 0, 255 ) );
-		UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Body->Depenetration, Color( 255, 0, 255 ) );
+	const auto BodyTransform = Body->GetTransform();
+	// UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Response.Normal * Response.Distance, Color( 255, 0, 255 ) );
+	UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Body->Depenetration, Color( 255, 0, 255 ) );
 #endif
 
 #if DrawDebugLines == 1
-		auto Position = Transform.GetPosition();
-		const auto ImpulseEnd = Position + Impulse + ( InverseMass * Impulse * Mass );
-		UI::AddLine( Position, Position + Response.Normal.Normalized(), Color( 0, 255, 0 ) );
-		UI::AddLine( Position, ImpulseEnd, Color( 255, 0, 0 ) );
-		UI::AddCircle( ImpulseEnd, 5.0f, Color( 255, 0, 255 ) );
-		UI::AddText( ImpulseEnd, std::to_string( VelocityAlongNormal ).c_str() );
+	auto Position = Transform.GetPosition();
+	const auto ImpulseEnd = Position + Impulse + ( InverseMass * Impulse * Mass );
+	UI::AddLine( Position, Position + Response.Normal.Normalized(), Color( 0, 255, 0 ) );
+	UI::AddLine( Position, ImpulseEnd, Color( 255, 0, 0 ) );
+	UI::AddCircle( ImpulseEnd, 5.0f, Color( 255, 0, 255 ) );
+	UI::AddText( ImpulseEnd, std::to_string( VelocityAlongNormal ).c_str() );
 #endif
-	}
 
 #if DrawDebugLines == 1
 	Color BoundsColor = Color( 0, 255, 0 );
@@ -712,19 +714,6 @@ bool CBody::Collision( CBody* Body )
 		// UI::AddAABB( Body->WorldBounds.Minimum, Body->WorldBounds.Maximum, BoundsColor );
 	}
 #endif
-
-	/*if( Collided && Owner && Owner->IsDebugEnabled() )
-	{
-		const Vector3D& CenterA = ( BoundsA.Maximum + BoundsA.Minimum ) * 0.5f;
-		const Vector3D& CenterB = ( BoundsB.Maximum + BoundsB.Minimum ) * 0.5f;
-		UI::AddLine( CenterA, CenterB, Color( 0, 255, 0 ) );
-		UI::AddText( CenterA, Owner->Name.String().c_str() );
-
-		if( Body->Owner )
-		{
-			UI::AddText( CenterB, Body->Owner->Name.String().c_str() );
-		}
-	}*/
 
 	return Collided;
 }
@@ -1002,28 +991,39 @@ void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBoun
 
 void CBody::Tick()
 {
-	Handled = false;
-
 	auto Transform = GetTransform();	
 	if( Static )
 		return;
 
 	CalculateBounds();
-
 	auto NewPosition = Transform.GetPosition();
 
-#if DrawDebugLines == 1
-	UI::AddLine( NewPosition, NewPosition + Velocity, Color( 32, 255, 255 ) );
-#endif
-
-	if( !Stationary )
+	if( !Static && !Stationary )
 	{
 		const auto DeltaTime = static_cast<float>( Physics->TimeStep );
-		Velocity += Acceleration * DeltaTime;
-		Velocity += LinearVelocity * DeltaTime;
-		NewPosition += Velocity;
 
-		const float MinimumHeight = -200.0f;
+		// Apply depenetration.
+		NewPosition -= Depenetration;
+		Normal = Depenetration * -1.0f;
+		Depenetration = { 0.0f, 0.0f, 0.0f };
+
+		Velocity += Acceleration * DeltaTime;
+		Velocity += LinearVelocity;
+		NewPosition += Velocity * DeltaTime;
+
+		// Damping is used to simulate drag.
+		Velocity *= powf( Damping, DeltaTime );
+
+		// Clear the acceleration and linear velocity.
+		Acceleration = { 0.0f, 0.0f, 0.0f };
+		LinearVelocity = { 0.0f, 0.0f, 0.0f };
+
+		// Penetration friction?
+		// const float Factor = Math::Saturate( ( Depenetration.Normalized().Dot( Velocity.Normalized() ) * -1.0f ) + 1.0f );
+		// Velocity *= powf( Factor, DeltaTime );
+
+		// Hard limit Z to stop you from falling forever.
+		constexpr float MinimumHeight = -200.0f;
 		if( NewPosition.Z < MinimumHeight )
 		{
 			if( Velocity.Z < 0.0f )
@@ -1036,32 +1036,10 @@ void CBody::Tick()
 			Contact = true;
 		}
 
-		// NormalForce = Velocity.Dot( Normal ) * Normal;
-
 		if( Contacts > 0 )
 		{
 			Contact = true;
-			// Velocity = Math::Abs( Velocity.Dot( Depenetration ) ) * Velocity;
-			const float Factor = Math::Saturate( ( Depenetration.Normalized().Dot( Velocity.Normalized() ) * -1.0f ) + 1.0f );
-			// UI::AddLine( NewPosition, NewPosition + Velocity.Normalized(), Color( 255, 0, 255 ) );
-			// UI::AddLine( NewPosition, NewPosition - Depenetration.Normalized(), Color( 0, 255, 255 ) );
-			// UI::AddText( NewPosition, std::to_string( Factor ).c_str() );
-			Velocity *= Factor;
 		}
-		else
-		{
-			Velocity = NewPosition - PreviousTransform.GetPosition();
-
-			// Temporary friction factor that only applies to the XY plane.
-			const auto AirDamping = powf( 0.001f, DeltaTime );
-			Velocity.X *= AirDamping;
-			Velocity.Y *= AirDamping;
-		}
-
-		// Apply depenetration.
-		NewPosition -= Depenetration;
-		Normal = Depenetration.Normalized() * -1.0f;
-		Depenetration = { 0.0f, 0.0f, 0.0f };
 	}
 
 	const auto Difference = NewPosition - PreviousTransform.GetPosition();
@@ -1092,8 +1070,6 @@ void CBody::Tick()
 	}
 
 	CalculateBounds();
-	Acceleration = { 0.0f, 0.0f, 0.0f };
-	LinearVelocity = { 0.0f, 0.0f, 0.0f };
 	TextPosition = 0;
 }
 
@@ -1107,7 +1083,7 @@ void CBody::Destroy()
 
 void CBody::CalculateBounds()
 {
-	FTransform Transform = GetTransform();
+	const auto Transform = GetTransform();
 	WorldBounds = Math::AABB( LocalBounds, Transform );
 
 	if( Continuous )
@@ -1121,10 +1097,13 @@ void CBody::CalculateBounds()
 	// Ensure we have at least some volume.
 	EnsureVolume( WorldBounds );
 
-	Mass = ( WorldBounds.Maximum - WorldBounds.Minimum ).Length() * 45.0f;
-
-	const bool Unmoving = Static || Stationary;
-	InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
+	// Update the inverse mass once.
+	if( InverseMass < 0.0f )
+	{
+		Mass = ( WorldBounds.Maximum - WorldBounds.Minimum ).Length() * 40.0f;
+		const bool Unmoving = Static || Stationary;
+		InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
+	}
 }
 
 const BoundingBox& CBody::GetBounds() const
@@ -1199,9 +1178,23 @@ void CBody::Debug() const
 	}
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
-	UI::AddText( WorldBounds.Minimum, "Mass", Mass );
 
 	VisualizeBounds( Tree, &PreviousTransform );
+
+	if( Static )
+		return;
+
+	Vector2D Offset = { 0.0f,0.0f };
+	UI::AddText( WorldBounds.Minimum, "Mass", Mass, Color::White, Offset );
+	Offset.Y += 20.0f;
+	UI::AddText( WorldBounds.Minimum, "Restitution", Restitution, Color::White, Offset );
+	Offset.Y += 20.0f;
+	UI::AddText( WorldBounds.Minimum, "Damping", Damping, Color::White, Offset );
+	Offset.Y += 20.0f;
+	UI::AddText( WorldBounds.Minimum, "Acceleration", Acceleration, Color::White, Offset );
+	Offset.Y += 20.0f;
+	UI::AddText( WorldBounds.Minimum, "Velocity", Velocity, Color::White, Offset );
+	Offset.Y += 20.0f;
 }
 
 BodyType CBody::GetType() const

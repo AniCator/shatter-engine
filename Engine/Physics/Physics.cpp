@@ -261,7 +261,7 @@ public:
 
 						if( BodyB->Owner != BodyA->Owner )
 						{
-							BodyB->Collision( BodyA );
+							// BodyB->Collision( BodyA );
 							BodyA->Collision( BodyB );
 						}
 					}
