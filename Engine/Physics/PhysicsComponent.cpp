@@ -580,15 +580,6 @@ bool CBody::Collision( CBody* Body )
 
 	bool Collided = false;
 
-	// Position solver?
-	if( !TriangleMesh && Response.Distance > 0.0f && !Body->Static && !Body->Stationary )
-	{
-		auto Penetration = ( Response.Normal * Response.Distance );
-		Body->Depenetration += Penetration;
-		Body->Velocity -= Penetration;
-		Collided = true;
-	}
-
 	const auto InverseMassTotal = InverseMass + Body->InverseMass;
 	if( InverseMassTotal <= 0.0f )
 		return false;
@@ -1178,10 +1169,9 @@ void CBody::Debug() const
 	}
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
-
 	VisualizeBounds( Tree, &PreviousTransform );
 
-	if( Static )
+	if( Static || Sleeping )
 		return;
 
 	Vector2D Offset = { 0.0f,0.0f };
