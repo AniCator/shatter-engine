@@ -26,13 +26,13 @@ namespace UI
 	void AddCircle( const Vector3D& Position, float Radius, const Color& Color = Color::Red );
 	// void AddCircleFilled( const Vector2D& centre, float radius, uint32_t col, int num_segments = 12 );
 	void AddText( const Vector2D& Position, const char* Start, const char* End = nullptr, const Color& Color = Color::White, const float Size = 16.0f );
-	void AddText( const Vector3D& Position, const char* Start, const char* End = nullptr, const Color& Color = Color::White );
+	void AddText( const Vector3D& Position, const char* Start, const char* End = nullptr, const Color& Color = Color::White, const Vector2D& Offset = { 0.0f,0.0f } );
 
 	void AddText( const Vector2D& Position, const std::string& Name, const Vector3D& Vector, const Color& Color = Color::White, const float Size = 16.0f );
-	void AddText( const Vector3D& Position, const std::string& Name, const Vector3D& Vector, const Color& Color = Color::White );
+	void AddText( const Vector3D& Position, const std::string& Name, const Vector3D& Vector, const Color& Color = Color::White, const Vector2D& Offset = { 0.0f,0.0f } );
 
 	void AddText( const Vector2D& Position, const std::string& Name, const float& Float, const Color& Color = Color::White, const float Size = 16.0f );
-	void AddText( const Vector3D& Position, const std::string& Name, const float& Float, const Color& Color = Color::White );
+	void AddText( const Vector3D& Position, const std::string& Name, const float& Float, const Color& Color = Color::White, const Vector2D& Offset = { 0.0f,0.0f } );
 	
 	void AddImage( const Vector3D& Position, const Vector2D& Size, const ::CTexture* Texture, const Color& Color = Color::White );
 	// void AddText( const ImFont* font, float font_size, const Vector2D& pos, uint32_t col, const char* text_begin, const char* text_end = NULL, float wrap_width = 0.0f, const Vector4D * cpu_fine_clip_rect = NULL );

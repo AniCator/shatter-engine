@@ -109,7 +109,8 @@ namespace UI
 
 	struct DrawText
 	{
-		DrawText( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
+		DrawText() = delete;
+		DrawText( const Vector3D& Position, const char* Start, const char* End, const Color& Color, const Vector2D& Offset = { 0.0f,0.0f } )
 		{
 			this->Position = Position;
 			
@@ -129,9 +130,11 @@ namespace UI
 			}
 
 			this->Color = Color;
+			this->Offset = Offset;
 		}
 
 		Vector3D Position;
+		Vector2D Offset;
 		char* Text;
 		size_t Length;
 		Color Color;
@@ -458,10 +461,10 @@ namespace UI
 		TextsScreen.emplace_back( Text );
 	}
 
-	void AddTextInternal( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
+	void AddTextInternal( const Vector3D& Position, const char* Start, const char* End, const Color& Color, const Vector2D& Offset = { 0.0f,0.0f } )
 	{
 		bool IsInFront = false;
-		const auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront );
+		const auto& ScreenPosition = WorldToScreenPosition( Position, &IsInFront ) + Offset;
 
 		if( IsInFront )
 		{
@@ -469,12 +472,12 @@ namespace UI
 		}
 	}
 
-	void AddText( const Vector3D& Position, const char* Start, const char* End, const Color& Color )
+	void AddText( const Vector3D& Position, const char* Start, const char* End, const Color& Color, const Vector2D& Offset )
 	{
 		if( CApplication::IsPaused() )
 			return;
 		
-		DrawText Text( Position, Start, End, Color );
+		DrawText Text( Position, Start, End, Color, Offset );
 		Texts.emplace_back( Text );
 	}
 
@@ -484,10 +487,10 @@ namespace UI
 		AddText( Position, VectorString.c_str(), nullptr, Color, Size );
 	}
 
-	void AddText( const Vector3D& Position, const std::string& Name, const Vector3D& Vector, const Color& Color )
+	void AddText( const Vector3D& Position, const std::string& Name, const Vector3D& Vector, const Color& Color, const Vector2D& Offset )
 	{
 		const std::string VectorString = Name + ": " + std::to_string( Vector.X ) + ", " + std::to_string( Vector.Y ) + ", " + std::to_string( Vector.Z );
-		AddText( Position, VectorString.c_str(), nullptr, Color );
+		AddText( Position, VectorString.c_str(), nullptr, Color, Offset );
 	}
 
 	void AddText( const Vector2D& Position, const std::string& Name, const float& Float, const Color& Color, const float Size )
@@ -496,10 +499,10 @@ namespace UI
 		AddText( Position, VectorString.c_str(), nullptr, Color, Size );
 	}
 
-	void AddText( const Vector3D& Position, const std::string& Name, const float& Float, const Color& Color )
+	void AddText( const Vector3D& Position, const std::string& Name, const float& Float, const Color& Color, const Vector2D& Offset )
 	{
 		const std::string VectorString = Name + ": " + std::to_string( Float );
-		AddText( Position, VectorString.c_str(), nullptr, Color );
+		AddText( Position, VectorString.c_str(), nullptr, Color, Offset );
 	}
 
 	void AddImageInternal( const Vector3D& Position, const Vector2D& Size, const ImTextureID Texture, const Color& Color )
@@ -859,7 +862,7 @@ namespace UI
 
 		for( const auto& Text : Texts )
 		{
-			AddTextInternal( Text.Position, Text.Text, Text.Text + Text.Length, Text.Color );
+			AddTextInternal( Text.Position, Text.Text, Text.Text + Text.Length, Text.Color, Text.Offset );
 		}
 
 		for( const auto& Text : TextsScreen )
