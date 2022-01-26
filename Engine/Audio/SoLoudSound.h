@@ -162,11 +162,11 @@ public:
 	static void Rate( SoundHandle Handle, const float Rate );
 	static void Rate( StreamHandle Handle, const float Rate );
 
-	static float Time( SoundHandle Handle );
-	static float Time( StreamHandle Handle );
+	static double Time( SoundHandle Handle );
+	static double Time( StreamHandle Handle );
 
-	static float Length( SoundHandle Handle );
-	static float Length( StreamHandle Handle );
+	static double Length( SoundHandle Handle );
+	static double Length( StreamHandle Handle );
 
 	static void Offset( SoundHandle Handle, const float Offset );
 	static void Offset( StreamHandle Handle, const float Offset );

@@ -15,7 +15,7 @@ struct DragTransform
 
 struct DragVector
 {
-	struct Vector3D* Point = nullptr;
+	class Vector3D* Point = nullptr;
 	int Plane = -1;
 };
 
