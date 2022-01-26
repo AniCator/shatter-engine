@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "SoundEntity.h"
 
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/World/World.h>
@@ -307,4 +308,18 @@ void SoundEntity::Export( CData& Data )
 	Data << Loop;
 	Data << Is3D;
 	Data << Bus;
+}
+
+void SoundEntity::Debug()
+{
+	CPointEntity::Debug();
+
+	if( Is3D || Falloff == EFalloff::InverseSquare )
+	{
+		UI::AddSphere( Transform.GetPosition(), Radius * Math::Pi(), Color::Yellow );
+	}
+	else
+	{
+		UI::AddSphere( Transform.GetPosition(), Radius, Color::Yellow );
+	}
 }

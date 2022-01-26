@@ -30,6 +30,8 @@ public:
 	virtual void Import( CData& Data ) override;
 	virtual void Export( CData& Data ) override;
 
+	void Debug() override;
+
 public:
 	CSound* Asset = nullptr;
 	SoundInstance Sound;
