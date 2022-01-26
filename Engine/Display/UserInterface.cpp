@@ -533,7 +533,7 @@ namespace UI
 		Images.emplace_back( Image );
 	}
 
-	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color, const double Duration )
+	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color, const double& Duration )
 	{
 		if( CApplication::IsPaused() )
 			return;
@@ -576,6 +576,50 @@ namespace UI
 		const Vector3D Minimum = Center - Size;
 		const Vector3D Maximum = Center + Size;
 		AddAABB( Minimum, Maximum, Color );
+	}
+
+	void AddSphere( const Vector3D& Center, const float& Radius, const Color& Color, const double& Duration )
+	{
+		constexpr uint32_t Steps = 16;
+		constexpr float Delta = 1.0f / static_cast<float>( Steps );
+		float Rotation = 0.0f;
+		for( uint32_t Index = 0; Index < Steps; Index++ )
+		{
+			Vector3D SegmentStart = Vector3D::Zero;
+			Vector3D SegmentEnd = Vector3D::Zero;
+
+			float Offset = Delta * static_cast<float>( Index ) * Math::Pi2();
+			float Offset2 = Delta * static_cast<float>( Index + 1 ) * Math::Pi2();
+			SegmentStart.X = sin( Offset );
+			SegmentStart.Y = cos( Offset );
+
+			SegmentEnd.X = sin( Offset2 );
+			SegmentEnd.Y = cos( Offset2 );
+
+			AddLine( Center + SegmentStart * Radius, Center + SegmentEnd * Radius, Color, Duration );
+
+			SegmentStart = Vector3D::Zero;
+			SegmentEnd = Vector3D::Zero;
+
+			SegmentStart.X = sin( Offset );
+			SegmentStart.Z = cos( Offset );
+
+			SegmentEnd.X = sin( Offset2 );
+			SegmentEnd.Z = cos( Offset2 );
+			AddLine( Center + SegmentStart * Radius, Center + SegmentEnd * Radius, Color, Duration );
+
+			SegmentStart = Vector3D::Zero;
+			SegmentEnd = Vector3D::Zero;
+
+			SegmentStart.Y = sin( Offset );
+			SegmentStart.Z = cos( Offset );
+
+			SegmentEnd.Y = sin( Offset2 );
+			SegmentEnd.Z = cos( Offset2 );
+			AddLine( Center + SegmentStart * Radius, Center + SegmentEnd * Radius, Color, Duration );
+
+			Rotation += Delta;
+		}
 	}
 
 	void Reset()

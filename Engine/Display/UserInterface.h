@@ -42,8 +42,9 @@ namespace UI
 	// void AddConvexPolyFilled( const Vector2D* points, const int num_points, uint32_t col, bool anti_aliased );
 	// void AddBezierCurve( const Vector2D& pos0, const Vector2D& cp0, const Vector2D& cp1, const Vector2D& pos1, uint32_t col, float thickness, int num_segments = 0 );
 
-	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color = Color::Blue, const double Duration = -1.0 );
+	void AddAABB( const Vector3D& Minimum, const Vector3D& Maximum, const Color& Color = Color::Blue, const double& Duration = -1.0 );
 	void AddBox( const Vector3D& Center, const Vector3D& Size, const Color& Color = Color::Blue );
+	void AddSphere( const Vector3D& Center, const float& Radius, const Color& Color = Color::Blue, const double& Duration = -1.0 );
 
 	void Reset();
 
