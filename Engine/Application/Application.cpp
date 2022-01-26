@@ -636,7 +636,7 @@ void CApplication::Run()
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
 
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
-	CSoLoudSound::Volume( GlobalVolume );
+	SoLoudSound::Volume( GlobalVolume );
 
 	// const auto TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
 
@@ -793,7 +793,7 @@ void CApplication::Run()
 
 	MainWindow.Terminate();
 
-	CSoLoudSound::Shutdown();
+	SoLoudSound::Shutdown();
 }
 
 void CApplication::Close()
@@ -1465,6 +1465,6 @@ void CApplication::Initialize()
 		MainWindow.EnableCursor( false );
 	}
 
-	CSoLoudSound::Initialize();
+	SoLoudSound::Initialize();
 	GameLayersInstance->Initialize();
 }

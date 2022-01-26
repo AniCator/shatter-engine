@@ -279,6 +279,7 @@
     <ClInclude Include="Engine\Audio\SoLoud\EffectStack.h" />
     <ClInclude Include="Engine\Audio\Sound.h" />
     <ClInclude Include="Engine\Audio\SoundInstance.h" />
+    <ClInclude Include="Engine\Audio\SoundQueue.h" />
     <ClInclude Include="Engine\Configuration\Configuration.h" />
     <ClInclude Include="Engine\Display\Color.h" />
     <ClInclude Include="Engine\Display\imgui_impl_glfw.h" />

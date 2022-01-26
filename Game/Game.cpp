@@ -32,7 +32,7 @@ void CGameLayers::Initialize()
 {
 	Log::Event( "Initializing game layers.\n" );
 
-	CSoLoudSound::StopMusic();
+	SoLoudSound::StopStreams();
 
 	PreviousTime = 0.0;
 	CurrentTime = 0.0;
@@ -47,7 +47,7 @@ void CGameLayers::Initialize()
 	}
 
 	// Tick once.
-	CSoLoudSound::Tick();
+	SoLoudSound::Tick();
 }
 
 void CGameLayers::Frame()
@@ -86,12 +86,12 @@ void CGameLayers::Tick()
 		}
 	}
 
-	CSoLoudSound::Tick();
+	SoLoudSound::Tick();
 }
 
 void CGameLayers::Shutdown()
 {
-	CSoLoudSound::StopAll();
+	SoLoudSound::StopAll();
 
 	for( auto GameLayer : GameLayers )
 	{

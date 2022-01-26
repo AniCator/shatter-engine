@@ -13,6 +13,7 @@
 #include <ThirdParty/SoLoud/include/soloud_limiter.h>
 
 #include <Engine/Audio/SoLoud/EffectStack.h>
+#include <Engine/Audio/SoundQueue.h>
 #include <Engine/Physics/Body/Body.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
@@ -23,11 +24,12 @@
 #undef GetCurrentTime
 #include <Game/Game.h>
 
-std::deque<FSound> CSoLoudSound::Sounds;
-std::vector<SoLoud::Wav*> CSoLoudSound::SoundBuffers;
-std::vector<SoLoud::WavStream*> CSoLoudSound::StreamBuffers;
-std::vector<FStream> CSoLoudSound::Streams;
-float CSoLoudSound::GlobalVolume = 1.0f;
+std::deque<FSound> SoLoudSound::Sounds;
+std::vector<SoLoud::Wav*> SoLoudSound::SoundBuffers;
+std::vector<SoLoud::WavStream*> SoLoudSound::StreamBuffers;
+std::vector<FStream> SoLoudSound::Streams;
+
+float SoLoudSound::GlobalVolume = 1.0f;
 
 SoLoud::Soloud Engine;
 SoLoud::FreeverbFilter ReverbEarlyReflection;
@@ -203,7 +205,7 @@ SoLoud::handle PlaySound( SoLoud::AudioSource& AudioSource, const Spatial& Infor
 	return Handle;
 }
 
-SoundBufferHandle CSoLoudSound::Sound( const std::string& ResourcePath )
+SoundBufferHandle SoLoudSound::Sound( const std::string& ResourcePath )
 {
 	if( CFile::Exists( ResourcePath.c_str() ) )
 	{
@@ -221,7 +223,7 @@ SoundBufferHandle CSoLoudSound::Sound( const std::string& ResourcePath )
 	return EmptyHandle<SoundBufferHandle>();
 }
 
-StreamHandle CSoLoudSound::Music( const std::string& ResourcePath )
+StreamHandle SoLoudSound::Stream( const std::string& ResourcePath )
 {
 	if( CFile::Exists( ResourcePath.c_str() ) )
 	{
@@ -240,7 +242,7 @@ StreamHandle CSoLoudSound::Music( const std::string& ResourcePath )
 }
 
 SoLoud::Speech Speech;
-void CSoLoudSound::Speak( const std::string& Sentence, const Spatial Information )
+void SoLoudSound::Speak( const std::string& Sentence, const Spatial Information )
 {
 	Speech.setText( Sentence.c_str() );
 	Speech.setParams( Math::RandomRangeInteger( 2000, 3000 ), 5.0f );
@@ -265,7 +267,7 @@ void CSoLoudSound::Speak( const std::string& Sentence, const Spatial Information
 	}
 }
 
-SoundHandle CSoLoudSound::Start( SoundBufferHandle Handle, const Spatial Information )
+SoundHandle SoLoudSound::Start( SoundBufferHandle Handle, const Spatial Information )
 {
 	if( Handle.Handle < SoundBuffers.size() )
 	{
@@ -307,7 +309,7 @@ SoundHandle CSoLoudSound::Start( SoundBufferHandle Handle, const Spatial Informa
 	return EmptyHandle<SoundHandle>();
 }
 
-StreamHandle CSoLoudSound::Start( StreamHandle Handle, const Spatial Information )
+StreamHandle SoLoudSound::Start( StreamHandle Handle, const Spatial Information )
 {
 	if( GlobalVolume == 0.0f )
 		return EmptyHandle<StreamHandle>();
@@ -351,7 +353,7 @@ StreamHandle CSoLoudSound::Start( StreamHandle Handle, const Spatial Information
 	return EmptyHandle<StreamHandle>();
 }
 
-void CSoLoudSound::Stop( SoundHandle Handle )
+void SoLoudSound::Stop( SoundHandle Handle )
 {
 	if( Sounds.empty() )
 		return;
@@ -362,7 +364,7 @@ void CSoLoudSound::Stop( SoundHandle Handle )
 	}
 }
 
-void CSoLoudSound::Stop( StreamHandle Handle, const float FadeOut )
+void SoLoudSound::Stop( StreamHandle Handle, const float FadeOut )
 {
 	if( Streams.empty() )
 		return;
@@ -395,7 +397,7 @@ void CSoLoudSound::Stop( StreamHandle Handle, const float FadeOut )
 	}
 }
 
-void CSoLoudSound::StopSounds()
+void SoLoudSound::StopSounds()
 {
 	for( const auto& Sound : Sounds )
 	{
@@ -403,7 +405,7 @@ void CSoLoudSound::StopSounds()
 	}
 }
 
-void CSoLoudSound::StopMusic()
+void SoLoudSound::StopStreams()
 {
 	for( const auto& Stream : Streams )
 	{
@@ -411,13 +413,13 @@ void CSoLoudSound::StopMusic()
 	}
 }
 
-void CSoLoudSound::StopAll()
+void SoLoudSound::StopAll()
 {
 	StopSounds();
-	StopMusic();
+	StopStreams();
 }
 
-void CSoLoudSound::Loop( SoundHandle Handle, const bool Loop )
+void SoLoudSound::Loop( SoundHandle Handle, const bool Loop )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -425,7 +427,7 @@ void CSoLoudSound::Loop( SoundHandle Handle, const bool Loop )
 	}
 }
 
-void CSoLoudSound::Loop( StreamHandle Handle, const bool Loop )
+void SoLoudSound::Loop( StreamHandle Handle, const bool Loop )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -433,7 +435,7 @@ void CSoLoudSound::Loop( StreamHandle Handle, const bool Loop )
 	}
 }
 
-void CSoLoudSound::Rate( SoundHandle Handle, const float Rate )
+void SoLoudSound::Rate( SoundHandle Handle, const float Rate )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -441,7 +443,7 @@ void CSoLoudSound::Rate( SoundHandle Handle, const float Rate )
 	}
 }
 
-void CSoLoudSound::Rate( StreamHandle Handle, const float Rate )
+void SoLoudSound::Rate( StreamHandle Handle, const float Rate )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -449,7 +451,7 @@ void CSoLoudSound::Rate( StreamHandle Handle, const float Rate )
 	}
 }
 
-float CSoLoudSound::Time( SoundHandle Handle )
+float SoLoudSound::Time( SoundHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -459,7 +461,7 @@ float CSoLoudSound::Time( SoundHandle Handle )
 	return 0.0f;
 }
 
-float CSoLoudSound::Time( StreamHandle Handle )
+float SoLoudSound::Time( StreamHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -469,7 +471,7 @@ float CSoLoudSound::Time( StreamHandle Handle )
 	return 0.0f;
 }
 
-float CSoLoudSound::Length( SoundHandle Handle )
+float SoLoudSound::Length( SoundHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -479,7 +481,7 @@ float CSoLoudSound::Length( SoundHandle Handle )
 	return -1.0f;
 }
 
-float CSoLoudSound::Length( StreamHandle Handle )
+float SoLoudSound::Length( StreamHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -489,7 +491,7 @@ float CSoLoudSound::Length( StreamHandle Handle )
 	return -1.0f;
 }
 
-void CSoLoudSound::Offset( SoundHandle Handle, const float Offset )
+void SoLoudSound::Offset( SoundHandle Handle, const float Offset )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -497,7 +499,7 @@ void CSoLoudSound::Offset( SoundHandle Handle, const float Offset )
 	}
 }
 
-void CSoLoudSound::Offset( StreamHandle Handle, const float Offset )
+void SoLoudSound::Offset( StreamHandle Handle, const float Offset )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -505,7 +507,7 @@ void CSoLoudSound::Offset( StreamHandle Handle, const float Offset )
 	}
 }
 
-bool CSoLoudSound::Playing( SoundHandle Handle )
+bool SoLoudSound::Playing( SoundHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -515,7 +517,7 @@ bool CSoLoudSound::Playing( SoundHandle Handle )
 	return false;
 }
 
-bool CSoLoudSound::Playing( StreamHandle Handle )
+bool SoLoudSound::Playing( StreamHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -525,7 +527,7 @@ bool CSoLoudSound::Playing( StreamHandle Handle )
 	return false;
 }
 
-void CSoLoudSound::Volume( SoundHandle Handle, const float Volume )
+void SoLoudSound::Volume( SoundHandle Handle, const float Volume )
 {
 	if( Handle.Handle == InvalidHandle )
 		return;
@@ -534,7 +536,7 @@ void CSoLoudSound::Volume( SoundHandle Handle, const float Volume )
 	Engine.setVolume( Sounds[Handle.Handle].Voice, Volume * 0.01f );
 }
 
-void CSoLoudSound::Volume( StreamHandle Handle, const float Volume )
+void SoLoudSound::Volume( StreamHandle Handle, const float Volume )
 {
 	if( Handle.Handle == InvalidHandle )
 		return;
@@ -543,7 +545,7 @@ void CSoLoudSound::Volume( StreamHandle Handle, const float Volume )
 	Engine.setVolume( Streams[Handle.Handle].Stream, Volume * 0.01f );
 }
 
-void CSoLoudSound::Fade( SoundHandle Handle, const float Volume, const float Time )
+void SoLoudSound::Fade( SoundHandle Handle, const float Volume, const float Time )
 {
 	if( Handle.Handle == InvalidHandle )
 		return;
@@ -551,7 +553,7 @@ void CSoLoudSound::Fade( SoundHandle Handle, const float Volume, const float Tim
 	Engine.fadeVolume( Sounds[Handle.Handle].Voice, Volume * 0.01f, Time );
 }
 
-void CSoLoudSound::Fade( StreamHandle Handle, const float Volume, const float Time )
+void SoLoudSound::Fade( StreamHandle Handle, const float Volume, const float Time )
 {
 	if( Handle.Handle == InvalidHandle )
 		return;
@@ -575,41 +577,41 @@ void DeleteGroup( const SoLoud::handle& VoiceGroup )
 	Engine.destroyVoiceGroup( VoiceGroup );
 }
 
-void CSoLoudSound::GroupPause( const std::vector<StreamHandle>& Handles, const bool State )
+void SoLoudSound::GroupPause( const std::vector<StreamHandle>& Handles, const bool State )
 {
 	const auto PauseGroup = CreateGroup( Handles );
 	Engine.setPause( PauseGroup, State );
 	DeleteGroup( PauseGroup );
 }
 
-void CSoLoudSound::GroupProtect( const std::vector<StreamHandle>& Handles, const bool State )
+void SoLoudSound::GroupProtect( const std::vector<StreamHandle>& Handles, const bool State )
 {
 	const auto ProtectGroup = CreateGroup( Handles );
 	Engine.setProtectVoice( ProtectGroup, State );
 	DeleteGroup( ProtectGroup );
 }
 
-void CSoLoudSound::SetListenerPosition( const Vector3D& Position )
+void SoLoudSound::SetListenerPosition( const Vector3D& Position )
 {
 	Engine.set3dListenerPosition( Position.X, Position.Y, Position.Z );
 }
 
-void CSoLoudSound::SetListenerDirection( const Vector3D& Direction )
+void SoLoudSound::SetListenerDirection( const Vector3D& Direction )
 {
 	Engine.set3dListenerAt( Direction.X, Direction.Y, Direction.Z );
 }
 
-void CSoLoudSound::SetListenerUpDirection( const Vector3D& Direction )
+void SoLoudSound::SetListenerUpDirection( const Vector3D& Direction )
 {
 	Engine.set3dListenerUp( Direction.X, Direction.Y, Direction.Z );
 }
 
-void CSoLoudSound::SetListenerVelocity( const Vector3D& Velocity )
+void SoLoudSound::SetListenerVelocity( const Vector3D& Velocity )
 {
 	Engine.set3dListenerVelocity( Velocity.X, Velocity.Y, Velocity.Z );
 }
 
-void CSoLoudSound::Update( SoundHandle Handle, const Vector3D& Position, const Vector3D& Velocity )
+void SoLoudSound::Update( SoundHandle Handle, const Vector3D& Position, const Vector3D& Velocity )
 {
 	Engine.set3dSourceParameters( Sounds[Handle.Handle].Voice,
 		Position.X, Position.Y, Position.Z,
@@ -617,7 +619,7 @@ void CSoLoudSound::Update( SoundHandle Handle, const Vector3D& Position, const V
 	);
 }
 
-void CSoLoudSound::Update( StreamHandle Handle, const Vector3D& Position, const Vector3D& Velocity )
+void SoLoudSound::Update( StreamHandle Handle, const Vector3D& Position, const Vector3D& Velocity )
 {
 	Engine.set3dSourceParameters( Streams[Handle.Handle].Stream,
 		Position.X, Position.Y, Position.Z,
@@ -625,7 +627,7 @@ void CSoLoudSound::Update( StreamHandle Handle, const Vector3D& Position, const 
 	);
 }
 
-Bus::Volume CSoLoudSound::GetBusOutput( const Bus::Type& Bus )
+Bus::Volume SoLoudSound::GetBusOutput( const Bus::Type& Bus )
 {
 	Bus::Volume Volume;
 	if( Bus == Bus::Master )
@@ -642,7 +644,7 @@ Bus::Volume CSoLoudSound::GetBusOutput( const Bus::Type& Bus )
 	return Volume;
 }
 
-float* CSoLoudSound::GetBusFFT( const Bus::Type& Bus )
+float* SoLoudSound::GetBusFFT( const Bus::Type& Bus )
 {
 	if( Bus == Bus::Master )
 	{
@@ -652,7 +654,7 @@ float* CSoLoudSound::GetBusFFT( const Bus::Type& Bus )
 	return Mixer[Bus].calcFFT();
 }
 
-float CSoLoudSound::Volume( const Bus::Type& Bus )
+float SoLoudSound::Volume( const Bus::Type& Bus )
 {
 	if( Bus == Bus::Master )
 	{
@@ -662,7 +664,7 @@ float CSoLoudSound::Volume( const Bus::Type& Bus )
 	return Mixer[Bus].getVolume();
 }
 
-void CSoLoudSound::Volume( const Bus::Type& Bus, const float& Volume )
+void SoLoudSound::Volume( const Bus::Type& Bus, const float& Volume )
 {
 	if( Bus == Bus::Master )
 	{
@@ -672,17 +674,17 @@ void CSoLoudSound::Volume( const Bus::Type& Bus, const float& Volume )
 	Mixer[Bus].setVolume( Volume );
 }
 
-FilterStack& CSoLoudSound::GetBusStack( const Bus::Type& Bus )
+FilterStack& SoLoudSound::GetBusStack( const Bus::Type& Bus )
 {
 	return Stacks[Bus];
 }
 
-void CSoLoudSound::Volume( const float GlobalVolumeIn )
+void SoLoudSound::Volume( const float GlobalVolumeIn )
 {
 	Engine.setGlobalVolume( GlobalVolumeIn * 0.01f );
 }
 
-void CSoLoudSound::Tick()
+void SoLoudSound::Tick()
 {
 	Profile( "Sound" );
 
@@ -751,7 +753,7 @@ void CSoLoudSound::Tick()
 	Profiler.AddCounterEntry( VoiceEntry, false, true );
 }
 
-void CSoLoudSound::Initialize()
+void SoLoudSound::Initialize()
 {
 	Engine.init( 0 );
 
@@ -825,7 +827,7 @@ void CSoLoudSound::Initialize()
 	StopAll();
 }
 
-void CSoLoudSound::Shutdown()
+void SoLoudSound::Shutdown()
 {
 	Sounds.clear();
 	Streams.clear();
@@ -836,4 +838,33 @@ void CSoLoudSound::Shutdown()
 	}
 
 	Engine.deinit();
+}
+
+SoundQueue::SoundQueue()
+{
+	Instance = new SoLoud::Queue();
+}
+
+SoundQueue::~SoundQueue()
+{
+	delete Instance;
+}
+
+void SoundQueue::Add( const std::string& ResourcePath )
+{
+	SoLoud::WavStream Stream;
+	if( Stream.load( ResourcePath.c_str() ) != 0 )
+		return; // Failed to load.
+
+	Instance->play( Stream );
+}
+
+uint32_t SoundQueue::Count() const
+{
+	return Instance->getQueueCount();
+}
+
+bool SoundQueue::Playing() const
+{
+	return Instance->getQueueCount() > 0;
 }

@@ -18,7 +18,7 @@ SoundInstance::~SoundInstance()
 	Stop();
 }
 
-void SoundInstance::Start( const Spatial Information )
+void SoundInstance::Start( const Spatial& Information )
 {
 	if( !Asset )
 		return;
@@ -30,48 +30,48 @@ void SoundInstance::Start( const Spatial Information )
 	StreamHandle.Handle = Handle;
 }
 
-void SoundInstance::Stop( const float FadeOut ) const
+void SoundInstance::Stop( const float& FadeOut ) const
 {
 	if( !Asset )
 		return;
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		CSoLoudSound::Stop( SoundHandle );
+		SoLoudSound::Stop( SoundHandle );
 	}
 	else
 	{
-		CSoLoudSound::Stop( StreamHandle, FadeOut );
+		SoLoudSound::Stop( StreamHandle, FadeOut );
 	}
 }
 
-void SoundInstance::Loop( const bool Loop ) const
+void SoundInstance::Loop( const bool& Loop ) const
 {
 	if( !Asset )
 		return;
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		CSoLoudSound::Loop( SoundHandle, Loop );
+		SoLoudSound::Loop( SoundHandle, Loop );
 	}
 	else
 	{
-		CSoLoudSound::Loop( StreamHandle, Loop );
+		SoLoudSound::Loop( StreamHandle, Loop );
 	}
 }
 
-void SoundInstance::Rate( const float Rate ) const
+void SoundInstance::Rate( const float& Rate ) const
 {
 	if( !Asset )
 		return;
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		CSoLoudSound::Rate( SoundHandle, Rate );
+		SoLoudSound::Rate( SoundHandle, Rate );
 	}
 	else
 	{
-		CSoLoudSound::Rate( StreamHandle, Rate );
+		SoLoudSound::Rate( StreamHandle, Rate );
 	}
 }
 
@@ -82,10 +82,10 @@ float SoundInstance::Time() const
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		return CSoLoudSound::Time( SoundHandle );
+		return SoLoudSound::Time( SoundHandle );
 	}
 
-	return CSoLoudSound::Time( StreamHandle );
+	return SoLoudSound::Time( StreamHandle );
 }
 
 float SoundInstance::Length() const
@@ -95,24 +95,24 @@ float SoundInstance::Length() const
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		return CSoLoudSound::Length( SoundHandle );
+		return SoLoudSound::Length( SoundHandle );
 	}
 
-	return CSoLoudSound::Length( StreamHandle );
+	return SoLoudSound::Length( StreamHandle );
 }
 
-void SoundInstance::Offset( const float Offset ) const
+void SoundInstance::Offset( const float& Offset ) const
 {
 	if( !Asset )
 		return;
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		CSoLoudSound::Offset( SoundHandle, Offset );
+		SoLoudSound::Offset( SoundHandle, Offset );
 	}
 	else
 	{
-		CSoLoudSound::Offset( StreamHandle, Offset );
+		SoLoudSound::Offset( StreamHandle, Offset );
 	}
 }
 
@@ -123,39 +123,39 @@ bool SoundInstance::Playing() const
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		return CSoLoudSound::Playing( SoundHandle );
+		return SoLoudSound::Playing( SoundHandle );
 	}
 
-	return CSoLoudSound::Playing( StreamHandle );
+	return SoLoudSound::Playing( StreamHandle );
 }
 
-void SoundInstance::Volume( const float Volume ) const
+void SoundInstance::Volume( const float& Volume ) const
 {
 	if( !Asset )
 		return;
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		CSoLoudSound::Volume( SoundHandle, Volume );
+		SoLoudSound::Volume( SoundHandle, Volume );
 	}
 	else
 	{
-		CSoLoudSound::Volume( StreamHandle, Volume );
+		SoLoudSound::Volume( StreamHandle, Volume );
 	}
 }
 
-void SoundInstance::Fade( const float Volume, const float Time ) const
+void SoundInstance::Fade( const float& Volume, const float& Time ) const
 {
 	if( !Asset )
 		return;
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		CSoLoudSound::Fade( SoundHandle, Volume, Time );
+		SoLoudSound::Fade( SoundHandle, Volume, Time );
 	}
 	else
 	{
-		CSoLoudSound::Fade( StreamHandle, Volume, Time );
+		SoLoudSound::Fade( StreamHandle, Volume, Time );
 	}
 }
 
@@ -166,11 +166,11 @@ void SoundInstance::Update( const Vector3D& Position, const Vector3D& Velocity )
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
-		CSoLoudSound::Update( SoundHandle, Position, Velocity );
+		SoLoudSound::Update( SoundHandle, Position, Velocity );
 	}
 	else
 	{
-		CSoLoudSound::Update( StreamHandle, Position, Velocity );
+		SoLoudSound::Update( StreamHandle, Position, Velocity );
 	}
 }
 
@@ -191,7 +191,7 @@ bool CSound::Load( const char* FileLocation )
 	{
 		if( SoundType == ESoundType::Memory )
 		{
-			auto Handle = CSoLoudSound::Sound( FileLocation );
+			auto Handle = SoLoudSound::Sound( FileLocation );
 			if( Handle.Handle > InvalidHandle )
 			{
 				BufferHandles.emplace_back( Handle );
@@ -200,7 +200,7 @@ bool CSound::Load( const char* FileLocation )
 		}
 		else
 		{
-			auto Handle = CSoLoudSound::Music( FileLocation );
+			auto Handle = SoLoudSound::Stream( FileLocation );
 			if( Handle.Handle > InvalidHandle )
 			{
 				StreamBufferHandles.emplace_back( Handle );
@@ -222,7 +222,7 @@ bool CSound::Load( const std::vector<std::string>& Locations )
 		{
 			if( SoundType == ESoundType::Memory )
 			{
-				auto Handle = CSoLoudSound::Sound( FileLocation );
+				auto Handle = SoLoudSound::Sound( FileLocation );
 				if( Handle.Handle > InvalidHandle )
 				{
 					BufferHandles.emplace_back( Handle );
@@ -231,7 +231,7 @@ bool CSound::Load( const std::vector<std::string>& Locations )
 			}
 			else
 			{
-				auto Handle = CSoLoudSound::Music( FileLocation );
+				auto Handle = SoLoudSound::Stream( FileLocation );
 				if( Handle.Handle > InvalidHandle )
 				{
 					StreamBufferHandles.emplace_back( Handle );
@@ -271,7 +271,7 @@ int32_t CSound::Start( const Spatial Information )
 	if( SoundType == ESoundType::Memory )
 	{
 		const auto Buffer = Select();
-		auto Handle = CSoLoudSound::Start( Buffer, Information );
+		auto Handle = SoLoudSound::Start( Buffer, Information );
 		if( Handle.Handle > InvalidHandle )
 		{
 			SoundHandles.emplace_back( Handle );
@@ -280,7 +280,7 @@ int32_t CSound::Start( const Spatial Information )
 	}
 	else if( !StreamBufferHandles.empty() )
 	{
-		auto Handle = CSoLoudSound::Start( StreamBufferHandles[0], Information );
+		auto Handle = SoLoudSound::Start( StreamBufferHandles[0], Information );
 		if( Handle.Handle > InvalidHandle )
 		{
 			StreamHandles.emplace_back( Handle );
@@ -297,14 +297,14 @@ void CSound::Stop( const float FadeOut )
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			CSoLoudSound::Stop( Handle );
+			SoLoudSound::Stop( Handle );
 		}
 	}
 	else
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			CSoLoudSound::Stop( Handle, FadeOut );
+			SoLoudSound::Stop( Handle, FadeOut );
 		}
 	}
 }
@@ -315,14 +315,14 @@ void CSound::Loop( const bool Loop )
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			CSoLoudSound::Loop( Handle, Loop );
+			SoLoudSound::Loop( Handle, Loop );
 		}
 	}
 	else
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			CSoLoudSound::Loop( Handle, Loop );
+			SoLoudSound::Loop( Handle, Loop );
 		}
 	}
 }
@@ -333,14 +333,14 @@ void CSound::Rate( const float Rate )
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			CSoLoudSound::Rate( Handle, Rate );
+			SoLoudSound::Rate( Handle, Rate );
 		}
 	}
 	else
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			CSoLoudSound::Rate( Handle, Rate );
+			SoLoudSound::Rate( Handle, Rate );
 		}
 	}
 }
@@ -351,14 +351,14 @@ float CSound::Time() const
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			return CSoLoudSound::Time( Handle );
+			return SoLoudSound::Time( Handle );
 		}
 	}
 	else
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			return CSoLoudSound::Time( Handle );
+			return SoLoudSound::Time( Handle );
 		}
 	}
 
@@ -371,14 +371,14 @@ float CSound::Length() const
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			return CSoLoudSound::Length( Handle );
+			return SoLoudSound::Length( Handle );
 		}
 	}
 	else
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			return CSoLoudSound::Length( Handle );
+			return SoLoudSound::Length( Handle );
 		}
 	}
 	
@@ -391,14 +391,14 @@ void CSound::Offset( const float Offset )
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			CSoLoudSound::Offset( Handle, Offset );
+			SoLoudSound::Offset( Handle, Offset );
 		}
 	}
 	else
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			CSoLoudSound::Offset( Handle, Offset );
+			SoLoudSound::Offset( Handle, Offset );
 		}
 	}
 }
@@ -411,7 +411,7 @@ bool CSound::Playing()
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			if( CSoLoudSound::Playing( Handle ) )
+			if( SoLoudSound::Playing( Handle ) )
 			{
 				IsPlaying = true;
 				break;
@@ -422,7 +422,7 @@ bool CSound::Playing()
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			if( CSoLoudSound::Playing( Handle ) )
+			if( SoLoudSound::Playing( Handle ) )
 			{
 				IsPlaying = true;
 				break;
@@ -439,14 +439,14 @@ void CSound::Volume( const float Volume )
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			CSoLoudSound::Volume( Handle, Volume );
+			SoLoudSound::Volume( Handle, Volume );
 		}
 	}
 	else
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			CSoLoudSound::Volume( Handle, Volume );
+			SoLoudSound::Volume( Handle, Volume );
 		}
 	}
 }
@@ -457,14 +457,14 @@ void CSound::Fade( const float Volume, const float Time )
 	{
 		for( const auto& Handle : SoundHandles )
 		{
-			CSoLoudSound::Fade( Handle, Volume, Time );
+			SoLoudSound::Fade( Handle, Volume, Time );
 		}
 	}
 	else
 	{
 		for( const auto& Handle : StreamHandles )
 		{
-			CSoLoudSound::Fade( Handle, Volume, Time );
+			SoLoudSound::Fade( Handle, Volume, Time );
 		}
 	}
 }
@@ -482,7 +482,7 @@ void CSound::Update( const int32_t& HandleIn, const Vector3D& Position, const Ve
 		{
 			if( Handle.Handle == HandleIn )
 			{
-				CSoLoudSound::Update( Handle, Position, Velocity );
+				SoLoudSound::Update( Handle, Position, Velocity );
 			}
 		}
 	}
@@ -492,7 +492,7 @@ void CSound::Update( const int32_t& HandleIn, const Vector3D& Position, const Ve
 		{
 			if( Handle.Handle == HandleIn )
 			{
-				CSoLoudSound::Update( Handle, Position, Velocity );
+				SoLoudSound::Update( Handle, Position, Velocity );
 			}
 		}
 	}

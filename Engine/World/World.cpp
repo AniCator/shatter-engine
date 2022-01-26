@@ -109,10 +109,10 @@ void CWorld::Tick()
 
 		CameraPosition = Setup.CameraPosition;
 		
-		CSoLoudSound::SetListenerPosition( Setup.CameraPosition );
-		CSoLoudSound::SetListenerDirection( Setup.CameraDirection );
-		CSoLoudSound::SetListenerUpDirection( Setup.CameraUpVector );
-		CSoLoudSound::SetListenerVelocity( Velocity );
+		SoLoudSound::SetListenerPosition( Setup.CameraPosition );
+		SoLoudSound::SetListenerDirection( Setup.CameraDirection );
+		SoLoudSound::SetListenerUpDirection( Setup.CameraUpVector );
+		SoLoudSound::SetListenerVelocity( Velocity );
 	}
 
 	PreviousCamera = Camera;
@@ -134,7 +134,7 @@ void CWorld::Destroy()
 	{
 		PrimaryWorld = nullptr;
 		
-		CSoLoudSound::StopSounds();
+		SoLoudSound::StopSounds();
 
 		// Prevent sequences from playing when the primary world is destroyed.
 		const auto& Sequences = CAssets::Get().GetSequences();

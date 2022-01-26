@@ -898,6 +898,9 @@
     <ClInclude Include="Engine\Display\Rendering\Culling.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Audio\SoundQueue.h">
+      <Filter>Source Files\Engine\Audio</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">

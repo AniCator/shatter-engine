@@ -207,7 +207,7 @@ void ParticleEmitter::Tick()
 	const auto* Particle = Cast<ParticleRenderable>( Renderable );
 	Particle->Buffer.Bind();
 
-	const auto Volume = CSoLoudSound::GetBusOutput( Bus::Music );
+	const auto Volume = SoLoudSound::GetBusOutput( Bus::Music );
 	const auto MaxVolume = Math::Max( Volume.Left, Volume.Right );
 
 	Time += GameLayersInstance->GetDeltaTime();// +std::powf( MaxVolume, 7.0f ) * 3.0f;

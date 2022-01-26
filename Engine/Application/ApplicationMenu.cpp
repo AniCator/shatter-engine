@@ -1079,7 +1079,7 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		HoveringBus = true;
 	}
 	
-	const auto Volume = CSoLoudSound::GetBusOutput( Bus );
+	const auto Volume = SoLoudSound::GetBusOutput( Bus );
 	if( BusEntry.find( Name ) == BusEntry.end() )
 	{
 		BusInformation Information;
@@ -1089,7 +1089,7 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		BusEntry.insert_or_assign( Name, Information );
 	}
 	
-	const float MaximumVolume = CSoLoudSound::Volume( Bus );
+	const float MaximumVolume = SoLoudSound::Volume( Bus );
 
 	const auto PreviousFrame = BusEntry[Name];
 	const auto PreviousVolume = PreviousFrame.Volume;
@@ -1229,7 +1229,7 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 		const float Drag = ImGui::GetMouseDragDelta( 0, 0.0f ).y / 160.0f;
 		if( Math::Abs( Drag ) > 0.001f )
 		{
-			CSoLoudSound::Volume( Bus, Math::Saturate( MaximumVolume - Drag ) );
+			SoLoudSound::Volume( Bus, Math::Saturate( MaximumVolume - Drag ) );
 			ImGui::ResetMouseDragDelta();
 		}
 	}
@@ -1245,12 +1245,12 @@ void DrawBus( const std::string& Name, const Bus::Type& Bus )
 	bool Muted = MaximumVolume < 0.001f;
 	if( ImGui::Checkbox( MuteText.c_str(), &Muted ) )
 	{
-		CSoLoudSound::Volume( Bus, CSoLoudSound::Volume( Bus ) > 0.001f ? 0.0f : 1.0f );
+		SoLoudSound::Volume( Bus, SoLoudSound::Volume( Bus ) > 0.001f ? 0.0f : 1.0f );
 	}
 
 	ImGui::SetCursorScreenPos( ImVec2( Position.x + 5.0f, Position.y + 225.0f ) );
 
-	auto& Stack = CSoLoudSound::GetBusStack( Bus );
+	auto& Stack = SoLoudSound::GetBusStack( Bus );
 	const auto& Effects = Stack.Get();
 
 	const Effect* MarkedEffect = nullptr;

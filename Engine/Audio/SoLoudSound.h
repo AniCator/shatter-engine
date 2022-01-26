@@ -40,6 +40,7 @@ namespace SoLoud
 {
 	class Wav;
 	class WavStream;
+	class Queue;
 }
 
 struct FSound
@@ -138,11 +139,11 @@ struct Spatial
 	static Spatial Create( class CMeshEntity* Entity );
 };
 
-class CSoLoudSound
+class SoLoudSound
 {
 public:
 	static SoundBufferHandle Sound( const std::string& ResourcePath );
-	static StreamHandle Music( const std::string& ResourcePath );
+	static StreamHandle Stream( const std::string& ResourcePath );
 	static void Speak( const std::string& Sentence, const Spatial Information = Spatial() );
 
 	static SoundHandle Start( SoundBufferHandle Handle, const Spatial Information = Spatial() );
@@ -152,7 +153,7 @@ public:
 	static void Stop( StreamHandle Handle, const float FadeOut = -1.0f );
 
 	static void StopSounds();
-	static void StopMusic();
+	static void StopStreams();
 	static void StopAll();
 
 	static void Loop( SoundHandle Handle, const bool Loop );
@@ -209,5 +210,6 @@ private:
 	static std::vector<SoLoud::Wav*> SoundBuffers;
 	static std::vector<SoLoud::WavStream*> StreamBuffers;
 	static std::vector<FStream> Streams;
+
 	static float GlobalVolume;
 };
