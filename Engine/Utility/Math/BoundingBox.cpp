@@ -73,6 +73,25 @@ BoundingBox BoundingBox::Combine( const BoundingBox& A, const BoundingBox& B )
 	return { Minimum, Maximum };
 }
 
+BoundingSphere::BoundingSphere( const Vector3D& Center, const float& Radius )
+{
+	this->Center = Center;
+	this->Radius = Radius;
+}
+
+BoundingSphere::BoundingSphere( const BoundingBox& Box )
+{
+	Center = Box.Center();
+	Radius = Box.Size().Length() * 0.5f;
+}
+
+bool BoundingSphere::Intersects( const BoundingSphere& B ) const
+{
+	const auto RadiusSquared = Radius * Radius;
+	const auto Difference = Center - B.Center;
+	return Difference.LengthSquared() < RadiusSquared;
+}
+
 BoundingBoxSIMD::BoundingBoxSIMD( const Vector3D& Minimum, const Vector3D& Maximum )
 {
 	this->Minimum = _mm_setr_ps( Minimum.X, Minimum.Y, Minimum.Z, 0.0f );

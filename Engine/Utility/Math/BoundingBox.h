@@ -20,6 +20,18 @@ struct BoundingBox
 	static BoundingBox Combine( const BoundingBox& A, const BoundingBox& B );
 };
 
+struct BoundingSphere
+{
+	BoundingSphere() = default;
+	BoundingSphere( const Vector3D& Center, const float& Radius );
+	BoundingSphere( const BoundingBox& Box );
+
+	bool Intersects( const BoundingSphere& B ) const;
+
+	Vector3D Center = Vector3D::Zero;
+	float Radius = 0.0f;
+};
+
 struct BoundingPoints
 {
 	BoundingPoints() = delete;

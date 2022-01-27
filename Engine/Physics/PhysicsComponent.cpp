@@ -602,7 +602,7 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	// float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass; // Old calculation of the seperating velocity.
 
 	const auto SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
-	if( SeparatingVelocity > 0.0f ) // Check if the bodies are moving away from each other.
+	if( SeparatingVelocity < 0.0f ) // Check if the bodies are moving away from each other.
 		return false;
 
 	float DeltaVelocity = -SeparatingVelocity * B->Restitution;
@@ -640,6 +640,9 @@ bool CBody::Collision( CBody* Body )
 	if( ShouldIgnoreBody( Body ) )
 		return false;
 
+	if( !WorldSphere.Intersects( Body->WorldSphere ) )
+		return false;
+
 	const BoundingBox& BoundsA = Body->GetBounds();
 	const BoundingBox& BoundsB = GetBounds();
 
@@ -661,11 +664,7 @@ bool CBody::Collision( CBody* Body )
 
 	Contact = true;
 
-	bool Collided = false;
-
-	Integrate( this, Body, SweptResult );
-
-	Collided = true;
+	const auto Collided = Integrate( this, Body, SweptResult );
 	Contacts++;
 	Body->Contacts++;
 
@@ -812,7 +811,7 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 	BoundingBox LowerBounds = UpperBounds;
 
 	size_t Axis = 0;
-	Vector3D Size = ( WorldBounds.Maximum - WorldBounds.Minimum );
+	Vector3D Size = WorldBounds.Size();
 
 	if( Size.X > Size.Y && Size.X > Size.Z )
 	{
@@ -1097,6 +1096,8 @@ void CBody::CalculateBounds()
 	// Ensure we have at least some volume.
 	EnsureVolume( WorldBounds );
 
+	WorldSphere = WorldBounds;
+
 	// Update the inverse mass once.
 	if( InverseMass < 0.0f )
 	{
@@ -1178,6 +1179,7 @@ void CBody::Debug() const
 	}
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
+	UI::AddSphere( WorldSphere.Center, WorldSphere.Radius, BoundsColor );
 	VisualizeBounds( Tree, &PreviousTransform );
 
 	if( Static || Sleeping )

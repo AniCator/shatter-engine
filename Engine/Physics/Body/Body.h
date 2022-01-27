@@ -96,6 +96,7 @@ public:
 	BoundingBox LocalBounds;
 	BoundingBox WorldBounds;
 	BoundingBox WorldBoundsSwept;
+	BoundingSphere WorldSphere;
 
 	// Velocity that is applied to the body multiplied by the time delta.
 	Vector3D LinearVelocity = Vector3D::Zero;
