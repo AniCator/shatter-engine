@@ -121,17 +121,11 @@ CollisionResponse CollisionResponseAABBAABB( const BoundingBox& A, const Boundin
 {
 	CollisionResponse Response;
 
-	const Vector3D& MinimumA = A.Minimum;
-	const Vector3D& MaximumA = A.Maximum;
-
-	const Vector3D& MinimumB = B.Minimum;
-	const Vector3D& MaximumB = B.Maximum;
-
 	const Vector3D& CenterA = ( A.Maximum + A.Minimum ) * 0.5f;
 	const Vector3D& CenterB = ( B.Maximum + B.Minimum ) * 0.5f;
 
-	const Vector3D SizeA = ( MaximumA - MinimumA );
-	const Vector3D SizeB = ( MaximumB - MinimumB );
+	const Vector3D SizeA = A.Maximum - A.Minimum;
+	const Vector3D SizeB = B.Maximum - B.Minimum;
 
 	const Vector3D HalfSizeA = SizeA * 0.5f;
 	const Vector3D HalfSizeB = SizeB * 0.5f;
@@ -516,6 +510,128 @@ void CBody::Simulate()
 	Acceleration += EnvironmentalForce;
 }
 
+CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+{
+	CollisionResponse Response;
+
+	if( A->Static && !B->Static )
+	{
+		if( A->Owner && A->Tree && A->TriangleMesh && !B->Stationary )
+		{
+			Response = CollisionResponseTreeAABB( A->Tree, B->WorldBounds, A->PreviousTransform, B->PreviousTransform );
+		}
+		else
+		{
+			if( B->Continuous )
+			{
+				Response = CollisionResponseAABBAABBSwept( B->WorldBounds, B->Velocity, A->WorldBounds, SweptResult );
+			}
+			else
+			{
+				Response = CollisionResponseAABBAABB( B->WorldBounds, A->WorldBounds );
+			}
+		}
+	}
+	else if( !A->Static || !B->Static )
+	{
+		if( B->Continuous )
+		{
+			Response = CollisionResponseAABBAABBSwept( B->WorldBounds, B->Velocity, A->WorldBounds, SweptResult );
+		}
+		else
+		{
+			Response = CollisionResponseAABBAABB( B->WorldBounds, A->WorldBounds );
+		}
+	}
+
+	return Response;
+}
+
+void Interpenetration( CBody* A, CBody* B, CollisionResponse& Response )
+{
+	if( A->TriangleMesh || Response.Distance <= 0.001f || B->Static || B->Stationary )
+		return;
+
+	const auto Penetration = ( Response.Normal * Response.Distance );
+	B->Depenetration += Penetration;
+	B->Velocity -= Penetration;
+
+	Response.Distance *= -1.0f;
+}
+
+void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vector3D& RelativeVelocity, const float& InverseMassTotal, const float& ImpulseScale )
+{
+	auto Tangent = RelativeVelocity - ( Response.Normal * RelativeVelocity.Dot( Response.Normal ) );
+	const auto ValidTangent = !Math::Equal( Tangent.LengthSquared(), 0.0f );
+	if( !ValidTangent )
+		return;
+
+	Tangent.Normalize();
+
+	auto FrictionScale = RelativeVelocity.Dot( Tangent ) * -1.0f / InverseMassTotal;
+	const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
+	if( ValidFrictionScale )
+	{
+		constexpr float FixedFriction = 1.0f;
+		const auto Friction = sqrtf( FixedFriction );
+		if( FrictionScale > ImpulseScale * Friction )
+		{
+			FrictionScale = ImpulseScale * Friction;
+		}
+		else if( FrictionScale < -ImpulseScale * Friction )
+		{
+			FrictionScale = -ImpulseScale * Friction;
+		}
+
+		const auto TangentImpulse = Tangent * FrictionScale;
+		// const auto TangentImpulse = Tangent * ( RelativeVelocity.Dot( Tangent ) * -1.0f * 0.0f );
+		A->Velocity -= A->InverseMass * TangentImpulse;
+		B->Velocity += B->InverseMass * TangentImpulse;
+	}
+}
+
+bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+{
+	const auto InverseMassTotal = A->InverseMass + B->InverseMass;
+	if( InverseMassTotal <= 0.0f )
+		return false;
+
+	CollisionResponse Response = CalculateResponse( A, B, SweptResult );
+
+	const Vector3D RelativeVelocity = A->Velocity - B->Velocity;
+	// float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass; // Old calculation of the seperating velocity.
+
+	const auto SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
+	if( SeparatingVelocity > 0.0f ) // Check if the bodies are moving away from each other.
+		return false;
+
+	float DeltaVelocity = -SeparatingVelocity * B->Restitution;
+
+	const auto AccelerationCausedVelocity = ( A->Acceleration - B->Acceleration ).Dot( Response.Normal ) * ( 1.0f / 60.0f );
+	if( AccelerationCausedVelocity < 0.0f )
+	{
+		DeltaVelocity += B->Restitution * AccelerationCausedVelocity;
+
+		DeltaVelocity = Math::Max( 0.0f, DeltaVelocity );
+	}
+
+	DeltaVelocity -= SeparatingVelocity;
+
+	const float ImpulseScale = DeltaVelocity / InverseMassTotal;
+	const Vector3D Impulse = Response.Normal * ImpulseScale;
+
+	A->Normal += Response.Normal;
+
+	Interpenetration( A, B, Response );
+
+	A->Velocity += A->InverseMass * Impulse;
+	B->Velocity -= B->InverseMass * Impulse;
+
+	Friction( A, B, Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
+
+	return true;
+}
+
 bool CBody::Collision( CBody* Body )
 {
 	if( !Body->Block )
@@ -545,120 +661,13 @@ bool CBody::Collision( CBody* Body )
 
 	Contact = true;
 
-	CollisionResponse Response;
-
-	// Dynamic interaction with static geometry.
-	if( Static && !Body->Static )
-	{
-		if( Owner && Tree && TriangleMesh && !Body->Stationary )
-		{
-			Response = CollisionResponseTreeAABB( Tree, Body->WorldBounds, PreviousTransform, Body->PreviousTransform );
-		}
-		else
-		{
-			if( Body->Continuous )
-			{
-				Response = CollisionResponseAABBAABBSwept( Body->WorldBounds, Body->Velocity, WorldBounds, SweptResult );
-			}
-			else
-			{
-				Response = CollisionResponseAABBAABB( Body->WorldBounds, WorldBounds );
-			}
-		}
-	}
-	else if( !Static || !Body->Static )
-	{
-		if( Body->Continuous )
-		{
-			Response = CollisionResponseAABBAABBSwept( Body->WorldBounds, Body->Velocity, WorldBounds, SweptResult );
-		}
-		else
-		{
-			Response = CollisionResponseAABBAABB( Body->WorldBounds, WorldBounds );
-		}
-	}
-
 	bool Collided = false;
 
-	const auto InverseMassTotal = InverseMass + Body->InverseMass;
-	if( InverseMassTotal <= 0.0f )
-		return false;
-
-	const Vector3D RelativeVelocity = Body->Velocity - Velocity;
-	// float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal );// +Response.Distance * InverseMass;
-
-	auto SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
-
-	const Vector3D& CenterA = ( BoundsA.Maximum + BoundsA.Minimum ) * 0.5f;
-	const Vector3D& CenterB = ( BoundsB.Maximum + BoundsB.Minimum ) * 0.5f;
-
-	// Check if the bodies are moving away from each other.
-	if( SeparatingVelocity < 0.0f )
-		return false;
-
-	float DeltaVelocity = -SeparatingVelocity * Restitution;
-
-	auto AccelerationCausedVelocity = ( Body->Acceleration - Acceleration ).Dot( Response.Normal ) * ( 1.0f / 60.0f );
-	if( AccelerationCausedVelocity < 0.0f )
-	{
-		DeltaVelocity += Restitution * AccelerationCausedVelocity;
-
-		DeltaVelocity = Math::Max( 0.0f, DeltaVelocity );
-	}
-
-	DeltaVelocity -= SeparatingVelocity;
-
-	float ImpulseScale = DeltaVelocity / InverseMassTotal;
-
-	Vector3D Impulse = Response.Normal * ImpulseScale;
-
-	Normal += Response.Normal;
-
-	// Position solver?
-	if( !TriangleMesh && Response.Distance > 0.001f && !Body->Static && !Body->Stationary )
-	{
-		auto Penetration = ( Response.Normal * Response.Distance );
-		Body->Depenetration += Penetration;
-		Body->Velocity -= Penetration;
-
-		Response.Distance *= -1.0f;
-	}
-
-	Velocity -= InverseMass * Impulse;
-	Body->Velocity += Body->InverseMass * Impulse;
+	Integrate( this, Body, SweptResult );
 
 	Collided = true;
 	Contacts++;
 	Body->Contacts++;
-
-	// Tangent vector for friction
-	auto Tangent = RelativeVelocity - ( Response.Normal * RelativeVelocity.Dot( Response.Normal ) );
-	const auto ValidTangent = !Math::Equal( Tangent.LengthSquared(), 0.0f );
-	if( ValidTangent && false )
-	{
-		Tangent.Normalize();
-
-		auto FrictionScale = RelativeVelocity.Dot( Tangent ) * -1.0f / InverseMassTotal;
-		const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
-		if( ValidFrictionScale )
-		{
-			constexpr float FixedFriction = 1.0f;
-			const auto Friction = sqrtf( FixedFriction );
-			if( FrictionScale > ImpulseScale * Friction )
-			{
-				FrictionScale = ImpulseScale * Friction;
-			}
-			else if( FrictionScale < -ImpulseScale * Friction )
-			{
-				FrictionScale = -ImpulseScale * Friction;
-			}
-
-			const auto TangentImpulse = Tangent * FrictionScale;
-			// const auto TangentImpulse = Tangent * ( RelativeVelocity.Dot( Tangent ) * -1.0f * 0.0f );
-			Velocity -= InverseMass * TangentImpulse;
-			Body->Velocity += Body->InverseMass * TangentImpulse;
-		}
-	}
 
 #if DrawNormalAndDistance == 1
 	const auto BodyTransform = Body->GetTransform();
