@@ -654,6 +654,7 @@ namespace UI
 
 	void Refresh()
 	{
+		// Lines can have durations so they have to be removed based whether they have expired.
 		const auto CurrentTime = GameLayersInstance->GetCurrentTime();
 		for( auto LineIterator = Lines.begin(); LineIterator != Lines.end(); )
 		{
@@ -661,15 +662,13 @@ namespace UI
 			const auto EndTime = Line.StartTime + Line.Duration;
 			if( CurrentTime > EndTime )
 			{
-				LineIterator = Lines.erase( LineIterator );
+				LineIterator = Lines.erase( LineIterator ); // Note: It's possible that we sometimes may get stuck here when a lot of lines are drawn.
 			}
 			else
 			{
 				++LineIterator;
 			}
 		}
-		
-		// Lines.clear();
 		
 		Circles.clear();
 		CirclesScreen.clear();
