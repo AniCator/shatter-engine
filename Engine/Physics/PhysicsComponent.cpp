@@ -16,9 +16,6 @@
 
 #include <Engine/World/World.h>
 
-constexpr auto GravityAcceleration = 9.81f;
-static const auto Gravity = Vector3D( 0.0f, 0.0f, GravityAcceleration );
-
 #define DrawDebugLines 0
 #define DrawCollisionResponseAABBAABB 0
 #define DrawNormalAndDistance 0
@@ -502,7 +499,7 @@ void CBody::Simulate()
 	Vector3D EnvironmentalForce = Vector3D::Zero;
 	if( AffectedByGravity && Math::Equal( Acceleration, Vector3D::Zero ) )
 	{
-		EnvironmentalForce -= Gravity;
+		EnvironmentalForce += Gravity;
 	}
 
 	Acceleration += EnvironmentalForce;
@@ -571,8 +568,7 @@ void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vect
 	const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
 	if( ValidFrictionScale )
 	{
-		constexpr float FixedFriction = 1.0f;
-		const auto Friction = sqrtf( FixedFriction );
+		const auto Friction = sqrtf( A->Friction );
 		if( FrictionScale > ImpulseScale * Friction )
 		{
 			FrictionScale = ImpulseScale * Friction;
@@ -583,7 +579,6 @@ void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vect
 		}
 
 		const auto TangentImpulse = Tangent * FrictionScale;
-		// const auto TangentImpulse = Tangent * ( RelativeVelocity.Dot( Tangent ) * -1.0f * 0.0f );
 		A->Velocity -= A->InverseMass * TangentImpulse;
 		B->Velocity += B->InverseMass * TangentImpulse;
 	}
@@ -603,6 +598,9 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	const auto SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
 	if( SeparatingVelocity > 0.0f ) // Check if the bodies are moving away from each other.
 		return false;
+
+	const auto DebugPosition = B->GetTransform().GetPosition();
+	UI::AddVector( DebugPosition, Response.Normal, Color::Blue );
 
 	float DeltaVelocity = -SeparatingVelocity * B->Restitution;
 

@@ -368,12 +368,21 @@ namespace UI
 		}
 	}
 
-	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color, const double Duration )
+	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color, const double& Duration )
 	{
 		if( CApplication::IsPaused() )
 			return;
 		
 		DrawLine Line( Start, End, Color, Duration );
+		Lines.emplace_back( Line );
+	}
+
+	void AddVector( const Vector3D& Origin, const Vector3D& Vector, const Color& Color, const double& Duration )
+	{
+		if( CApplication::IsPaused() )
+			return;
+
+		DrawLine Line( Origin, Origin + Vector, Color, Duration );
 		Lines.emplace_back( Line );
 	}
 

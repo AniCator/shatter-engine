@@ -13,7 +13,8 @@ namespace UI
 	Vector2D WorldToScreenPosition( const Vector3D& WorldPosition, bool* IsInFront = nullptr );
 
 	void AddLine( const Vector2D& Start, const Vector2D& End, const Color& Color = Color::Green );
-	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color = Color::Green, const double Duration = -1.0 );
+	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color = Color::Green, const double& Duration = -1.0 );
+	void AddVector( const Vector3D& Origin, const Vector3D& Vector, const Color& Color = Color::Green, const double& Duration = -1.0 );
 	// void AddRect( const Vector2D& a, const Vector2D& b, uint32_t col, float rounding = 0.0f, int rounding_corners_flags = ~0, float thickness = 1.0f );   // a: upper-left, b: lower-right, rounding_corners_flags: 4-bits corresponding to which corner to round
 	// void AddRectFilled( const Vector2D& a, const Vector2D& b, uint32_t col, float rounding = 0.0f, int rounding_corners_flags = ~0 );                     // a: upper-left, b: lower-right
 	// void AddRectFilledMultiColor( const Vector2D& a, const Vector2D& b, uint32_t col_upr_left, uint32_t col_upr_right, uint32_t col_bot_right, uint32_t col_bot_left );
