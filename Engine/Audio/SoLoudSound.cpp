@@ -451,44 +451,44 @@ void SoLoudSound::Rate( StreamHandle Handle, const float Rate )
 	}
 }
 
-float SoLoudSound::Time( SoundHandle Handle )
+double SoLoudSound::Time( SoundHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
 		return Engine.getStreamTime( Sounds[Handle.Handle].Voice );
 	}
 	
-	return 0.0f;
+	return 0.0;
 }
 
-float SoLoudSound::Time( StreamHandle Handle )
+double SoLoudSound::Time( StreamHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
 		return Engine.getStreamTime( Streams[Handle.Handle].Stream );
 	}
 	
-	return 0.0f;
+	return 0.0;
 }
 
-float SoLoudSound::Length( SoundHandle Handle )
+double SoLoudSound::Length( SoundHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
 		return SoundBuffers[Sounds[Handle.Handle].Buffer.Handle]->getLength();
 	}
 	
-	return -1.0f;
+	return -1.0;
 }
 
-float SoLoudSound::Length( StreamHandle Handle )
+double SoLoudSound::Length( StreamHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
 		return StreamBuffers[Streams[Handle.Handle].Buffer.Handle]->getLength();
 	}
 	
-	return -1.0f;
+	return -1.0;
 }
 
 void SoLoudSound::Offset( SoundHandle Handle, const float Offset )

@@ -46,6 +46,16 @@ BoundingBox BoundingBox::Combine( const BoundingBox& B ) const
 	return Combine( *this, B );
 }
 
+Vector3D BoundingBox::Center() const
+{
+	return ( Maximum + Minimum ) * 0.5f;
+}
+
+Vector3D BoundingBox::Size() const
+{
+	return Maximum - Minimum;
+}
+
 BoundingBox BoundingBox::Combine( const BoundingBox& A, const BoundingBox& B )
 {
 	const Vector3D Minimum(

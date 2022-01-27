@@ -11,6 +11,9 @@ struct BoundingBox
 	bool Intersects( const BoundingBox& B ) const;
 	BoundingBox Combine( const BoundingBox& B ) const;
 
+	Vector3D Center() const;
+	Vector3D Size() const;
+
 	Vector3D Minimum = Vector3D::Zero;
 	Vector3D Maximum = Vector3D::Zero;
 
