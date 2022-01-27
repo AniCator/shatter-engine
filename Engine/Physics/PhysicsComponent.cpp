@@ -421,8 +421,6 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 	
 	// UI::AddLine( WorldCenter, WorldCenter + Response.Normal );
 
-	Response.Normal = Response.Normal.Normalized();
-
 	if( Response.Distance < 0.0f )
 	{
 		Response.Distance = 0.0f;
@@ -544,6 +542,7 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 		}
 	}
 
+	Response.Normal.Normalize();
 	return Response;
 }
 
@@ -568,7 +567,7 @@ void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vect
 
 	Tangent.Normalize();
 
-	auto FrictionScale = RelativeVelocity.Dot( Tangent ) * -1.0f / InverseMassTotal;
+	auto FrictionScale = RelativeVelocity.Dot( Tangent ) / InverseMassTotal;
 	const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
 	if( ValidFrictionScale )
 	{
@@ -602,7 +601,7 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	// float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass; // Old calculation of the seperating velocity.
 
 	const auto SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
-	if( SeparatingVelocity < 0.0f ) // Check if the bodies are moving away from each other.
+	if( SeparatingVelocity > 0.0f ) // Check if the bodies are moving away from each other.
 		return false;
 
 	float DeltaVelocity = -SeparatingVelocity * B->Restitution;
