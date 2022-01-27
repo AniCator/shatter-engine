@@ -121,11 +121,11 @@ CollisionResponse CollisionResponseAABBAABB( const BoundingBox& A, const Boundin
 {
 	CollisionResponse Response;
 
-	const Vector3D& CenterA = ( A.Maximum + A.Minimum ) * 0.5f;
-	const Vector3D& CenterB = ( B.Maximum + B.Minimum ) * 0.5f;
+	const Vector3D& CenterA = A.Center();
+	const Vector3D& CenterB = B.Center();
 
-	const Vector3D SizeA = A.Maximum - A.Minimum;
-	const Vector3D SizeB = B.Maximum - B.Minimum;
+	const Vector3D SizeA = A.Size();
+	const Vector3D SizeB = B.Size();
 
 	const Vector3D HalfSizeA = SizeA * 0.5f;
 	const Vector3D HalfSizeB = SizeB * 0.5f;
