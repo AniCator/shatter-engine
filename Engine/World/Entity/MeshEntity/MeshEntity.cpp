@@ -707,6 +707,7 @@ void CMeshEntity::Import( CData& Data )
 
 	Data >> Static;
 	Data >> Stationary;
+	Data >> MaximumRenderDistance;
 }
 
 void CMeshEntity::Export( CData& Data )
@@ -732,6 +733,7 @@ void CMeshEntity::Export( CData& Data )
 
 	Data << Static;
 	Data << Stationary;
+	Data << MaximumRenderDistance;
 }
 
 bool CMeshEntity::ShouldCollide() const
