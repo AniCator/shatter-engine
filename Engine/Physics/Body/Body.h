@@ -18,7 +18,7 @@ struct CollisionResponse
 class CBody : public Testable
 {
 public:
-	CBody();
+	CBody() = default;
 	virtual ~CBody();
 
 	void Construct();
@@ -96,6 +96,7 @@ public:
 	BoundingBox LocalBounds;
 	BoundingBox WorldBounds;
 	BoundingBox WorldBoundsSwept;
+	BoundingSphere WorldSphere;
 
 	// Velocity that is applied to the body multiplied by the time delta.
 	Vector3D LinearVelocity = Vector3D::Zero;
@@ -104,7 +105,13 @@ public:
 	Vector3D Acceleration = Vector3D::Zero;
 
 	// Velocity.
+	Vector3D ActualVelocity = Vector3D::Zero;
 	Vector3D Velocity = Vector3D::Zero;
+	float Damping = 0.2f;
+	float Restitution = 0.0f;
+	float Friction = 1.0f;
+
+	Vector3D Gravity = Vector3D( 0.0f, 0.0f, -9.81f );
 
 	// Offset vector that determines where the body will be projected to when penetrating surfaces.
 	Vector3D Depenetration = Vector3D::Zero;
@@ -112,7 +119,6 @@ public:
 	float Mass = 1.0f;
 	float InverseMass = -1.0f;
 	size_t Contacts = 0;
-	bool Handled = false;
 
 	TriangleTree* Tree = nullptr;
 

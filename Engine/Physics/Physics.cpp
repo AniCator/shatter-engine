@@ -212,13 +212,26 @@ public:
 		ScheduleBodyUpdate( StaticBodiesToQuery, DynamicBodiesToQuery );
 	}
 
-	void UpdateBodies()
+	void ResolveCollisions( CBody* A, const QueryResult& Query )
 	{
-		// BoundingVolumeHierarchy::Node::Depth = 0;
-		// StaticScene->Debug();
-		// BoundingVolumeHierarchy::Node::Depth = 0;
-		// DynamicScene->Debug();
+		if( !Query )
+			return;
 
+		for( auto* Object : Query.Objects )
+		{
+			auto* B = ::Cast<CBody>( Object );
+			if( !A || !B || B == A )
+				continue;
+
+			if( B->Owner != A->Owner )
+			{
+				A->Collision( B );
+			}
+		}
+	}
+
+	void ResolveCollisions()
+	{
 		size_t StaticQueryIndex = 0;
 		size_t QueryIndex = 0;
 		for( auto* BodyA : Bodies )
@@ -251,30 +264,18 @@ public:
 					// DynamicScene->Query( BodyA->GetBounds(), Query );
 				}
 
-				if( Query )
-				{
-					for( auto* Object : Query.Objects )
-					{
-						auto* BodyB = ::Cast<CBody>( Object );
-						if( !BodyA || !BodyB || BodyB == BodyA )
-							continue;
-
-						if( BodyB->Owner != BodyA->Owner )
-						{
-							BodyB->Collision( BodyA );
-							BodyA->Collision( BodyB );
-						}
-					}
-				}
-
-				/*for( auto* BodyB : Bodies )
-					{
-						if( BodyB && BodyB != BodyA && BodyB->Owner != BodyA->Owner )
-						{
-							BodyB->Collision( BodyA );
-						}
-					}*/
+				ResolveCollisions( BodyA, Query );
 			}
+		}
+	}
+
+	void UpdateBodies()
+	{
+		uint32_t Iterations = 2;
+		while( Iterations )
+		{
+			ResolveCollisions();
+			Iterations--;
 		}
 
 		for( auto* BodyA : Bodies )
