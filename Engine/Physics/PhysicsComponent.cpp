@@ -599,9 +599,6 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	if( SeparatingVelocity > 0.0f ) // Check if the bodies are moving away from each other.
 		return false;
 
-	const auto DebugPosition = B->GetTransform().GetPosition();
-	UI::AddVector( DebugPosition, Response.Normal, Color::Blue );
-
 	float DeltaVelocity = -SeparatingVelocity * B->Restitution;
 
 	const auto AccelerationCausedVelocity = ( A->Acceleration - B->Acceleration ).Dot( Response.Normal ) * ( 1.0f / 60.0f );
@@ -657,7 +654,7 @@ bool CBody::Collision( CBody* Body )
 
 	if( IsType<CPlaneBody>( Body ) )
 		return false;
-	auto Transform = GetTransform();
+	const auto Transform = GetTransform();
 
 	Contact = true;
 
