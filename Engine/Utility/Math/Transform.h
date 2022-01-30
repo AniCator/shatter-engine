@@ -53,6 +53,8 @@ public:
 		return *this;
 	};
 
+	FTransform Lerp( const FTransform& B, const float& Alpha ) const;
+
 	void Update();
 
 private:

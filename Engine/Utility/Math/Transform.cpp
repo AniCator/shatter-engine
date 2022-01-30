@@ -163,6 +163,22 @@ void FTransform::Dirty()
 	ShouldUpdate = true;
 }
 
+FTransform FTransform::Lerp( const FTransform& B, const float& Alpha ) const
+{
+	// Copy the transformation.
+	FTransform Blended = *this;
+
+	// Interpolate between two transformations.
+	Blended.StoredPosition = Math::Lerp( Blended.StoredPosition, B.StoredPosition, Alpha );
+	Blended.StoredOrientation = Math::Lerp( Blended.StoredOrientation, B.StoredOrientation, Alpha );
+	Blended.StoredSize = Math::Lerp( Blended.StoredSize, B.StoredSize, Alpha );
+
+	// Force the transformation to update.
+	Blended.Update();
+
+	return Blended;
+}
+
 void FTransform::Update()
 {
 	if( ShouldUpdate )
