@@ -1205,6 +1205,7 @@ public:
 			AutoFit = false;
 			SnapToHandles = false;
 			Visualize = false;
+			AutoScroll = true;
 		}
 
 		Feed();
@@ -1363,6 +1364,15 @@ public:
 			ImGui::SameLine();
 			ImGui::Checkbox( "Snap when Stretching", &SnapToHandles );
 
+			ImGui::SameLine();
+			ImGui::Checkbox( "Auto Scroll", &AutoScroll );
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Scroll to Marker" ) )
+			{
+				ScrollMarker = -1.0f;
+			}
+
 			ImGui::Separator();
 
 			int StartLocation = StartMarker / Timebase;
@@ -1382,7 +1392,7 @@ public:
 
 			static float WidthScale = 1.0f;
 			size_t WidthDelta = Math::Max( 1.0f, static_cast<size_t>( 1000.0f / 30 ) * WidthScale );
-			ImGui::SliderFloat( "Scale", &WidthScale, 0.1f, 10.0f );
+			ImGui::DragFloat( "Scale", &WidthScale, 0.1f, 0.1f, 100.0f );
 
 			if( ImGui::GetIO().KeyCtrl )
 			{
@@ -1407,14 +1417,18 @@ public:
 
 			auto CursorOffset = 100.0f;
 
-			auto WindowWidth = ImGui::GetWindowWidth() - CursorOffset;
-			auto MarkerWindowPosition = MarkerLocalPosition;
-			auto MarkerPercentageWindow = MarkerWindowPosition / WindowWidth;
-			auto EndMarkerPercentageWindow = EndMarkerLocalPosition / WindowWidth;
+			if( AutoScroll || ScrollMarker < 0.0f )
+			{
+				ScrollMarker = MarkerLocalPosition;
+			}
+
+			const auto WindowWidth = ImGui::GetWindowWidth() - CursorOffset;
+			const auto MarkerPercentageWindow = ScrollMarker / WindowWidth;
+			const auto EndMarkerPercentageWindow = ScrollMarker / WindowWidth;
 
 			if( Status != ESequenceStatus::Stopped && EndMarkerPercentageWindow > 1.0f && MarkerPercentageWindow > 0.5f )
 			{
-				CursorOffset -= MarkerWindowPosition - WindowWidth * 0.5f;
+				CursorOffset -= ScrollMarker - WindowWidth * 0.5f;
 			}
 
 			// UI::AddText( Vector2D( 50.0f, 130.0f ), "MarkerWindowPosition", MarkerWindowPosition );
@@ -2395,6 +2409,10 @@ protected:
 
 	// Enable visualization for all tracks.
 	bool Visualize = false;
+
+	// Enables marker tracking.
+	bool AutoScroll = true;
+	float ScrollMarker = -1.0f;
 
 	// True if the sequencer is skipping through the sequence and only wants to fire important events.
 	bool Skipping = false;
