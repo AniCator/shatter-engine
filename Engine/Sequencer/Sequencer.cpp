@@ -1226,7 +1226,7 @@ public:
 		{
 			static int SequenceLengthSeconds = 2;
 
-			/*const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
+			const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
 			if( ShouldPlayPause )
 			{
 				if( Status == ESequenceStatus::Stopped )
@@ -1237,7 +1237,7 @@ public:
 				{
 					Pause();
 				}
-			}*/
+			}
 
 			if( ImGui::Button( "Play" ) )
 			{
@@ -1370,17 +1370,18 @@ public:
 			ImGui::SameLine();
 			if( ImGui::Button( "Scroll to Marker" ) )
 			{
-				ScrollMarker = -1.0f;
+				ScrollMarker = static_cast<Timecode>( -1 );
 			}
 
-			ImGui::Separator();
+			ImGui::SameLine();
+			ImGui::SetNextItemWidth( 100.0f );
 
 			int StartLocation = StartMarker / Timebase;
 			int EndLocation = EndMarker / Timebase;
-			if( ImGui::InputInt( "Start", &StartLocation ) )
+			/*if( ImGui::InputInt( "Start", &StartLocation ) )
 			{
 				StartMarker = StartLocation * Timebase;
-			}
+			}*/
 
 			if( ImGui::InputInt( "End", &EndLocation ) )
 			{
@@ -1417,18 +1418,20 @@ public:
 
 			auto CursorOffset = 100.0f;
 
-			if( AutoScroll || ScrollMarker < 0.0f )
+			if( AutoScroll || ScrollMarker == static_cast<Timecode>( -1 ) )
 			{
-				ScrollMarker = MarkerLocalPosition;
+				ScrollMarker = Marker;
 			}
 
+			auto ScrollMarkerPosition = ( static_cast<float>( ScrollMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+
 			const auto WindowWidth = ImGui::GetWindowWidth() - CursorOffset;
-			const auto MarkerPercentageWindow = ScrollMarker / WindowWidth;
-			const auto EndMarkerPercentageWindow = ScrollMarker / WindowWidth;
+			const auto MarkerPercentageWindow = ScrollMarkerPosition / WindowWidth;
+			const auto EndMarkerPercentageWindow = ScrollMarkerPosition / WindowWidth;
 
 			if( Status != ESequenceStatus::Stopped && EndMarkerPercentageWindow > 1.0f && MarkerPercentageWindow > 0.5f )
 			{
-				CursorOffset -= ScrollMarker - WindowWidth * 0.5f;
+				CursorOffset -= ScrollMarkerPosition - WindowWidth * 0.5f;
 			}
 
 			// UI::AddText( Vector2D( 50.0f, 130.0f ), "MarkerWindowPosition", MarkerWindowPosition );
@@ -1493,6 +1496,11 @@ public:
 					{
 						Status = ESequenceStatus::Paused;
 					}
+				}
+				else if ( ImGui::GetIO().MouseDown[1] )
+				{
+					int32_t ScrollMove = static_cast<int32_t>( GhostMarker ) - static_cast<int32_t>( ScrollMarker );
+					ScrollMarker = ScrollMarker + ScrollMove / 30;
 				}
 			}
 
@@ -2412,7 +2420,7 @@ protected:
 
 	// Enables marker tracking.
 	bool AutoScroll = true;
-	float ScrollMarker = -1.0f;
+	Timecode ScrollMarker = -1.0f;
 
 	// True if the sequencer is skipping through the sequence and only wants to fire important events.
 	bool Skipping = false;
