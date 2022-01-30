@@ -10,7 +10,8 @@
 
 #include <ThirdParty/imgui-1.70/imgui.h>
 
-DragTransform Drag;
+DragTransform DragA;
+DragTransform DragB;
 
 void EventEntity::Evaluate( const Timecode& Marker )
 {
@@ -25,6 +26,7 @@ void EventEntity::Execute()
 		FindEntities();
 	}
 
+	FTransform Transform;
 	if( !UseTransform )
 	{
 		if( !TargetEntity )
@@ -33,7 +35,21 @@ void EventEntity::Execute()
 		}
 		else
 		{
-			Transform = TargetEntity->GetTransform();
+			TransformA = TargetEntity->GetTransform();
+		}
+
+		Transform = TransformA;
+	}
+	else
+	{
+		if( InterpolateLinear )
+		{
+			const auto Factor = static_cast<float>( MarkerToTime( Offset ) / MarkerToTime( Length ) );
+			Transform = TransformA.Lerp( TransformB, Factor );
+		}
+		else
+		{
+			Transform = TransformA;
 		}
 	}
 
@@ -52,7 +68,7 @@ void EventEntity::Execute()
 		{
 			if( Entity->GetAnimation() != Animation )
 			{
-				Entity->SetAnimation( Animation );
+				Entity->SetAnimation( Animation, LoopAnimation );
 			}
 
 			// Calculate the animation time relative to the event.
@@ -61,13 +77,15 @@ void EventEntity::Execute()
 
 			// Apply the event-relative animation time.
 			Entity->SetAnimationTime( static_cast<float>( AnimationTime ) );
+			Entity->SetPlayRate( PlayRate );
 		}
 	}
 
 	// A little hacky but this lets you move the transform point.
-	if( UseTransform && MoveTransform )
+	if( UseTransform && DisplayGizmo )
 	{
-		PointGizmo( &Transform, Drag );
+		PointGizmo( &TransformA, DragA );
+		PointGizmo( &TransformB, DragB );
 	}
 }
 
@@ -111,21 +129,60 @@ void EventEntity::Context()
 		ImGui::EndTooltip();
 	}
 
+	ImGui::Checkbox( "Linear Interpolation", &InterpolateLinear );
+	if( ImGui::IsItemHovered() )
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text( "Interpolate between two transforms." );
+		ImGui::EndTooltip();
+	}
+
 	if( UseTransform )
 	{
-		auto Position = Transform.GetPosition();
-		if( ImGui::InputFloat3( "##mp", &Position.X, "%.2f" ) )
+		bool ShouldUpdate = false;
+		auto Position = TransformA.GetPosition();
+		if( ImGui::DragFloat3( "Position##mp", &Position.X, 0.1f ) )
 		{
-			Transform.SetPosition( Position );
+			TransformA.SetPosition( Position );
+			ShouldUpdate = true;
 		}
 
-		auto Orientation = Transform.GetOrientation();
-		if( ImGui::InputFloat3( "##mo", &Orientation.X, "%.2f" ) )
+		auto Orientation = TransformA.GetOrientation();
+		if( ImGui::DragFloat3( "Orientation##mo", &Orientation.X ) )
 		{
-			Transform.SetOrientation( Orientation );
+			TransformA.SetOrientation( Orientation );
+			ShouldUpdate = true;
 		}
 
-		ImGui::Checkbox( "Display Gizmo", &MoveTransform );
+		if( ShouldUpdate )
+		{
+			TransformA.Update();
+		}
+
+		if( InterpolateLinear )
+		{
+			ShouldUpdate = false;
+			Position = TransformB.GetPosition();
+			if( ImGui::DragFloat3( "Position##mpb", &Position.X, 0.1f ) )
+			{
+				TransformB.SetPosition( Position );
+				ShouldUpdate = true;
+			}
+
+			Orientation = TransformB.GetOrientation();
+			if( ImGui::DragFloat3( "Orientation##mob", &Orientation.X ) )
+			{
+				TransformB.SetOrientation( Orientation );
+				ShouldUpdate = true;
+			}
+
+			if( ShouldUpdate )
+			{
+				TransformB.Update();
+			}
+		}
+
+		ImGui::Checkbox( "Display Gizmo", &DisplayGizmo );
 		if( ImGui::IsItemHovered() )
 		{
 			ImGui::BeginTooltip();
@@ -174,6 +231,9 @@ void EventEntity::Context()
 			{
 				ImGui::Text( "Entity has no animations." );
 			}
+
+			ImGui::Checkbox( "Loop##LoopAnimation", &LoopAnimation );
+			ImGui::DragFloat( "Play Rate", &PlayRate, 0.1f, 0.1f );
 		}
 		else
 		{
@@ -209,10 +269,14 @@ void EventEntity::Export( CData& Data )
 	Serialize::Export( Data, "tg", TargetString );
 
 	Serialize::Export( Data, "tb", UseTransform );
-	Serialize::Export( Data, "tm", Transform );
+	Serialize::Export( Data, "tlrp", InterpolateLinear );
+	Serialize::Export( Data, "tm", TransformA );
+	Serialize::Export( Data, "tmb", TransformB );
 
 	Serialize::Export( Data, "ab", OverrideAnimation );
 	Serialize::Export( Data, "am", Animation );
+	Serialize::Export( Data, "apr", PlayRate );
+	Serialize::Export( Data, "alp", LoopAnimation );
 }
 
 void EventEntity::Import( CData& Data )
@@ -228,10 +292,14 @@ void EventEntity::Import( CData& Data )
 	Serialize::StringToArray( TargetString, Target, 2048 );
 
 	Serialize::Import( Data, "tb", UseTransform );
-	Serialize::Import( Data, "tm", Transform );
+	Serialize::Import( Data, "tlrp", InterpolateLinear );
+	Serialize::Import( Data, "tm", TransformA );
+	Serialize::Import( Data, "tmb", TransformB );
 
 	Serialize::Import( Data, "ab", OverrideAnimation );
 	Serialize::Import( Data, "am", Animation );
+	Serialize::Import( Data, "apr", PlayRate );
+	Serialize::Import( Data, "alp", LoopAnimation );
 }
 
 void EventEntity::FindEntities()

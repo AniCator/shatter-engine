@@ -27,12 +27,16 @@ protected:
 	class CPointEntity* TargetEntity = nullptr;
 
 	bool UseTransform = true;
-	FTransform Transform;
+	bool InterpolateLinear = false;
+	FTransform TransformA;
+	FTransform TransformB;
 
 	bool OverrideAnimation = false;
 	std::string Animation;
+	float PlayRate = 1.0f;
+	bool LoopAnimation = false;
 
-	bool MoveTransform = false;
+	bool DisplayGizmo = false;
 
 	Timecode StoredMarker = 0;
 };
