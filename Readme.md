@@ -28,3 +28,6 @@ The engine requires a couple of third party libraries which aren't available in 
 * ThirdParty/SoLoud/ - SoLoud (for audio)
 * ThirdParty/stb/ - STB
 * ThirdParty/discord-rpc/ - Discord Rich Presence
+
+# License
+Copyright © 2017, Christiaan Bakker, All rights reserved.
