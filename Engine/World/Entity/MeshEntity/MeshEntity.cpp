@@ -182,7 +182,7 @@ size_t GetNextKey( const size_t& CurrentIndex, const std::vector<Key>& Keys )
 	return CurrentIndex;
 }
 
-void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleton& Skeleton, const std::vector<AnimationBlendEntry>& Animations, const Bone* Parent, const Bone* Bone, std::vector<::Bone>& Result )
+void TransformBones( const float& Time, const Skeleton& Skeleton, const std::vector<AnimationBlendEntry>& Animations, const Bone* Parent, const Bone* Bone, std::vector<::Bone>& Result )
 {
 	if( !Bone )
 	{
@@ -228,21 +228,9 @@ void TransformBones( const CMeshEntity* Entity, const float& Time, const Skeleto
 	{
 		if( ChildIndex > -1 && ChildIndex < Result.size() )
 		{
-			TransformBones( Entity, Time, Skeleton, Animations, &Result[Bone->Index], &Skeleton.Bones[ChildIndex], Result );
+			TransformBones( Time, Skeleton, Animations, &Result[Bone->Index], &Skeleton.Bones[ChildIndex], Result );
 		}
 	}
-
-#if 0
-	if( Entity && Entity->IsDebugEnabled() )
-	{
-		UI::AddCircle( Matrices.Translation.Transform( Vector3D::Zero ), 3.0f, Color( 255, 0, 0 ) );
-
-		UI::AddCircle( Matrices.Rotation.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), 3.0f, Color( 0, 255, 0 ) );
-		UI::AddLine( Matrices.Rotation.Transform( Vector3D( 0.0f, 1.0f, 0.0f ) ), Vector3D::Zero );
-
-		UI::AddCircle( Matrices.Scale.Transform( Vector3D( 1.0f, 1.0f, 1.0f ) ), 3.0f, Color( 0, 0, 255 ) );
-	}
-#endif
 };
 
 const std::string BoneLocationNamePrefix = "Bones[";
@@ -358,7 +346,7 @@ void CMeshEntity::TickAnimation()
 	// Transform all of the bones in the skeletal hierarchy.
 	for( const auto* Bone : RootBones )
 	{
-		TransformBones( this, AnimationTime, Skeleton, BlendStack, nullptr, Bone, Bones );
+		TransformBones( AnimationTime, Skeleton, BlendStack, nullptr, Bone, Bones );
 	}
 
 	// Set global transform
