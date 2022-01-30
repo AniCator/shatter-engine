@@ -294,6 +294,7 @@ static bool ShowPreview = false;
 static bool ShowTextures = true;
 static bool ShowSounds = true;
 static bool ShowMeshes = true;
+static bool ShowShaders = true;
 static bool ShowSequences = true;
 static char FilterText[512] = {};
 
@@ -748,6 +749,8 @@ void AssetUI()
 			ImGui::SameLine(); ImGui::Checkbox( "Textures", &ShowTextures );
 			ImGui::SameLine(); ImGui::Checkbox( "Sounds", &ShowSounds );
 			ImGui::SameLine(); ImGui::Checkbox( "Meshes", &ShowMeshes );
+			ImGui::SameLine(); ImGui::Checkbox( "Shaders", &ShowShaders );
+			ImGui::SameLine(); ImGui::Checkbox( "Sequences", &ShowSequences );
 
 			ImGui::PushItemWidth( -1.0f );
 			ImGui::InputText( "##AssetFilter", FilterText, 512 );
@@ -763,11 +766,13 @@ void AssetUI()
 			ImGui::Separator();
 			ImGui::Separator();
 
+			const bool InclusiveFilter = ShowTextures && ShowSounds && ShowMeshes && ShowShaders && ShowSequences;
+
 			const auto FilterLength = std::strlen( FilterText );
 			const bool ValidFilter = FilterLength > 0;
 
 			auto* World = CWorld::GetPrimaryWorld();
-			if( World )
+			if( InclusiveFilter && World )
 			{
 				auto& Levels = World->GetLevels();
 				for( auto& Level : Levels )
@@ -788,153 +793,171 @@ void AssetUI()
 			ImGui::Separator();
 			ImGui::Separator();
 
-			const auto& CustomAssets = Assets.GetAssets();
-			for( const auto& Pair : CustomAssets )
+			if( InclusiveFilter )
 			{
-				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
-					continue;
-
-				if( ImGui::Selectable( ( Pair.first + "##Custom" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				const auto& CustomAssets = Assets.GetAssets();
+				for( const auto& Pair : CustomAssets )
 				{
+					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+						continue;
 
-				}
-				ImGui::NextColumn();
-
-				ImGui::Text( Pair.second->GetType().c_str() ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-			ImGui::Separator();
-
-			const auto& Meshes = Assets.GetMeshes();
-			for( const auto& Pair : Meshes )
-			{
-				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
-					continue;
-
-				if( ImGui::Selectable( ( Pair.first + "##Mesh" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					if( Pair.second && Assets.FindMesh( Pair.first ) )
+					if( ImGui::Selectable( ( Pair.first + "##Custom" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						ReloadMesh( Pair.first, Pair.second->GetLocation() );
+
 					}
+					ImGui::NextColumn();
+
+					ImGui::Text( Pair.second->GetType().c_str() ); ImGui::NextColumn();
+					ImGui::Separator();
 				}
-				ImGui::NextColumn();
-				ImGui::Text( "Mesh" ); ImGui::NextColumn();
-				ImGui::Separator();
 			}
 
 			ImGui::Separator();
-
-			const auto& Shaders = Assets.GetShaders();
-			for( const auto& Pair : Shaders )
-			{
-				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
-					continue;
-
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				std::string Label = Pair.first;
-				if( Pair.second->AutoReload() )
-				{
-					Label += "( Auto Reload )";
-				}
-
-				Label += "##Shader";
-
-				if( ImGui::Selectable( Label.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					Pair.second->Reload();
-				}
-
-				if( ImGui::IsItemClicked( 1 ) )
-				{
-					Pair.second->AutoReload( !Pair.second->AutoReload() );
-				}
-
-				if( ImGui::IsItemHovered() )
-				{
-					ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
-					ImGui::BeginTooltip();
-					ImGui::PopStyleVar();
-
-					ImGui::Text( "Left click to reload.\nRight click to enable auto-reload." );
-					ImGui::EndTooltip();
-				}
-
-				ImGui::NextColumn();
-
-				ImGui::Text( "Shader" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
 			ImGui::Separator();
 
-			const auto& Textures = Assets.GetTextures();
-			for( const auto& Pair : Textures )
+			if( ShowMeshes )
 			{
-				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
-					continue;
-
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				if( ImGui::Selectable( ( Pair.first + "##Texture" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				const auto& Meshes = Assets.GetMeshes();
+				for( const auto& Pair : Meshes )
 				{
-					PreviewTexture = Pair.second;
-				}
-				ImGui::NextColumn();
+					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+						continue;
 
-				ImGui::Text( "Texture" ); ImGui::NextColumn();
-				ImGui::Separator();
-			}
-
-			ImGui::Separator();
-
-			const auto& Sounds = Assets.GetSounds();
-			for( const auto& Pair : Sounds )
-			{
-				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
-					continue;
-
-				if( ImGui::Selectable( ( Pair.first + "##Audio" ).c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
-				{
-					if( Pair.second->Playing() )
+					if( ImGui::Selectable( ( Pair.first + "##Mesh" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						Pair.second->Stop();
+						if( Pair.second && Assets.FindMesh( Pair.first ) )
+						{
+							ReloadMesh( Pair.first, Pair.second->GetLocation() );
+						}
+					}
+					ImGui::NextColumn();
+					ImGui::Text( "Mesh" ); ImGui::NextColumn();
+					ImGui::Separator();
+				}
+			}
+
+			ImGui::Separator();
+
+			if( ShowShaders )
+			{
+				const auto& Shaders = Assets.GetShaders();
+				for( const auto& Pair : Shaders )
+				{
+					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+						continue;
+
+					// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+					std::string Label = Pair.first;
+					if( Pair.second->AutoReload() )
+					{
+						Label += "( Auto Reload )";
+					}
+
+					Label += "##Shader";
+
+					if( ImGui::Selectable( Label.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+					{
+						Pair.second->Reload();
+					}
+
+					if( ImGui::IsItemClicked( 1 ) )
+					{
+						Pair.second->AutoReload( !Pair.second->AutoReload() );
+					}
+
+					if( ImGui::IsItemHovered() )
+					{
+						ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
+						ImGui::BeginTooltip();
+						ImGui::PopStyleVar();
+
+						ImGui::Text( "Left click to reload.\nRight click to enable auto-reload." );
+						ImGui::EndTooltip();
+					}
+
+					ImGui::NextColumn();
+
+					ImGui::Text( "Shader" ); ImGui::NextColumn();
+					ImGui::Separator();
+				}
+			}
+
+			ImGui::Separator();
+
+			if( ShowTextures )
+			{
+				const auto& Textures = Assets.GetTextures();
+				for( const auto& Pair : Textures )
+				{
+					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+						continue;
+
+					// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+					if( ImGui::Selectable( ( Pair.first + "##Texture" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+					{
+						PreviewTexture = Pair.second;
+					}
+					ImGui::NextColumn();
+
+					ImGui::Text( "Texture" ); ImGui::NextColumn();
+					ImGui::Separator();
+				}
+			}
+
+			ImGui::Separator();
+
+			if( ShowSounds )
+			{
+				const auto& Sounds = Assets.GetSounds();
+				for( const auto& Pair : Sounds )
+				{
+					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+						continue;
+
+					if( ImGui::Selectable( ( Pair.first + "##Audio" ).c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
+					{
+						if( Pair.second->Playing() )
+						{
+							Pair.second->Stop();
+						}
+						else
+						{
+							Pair.second->Start();
+						}
+					}
+					ImGui::NextColumn();
+
+					// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
+					if( Pair.second->GetSoundType() == ESoundType::Stream )
+					{
+						ImGui::Text( "Stream" ); ImGui::NextColumn();
 					}
 					else
 					{
-						Pair.second->Start();
+						ImGui::Text( "Sound" ); ImGui::NextColumn();
 					}
-				}
-				ImGui::NextColumn();
 
-				// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-				if( Pair.second->GetSoundType() == ESoundType::Stream )
-				{
-					ImGui::Text( "Stream" ); ImGui::NextColumn();
+					ImGui::Separator();
 				}
-				else
-				{
-					ImGui::Text( "Sound" ); ImGui::NextColumn();
-				}
-				
-				ImGui::Separator();
 			}
 
-			const auto& Sequences = Assets.GetSequences();
-			for( const auto& Pair : Sequences )
+			if( ShowSequences )
 			{
-				if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
-					continue;
-
-				if( ImGui::Selectable( ( Pair.first + "##Sequence" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+				const auto& Sequences = Assets.GetSequences();
+				for( const auto& Pair : Sequences )
 				{
-					Pair.second->Draw();
-				}
-				ImGui::NextColumn();
+					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+						continue;
 
-				ImGui::Text( "Sequence" ); ImGui::NextColumn();
-				ImGui::Separator();
+					if( ImGui::Selectable( ( Pair.first + "##Sequence" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
+					{
+						Pair.second->Draw();
+					}
+					ImGui::NextColumn();
+
+					ImGui::Text( "Sequence" ); ImGui::NextColumn();
+					ImGui::Separator();
+				}
 			}
 
 			ImGui::Separator();
