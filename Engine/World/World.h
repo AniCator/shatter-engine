@@ -58,7 +58,7 @@ public:
 
 	CLevel& Add();
 	std::deque<CLevel>& GetLevels() { return Levels; };
-	CLevel* GetActiveLevel() { return ActiveLevel; };
+	CLevel* GetActiveLevel() const { return ActiveLevel; };
 
 	// Moves an entity from their original level to this world's active level.
 	bool Transfer( CEntity* Entity );
