@@ -1226,7 +1226,8 @@ public:
 		{
 			static int SequenceLengthSeconds = 2;
 
-			const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
+			// NOTE: This play/pause code isn't ideal because it doesn't always work. (an item has to be hovered) Plus it triggers when you're typing.
+			/*const bool ShouldPlayPause = ImGui::IsKeyReleased( ImGui::GetKeyIndex( ImGuiKey_Space ) );
 			if( ShouldPlayPause )
 			{
 				if( Status == ESequenceStatus::Stopped )
@@ -1237,7 +1238,7 @@ public:
 				{
 					Pause();
 				}
-			}
+			}*/
 
 			if( ImGui::Button( "Play" ) )
 			{
