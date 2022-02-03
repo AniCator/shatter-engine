@@ -88,12 +88,42 @@ struct Event
 		}
 
 		/// <summary>
+		/// Allows other queues to have events of this queue passed through to them.
+		/// </summary>
+		/// <param name="Queue">The queue that is subscribing to this queue's events.</param>
+		void Subscribe( Queue* Queue )
+		{
+			Passthrough.emplace_back( Queue );
+		}
+
+		/// <summary>
+		/// Disables the passthrough of events to the given queue.
+		/// </summary>
+		/// <param name="Queue">The queue that is unsubscribing from this queue's events.</param>
+		void Unsubscribe( const Queue* Queue )
+		{
+			const auto Iterator = std::find( Passthrough.begin(), Passthrough.end(), Queue );
+
+			// Only erase them if they have been subscribed to this event queue.
+			const bool IsSubscribed = Iterator != Passthrough.end();
+			if( !IsSubscribed )
+				return;
+
+			Passthrough.erase( Iterator );
+		}
+
+		/// <summary>
 		/// Pushes an event onto the queue.
 		/// </summary>
 		/// <param name="Event">The event to be queued.</param>
 		void Push( const Message& Event )
 		{
 			Events.push_back( Event );
+
+			for( auto* Queue : Passthrough )
+			{
+				Queue->Push( Event );
+			}
 		}
 
 		/// <summary>
@@ -154,5 +184,8 @@ struct Event
 
 		std::vector<Listener*> Listeners[MaximumTypes];
 		std::deque<Message> Events;
+
+		// Stores queues that want to have events of this queue piped through to them.
+		std::vector<Queue*> Passthrough;
 	};
 };
