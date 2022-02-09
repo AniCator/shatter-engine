@@ -139,7 +139,7 @@ void ShowAssetSound( AssetSound& Sound )
 bool CreateSound( const AssetNewData& Data, const AssetSound& Sound )
 {
 	auto& Assets = CAssets::Get();
-	if( Assets.FindSound( Data.Name ) )
+	if( Assets.Sounds.Find( Data.Name ) )
 		return false;
 
 	if( Sound.Stream )
@@ -185,7 +185,7 @@ void ShowAssetSequence( AssetSequence& Data )
 bool CreateSequence( const AssetNewData& Data, const AssetSequence& Sequence )
 {
 	auto& Assets = CAssets::Get();
-	if( Assets.FindSequence( Data.Name ) )
+	if( Assets.Sequences.Find( Data.Name ) )
 		return false;
 
 	/*if( !CFile::Exists( Sequence.Location ) )
@@ -207,15 +207,15 @@ bool DoesAssetExist( const std::string& Name, const EAsset::Type& Type )
 	switch( Type )
 	{
 	case EAsset::Mesh:
-		return Assets.FindMesh( Name ) != nullptr;
+		return Assets.Meshes.Find( Name ) != nullptr;
 	case EAsset::Shader:
-		return Assets.FindShader( Name ) != nullptr;
+		return Assets.Shaders.Find( Name ) != nullptr;
 	case EAsset::Texture:
 		return Assets.FindTexture( Name ) != Assets.FindTexture( "error" ); // Check for error texture since that is returned by default.
 	case EAsset::Sound:
-		return Assets.FindSound( Name ) != nullptr;
+		return Assets.Sounds.Find( Name ) != nullptr;
 	case EAsset::Sequence:
-		return Assets.FindSequence( Name ) != nullptr;
+		return Assets.Sequences.Find( Name ) != nullptr;
 	default:
 		return Assets.FindAsset( Name ) != nullptr;
 	}

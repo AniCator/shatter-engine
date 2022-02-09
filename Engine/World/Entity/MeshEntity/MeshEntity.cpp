@@ -652,18 +652,18 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 void CMeshEntity::Reload()
 {
 	CAssets& Assets = CAssets::Get();
-	CMesh* TargetMesh = Assets.FindMesh( MeshName );
-	CShader* TargetShader = Assets.FindShader( ShaderName );
+	CMesh* TargetMesh = Assets.Meshes.Find( MeshName );
+	CShader* TargetShader = Assets.Shaders.Find( ShaderName );
 
 	if( !TargetShader )
 	{
 		// Try to use the default shader if the specified shader can't be found.
-		TargetShader = Assets.FindShader( "default" );
+		TargetShader = Assets.Shaders.Find( "default" );
 	}
 
 	Spawn( TargetMesh, TargetShader, nullptr, Transform );
 
-	CMesh* TargetCollisionMesh = Assets.FindMesh( CollisionMeshName );
+	CMesh* TargetCollisionMesh = Assets.Meshes.Find( CollisionMeshName );
 	if( TargetCollisionMesh )
 	{
 		CollisionMesh = TargetCollisionMesh;

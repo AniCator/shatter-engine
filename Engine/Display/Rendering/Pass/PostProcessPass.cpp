@@ -7,7 +7,7 @@
 CRenderPassPostProcess::CRenderPassPostProcess( int Width, int Height, const CCamera& Camera, const bool AlwaysClear ) : CRenderPass( "PostProcess", Width, Height, Camera, AlwaysClear )
 {
 	auto& Assets = CAssets::Get();
-	Mesh = Assets.FindMesh( "square" );
+	Mesh = Assets.Meshes.Find( "square" );
 	Shader = Assets.CreateNamedShader( "fullscreenquad", "Shaders/FullScreenQuad" );
 }
 

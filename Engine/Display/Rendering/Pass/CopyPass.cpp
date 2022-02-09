@@ -8,7 +8,7 @@ CRenderPassCopy::CRenderPassCopy( int Width, int Height, const CCamera& Camera, 
 	: CRenderPass( "Copy", Width, Height, Camera, AlwaysClear )
 {
 	auto& Assets = CAssets::Get();
-	Mesh = Assets.FindMesh( "square" );
+	Mesh = Assets.Meshes.Find( "square" );
 	Shader = Assets.CreateNamedShader( "Copy", "Shaders/FullScreenQuad", "Shaders/Copy" );
 }
 

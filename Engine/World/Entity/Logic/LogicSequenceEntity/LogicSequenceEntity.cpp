@@ -61,7 +61,7 @@ void CLogicSequenceEntity::Load( const JSON::Vector& Objects )
 
 void CLogicSequenceEntity::Reload()
 {
-	Sequence = CAssets::Get().FindSequence( SequenceAsset );
+	Sequence = CAssets::Get().Sequences.Find( SequenceAsset );
 }
 
 void CLogicSequenceEntity::Export( CData& Data )

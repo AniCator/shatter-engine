@@ -155,7 +155,7 @@ void SoundEntity::Load( const JSON::Vector& Objects )
 
 void SoundEntity::Reload()
 {
-	Asset = CAssets::Get().FindSound( SoundName );
+	Asset = CAssets::Get().Sounds.Find( SoundName );
 
 	CPointEntity::Reload();
 }

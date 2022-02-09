@@ -8,7 +8,7 @@ CRenderPassDownsample::CRenderPassDownsample( int Width, int Height, const CCame
 	: CRenderPass( "Downsample", Width, Height, Camera, AlwaysClear )
 {
 	auto& Assets = CAssets::Get();
-	Mesh = Assets.FindMesh( "square" );
+	Mesh = Assets.Meshes.Find( "square" );
 	Shader = Assets.CreateNamedShader( "Downsample", "Shaders/FullScreenQuad", "Shaders/Downsample" );
 }
 

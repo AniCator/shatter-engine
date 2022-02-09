@@ -59,7 +59,7 @@ struct FEventAudio : TrackEvent
 	{
 		if( !Sound )
 		{
-			Sound = CAssets::Get().FindSound( Name );
+			Sound = CAssets::Get().Sounds.Find( Name );
 			return;
 		}
 		
@@ -267,7 +267,7 @@ struct FEventAudio : TrackEvent
 			Sound = CAssets::Get().CreateNamedStream( Name.c_str(), FileLocation.c_str() );
 		}
 
-		Sound = CAssets::Get().FindSound( Name );
+		Sound = CAssets::Get().Sounds.Find( Name );
 		
 		if( DataMarker::Check( Data, "Bus" ) )
 		{

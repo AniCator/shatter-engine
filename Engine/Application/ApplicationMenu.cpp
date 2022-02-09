@@ -63,7 +63,7 @@ public:
 
 		CRenderable Model;
 		Model.SetMesh( Mesh );
-		Model.SetShader( Assets.FindShader( "default" ) );
+		Model.SetShader( Assets.Shaders.Find( "default" ) );
 		Model.SetTexture( Assets.FindTexture( "error" ), ETextureSlot::Slot0 );
 		auto& RenderData = Model.GetRenderData();
 		RenderData.Transform = FTransform();
@@ -828,7 +828,7 @@ void AssetUI()
 
 					if( ImGui::Selectable( ( Pair.first + "##Mesh" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						if( Assets.FindMesh( Pair.first ) )
+						if( Assets.Meshes.Find( Pair.first ) )
 						{
 							ReloadMesh( Pair.first, Mesh->GetLocation() );
 						}
@@ -1517,12 +1517,12 @@ public:
 	virtual uint32_t Render( UniformMap& Uniforms ) override
 	{
 		auto& Assets = CAssets::Get();
-		auto* Shader = Assets.FindShader( "shadertoy" );
+		auto* Shader = Assets.Shaders.Find( "shadertoy" );
 		if( !Shader )
 			return 0;
 
 		CRenderable ShaderToyRenderable;
-		ShaderToyRenderable.SetMesh( Assets.FindMesh( "square" ) );
+		ShaderToyRenderable.SetMesh( Assets.Meshes.Find( "square" ) );
 		ShaderToyRenderable.SetShader( Shader );
 
 		if( Slot0 )

@@ -55,7 +55,7 @@ typedef const std::vector<std::string> AssetParameters;
 class CAssets : public Singleton<CAssets>
 {
 public:
-	void CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
+	void CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, std::vector<FGenericAssetPayload>& GenericAssets );
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
@@ -110,11 +110,7 @@ public:
 	// This is a special method that can be used to run asset loaders that generate multiple assets.
 	void CreateAssets( const std::string& Type, const std::string& Location );
 
-	CMesh* FindMesh( const std::string& Name ) const;
-	CShader* FindShader( const std::string& Name ) const;
 	CTexture* FindTexture( const std::string& Name ) const;
-	CSound* FindSound( const std::string& Name ) const;
-	CSequence* FindSequence( const std::string& Name ) const;
 
 	// Allows you to change the name of an asset of the specified type.
 	void Rename( EAsset::Type Type, const std::string& Original, const std::string& Name );

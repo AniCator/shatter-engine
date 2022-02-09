@@ -129,7 +129,7 @@ static const std::map<EImageFormat, std::string> StringToImageFormat = {
 	std::make_pair( EImageFormat::RGBA32F, "rgba32f" ),
 };
 
-void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets )
+void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, std::vector<FGenericAssetPayload>& GenericAssets )
 {
 	OptickEvent();
 
@@ -137,16 +137,16 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vec
 	LoadTimer.Start();
 
 	std::vector<std::future<void>> Futures;
-	Futures.reserve( Meshes.size() );
+	Futures.reserve( MeshPayloads.size() );
 
 	std::vector<CompoundPayload> Payloads;
-	Payloads.reserve( Meshes.size() );
-	for( auto& Payload : Meshes )
+	Payloads.reserve( MeshPayloads.size() );
+	for( auto& Payload : MeshPayloads )
 	{
 		// Transform given name into lower case string
 		std::transform( Payload.Name.begin(), Payload.Name.end(), Payload.Name.begin(), ::tolower );
 
-		if( !FindMesh( Payload.Name ) )
+		if( !Meshes.Find( Payload.Name ) )
 		{
 			CompoundPayload Compound;
 			Compound.Payload = &Payload;
@@ -225,7 +225,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vec
 		}
 		else if( Payload.Type == EAsset::Sound )
 		{
-			CSound* NewSound = FindSound( Payload.Name );
+			CSound* NewSound = Sounds.Find( Payload.Name );
 			if( NewSound )
 			{
 				NewSound->Load( Payload.Data );
@@ -233,7 +233,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vec
 		}
 		else if( Payload.Type == EAsset::Sequence )
 		{
-			CSequence* NewSequence = FindSequence( Payload.Name );
+			CSequence* NewSequence = Sequences.Find( Payload.Name );
 			if( NewSequence )
 			{
 				NewSequence->Load( Payload.Data[0].c_str() );
@@ -286,7 +286,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vec
 		if( Payload.Type != EAsset::Animation )
 			continue;
 
-		auto* Mesh = FindMesh( Payload.Name );
+		auto* Mesh = Meshes.Find( Payload.Name );
 		if( !Mesh )
 		{
 			Log::Event( Log::Error, "Unable to append animation. Mesh doesn't exist (yet).\n" );
@@ -319,7 +319,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	CMesh* Mesh = FindMesh( NameString );
+	CMesh* Mesh = Meshes.Find( NameString );
 	const bool ShouldLoad = Mesh == nullptr || ForceLoad;
 
 	std::string ExportPath;
@@ -449,7 +449,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the mesh exists
-	if( CMesh* ExistingMesh = FindMesh( NameString ) )
+	if( CMesh* ExistingMesh = Meshes.Find( NameString ) )
 	{
 		return ExistingMesh;
 	}
@@ -487,7 +487,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation,
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the mesh exists
-	if( CShader* ExistingShader = FindShader( NameString ) )
+	if( CShader* ExistingShader = Shaders.Find( NameString ) )
 	{
 		return ExistingShader;
 	}
@@ -524,7 +524,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the mesh exists
-	if( CShader * ExistingShader = FindShader( NameString ) )
+	if( CShader * ExistingShader = Shaders.Find( NameString ) )
 	{
 		return ExistingShader;
 	}
@@ -682,7 +682,7 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the sound exists
-	if( CSound* ExistingSound = FindSound( NameString ) )
+	if( CSound* ExistingSound = Sounds.Find( NameString ) )
 	{
 		return ExistingSound;
 	}
@@ -720,7 +720,7 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the sound exists
-	if( CSound* ExistingSound = FindSound( NameString ) )
+	if( CSound* ExistingSound = Sounds.Find( NameString ) )
 	{
 		return ExistingSound;
 	}
@@ -749,7 +749,7 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the sound exists
-	if( CSound * ExistingSound = FindSound( NameString ) )
+	if( CSound * ExistingSound = Sounds.Find( NameString ) )
 	{
 		return ExistingSound;
 	}
@@ -786,7 +786,7 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the sound exists
-	if( CSound * ExistingSound = FindSound( NameString ) )
+	if( CSound * ExistingSound = Sounds.Find( NameString ) )
 	{
 		return ExistingSound;
 	}
@@ -815,7 +815,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocat
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the sequence exists
-	if( CSequence * ExistingSequence = FindSequence( NameString ) )
+	if( CSequence * ExistingSequence = Sequences.Find( NameString ) )
 	{
 		return ExistingSequence;
 	}
@@ -851,7 +851,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the sequence exists
-	if( CSequence * ExistingSequence = FindSequence( NameString ) )
+	if( CSequence * ExistingSequence = Sequences.Find( NameString ) )
 	{
 		return ExistingSequence;
 	}
@@ -920,30 +920,10 @@ void CAssets::CreateAssets( const std::string& Type, const std::string& Location
 	const auto* NullAsset = AssetLoaders[Type]( Parameters );
 }
 
-CMesh* CAssets::FindMesh( const std::string& Name ) const
-{
-	return Meshes.Find( Name );
-}
-
-CShader* CAssets::FindShader( const std::string& Name ) const
-{
-	return Shaders.Find( Name );
-}
-
 CTexture* CAssets::FindTexture( const std::string& Name ) const
 {
 	auto* Texture = Textures.Find( Name );
 	return Texture ? Texture : Textures.Find( "error" );
-}
-
-CSound* CAssets::FindSound( const std::string& Name ) const
-{
-	return Sounds.Find( Name );
-}
-
-CSequence* CAssets::FindSequence( const std::string& Name ) const
-{
-	return Sequences.Find( Name );
 }
 
 // Returns false if the asset wasn't found.

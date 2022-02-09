@@ -19,7 +19,7 @@ CRenderTexture* TinySizeY = nullptr;
 CRenderPassBloom::CRenderPassBloom( int Width, int Height, const CCamera& Camera, const bool AlwaysClear ) : CRenderPass( "Bloom", Width, Height, Camera, AlwaysClear )
 {
 	auto& Assets = CAssets::Get();
-	Mesh = Assets.FindMesh( "square" );
+	Mesh = Assets.Meshes.Find( "square" );
 	BlurX = Assets.CreateNamedShader( "BloomBlurX", "Shaders/FullScreenQuad", "Shaders/BloomBlurX" );
 	BlurY = Assets.CreateNamedShader( "BloomBlurY", "Shaders/FullScreenQuad", "Shaders/BloomBlurY" );
 	BloomThreshold = Assets.CreateNamedShader( "BloomThreshold", "Shaders/FullScreenQuad", "Shaders/BloomThreshold" );
