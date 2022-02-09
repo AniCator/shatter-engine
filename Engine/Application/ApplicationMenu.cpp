@@ -955,15 +955,18 @@ void AssetUI()
 
 			if( ShowSequences )
 			{
-				const auto& Sequences = Assets.GetSequences();
-				for( const auto& Pair : Sequences )
+				for( const auto& Pair : Assets.Sequences.Get() )
 				{
 					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 						continue;
 
+					auto* Sequence = Assets.Sequences.Get( Pair.second );
+					if( !Sequence )
+						continue;
+
 					if( ImGui::Selectable( ( Pair.first + "##Sequence" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						Pair.second->Draw();
+						Sequence->Draw();
 					}
 					ImGui::NextColumn();
 

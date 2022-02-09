@@ -479,7 +479,7 @@ void DisplayDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 		DisplayDropdown( Assets.Sounds, Data );
 		break;
 	case EAsset::Sequence:
-		DisplayDropdown( Assets.GetSequences(), Data );
+		DisplayDropdown( Assets.Sequences, Data );
 		break;
 	case EAsset::Generic:
 		DisplayDropdown( Assets.Assets, Data );
@@ -537,7 +537,7 @@ void AssignAsset( const EAsset::Type& Type, AssetDropdownData& Data )
 		AssignAsset( Assets.Sounds, Data );
 		break;
 	case EAsset::Sequence:
-		AssignAsset( Assets.GetSequences(), Data );
+		AssignAsset( Assets.Sequences, Data );
 		break;
 	case EAsset::Generic:
 		AssignAsset( Assets.Assets, Data );

@@ -42,7 +42,7 @@ void CAssets::Create( const std::string& Name, CSound* NewSound )
 
 void CAssets::Create( const std::string& Name, CSequence* NewSequence )
 {
-	Sequences.insert_or_assign( Name, NewSequence );
+	Sequences.Create( Name, NewSequence );
 }
 
 void CAssets::Create( const std::string& Name, CAsset* NewAsset )
@@ -973,7 +973,7 @@ CSound* CAssets::FindSound( const std::string& Name ) const
 
 CSequence* CAssets::FindSequence( const std::string& Name ) const
 {
-	return Find<CSequence>( Name, Sequences );
+	return Sequences.Find( Name );
 }
 
 // Returns false if the asset wasn't found.

@@ -137,12 +137,11 @@ void CWorld::Destroy()
 		SoLoudSound::StopSounds();
 
 		// Prevent sequences from playing when the primary world is destroyed.
-		const auto& Sequences = CAssets::Get().GetSequences();
-		for( const auto& Sequence : Sequences )
+		for( auto* Sequence : CAssets::Get().Sequences.GetAssets() )
 		{
-			if( Sequence.second && Sequence.second->Playing() )
+			if( Sequence && Sequence->Playing() )
 			{
-				Sequence.second->Stop();
+				Sequence->Stop();
 			}
 		}
 	}

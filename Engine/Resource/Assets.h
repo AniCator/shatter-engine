@@ -153,11 +153,6 @@ public:
 
 	void ReloadShaders();
 
-	const std::unordered_map<std::string, CSequence*>& GetSequences() const
-	{
-		return Sequences;
-	}
-
 	void RegisterAssetType( const std::string& Name, const std::function<CAsset*( AssetParameters& )>& Loader )
 	{
 		AssetLoaders.insert_or_assign( Name, Loader );
@@ -177,13 +172,12 @@ public:
 	AssetPool<CShader> Shaders;
 	AssetPool<CTexture> Textures;
 	AssetPool<CSound> Sounds;
+	AssetPool<CSequence> Sequences;
 
 	// Generic assets of any other type.
 	AssetPool<CAsset> Assets;
 
 private:
-	std::unordered_map<std::string, CSequence*> Sequences;
-
 	// Generic asset loaders.
 	std::unordered_map<std::string, std::function<CAsset*( AssetParameters& )>> AssetLoaders;
 

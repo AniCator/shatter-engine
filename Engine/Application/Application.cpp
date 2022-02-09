@@ -668,10 +668,9 @@ void CApplication::Run()
 				GameLayersInstance->Frame();
 
 				// TODO: Sequence update should happen elsewhere but this is better than having it run via DebugMenu().
-				const auto& Sequences = CAssets::Get().GetSequences();
-				for( const auto& Pair : Sequences )
+				for( auto* Sequence : CAssets::Get().Sequences.GetAssets() )
 				{
-					Pair.second->Frame();
+					Sequence->Frame();
 				}
 
 #if defined( IMGUI_ENABLED )
