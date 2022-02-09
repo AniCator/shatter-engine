@@ -321,41 +321,40 @@ void ContentBrowserUI()
 	auto& Assets = CAssets::Get();
 	if( ShowTextures )
 	{
-		const auto& Textures = Assets.GetTextures();
-		for( const auto& Pair : Textures )
+		for( const auto& Pair : Assets.Textures.Get() )
 		{
 			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 				continue;
 			
-			CTexture* Texture = Pair.second;
-			if( Texture )
+			auto* Texture = Assets.Textures.Get( Pair.second );
+			if( !Texture )
+				continue;
+
+			auto ImageSize = ImVec2( 64, 64 );
+
+			auto* TextureID = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
+			if( ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1, ImVec4( 0, 0, 0, 0 ) ) )
 			{
-				auto ImageSize = ImVec2( 64, 64 );
-
-				auto* TextureID = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
-				if( ImGui::ImageButton( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1, ImVec4( 0, 0, 0, 0 ) ) )
-				{
-					PreviewName = Pair.first;
-					PreviewTexture = Texture;
-					PreviewMesh = nullptr;
-					ShowPreview = true;
-				}
-
-				if( ImGui::IsItemHovered() )
-				{
-					ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
-					ImGui::BeginTooltip();
-					ImGui::PopStyleVar();
-
-					ImGui::Text( "%s", Pair.first.c_str() );
-					ImGui::Text( "%s", Texture->GetLocation().c_str() );
-					ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
-					ImGui::Text( "%s", CAssets::GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
-					ImGui::EndTooltip();
-				}
-
-				ImGui::NextColumn();
+				PreviewName = Pair.first;
+				PreviewTexture = Texture;
+				PreviewMesh = nullptr;
+				ShowPreview = true;
 			}
+
+			if( ImGui::IsItemHovered() )
+			{
+				ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
+				ImGui::BeginTooltip();
+				ImGui::PopStyleVar();
+
+				ImGui::Text( "%s", Pair.first.c_str() );
+				ImGui::Text( "%s", Texture->GetLocation().c_str() );
+				ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
+				ImGui::Text( "%s", CAssets::GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
+				ImGui::EndTooltip();
+			}
+
+			ImGui::NextColumn();
 		}
 	}
 
@@ -894,16 +893,19 @@ void AssetUI()
 
 			if( ShowTextures )
 			{
-				const auto& Textures = Assets.GetTextures();
-				for( const auto& Pair : Textures )
+				for( const auto& Pair : Assets.Textures.Get() )
 				{
 					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
+						continue;
+
+					auto* Texture = Assets.Textures.Get( Pair.second );
+					if( !Texture )
 						continue;
 
 					// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
 					if( ImGui::Selectable( ( Pair.first + "##Texture" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						PreviewTexture = Pair.second;
+						PreviewTexture = Texture;
 					}
 					ImGui::NextColumn();
 

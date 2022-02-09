@@ -473,7 +473,7 @@ void DisplayDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 		DisplayDropdown( Assets.Shaders, Data );
 		break;
 	case EAsset::Texture:
-		DisplayDropdown( Assets.GetTextures(), Data );
+		DisplayDropdown( Assets.Textures, Data );
 		break;
 	case EAsset::Sound:
 		DisplayDropdown( Assets.GetSounds(), Data );
@@ -531,7 +531,7 @@ void AssignAsset( const EAsset::Type& Type, AssetDropdownData& Data )
 		AssignAsset( Assets.Shaders, Data );
 		break;
 	case EAsset::Texture:
-		AssignAsset( Assets.GetTextures(), Data );
+		AssignAsset( Assets.Textures, Data );
 		break;
 	case EAsset::Sound:
 		AssignAsset( Assets.GetSounds(), Data );

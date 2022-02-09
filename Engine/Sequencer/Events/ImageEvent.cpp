@@ -43,13 +43,12 @@ void FEventImage::Context()
 	if( ImGui::BeginCombo( "##TextureAssets", Name.c_str() ) )
 	{
 		auto& Assets = CAssets::Get();
-		const auto& Textures = Assets.GetTextures();
-		for( const auto& Pair : Textures )
+		for( const auto& Pair : Assets.Textures.Get() )
 		{
 			if( ImGui::Selectable( Pair.first.c_str() ) )
 			{
 				Name = Pair.first;
-				Texture = Pair.second;
+				Texture = Assets.Textures.Get( Pair.second );
 			}
 
 			ImGui::Separator();

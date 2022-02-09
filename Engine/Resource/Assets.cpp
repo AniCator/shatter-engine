@@ -32,7 +32,7 @@ void CAssets::Create( const std::string& Name, CShader* NewShader )
 
 void CAssets::Create( const std::string& Name, CTexture* NewTexture )
 {
-	Textures.insert_or_assign( Name, NewTexture );
+	Textures.Create( Name, NewTexture );
 }
 
 void CAssets::Create( const std::string& Name, CSound* NewSound )
@@ -590,11 +590,9 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	// Check if the mesh exists
-	if( CTexture* ExistingTexture = Find<CTexture>( NameString, Textures ) )
-	{
+	// Check if the texture exists
+	if( CTexture* ExistingTexture = Textures.Find( NameString ) )
 		return ExistingTexture;
-	}
 
 	ProfileMemory( "Texture" );
 
@@ -633,11 +631,9 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	// Check if the mesh exists
-	if( CTexture* ExistingTexture = Find<CTexture>( NameString, Textures ) )
-	{
+	// Check if the texture exists
+	if( CTexture* ExistingTexture = Textures.Find( NameString ) )
 		return ExistingTexture;
-	}
 
 	ProfileMemory( "Texture" );
 
@@ -677,7 +673,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
 	// Check if the texture exists
-	const auto* ExistingTexture = Find<CTexture>( NameString, Textures );
+	const auto* ExistingTexture = Textures.Find( NameString );
 
 	if( Texture )
 	{
@@ -966,8 +962,8 @@ CShader* CAssets::FindShader( const std::string& Name ) const
 
 CTexture* CAssets::FindTexture( const std::string& Name ) const
 {
-	auto* Texture = Find<CTexture>( Name, Textures );
-	return Texture ? Texture : Find<CTexture>( "error", Textures );
+	auto* Texture = Textures.Find( Name );
+	return Texture ? Texture : Textures.Find( "error" );
 }
 
 CSound* CAssets::FindSound( const std::string& Name ) const

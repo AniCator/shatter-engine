@@ -758,12 +758,11 @@ struct FEventRenderable : TrackEvent
 		if( ImGui::BeginCombo( "##TextureAssets", Name.c_str() ) )
 		{
 			auto& Assets = CAssets::Get();
-			auto& Textures = Assets.GetTextures();
-			for( auto& Pair : Textures )
+			for( auto& Pair : Assets.Textures.Get() )
 			{
 				if( ImGui::Selectable( Pair.first.c_str() ) )
 				{
-					Renderable.SetTexture( Pair.second, ETextureSlot::Slot0 );
+					Renderable.SetTexture( Assets.Textures.Get( Pair.second ), ETextureSlot::Slot0 );
 				}
 
 				ImGui::Separator();
