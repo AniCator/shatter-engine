@@ -98,6 +98,9 @@ public:
 	bool Contact;
 	bool Visible;
 
+	// Set to true when the sequencer is making use of this entity.
+	bool UsedBySequence = false;
+
 	// Animation blending stack.
 	std::vector<AnimationBlendEntry> BlendStack;
 

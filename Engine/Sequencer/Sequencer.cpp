@@ -34,6 +34,7 @@ static CCamera* ActiveTimelineCamera = nullptr;
 static bool Scrubbing = false;
 
 constexpr uint32_t SequenceCameraPriority = 200000;
+constexpr Timecode InvalidTimecode = -1;
 
 double MarkerToTime( const Timecode& Marker )
 {
@@ -45,7 +46,7 @@ double MarkerRangeToTime( const Timecode& StartMarker, const Timecode& EndMarker
 	return StaticCast<double>( EndMarker - StartMarker ) / StaticCast<double>( Timebase );
 }
 
-enum class ESequenceStatus : uint8_t
+enum class SequenceStatus : uint8_t
 {
 	Stopped = 0,
 	Paused,
@@ -827,7 +828,7 @@ static std::map<std::string, std::function<TrackEvent* ( )>> EventTypes
 
 void TrackEvent::Evaluate( const Timecode& Marker )
 {
-	if( Marker >= Start && Marker < ( Start + Length ) )
+	if( InRange( Marker ) )
 	{
 		Execute();
 	}
@@ -971,7 +972,7 @@ public:
 		StartMarker = Start;
 		EndMarker = End;
 		Marker = 0;
-		Status = ESequenceStatus::Stopped;
+		Status = SequenceStatus::Stopped;
 
 		DrawTimeline = false;
 	}
@@ -1010,7 +1011,7 @@ public:
 
 	void Play()
 	{
-		if( Status != ESequenceStatus::Paused )
+		if( Status != SequenceStatus::Paused )
 		{
 			Marker = StartMarker;
 
@@ -1021,15 +1022,15 @@ public:
 			}
 		}
 
-		Status = ESequenceStatus::Playing;
+		Status = SequenceStatus::Playing;
 		StartTime = GameLayersInstance->GetRealTime();
 	}
 
 	void Pause()
 	{
-		if( Status == ESequenceStatus::Paused || Status == ESequenceStatus::Stopped )
+		if( Status == SequenceStatus::Paused || Status == SequenceStatus::Stopped )
 		{
-			Status = ESequenceStatus::Playing;
+			Status = SequenceStatus::Playing;
 
 			Scrubbing = true;
 			for( auto& Track : Tracks )
@@ -1044,7 +1045,7 @@ public:
 			return;
 		}
 		
-		Status = ESequenceStatus::Paused;
+		Status = SequenceStatus::Paused;
 
 		for( auto& Track : Tracks )
 		{
@@ -1054,7 +1055,7 @@ public:
 
 	void Stop()
 	{
-		Status = ESequenceStatus::Stopped;
+		Status = SequenceStatus::Stopped;
 		Marker = StartMarker;
 
 		for( auto& Track : Tracks )
@@ -1065,26 +1066,35 @@ public:
 
 	bool Playing() const
 	{
-		return Status == ESequenceStatus::Playing;
+		return Status == SequenceStatus::Playing;
 	}
 
 	bool Stopped() const
 	{
-		return Status == ESequenceStatus::Stopped || Status == ESequenceStatus::Paused;
+		return Status == SequenceStatus::Stopped || Status == SequenceStatus::Paused;
 	}
 
 	void Step()
 	{
-		if( Status < ESequenceStatus::Playing )
+		if( Status < SequenceStatus::Playing )
 			return;
 
 		// Increment the timeline step.
 		Marker++;
 
+		// Check if we should use the loop points
+		if( PlaybackMode == Repeat && LoopStart != InvalidTimecode && LoopEnd != InvalidTimecode )
+		{
+			if( Marker >= LoopEnd )
+			{
+				Marker = LoopStart;
+			}
+		}
+
 		// Stop the timeline playback if we have crossed the end marker.
 		if( Marker >= EndMarker )
 		{
-			if( DrawTimeline )
+			if( PlaybackMode == Repeat )
 			{
 				Play();
 			}
@@ -1095,7 +1105,7 @@ public:
 		}
 	}
 
-	void GoTo( const Timecode MarkerLocation )
+	void GoTo( const Timecode& MarkerLocation )
 	{
 		Marker = MarkerLocation;
 		StartTime = GameLayersInstance->GetRealTime() - MarkerToTime( Marker - StartMarker );
@@ -1142,7 +1152,7 @@ public:
 		
 		for( uint64_t StepIndex = 0; StepIndex < Steps; StepIndex++ )
 		{
-			if( Status == ESequenceStatus::Stopped )
+			if( Status == SequenceStatus::Stopped )
 				break;
 
 			Step();
@@ -1169,7 +1179,7 @@ public:
 		ActiveTimelineCamera = nullptr;
 		
 		// Run all the timeline events that are associated with the current marker.
-		if( Status != ESequenceStatus::Stopped )
+		if( Status != SequenceStatus::Stopped )
 		{
 			for( auto& Track : Tracks )
 			{
@@ -1218,8 +1228,9 @@ public:
 
 	void DisplayTimeline()
 	{
+		const auto TimelineName = "Timeline: " + Location;
 		if( ImGui::Begin(
-			"Timeline",
+			TimelineName.c_str(),
 			&DrawTimeline,
 			ImVec2( 1000.0f, 500.0f ), 0.45f
 		) )
@@ -1371,7 +1382,39 @@ public:
 			ImGui::SameLine();
 			if( ImGui::Button( "Scroll to Marker" ) )
 			{
-				ScrollMarker = static_cast<Timecode>( -1 );
+				ScrollMarker = InvalidTimecode;
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Set Loop Start" ) )
+			{
+				PlaybackMode = Repeat;
+				LoopStart = Marker;
+
+				if( LoopEnd == InvalidTimecode )
+				{
+					LoopEnd = EndMarker;
+				}
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Set Loop End" ) )
+			{
+				PlaybackMode = Repeat;
+				LoopEnd = Marker;
+
+				if( LoopStart == InvalidTimecode )
+				{
+					LoopStart = StartMarker;
+				}
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Clear Loop" ) )
+			{
+				LoopStart = InvalidTimecode;
+				LoopEnd = InvalidTimecode;
+				PlaybackMode = Once;
 			}
 
 			ImGui::SameLine();
@@ -1419,7 +1462,7 @@ public:
 
 			auto CursorOffset = 100.0f;
 
-			if( AutoScroll || ScrollMarker == static_cast<Timecode>( -1 ) )
+			if( AutoScroll || ScrollMarker == InvalidTimecode )
 			{
 				ScrollMarker = Marker;
 			}
@@ -1430,7 +1473,7 @@ public:
 			const auto MarkerPercentageWindow = ScrollMarkerPosition / WindowWidth;
 			const auto EndMarkerPercentageWindow = ScrollMarkerPosition / WindowWidth;
 
-			if( Status != ESequenceStatus::Stopped && EndMarkerPercentageWindow > 1.0f && MarkerPercentageWindow > 0.5f )
+			if( Status != SequenceStatus::Stopped && EndMarkerPercentageWindow > 1.0f && MarkerPercentageWindow > 0.5f )
 			{
 				CursorOffset -= ScrollMarkerPosition - WindowWidth * 0.5f;
 			}
@@ -1493,9 +1536,9 @@ public:
 					GoTo( GhostMarker );
 					Scrubbing = true;
 
-					if( Status == ESequenceStatus::Stopped )
+					if( Status == SequenceStatus::Stopped )
 					{
-						Status = ESequenceStatus::Paused;
+						Status = SequenceStatus::Paused;
 					}
 				}
 				else if ( ImGui::GetIO().MouseDown[1] )
@@ -2018,7 +2061,7 @@ public:
 				}
 			}
 
-			auto* DrawList = ImGui::GetWindowDrawList();
+			auto* DrawList = ImGui::IsWindowFocused() ? ImGui::GetOverlayDrawList() : ImGui::GetWindowDrawList();
 			if( DrawList )
 			{
 				auto VerticalOffset = 32.0f;
@@ -2036,31 +2079,50 @@ public:
 				// UI::AddText( Vector2D( 50.0f, 110.0f ), "CursorPosition", CursorPosition.x );
 
 				MarkerPosition = ScreenPosition;
-				MarkerPosition.x += ( static_cast<float>( GhostMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+				MarkerPosition.x += static_cast<float>( GhostMarker ) / static_cast<float>( Timebase ) * WidthDelta;
 				LineEnd = MarkerPosition;
 				LineEnd.y += Tracks.size() * VerticalOffset;
-				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 128, 128, 128, 255 ) );
+				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 128, 128, 128, 128 ) );
 
 				if( SnapMarker != GhostMarker )
 				{
 					MarkerPosition = ScreenPosition;
-					MarkerPosition.x += ( static_cast<float>( SnapMarker ) / static_cast<float>( Timebase ) ) * WidthDelta;
+					MarkerPosition.x += static_cast<float>( SnapMarker ) / static_cast<float>( Timebase ) * WidthDelta;
 					LineEnd = MarkerPosition;
 					LineEnd.y += Tracks.size() * VerticalOffset;
-					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 255, 255, 0, 255 ) );
+					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 255, 255, 0, 128 ) );
 				}
 
 				MarkerPosition = ScreenPosition;
-				MarkerPosition.x += ( StartMarker / Timebase ) * WidthDelta;
+				MarkerPosition.x += static_cast<float>( StartMarker ) / static_cast<float>( Timebase ) * WidthDelta;
 				LineEnd = MarkerPosition;
 				LineEnd.y += Tracks.size() * VerticalOffset;
-				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK );
+				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK, 2 );
 
 				MarkerPosition = ScreenPosition;
-				MarkerPosition.x += ( EndMarker / Timebase ) * WidthDelta;
+				MarkerPosition.x += static_cast<float>( EndMarker ) / static_cast<float>( Timebase ) * WidthDelta;
 				LineEnd = MarkerPosition;
 				LineEnd.y += Tracks.size() * VerticalOffset;
-				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK );
+				DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32_BLACK, 2 );
+
+				// Draw the loop points, when valid.
+				if( LoopStart != InvalidTimecode )
+				{
+					MarkerPosition = ScreenPosition;
+					MarkerPosition.x += static_cast<float>( LoopStart ) / static_cast<float>( Timebase ) * WidthDelta;
+					LineEnd = MarkerPosition;
+					LineEnd.y += Tracks.size() * VerticalOffset;
+					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 0, 255, 0, 128 ), 2 );
+				}
+
+				if( LoopEnd != InvalidTimecode )
+				{
+					MarkerPosition = ScreenPosition;
+					MarkerPosition.x += static_cast<float>( LoopEnd ) / static_cast<float>( Timebase ) * WidthDelta;
+					LineEnd = MarkerPosition;
+					LineEnd.y += Tracks.size() * VerticalOffset;
+					DrawList->AddLine( MarkerPosition, LineEnd, IM_COL32( 255, 0, 0, 128 ), 2 );
+				}
 			}
 
 			for( auto& StretchEvent : StretchEvents )
@@ -2375,7 +2437,6 @@ public:
 		return Data;
 	}
 
-protected:
 	bool DrawTimeline;
 	double StartTime = -1.0;
 	double PlayRate = 1.0;
@@ -2389,7 +2450,7 @@ protected:
 	Timecode StartMarker;
 	Timecode EndMarker;
 
-	ESequenceStatus Status;
+	SequenceStatus Status;
 
 	std::vector<FTrack> Tracks;
 
@@ -2421,10 +2482,20 @@ protected:
 
 	// Enables marker tracking.
 	bool AutoScroll = true;
-	Timecode ScrollMarker = -1.0f;
+	Timecode ScrollMarker = InvalidTimecode;
 
 	// True if the sequencer is skipping through the sequence and only wants to fire important events.
 	bool Skipping = false;
+
+	// Determines if a sequence should play once or multiple times.
+	enum PlaybackMode
+	{
+		Once,
+		Repeat
+	} PlaybackMode = Once;
+
+	Timecode LoopStart = InvalidTimecode;
+	Timecode LoopEnd = InvalidTimecode;
 };
 
 CSequence::CSequence()
@@ -2434,145 +2505,88 @@ CSequence::CSequence()
 
 CSequence::~CSequence()
 {
-	if( Timeline )
-	{
-		delete Timeline;
-		Timeline = nullptr;
-	}
+	delete Timeline;
+	Timeline = nullptr;
 }
 
 bool CSequence::Load( const char* FileLocation )
 {
-	if( Timeline )
-	{
-		Timeline->Load( FileLocation );
-	}
-
-	return true;
+	return Timeline->Load( FileLocation );
 }
 
 void CSequence::Save( const char* FileLocation )
 {
-	if( Timeline )
-	{
-		Timeline->Save( FileLocation );
-	}
+	Timeline->Save( FileLocation );
+}
+
+std::string CSequence::Location() const
+{
+	return Timeline->Location;
 }
 
 void CSequence::Play()
 {
-	if( Timeline )
-	{
-		Timeline->Play();
-	}
+	Timeline->Play();
 }
 
 void CSequence::Pause()
 {
-	if( Timeline )
-	{
-		Timeline->Pause();
-	}
+	Timeline->Pause();
 }
 
 void CSequence::Stop()
 {
-	if( Timeline )
-	{
-		Timeline->Stop();
-	}
+	Timeline->Stop();
 }
 
 bool CSequence::Playing() const
 {
-	if( Timeline )
-	{
-		return Timeline->Playing();
-	}
-
-	return false;
+	return Timeline->Playing();
 }
 
 bool CSequence::Stopped() const
 {
-	if( Timeline )
-	{
-		return Timeline->Stopped();
-	}
-
-	return true;
+	return Timeline->Stopped();
 }
 
 void CSequence::Step()
 {
-	if( Timeline )
-	{
-		Timeline->Step();
-	}
+	Timeline->Step();
 }
 
-void CSequence::GoTo( const Timecode Marker )
+void CSequence::GoTo( const Timecode& Marker )
 {
-	if( Timeline )
-	{
-		Timeline->GoTo( Marker );
-	}
+	Timeline->GoTo( Marker );
 }
 
 Timecode CSequence::CurrentMarker() const
 {
-	if( Timeline )
-	{
-		return Timeline->CurrentMarker();
-	}
-
-	return 0;
+	return Timeline->CurrentMarker();
 }
 
 Timecode CSequence::Size() const
 {
-	if( Timeline )
-	{
-		return Timeline->Size();
-	}
-
-	return 0;
+	return Timeline->Size();
 }
 
-float CSequence::Time() const
+double CSequence::Time() const
 {
-	if( Timeline )
-	{
-		return Timeline->Time();
-	}
-
-	return 0.0f;
+	return Timeline->Time();
 }
 
-float CSequence::Length() const
+double CSequence::Length() const
 {
-	if( Timeline )
-	{
-		return Timeline->Length();
-	}
-
-	return 0.0f;
+	return Timeline->Length();
 }
 
 void CSequence::Frame()
 {
-	if( Timeline )
-	{
-		Timeline->Frame();
-	}
+	Timeline->Frame();
 }
 
 void CSequence::Draw()
 {
-	if( Timeline )
-	{
-		Timeline->Draw();
-	}
+	Timeline->Draw();
 }
 
 CData& operator<<( CData& Data, CSequence& Sequence )

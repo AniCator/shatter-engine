@@ -222,7 +222,7 @@ void TransformBones( const float& Time, const Skeleton& Skeleton, const std::vec
 		Result[Bone->Index].GlobalTransform = LocalTransform;
 	}
 
-	Result[Bone->Index].BoneTransform = Skeleton.GlobalMatrixInverse * Result[Bone->Index].GlobalTransform * ModelToBone;
+	Result[Bone->Index].BoneTransform = Result[Bone->Index].GlobalTransform * ModelToBone;
 
 	for( const int& ChildIndex : Bone->Children )
 	{
@@ -358,6 +358,8 @@ void CMeshEntity::TickAnimation()
 
 	auto WorldTransform = GetTransform();
 	// WorldTransform = FTransform();
+	static auto NewBoundVertices = std::vector<Vector3D>();
+	NewBoundVertices.clear();
 	for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
 	{
 		auto Matrix = Bones[MatrixIndex].GlobalTransform;
@@ -369,15 +371,16 @@ void CMeshEntity::TickAnimation()
 
 		// Matrix = Skeleton.GlobalMatrixInverse * Matrix;
 		// ParentMatrix = Skeleton.GlobalMatrixInverse * ParentMatrix;
+
+		const auto Current = Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+		Vector3D PointTarget = WorldTransform.Transform( Current );
+		NewBoundVertices.emplace_back( PointTarget );
 		
-		if( ( MatrixIndex < 1 || true ) && false )
+		if( IsDebugEnabled() )
 		{
 			Vector3D RandomJitter = Vector3D( Math::Random(), Math::Random(), Math::Random() ) * 0.001f;
 			const auto Parent = ParentMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
 			Vector3D PointSource = WorldTransform.Transform( Parent );
-			
-			const auto Current = Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );			
-			Vector3D PointTarget = WorldTransform.Transform( Current );
 
 			Vector3D PointCenter = PointSource + ( PointTarget - PointSource ) * 0.5f;
 
@@ -418,6 +421,10 @@ void CMeshEntity::TickAnimation()
 
 		// UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
 	}
+
+	WorldBounds = Math::AABB( NewBoundVertices.data(), NewBoundVertices.size() );
+	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+	RenderData.WorldBounds = WorldBounds;
 
 	SubmitAnimation();
 }

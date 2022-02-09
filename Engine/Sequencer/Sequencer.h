@@ -44,6 +44,21 @@ struct TrackEvent
 		return PreviousOffset == Offset;
 	}
 
+	bool HasStarted( const Timecode& Marker ) const
+	{
+		return Marker >= Start;
+	}
+
+	bool HasEnded( const Timecode& Marker ) const
+	{
+		return Marker > ( Start + Length );
+	}
+
+	bool InRange( const Timecode& Marker ) const
+	{
+		return Marker >= Start && Marker < ( Start + Length );
+	}
+
 	virtual void Export( CData& Data );
 	virtual void Import( CData& Data );
 
@@ -74,6 +89,7 @@ public:
 
 	bool Load( const char* FileLocation );
 	void Save( const char* FileLocation = nullptr );
+	std::string Location() const;
 
 	void Play();
 	void Pause();
@@ -83,12 +99,12 @@ public:
 	bool Stopped() const;
 
 	void Step();
-	void GoTo( const Timecode Marker );
+	void GoTo( const Timecode& Marker );
 	Timecode CurrentMarker() const;
 	Timecode Size() const;
 
-	float Time() const;
-	float Length() const;
+	double Time() const;
+	double Length() const;
 
 	// TODO: Move this elsewhere.
 	void Frame();

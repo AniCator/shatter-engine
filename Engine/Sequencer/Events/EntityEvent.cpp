@@ -17,6 +17,21 @@ void EventEntity::Evaluate( const Timecode& Marker )
 {
 	StoredMarker = Marker;
 	TrackEvent::Evaluate( Marker );
+
+	if( !Entity )
+		return;
+
+	// Check if the event has ended.
+	if( HasEnded( Marker ) )
+	{
+		Entity->UsedBySequence = false;
+	}
+
+	if( !InRange( Marker ) )
+		return;
+
+	// As long as we're in range we want to mark the entity as "in use".
+	Entity->UsedBySequence = true;
 }
 
 void EventEntity::Execute()
@@ -55,13 +70,16 @@ void EventEntity::Execute()
 
 	if( Entity )
 	{
-		Entity->SetTransform( Transform );
-
-		if( auto* Body = Entity->GetBody() )
+		if( UseTransform )
 		{
-			Body->PreviousTransform = Transform;
-			Body->Acceleration = Vector3D::Zero;
-			Body->Velocity = Vector3D::Zero;
+			Entity->SetTransform( Transform );
+
+			if( auto* Body = Entity->GetBody() )
+			{
+				Body->PreviousTransform = Transform;
+				Body->Acceleration = Vector3D::Zero;
+				Body->Velocity = Vector3D::Zero;
+			}
 		}
 
 		if( OverrideAnimation )
@@ -73,11 +91,11 @@ void EventEntity::Execute()
 
 			// Calculate the animation time relative to the event.
 			const auto MarkerTime = StoredMarker - Start;
-			const auto AnimationTime = MarkerToTime( MarkerTime );
+			const auto AnimationTime = MarkerToTime( MarkerTime ) * PlayRate;
 
 			// Apply the event-relative animation time.
 			Entity->SetAnimationTime( static_cast<float>( AnimationTime ) );
-			Entity->SetPlayRate( PlayRate );
+			Entity->SetPlayRate( 0.0f );
 		}
 	}
 
@@ -91,10 +109,16 @@ void EventEntity::Execute()
 
 void EventEntity::Reset()
 {
+	if( Entity )
+	{
+		Entity->UsedBySequence = false;
+	}
+
 	Entity = nullptr;
 	TargetEntity = nullptr;
 }
 
+FTransform CopiedTransform;
 void EventEntity::Context()
 {
 	ImGui::Text( "Entity Manipulation" );
@@ -129,12 +153,27 @@ void EventEntity::Context()
 		ImGui::EndTooltip();
 	}
 
-	ImGui::Checkbox( "Linear Interpolation", &InterpolateLinear );
+	if( ImGui::Checkbox( "Linear Interpolation", &InterpolateLinear ) )
+	{
+		TransformB = TransformA;
+	}
+
 	if( ImGui::IsItemHovered() )
 	{
 		ImGui::BeginTooltip();
-		ImGui::Text( "Interpolate between two transforms." );
+		ImGui::Text( "Interpolate between two transforms, clicking the checkbox copies the first transform to the second." );
 		ImGui::EndTooltip();
+	}
+
+	if( ImGui::Button( "Copy##CopyA" ) )
+	{
+		CopiedTransform = TransformA;
+	}
+
+	ImGui::SameLine();
+	if( ImGui::Button( "Paste##PasteA" ) )
+	{
+		TransformA = CopiedTransform;
 	}
 
 	if( UseTransform )
@@ -161,6 +200,17 @@ void EventEntity::Context()
 
 		if( InterpolateLinear )
 		{
+			if( ImGui::Button( "Copy##CopyB" ) )
+			{
+				CopiedTransform = TransformB;
+			}
+
+			ImGui::SameLine();
+			if( ImGui::Button( "Paste##PasteB" ) )
+			{
+				TransformB = CopiedTransform;
+			}
+
 			ShouldUpdate = false;
 			Position = TransformB.GetPosition();
 			if( ImGui::DragFloat3( "Position##mpb", &Position.X, 0.1f ) )
@@ -233,7 +283,7 @@ void EventEntity::Context()
 			}
 
 			ImGui::Checkbox( "Loop##LoopAnimation", &LoopAnimation );
-			ImGui::DragFloat( "Play Rate", &PlayRate, 0.1f, 0.1f );
+			ImGui::DragFloat( "Play Rate", &PlayRate, 0.01f );
 		}
 		else
 		{
