@@ -794,7 +794,6 @@ void AssetUI()
 
 			if( InclusiveFilter )
 			{
-				const auto& CustomAssets = Assets.GetAssets();
 				for( const auto& Pair : Assets.Assets.Get() )
 				{
 					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )

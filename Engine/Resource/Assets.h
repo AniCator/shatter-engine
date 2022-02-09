@@ -158,11 +158,6 @@ public:
 		return Meshes;
 	}
 
-	const AssetHandleMap& GetShaders() const
-	{
-		return Shaders.Get();
-	}
-
 	const std::unordered_map<std::string, CTexture*>& GetTextures() const
 	{
 		return Textures;
@@ -176,11 +171,6 @@ public:
 	const std::unordered_map<std::string, CSequence*>& GetSequences() const
 	{
 		return Sequences;
-	}
-
-	const AssetHandleMap& GetAssets() const
-	{
-		return Assets.Get();
 	}
 
 	void RegisterAssetType( const std::string& Name, const std::function<CAsset*( AssetParameters& )>& Loader )
