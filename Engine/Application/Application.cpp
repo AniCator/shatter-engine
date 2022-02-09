@@ -217,7 +217,6 @@ static bool ShowTestWindow = false;
 static bool ShowMetricsWindow = false;
 
 static bool DisplayLog = false;
-static bool ExportDialog = false;
 static size_t PreviousSize = 0;
 void DebugMenu( CApplication* Application )
 {
@@ -370,11 +369,6 @@ void DebugMenu( CApplication* Application )
 				DisplayLog = !DisplayLog;
 			}
 
-			if( ImGui::MenuItem( "Export" ) )
-			{
-				ExportDialog = true;
-			}
-
 			ImGui::Separator();
 
 			RenderMenuItems();
@@ -447,94 +441,6 @@ void DebugMenu( CApplication* Application )
 		ImGui::End();
 
 		ImGui::PopStyleColor();
-	}
-
-	if( ExportDialog )
-	{
-		if( ImGui::Begin( "Export", &ExportDialog, ImVec2( 600.0f, 800.0f ) ) )
-		{
-			ImGui::Text( "Click on an asset to convert it." );
-
-			const auto& Map = CAssets::Get().GetMeshes();
-			for( auto& Entry : Map )
-			{
-				if( ImGui::Button( Entry.first.c_str() ) )
-				{
-					Log::Event( "Exporting mesh \"%s\".", Entry.first.c_str() );
-					CMesh* Mesh = Entry.second;
-					if( Mesh )
-					{
-						FPrimitive Primitive;
-						MeshBuilder::Mesh( Primitive, Mesh );
-
-						CData Data;
-						Data << Primitive;
-
-						std::stringstream Location;
-						Location << "Models/" << Entry.first << ".lm";
-
-						CFile File( Location.str() );
-						File.Load( Data );
-						File.Save();
-					}
-				}
-			}
-
-			ImGui::Text( "Import speed test." );
-
-			if( ImGui::Button( "Import Island OBJ" ) )
-			{
-				CTimer LoadTimer;
-				CTimer ParseTimer;
-
-				CFile File( "Models/island.obj" );
-
-				LoadTimer.Start();
-				File.Load();
-				LoadTimer.Stop();
-
-				FPrimitive Primitive;
-
-				ParseTimer.Start();
-				MeshBuilder::OBJ( Primitive, File );
-				ParseTimer.Stop();
-
-				Log::Event( "Import speed test: Load %ims Parse %ims\n", LoadTimer.GetElapsedTimeMilliseconds(), ParseTimer.GetElapsedTimeMilliseconds() );
-			}
-
-			ImGui::Text( "Re-import" );
-
-			ImGui::Columns( 3 );
-			static char AssetName[128];
-			ImGui::InputText( "Asset name", AssetName, 128 );
-			ImGui::NextColumn();
-
-			static char AssetPath[512];
-			ImGui::InputText( "Asset path", AssetPath, 512 );
-			ImGui::NextColumn();
-
-			if( ImGui::Button( "Re-Import" ) )
-			{
-				auto& Assets = CAssets::Get();
-				if( Assets.FindMesh( AssetName ) )
-				{
-					CTimer LoadTimer;
-
-					LoadTimer.Start();
-					auto Mesh = Assets.CreateNamedMesh( AssetName, AssetPath, true );
-					LoadTimer.Stop();
-
-					const size_t Triangles = Mesh->GetVertexBufferData().IndexCount / 3;
-
-					Log::Event( "Re-import: %ims %i triangles\n", LoadTimer.GetElapsedTimeMilliseconds(), Triangles );
-				}
-			}
-			ImGui::NextColumn();
-
-			ImGui::Columns();
-		}
-
-		ImGui::End();
 	}
 
 	RenderMenuPanels();
