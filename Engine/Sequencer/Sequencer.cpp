@@ -725,13 +725,12 @@ struct FEventRenderable : TrackEvent
 		if( ImGui::BeginCombo( "##MeshAssets", Name.c_str() ) )
 		{
 			auto& Assets = CAssets::Get();
-			auto& Meshes = Assets.GetMeshes();
-			for( auto& Pair : Meshes )
+			for( auto& Pair : Assets.Meshes.Get() )
 			{
 				if( ImGui::Selectable( Pair.first.c_str() ) )
 				{
 					Name = Pair.first;
-					Renderable.SetMesh( Pair.second );
+					Renderable.SetMesh( Assets.Meshes.Get( Pair.second ) );
 				}
 
 				ImGui::Separator();

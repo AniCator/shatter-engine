@@ -153,11 +153,6 @@ public:
 
 	void ReloadShaders();
 
-	const std::unordered_map<std::string, CMesh*>& GetMeshes() const
-	{
-		return Meshes;
-	}
-
 	const std::unordered_map<std::string, CTexture*>& GetTextures() const
 	{
 		return Textures;
@@ -188,13 +183,13 @@ public:
 		return false;
 	}
 
+	AssetPool<CMesh> Meshes;
 	AssetPool<CShader> Shaders;
 
 	// Generic assets of any other type.
 	AssetPool<CAsset> Assets;
 
 private:
-	std::unordered_map<std::string, CMesh*> Meshes;
 	std::unordered_map<std::string, CTexture*> Textures;
 	std::unordered_map<std::string, CSound*> Sounds;
 	std::unordered_map<std::string, CSequence*> Sequences;

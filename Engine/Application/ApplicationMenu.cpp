@@ -350,7 +350,7 @@ void ContentBrowserUI()
 					ImGui::Text( "%s", Pair.first.c_str() );
 					ImGui::Text( "%s", Texture->GetLocation().c_str() );
 					ImGui::Text( "%ix%i", Texture->GetWidth(), Texture->GetHeight() );
-					ImGui::Text( "%s", Assets.GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
+					ImGui::Text( "%s", CAssets::GetReadableImageFormat( Texture->GetImageFormat() ).c_str() );
 					ImGui::EndTooltip();
 				}
 
@@ -361,13 +361,12 @@ void ContentBrowserUI()
 
 	if( ShowMeshes )
 	{
-		const auto& Meshes = Assets.GetMeshes();
-		for( const auto& Pair : Meshes )
+		for( const auto& Pair : Assets.Meshes.Get() )
 		{
 			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 				continue;
 
-			CMesh* Mesh = Pair.second;
+			auto* Mesh = Assets.Meshes.Get( Pair.second );
 			if( !Mesh )
 				continue;
 
@@ -449,7 +448,7 @@ void ContentBrowserUI()
 
 				ImGui::EndTooltip();
 
-				GenerateThumbnail( Pair.first, Pair.second );
+				GenerateThumbnail( Pair.first, Mesh );
 			}
 
 			ImGui::PopID();
@@ -709,13 +708,13 @@ void ReloadAllMeshes()
 {
 	auto& Assets = CAssets::Get();
 	
-	const auto& Meshes = Assets.GetMeshes();
-	for( const auto& Pair : Meshes )
+	for( const auto& Pair : Assets.Meshes.Get() )
 	{
-		if( Pair.second && Assets.FindMesh( Pair.first ) )
-		{
-			ReloadMesh( Pair.first, Pair.second->GetLocation() );
-		}
+		auto* Mesh = Assets.Meshes.Get( Pair.second );
+		if( !Mesh )
+			continue;
+
+		ReloadMesh( Pair.first, Mesh->GetLocation() );
 	}
 }
 
@@ -819,17 +818,21 @@ void AssetUI()
 
 			if( ShowMeshes )
 			{
-				const auto& Meshes = Assets.GetMeshes();
+				const auto& Meshes = Assets.Meshes.Get();
 				for( const auto& Pair : Meshes )
 				{
 					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 						continue;
 
+					auto* Mesh = Assets.Meshes.Get( Pair.second );
+					if( !Mesh )
+						continue;
+
 					if( ImGui::Selectable( ( Pair.first + "##Mesh" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						if( Pair.second && Assets.FindMesh( Pair.first ) )
+						if( Assets.FindMesh( Pair.first ) )
 						{
-							ReloadMesh( Pair.first, Pair.second->GetLocation() );
+							ReloadMesh( Pair.first, Mesh->GetLocation() );
 						}
 					}
 					ImGui::NextColumn();

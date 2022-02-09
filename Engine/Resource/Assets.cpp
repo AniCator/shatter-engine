@@ -22,7 +22,7 @@
 
 void CAssets::Create( const std::string& Name, CMesh* NewMesh )
 {
-	Meshes.insert_or_assign( Name, NewMesh );
+	Meshes.Create( Name, NewMesh );
 }
 
 void CAssets::Create( const std::string& Name, CShader* NewShader )
@@ -956,7 +956,7 @@ void CAssets::CreateAssets( const std::string& Type, const std::string& Location
 
 CMesh* CAssets::FindMesh( const std::string& Name ) const
 {
-	return Find<CMesh>( Name, Meshes );
+	return Meshes.Find( Name );
 }
 
 CShader* CAssets::FindShader( const std::string& Name ) const

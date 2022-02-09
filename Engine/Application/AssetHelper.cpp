@@ -467,7 +467,7 @@ void DisplayDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 	switch( Type )
 	{
 	case EAsset::Mesh:
-		DisplayDropdown( Assets.GetMeshes(), Data );
+		DisplayDropdown( Assets.Meshes, Data );
 		break;
 	case EAsset::Shader:
 		DisplayDropdown( Assets.Shaders, Data );
@@ -525,7 +525,7 @@ void AssignAsset( const EAsset::Type& Type, AssetDropdownData& Data )
 	switch( Type )
 	{
 	case EAsset::Mesh:
-		AssignAsset( Assets.GetMeshes(), Data );
+		AssignAsset( Assets.Meshes, Data );
 		break;
 	case EAsset::Shader:
 		AssignAsset( Assets.Shaders, Data );
