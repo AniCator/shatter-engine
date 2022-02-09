@@ -51,6 +51,25 @@ struct AssetDropdownData
 
 	// User is creating a new asset.
 	bool Create = false;
+
+	template<typename AssetType>
+	void Assign( std::string& OutputName, AssetType*& Output )
+	{
+		if( Asset )
+		{
+			OutputName = Name;
+			Output = static_cast<AssetType*>( Asset );
+			*this = AssetDropdownData(); // Clear the data.
+			PreviewName = Name;
+		}
+
+		if( Clear )
+		{
+			OutputName = "";
+			Output = nullptr;
+			*this = AssetDropdownData(); // Clear the data.
+		}
+	}
 };
 
 // Searchable asset drop-down.
