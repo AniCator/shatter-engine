@@ -37,7 +37,7 @@ void CAssets::Create( const std::string& Name, CTexture* NewTexture )
 
 void CAssets::Create( const std::string& Name, CSound* NewSound )
 {
-	Sounds.insert_or_assign( Name, NewSound );
+	Sounds.Create( Name, NewSound );
 }
 
 void CAssets::Create( const std::string& Name, CSequence* NewSequence )
@@ -968,7 +968,7 @@ CTexture* CAssets::FindTexture( const std::string& Name ) const
 
 CSound* CAssets::FindSound( const std::string& Name ) const
 {
-	return Find<CSound>( Name, Sounds );
+	return Sounds.Find( Name );
 }
 
 CSequence* CAssets::FindSequence( const std::string& Name ) const

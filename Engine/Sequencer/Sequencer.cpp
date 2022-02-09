@@ -187,41 +187,10 @@ struct FEventAudio : TrackEvent
 
 		ImGui::Separator();
 
-		/*if( ImGui::BeginCombo( "##SoundAssets", Name.c_str() ) )
-		{
-			auto& Assets = CAssets::Get();
-			auto& Sounds = Assets.GetSounds();
-			for( auto& Pair : Sounds )
-			{
-				if( ImGui::Selectable( Pair.first.c_str() ) )
-				{
-					Name = Pair.first;
-					Sound = Pair.second;
-				}
-
-				ImGui::Separator();
-			}
-
-			ImGui::EndCombo();
-		}*/
-
 		static AssetDropdownData Data;
 		Data.Name = Name;
 		DisplayAssetDropdown( EAsset::Sound, Data );
-		if( Data.Asset )
-		{
-			Name = Data.Name;
-			Sound = reinterpret_cast<CSound*>( Data.Asset );
-			Data = AssetDropdownData(); // Clear the data.
-			Data.PreviewName = Name;
-		}
-
-		if( Data.Clear )
-		{
-			Name = "";
-			Sound = nullptr;
-			Data = AssetDropdownData(); // Clear the data.
-		}
+		Data.Assign( Name, Sound );
 	}
 
 	virtual const char* GetName() override

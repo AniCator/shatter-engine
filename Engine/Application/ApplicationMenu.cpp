@@ -502,72 +502,71 @@ void ContentBrowserUI()
 
 	if( ShowSounds )
 	{
-		const auto& Sounds = Assets.GetSounds();
-		for( const auto& Pair : Sounds )
+		for( const auto& Pair : Assets.Sounds.Get() )
 		{
 			if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 				continue;
 
-			CSound* Sound = Pair.second;
-			if( Sound )
+			auto* Sound = Assets.Sounds.Get( Pair.second );
+			if( !Sound )
+				continue;
+
+			auto ImageSize = ImVec2( 64, 64 );
+
+			auto* TextureID = reinterpret_cast<ImTextureID>( UIFileSpeaker->GetHandle() );
+			const bool Playing = Sound->Playing();
+			const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
+			const ImVec4 Tint = Playing ? ImVec4( 1.0f, 0, 0, 1.0f ) : ImVec4( 0.65f, 0.1f, 0.1f, 1.0f );
+
+			ImGui::PushID( Pair.first.c_str() );
+			if( ImGui::ImageButton(
+				TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
+				Background,
+				Tint ) )
 			{
-				auto ImageSize = ImVec2( 64, 64 );
+				PreviewName = Pair.first;
+				PreviewTexture = UIFileSpeaker;
+				PreviewMesh = nullptr;
+				ShowPreview = true;
 
-				auto* TextureID = reinterpret_cast<ImTextureID>( UIFileSpeaker->GetHandle() );
-				const bool Playing = Sound->Playing();
-				const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
-				const ImVec4 Tint = Playing ? ImVec4( 1.0f, 0, 0, 1.0f ) : ImVec4( 0.65f, 0.1f, 0.1f, 1.0f );
-
-				ImGui::PushID( Pair.first.c_str() );
-				if( ImGui::ImageButton(
-					TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
-					Background,
-					Tint ) )
+				if( !Playing )
 				{
-					PreviewName = Pair.first;
-					PreviewTexture = UIFileSpeaker;
-					PreviewMesh = nullptr;
-					ShowPreview = true;
+					auto Information = Spatial::CreateUI();
 
-					if( !Playing )
-					{
-						auto Information = Spatial::CreateUI();
+					static uint32_t BusIndex = Bus::Auxilery3;
+					if( BusIndex == Bus::Maximum )
+						BusIndex = Bus::Auxilery3;
 
-						static uint32_t BusIndex = Bus::Auxilery3;
-						if( BusIndex == Bus::Maximum )
-							BusIndex = Bus::Auxilery3;
+					Information.Bus = Bus::Type( BusIndex++ );
 
-						Information.Bus = Bus::Type( BusIndex++ );
-
-						Sound->Start( Information );
-					}
-					else
-					{
-						Sound->Stop();
-					}
+					Sound->Start( Information );
 				}
-
-				if( ImGui::IsItemHovered() )
+				else
 				{
-					ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
-					ImGui::BeginTooltip();
-					ImGui::PopStyleVar();
-
-					ImGui::Text( "%s", Pair.first.c_str() );
-					ImGui::Text( "Type: %s", Sound->GetSoundType() == ESoundType::Stream ? "Stream" : "Memory" );
-
-					if( Sound->GetSoundType() == ESoundType::Memory )
-					{
-						ImGui::Text( "Sounds: %llu", Sound->GetSoundBufferHandles().size() );
-					}
-
-					ImGui::EndTooltip();
+					Sound->Stop();
 				}
-
-				ImGui::PopID();
-
-				ImGui::NextColumn();
 			}
+
+			if( ImGui::IsItemHovered() )
+			{
+				ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
+				ImGui::BeginTooltip();
+				ImGui::PopStyleVar();
+
+				ImGui::Text( "%s", Pair.first.c_str() );
+				ImGui::Text( "Type: %s", Sound->GetSoundType() == ESoundType::Stream ? "Stream" : "Memory" );
+
+				if( Sound->GetSoundType() == ESoundType::Memory )
+				{
+					ImGui::Text( "Sounds: %llu", Sound->GetSoundBufferHandles().size() );
+				}
+
+				ImGui::EndTooltip();
+			}
+
+			ImGui::PopID();
+
+			ImGui::NextColumn();
 		}
 	}
 
@@ -918,27 +917,30 @@ void AssetUI()
 
 			if( ShowSounds )
 			{
-				const auto& Sounds = Assets.GetSounds();
-				for( const auto& Pair : Sounds )
+				for( const auto& Pair : Assets.Sounds.Get() )
 				{
 					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 						continue;
 
-					if( ImGui::Selectable( ( Pair.first + "##Audio" ).c_str(), Pair.second->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
+					auto* Sound = Assets.Sounds.Get( Pair.second );
+					if( !Sound )
+						continue;
+
+					if( ImGui::Selectable( ( Pair.first + "##Audio" ).c_str(), Sound->Playing(), ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						if( Pair.second->Playing() )
+						if( Sound->Playing() )
 						{
-							Pair.second->Stop();
+							Sound->Stop();
 						}
 						else
 						{
-							Pair.second->Start();
+							Sound->Start();
 						}
 					}
 					ImGui::NextColumn();
 
 					// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
-					if( Pair.second->GetSoundType() == ESoundType::Stream )
+					if( Sound->GetSoundType() == ESoundType::Stream )
 					{
 						ImGui::Text( "Stream" ); ImGui::NextColumn();
 					}
