@@ -814,6 +814,7 @@ namespace UI
 			LineShader->Activate();
 
 			ConfigureBlendMode( LineShader );
+
 			ConfigureDepthMask( LineShader );
 			ConfigureDepthTest( LineShader );
 
