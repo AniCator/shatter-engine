@@ -16,7 +16,7 @@ constexpr EventType NoneEventType = 0;
 template<typename T>
 using VerifyEnum = std::enable_if_t<std::is_enum<T>::value>;
 
-struct Event
+namespace Event
 {
 	using PayloadType = std::unordered_map<std::string, Property>;
 	using PayloadData = const std::unordered_map<std::string, Property>&;
@@ -188,4 +188,4 @@ struct Event
 		// Stores queues that want to have events of this queue piped through to them.
 		std::vector<Queue*> Passthrough;
 	};
-};
+}
