@@ -27,7 +27,7 @@ void CAssets::Create( const std::string& Name, CMesh* NewMesh )
 
 void CAssets::Create( const std::string& Name, CShader* NewShader )
 {
-	Shaders.insert_or_assign( Name, NewShader );
+	Shaders.Create( Name, NewShader );
 }
 
 void CAssets::Create( const std::string& Name, CTexture* NewTexture )
@@ -47,7 +47,7 @@ void CAssets::Create( const std::string& Name, CSequence* NewSequence )
 
 void CAssets::Create( const std::string& Name, CAsset* NewAsset )
 {
-	Assets.insert_or_assign( Name, NewAsset );
+	Assets.Create( Name, NewAsset );
 }
 
 void LoadASSIMPMesh( PrimitivePayload* Payload, AnimationSet& Set, CFile& File )
@@ -904,33 +904,29 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 
 CAsset* CAssets::CreateNamedAsset( const std::string& Name, const std::string& Type, AssetParameters& Parameters )
 {
-	if( IsValidAssetType( Type ) )
+	if( !IsValidAssetType( Type ) )
 	{
-		// Transform given name into lower case string
-		std::string NameString = Name;
-		std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
-
-		auto* ExistingAsset = Find<CAsset>( NameString, Assets );
-		if( ExistingAsset == nullptr )
-		{
-			auto* Asset = AssetLoaders[Type]( Parameters );
-
-			// Loaders can return null pointers.
-			if( Asset != nullptr )
-			{
-				Assets.insert_or_assign( NameString, Asset );
-			}
-
-			return Asset;
-		}
-		else
-		{
-			return ExistingAsset;
-		}
+		Log::Event( Log::Warning, "Unknown asset type \"%s\".\n", Type.c_str() );
+		return nullptr;
 	}
 
-	Log::Event( Log::Warning, "Unknown asset type \"%s\".\n", Type.c_str() );
-	return nullptr;
+	// Transform given name into lower case string
+	std::string NameString = Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	auto* ExistingAsset = Assets.Find( NameString );
+	if( ExistingAsset != nullptr )
+		return ExistingAsset;
+
+	auto* Asset = AssetLoaders[Type]( Parameters );
+
+	// Loaders can return null pointers.
+	if( Asset != nullptr )
+	{
+		Assets.Create( NameString, Asset );
+	}
+
+	return Asset;
 }
 
 bool CAssets::RegisterNamedAsset( const std::string& Name, CAsset* Asset )
@@ -942,14 +938,8 @@ bool CAssets::RegisterNamedAsset( const std::string& Name, CAsset* Asset )
 	std::string NameString = Name;
 	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
 
-	// Check if the asset already exists.
-	auto* ExistingAsset = Find<CAsset>( NameString, Assets );
-	if( ExistingAsset != nullptr )
-		return false;
-
 	// Register the asset.
-	Assets.insert_or_assign( NameString, Asset );
-	return true;
+	return Assets.Create( NameString, Asset );
 }
 
 void CAssets::CreateAssets( const std::string& Type, const std::string& Location )
@@ -971,8 +961,7 @@ CMesh* CAssets::FindMesh( const std::string& Name ) const
 
 CShader* CAssets::FindShader( const std::string& Name ) const
 {
-	auto* Shader = Find<CShader>( Name, Shaders );
-	return Shader;
+	return Shaders.Find( Name );
 }
 
 CTexture* CAssets::FindTexture( const std::string& Name ) const
@@ -993,9 +982,9 @@ CSequence* CAssets::FindSequence( const std::string& Name ) const
 
 // Returns false if the asset wasn't found.
 template<typename T>
-bool RenameAsset( std::unordered_map<std::string, T*>& Assets, const std::string& OldName, const std::string& Name )
+bool RenameAsset( std::unordered_map<std::string, T*>& Assets, const std::string& Original, const std::string& Name )
 {
-	const auto Iterator = Assets.find( OldName );
+	const auto Iterator = Assets.find( Original );
 	if( Iterator == Assets.end() )
 		return false; // Asset doesn't exist.
 
@@ -1006,7 +995,14 @@ bool RenameAsset( std::unordered_map<std::string, T*>& Assets, const std::string
 	return true;
 }
 
-void CAssets::Rename( EAsset::Type Type, const std::string& OldName, const std::string& Name )
+// Returns false if the asset wasn't found.
+template<typename T>
+bool RenameAsset( AssetPool<T>& Assets, const std::string& Original, const std::string& Name )
+{
+	return Assets.Rename( Original, Name );
+}
+
+void CAssets::Rename( EAsset::Type Type, const std::string& Original, const std::string& Name )
 {
 	// Unsupported types are ignored.
 	if( Type == EAsset::Unknown || Type == EAsset::Animation )
@@ -1016,22 +1012,22 @@ void CAssets::Rename( EAsset::Type Type, const std::string& OldName, const std::
 	switch( Type )
 	{
 	case EAsset::Mesh:
-		Success = RenameAsset( Meshes, OldName, Name );
+		Success = RenameAsset( Meshes, Original, Name );
 		break;	
 	case EAsset::Shader:
-		Success = RenameAsset( Shaders, OldName, Name );
+		Success = RenameAsset( Shaders, Original, Name );
 		break;
 	case EAsset::Texture:
-		Success = RenameAsset( Textures, OldName, Name );
+		Success = RenameAsset( Textures, Original, Name );
 		break;
 	case EAsset::Sound:
-		Success = RenameAsset( Sounds, OldName, Name );
+		Success = RenameAsset( Sounds, Original, Name );
 		break;
 	case EAsset::Sequence:
-		Success = RenameAsset( Sequences, OldName, Name );
+		Success = RenameAsset( Sequences, Original, Name );
 		break;
 	case EAsset::Generic:
-		Success = RenameAsset( Assets, OldName, Name );
+		Success = RenameAsset( Assets, Original, Name );
 		break;
 	default:
 		Log::Event( Log::Warning, "Unable to rename type.\n" );
@@ -1039,7 +1035,7 @@ void CAssets::Rename( EAsset::Type Type, const std::string& OldName, const std::
 
 	if( !Success )
 	{
-		Log::Event( Log::Warning, "Could not rename asset \"%s\"\n", OldName.c_str() );
+		Log::Event( Log::Warning, "Could not rename asset \"%s\"\n", Original.c_str() );
 	}
 }
 
@@ -1073,9 +1069,12 @@ EImageFormat CAssets::GetImageFormatFromString( const std::string& Format )
 void CAssets::ReloadShaders()
 {
 	Log::Event( "Reloading shaders.\n" );
-	for( auto Shader : Shaders )
+	for( auto* Shader : Shaders.GetAssets() )
 	{
-		Shader.second->Reload();
+		if( !Shader )
+			continue;
+
+		Shader->Reload();
 	}
 }
 

@@ -458,49 +458,48 @@ void ContentBrowserUI()
 		}
 	}
 
-	const auto& CustomAssets = Assets.GetAssets();
-	for( const auto& Pair : CustomAssets )
+	for( const auto& Pair : Assets.Assets.Get() )
 	{
 		if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 			continue;
 
-		CAsset* Asset = Pair.second;
-		if( Asset )
+		auto* Asset = Assets.Assets.Get( Pair.second );
+		if( !Asset )
+			continue;
+
+		auto ImageSize = ImVec2( 64, 64 );
+
+		auto* TextureID = reinterpret_cast<ImTextureID>( UIFileGeneric->GetHandle() );
+		const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
+		const ImVec4 Tint = ImVec4( 0.25f, 0.5f, 1.0f, 1.0f );
+
+		ImGui::PushID( Pair.first.c_str() );
+		if( ImGui::ImageButton(
+			TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
+			Background,
+			Tint ) )
 		{
-			auto ImageSize = ImVec2( 64, 64 );
-
-			auto* TextureID = reinterpret_cast<ImTextureID>( UIFileGeneric->GetHandle() );
-			const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
-			const ImVec4 Tint = ImVec4( 0.25f, 0.5f, 1.0f, 1.0f );
-
-			ImGui::PushID( Pair.first.c_str() );
-			if( ImGui::ImageButton(
-				TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ), 1,
-				Background,
-				Tint ) )
-			{
-				PreviewName = Pair.first;
-				PreviewTexture = UIFileGeneric;
-				PreviewMesh = nullptr;
-				ShowPreview = true;
-			}
-
-			if( ImGui::IsItemHovered() )
-			{
-				ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
-				ImGui::BeginTooltip();
-				ImGui::PopStyleVar();
-
-				ImGui::Text( "%s", Pair.first.c_str() );
-				ImGui::Text( "Type: %s", Asset->GetType().c_str() );
-
-				ImGui::EndTooltip();
-			}
-
-			ImGui::PopID();
-
-			ImGui::NextColumn();
+			PreviewName = Pair.first;
+			PreviewTexture = UIFileGeneric;
+			PreviewMesh = nullptr;
+			ShowPreview = true;
 		}
+
+		if( ImGui::IsItemHovered() )
+		{
+			ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
+			ImGui::BeginTooltip();
+			ImGui::PopStyleVar();
+
+			ImGui::Text( "%s", Pair.first.c_str() );
+			ImGui::Text( "Type: %s", Asset->GetType().c_str() );
+
+			ImGui::EndTooltip();
+		}
+
+		ImGui::PopID();
+
+		ImGui::NextColumn();
 	}
 
 	if( ShowSounds )
@@ -796,18 +795,22 @@ void AssetUI()
 			if( InclusiveFilter )
 			{
 				const auto& CustomAssets = Assets.GetAssets();
-				for( const auto& Pair : CustomAssets )
+				for( const auto& Pair : Assets.Assets.Get() )
 				{
 					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 						continue;
 
+					auto* Asset = Assets.Assets.Get( Pair.second );
+					if( !Asset )
+						continue;
+
 					if( ImGui::Selectable( ( Pair.first + "##Custom" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-
+						// 
 					}
 					ImGui::NextColumn();
 
-					ImGui::Text( Pair.second->GetType().c_str() ); ImGui::NextColumn();
+					ImGui::Text( Asset->GetType().c_str() ); ImGui::NextColumn();
 					ImGui::Separator();
 				}
 			}
@@ -840,15 +843,18 @@ void AssetUI()
 
 			if( ShowShaders )
 			{
-				const auto& Shaders = Assets.GetShaders();
-				for( const auto& Pair : Shaders )
+				for( const auto& Pair : Assets.Shaders.Get() )
 				{
 					if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
 						continue;
 
+					auto* Shader = Assets.Shaders.Get( Pair.second );
+					if( !Shader )
+						continue;
+
 					// ImGui::Text( Pair.first.c_str() ); ImGui::NextColumn();
 					std::string Label = Pair.first;
-					if( Pair.second->AutoReload() )
+					if( Shader->AutoReload() )
 					{
 						Label += "( Auto Reload )";
 					}
@@ -857,12 +863,12 @@ void AssetUI()
 
 					if( ImGui::Selectable( Label.c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						Pair.second->Reload();
+						Shader->Reload();
 					}
 
 					if( ImGui::IsItemClicked( 1 ) )
 					{
-						Pair.second->AutoReload( !Pair.second->AutoReload() );
+						Shader->AutoReload( !Shader->AutoReload() );
 					}
 
 					if( ImGui::IsItemHovered() )

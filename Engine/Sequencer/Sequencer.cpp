@@ -743,12 +743,11 @@ struct FEventRenderable : TrackEvent
 		if( ImGui::BeginCombo( "##ShaderAssets", Name.c_str() ) )
 		{
 			auto& Assets = CAssets::Get();
-			auto& Shaders = Assets.GetShaders();
-			for( auto& Pair : Shaders )
+			for( auto& Pair : Assets.Shaders.Get() )
 			{
 				if( ImGui::Selectable( Pair.first.c_str() ) )
 				{
-					Renderable.SetShader( Pair.second );
+					Renderable.SetShader( Assets.Shaders.Get( Pair.second ) );
 				}
 
 				ImGui::Separator();

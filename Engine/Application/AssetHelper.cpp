@@ -440,6 +440,27 @@ void DisplayDropdown( const std::unordered_map<std::string, T*>& Assets, AssetDr
 	}
 }
 
+template<typename T>
+void DisplayDropdown( const AssetPool<T>& Assets, AssetDropdownData& Data )
+{
+	for( auto& Pair : Assets.Get() )
+	{
+		if( !Data.Filter.PassFilter( Pair.first.c_str() ) )
+			continue;
+
+		ImGui::SetCursorPosX( 10.0f );
+
+		if( ImGui::Selectable( Pair.first.c_str(), false, ImGuiSelectableFlags_None,
+			ImVec2( ImGui::GetContentRegionAvail().x - 10.0f, 0.0f ) ) )
+		{
+			Data.Name = Pair.first;
+			Data.Asset = Assets.Get( Pair.second );
+		}
+
+		ImGui::Separator();
+	}
+}
+
 void DisplayDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 {
 	const auto& Assets = CAssets::Get();
@@ -449,7 +470,7 @@ void DisplayDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 		DisplayDropdown( Assets.GetMeshes(), Data );
 		break;
 	case EAsset::Shader:
-		DisplayDropdown( Assets.GetShaders(), Data );
+		DisplayDropdown( Assets.Shaders, Data );
 		break;
 	case EAsset::Texture:
 		DisplayDropdown( Assets.GetTextures(), Data );
@@ -461,7 +482,7 @@ void DisplayDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 		DisplayDropdown( Assets.GetSequences(), Data );
 		break;
 	case EAsset::Generic:
-		DisplayDropdown( Assets.GetAssets(), Data );
+		DisplayDropdown( Assets.Assets, Data );
 		break;
 	default:;
 	}
@@ -481,6 +502,20 @@ void AssignAsset( const std::unordered_map<std::string, T*>& Assets, AssetDropdo
 	}
 }
 
+template<typename T>
+void AssignAsset( const AssetPool<T>& Assets, AssetDropdownData& Data )
+{
+	// Check if the asset is assigned correctly.
+	if( !Data.Name.empty() && !Data.Asset )
+	{
+		const auto Asset = Assets.Find( Data.Name );
+		if( Asset != nullptr )
+		{
+			Data.Asset = Asset;
+		}
+	}
+}
+
 void AssignAsset( const EAsset::Type& Type, AssetDropdownData& Data )
 {
 	if( Data.Clear )
@@ -493,7 +528,7 @@ void AssignAsset( const EAsset::Type& Type, AssetDropdownData& Data )
 		AssignAsset( Assets.GetMeshes(), Data );
 		break;
 	case EAsset::Shader:
-		AssignAsset( Assets.GetShaders(), Data );
+		AssignAsset( Assets.Shaders, Data );
 		break;
 	case EAsset::Texture:
 		AssignAsset( Assets.GetTextures(), Data );
@@ -505,7 +540,7 @@ void AssignAsset( const EAsset::Type& Type, AssetDropdownData& Data )
 		AssignAsset( Assets.GetSequences(), Data );
 		break;
 	case EAsset::Generic:
-		AssignAsset( Assets.GetAssets(), Data );
+		AssignAsset( Assets.Assets, Data );
 		break;
 	default:;
 	}
@@ -532,8 +567,8 @@ void DisplayAssetDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 		}
 	}
 
-
-	if( ImGui::BeginCombo( "##AssetDropDown", Data.PreviewName.c_str() ) )
+	const auto DropDownName = "##AssetDropDown" + Data.Popup.Window.Title;
+	if( ImGui::BeginCombo( DropDownName.c_str(), Data.PreviewName.c_str() ) )
 	{
 		ImGui::Separator();
 		ImGui::Separator();

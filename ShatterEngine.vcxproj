@@ -326,6 +326,7 @@
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
     <ClInclude Include="Engine\Resource\Asset.h" />
+    <ClInclude Include="Engine\Resource\AssetPool.h" />
     <ClInclude Include="Engine\Resource\Assets.h" />
     <ClInclude Include="Engine\Sequencer\Events\EntityEvent.h" />
     <ClInclude Include="Engine\Sequencer\Events\ImageEvent.h" />

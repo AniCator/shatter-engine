@@ -2,11 +2,11 @@
 #pragma once
 
 #include <unordered_map>
-#include <ThirdParty/glm/glm.hpp>
 
 #include <Engine/Display/Rendering/TextureEnumerators.h>
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Profiling/Profiling.h>
+#include <Engine/Resource/AssetPool.h>
 #include <Engine/Utility/Primitive.h>
 #include <Engine/Utility/Structures/JSON.h>
 #include <Engine/Utility/Singleton.h>
@@ -124,17 +124,17 @@ public:
 	CSequence* FindSequence( const std::string& Name ) const;
 
 	// Allows you to change the name of an asset of the specified type.
-	void Rename( EAsset::Type Type, const std::string& OldName, const std::string& Name );
+	void Rename( EAsset::Type Type, const std::string& Original, const std::string& Name );
 
 	template<class T>
 	T* FindAsset( const std::string& Name ) const
 	{
-		return Cast<T>( Find<CAsset>( Name, Assets ) );
+		return Cast<T>( Assets.Find( Name ) );
 	}
 
 	CAsset* FindAsset( const std::string& Name ) const
 	{
-		return Find<CAsset>( Name, Assets );
+		return Assets.Find( Name );
 	}
 
 	static const std::string& GetReadableImageFormat( EImageFormat Format );
@@ -158,9 +158,9 @@ public:
 		return Meshes;
 	}
 
-	const std::unordered_map<std::string, CShader*>& GetShaders() const
+	const AssetHandleMap& GetShaders() const
 	{
-		return Shaders;
+		return Shaders.Get();
 	}
 
 	const std::unordered_map<std::string, CTexture*>& GetTextures() const
@@ -178,9 +178,9 @@ public:
 		return Sequences;
 	}
 
-	const std::unordered_map<std::string, CAsset*>& GetAssets() const
+	const AssetHandleMap& GetAssets() const
 	{
-		return Assets;
+		return Assets.Get();
 	}
 
 	void RegisterAssetType( const std::string& Name, const std::function<CAsset*( AssetParameters& )>& Loader )
@@ -198,15 +198,16 @@ public:
 		return false;
 	}
 
+	AssetPool<CShader> Shaders;
+
+	// Generic assets of any other type.
+	AssetPool<CAsset> Assets;
+
 private:
 	std::unordered_map<std::string, CMesh*> Meshes;
-	std::unordered_map<std::string, CShader*> Shaders;
 	std::unordered_map<std::string, CTexture*> Textures;
 	std::unordered_map<std::string, CSound*> Sounds;
 	std::unordered_map<std::string, CSequence*> Sequences;
-
-	// Generic assets of any other type.
-	std::unordered_map<std::string, CAsset*> Assets;
 
 	// Generic asset loaders.
 	std::unordered_map<std::string, std::function<CAsset*( AssetParameters& )>> AssetLoaders;

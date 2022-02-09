@@ -901,6 +901,9 @@
     <ClInclude Include="Engine\Audio\SoundQueue.h">
       <Filter>Source Files\Engine\Audio</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Resource\AssetPool.h">
+      <Filter>Source Files\Engine\Resource</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">
