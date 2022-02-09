@@ -20,36 +20,6 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
 
-void CAssets::Create( const std::string& Name, CMesh* NewMesh )
-{
-	Meshes.Create( Name, NewMesh );
-}
-
-void CAssets::Create( const std::string& Name, CShader* NewShader )
-{
-	Shaders.Create( Name, NewShader );
-}
-
-void CAssets::Create( const std::string& Name, CTexture* NewTexture )
-{
-	Textures.Create( Name, NewTexture );
-}
-
-void CAssets::Create( const std::string& Name, CSound* NewSound )
-{
-	Sounds.Create( Name, NewSound );
-}
-
-void CAssets::Create( const std::string& Name, CSequence* NewSequence )
-{
-	Sequences.Create( Name, NewSequence );
-}
-
-void CAssets::Create( const std::string& Name, CAsset* NewAsset )
-{
-	Assets.Create( Name, NewAsset );
-}
-
 void LoadASSIMPMesh( PrimitivePayload* Payload, AnimationSet& Set, CFile& File )
 {
 	if( File.Extension() == "ses" ) // Animation set
@@ -490,7 +460,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const FPrimitive& Primitive )
 
 	if( bSuccessfulCreation )
 	{
-		Create( NameString, NewMesh );
+		Meshes.Create( NameString, NewMesh );
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Mesh = 1;
@@ -527,7 +497,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* FileLocation,
 
 	if( bSuccessfulCreation )
 	{
-		Create( NameString, NewShader );
+		Shaders.Create( NameString, NewShader );
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Shader = 1;
@@ -564,7 +534,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 
 	if( bSuccessfulCreation )
 	{
-		Create( NameString, NewShader );
+		Shaders.Create( NameString, NewShader );
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Shader = 1;
@@ -601,7 +571,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 
 	if( bSuccessfulCreation )
 	{
-		Create( NameString, NewTexture );
+		Textures.Create( NameString, NewTexture );
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Texture = 1;
@@ -642,7 +612,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 
 	if( bSuccessfulCreation )
 	{
-		Create( NameString, NewTexture );
+		Textures.Create( NameString, NewTexture );
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Texture = 1;
@@ -677,7 +647,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
 
 	if( Texture )
 	{
-		Create( NameString, Texture );
+		Textures.Create( NameString, Texture );
 
 		// Only increment the texture counter if it doesn't exist yet.
 		if( !ExistingTexture )
@@ -722,7 +692,7 @@ CSound* CAssets::CreateNamedSound( const char* Name, const char* FileLocation )
 
 	if( bSuccessfulCreation )
 	{
-		Create( NameString, NewSound );
+		Sounds.Create( NameString, NewSound );
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Sound = 1;
@@ -756,7 +726,7 @@ CSound* CAssets::CreateNamedSound( const char* Name )
 	}
 
 	CSound* NewSound = new CSound( ESoundType::Memory );
-	Create( NameString, NewSound );
+	Sounds.Create( NameString, NewSound );
 
 	CProfiler& Profiler = CProfiler::Get();
 	int64_t Sound = 1;
@@ -789,7 +759,7 @@ CSound* CAssets::CreateNamedStream( const char* Name, const char* FileLocation )
 
 	if( bSuccessfulCreation )
 	{
-		Create( NameString, NewSound );
+		Sounds.Create( NameString, NewSound );
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Sound = 1;
@@ -822,7 +792,7 @@ CSound* CAssets::CreateNamedStream( const char* Name )
 	}
 
 	CSound* NewSound = new CSound( ESoundType::Stream );
-	Create( NameString, NewSound );
+	Sounds.Create( NameString, NewSound );
 
 	CProfiler& Profiler = CProfiler::Get();
 	int64_t Sound = 1;
@@ -855,7 +825,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocat
 
 	if( bSuccessfulCreation )
 	{
-		Create( NameString, NewSequence );
+		Sequences.Create( NameString, NewSequence );
 
 		CProfiler& Profiler = CProfiler::Get();
 		int64_t Sequence = 1;
@@ -887,7 +857,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 	}
 
 	CSequence* NewSequence = new CSequence();
-	Create( NameString, NewSequence );
+	Sequences.Create( NameString, NewSequence );
 
 	CProfiler& Profiler = CProfiler::Get();
 	int64_t Sequence = 1;

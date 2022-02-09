@@ -55,13 +55,6 @@ typedef const std::vector<std::string> AssetParameters;
 class CAssets : public Singleton<CAssets>
 {
 public:
-	void Create( const std::string& Name, CMesh* NewMesh );
-	void Create( const std::string& Name, CShader* NewShader );
-	void Create( const std::string& Name, CTexture* NewTexture );
-	void Create( const std::string& Name, CSound* NewSound );
-	void Create( const std::string& Name, CSequence* NewSequence );
-	void Create( const std::string& Name, CAsset* NewAsset );
-
 	void CreateNamedAssets( std::vector<PrimitivePayload>& Meshes, std::vector<FGenericAssetPayload>& GenericAssets );
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
@@ -97,7 +90,7 @@ public:
 		}
 
 		T* NewAsset = new T();
-		Create( NameString, NewAsset );
+		Assets.Create( NameString, NewAsset );
 
 		CProfiler& Profiler = CProfiler::Get();
 		const int64_t Asset = 1;
