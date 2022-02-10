@@ -134,7 +134,7 @@ public:
 	/// Runs the entity's world initialization procedure.
 	/// </summary>
 	///	<remarks>Should only be called by the level that owns it, unless you know what you're doing.</remarks>
-	virtual void Construct();
+	virtual void Construct() {};
 
 	/// <summary>
 	/// Runs the entity's underlying tick function.

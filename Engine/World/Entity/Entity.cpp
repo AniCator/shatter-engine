@@ -113,11 +113,6 @@ CEntity* CEntity::GetParent() const
 	return Parent;
 }
 
-void CEntity::Construct()
-{
-
-}
-
 void CEntity::Destroy()
 {
 	// Unregister any remaining tags.
