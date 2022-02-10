@@ -670,7 +670,7 @@ void AddOpaque( std::vector<CRenderable*>& Renderables, const std::vector<CRende
 			continue;
 
 		const auto* Shader = Renderable->GetShader();
-		if( Shader->GetBlendMode() == EBlendMode::Opaque )
+		if( Shader && Shader->GetBlendMode() == EBlendMode::Opaque )
 		{
 			Renderables.emplace_back( Renderable );
 		}
@@ -685,7 +685,7 @@ void AddTranslucent( std::vector<CRenderable*>& Renderables, const std::vector<C
 			continue;
 
 		const auto* Shader = Renderable->GetShader();
-		if( Shader->GetBlendMode() != EBlendMode::Opaque )
+		if( Shader && Shader->GetBlendMode() != EBlendMode::Opaque )
 		{
 			Renderables.emplace_back( Renderable );
 		}
