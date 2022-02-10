@@ -38,14 +38,14 @@ CMeshEntity::CMeshEntity()
 
 	Inputs["PlayAnimation"] = [&] ( CEntity* Origin )
 	{
-		SetAnimation( CurrentAnimation );
+		SetAnimation( AnimationInstance.CurrentAnimation );
 
 		return true;
 	};
 
 	Inputs["LoopAnimation"] = [&] ( CEntity* Origin )
 	{
-		SetAnimation( CurrentAnimation, true );
+		SetAnimation( AnimationInstance.CurrentAnimation, true );
 
 		return true;
 	};
@@ -122,9 +122,15 @@ void CMeshEntity::Tick()
 		RenderData.Color = Color;
 		RenderData.WorldBounds = WorldBounds;
 
+		// Set the light origin to the transform position if we're not overriding it.
+		if( !UseLightOrigin )
+		{
+			LightOrigin = RenderData.Transform.GetPosition();
+		}
+
 		if( RenderData.LightIndex.Index[0] == -1 || !Static || true )
 		{
-			RenderData.LightIndex = LightEntity::Fetch( RenderData.Transform.GetPosition() );
+			RenderData.LightIndex = LightEntity::Fetch( LightOrigin );
 		}
 
 		QueueRenderable( Renderable );
@@ -182,7 +188,7 @@ size_t GetNextKey( const size_t& CurrentIndex, const std::vector<Key>& Keys )
 	return CurrentIndex;
 }
 
-void TransformBones( const float& Time, const Skeleton& Skeleton, const std::vector<AnimationBlendEntry>& Animations, const Bone* Parent, const Bone* Bone, std::vector<::Bone>& Result )
+void TransformBones( const float& Time, const Skeleton& Skeleton, const std::vector<Animator::BlendEntry>& Animations, const Bone* Parent, const Bone* Bone, std::vector<::Bone>& Result )
 {
 	if( !Bone )
 	{
@@ -233,140 +239,44 @@ void TransformBones( const float& Time, const Skeleton& Skeleton, const std::vec
 	}
 };
 
-const std::string BoneLocationNamePrefix = "Bones[";
 void CMeshEntity::TickAnimation()
 {
-	if( !Mesh )
-	{
-		return;
-	}
-
-	const auto& Set = Mesh->GetAnimationSet();
-	const auto& Skeleton = Set.Skeleton;
-	if( Skeleton.Bones.empty() )
-	{
-		return;
-	}
-
-	if( Skeleton.RootIndex < 0 )
-	{
-		return;
-	}
-
-	Animation Animation;
-	if( !Set.Lookup( CurrentAnimation, Animation ) )
-	{
-		CurrentAnimation = "";
-		return;
-	}
-
-	const float DeltaTime = static_cast<float>( GameLayersInstance->GetDeltaTime() ) * PlayRate;
-	const auto NewTime = AnimationTime + DeltaTime;
-	if( !LoopAnimation && NewTime > Animation.Duration )
-	{
-		AnimationFinished = true;
-		return;
-	}
-
-	// Update the animation time before throttling
-	AnimationTime = fmod( NewTime, Animation.Duration );
-
-	if( AnimationTickRate == 0 && !ForceAnimationTick )
-		return; // Animation disabled.
-
 	if( !Renderable->GetRenderData().ShouldRender )
 		return; // Mesh is invisible.
 
-	// Perform a reduced amount of animation updates when the tick rate is staggered above 1 tick.
-	if( AnimationTickRate > 1 && !ForceAnimationTick )
-	{
-		// Stagger using the entity ID.
-		const auto TickDelta = ( GetWorld()->GetTicks() + GetEntityID().ID ) % AnimationTickRate;
-		if( TickDelta != 0 )
-		{
-			// Skip this tick.
-			return;
-		}
-	}
+	Profile( "Animation" );
+
+	AnimationInstance.TickOffset = GetEntityID().ID;
+
+	Animator::Update( AnimationInstance, GameLayersInstance->GetDeltaTime(), ForceAnimationTick );
+	Animator::Submit( AnimationInstance, Renderable );
 
 	if( ForceAnimationTick )
 	{
 		ForceAnimationTick = false;
 	}
 
-	Profile( "Animation" );
-
-	/*if( IsDebugEnabled() )
-	{
-		const auto TimeText = "Animation time: " + std::to_string( AnimationTime ) + "\nAnimation duration: " + std::to_string( Animation.Duration );
-		UI::AddText( Transform.GetPosition() + Vector3D( 0.5f, 0.0f, -0.1f ), TimeText.c_str() );
-	}*/
-
-	Bones.clear();
-	Bones.resize( Skeleton.Bones.size() );
-
-	// Reset the matrices.
-	for( auto& Bone : Bones )
-	{
-		Bone.BoneTransform = Matrix4D();
-		Bone.GlobalTransform = Matrix4D();
-	}
-
-	// Collect the root bones since it's possible for multiple bones to be disconnected.
-	std::vector<const Bone*> RootBones;
-	for( const auto& Bone : Skeleton.Bones )
-	{
-		if( Bone.ParentIndex < 0 )
-		{
-			RootBones.emplace_back( &Bone );
-		}
-	}
-
-	// Re-weigh the blend stack.
-	/*float TotalWeight = 0.0f;
-	float Sum = 0.0f;
-	for( const auto& Entry : BlendStack )
-	{
-		TotalWeight += Entry.Weight;
-		Sum += 1.0f;
-	}
-
-	const auto Ratio = Sum / TotalWeight;
-	for( auto& Entry : BlendStack )
-	{
-		Entry.Weight *= Ratio;
-	}*/
-
-	// Ensure the first weight is always present.
-	if( !BlendStack.empty() )
-	{
-		BlendStack.front().Weight = 1.0f;
-	}
-
-	// Transform all of the bones in the skeletal hierarchy.
-	for( const auto* Bone : RootBones )
-	{
-		TransformBones( AnimationTime, Skeleton, BlendStack, nullptr, Bone, Bones );
-	}
+	if( AnimationInstance.Bones.empty() )
+		return;
 
 	// Set global transform
 	// Bones[Skeleton.RootIndex].Matrix = WorldTransform.GetTransformationMatrix() * Skeleton.Bones[Skeleton.RootIndex].Matrix;
 
 	static int DebugIndex = 0;
 	DebugIndex++;
-	DebugIndex = DebugIndex % Bones.size();
+	DebugIndex = DebugIndex % AnimationInstance.Bones.size();
 
 	auto WorldTransform = GetTransform();
 	// WorldTransform = FTransform();
 	static auto NewBoundVertices = std::vector<Vector3D>();
 	NewBoundVertices.clear();
-	for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
+	for( size_t MatrixIndex = 0; MatrixIndex < AnimationInstance.Bones.size(); MatrixIndex++ )
 	{
-		auto Matrix = Bones[MatrixIndex].GlobalTransform;
+		auto Matrix = AnimationInstance.Bones[MatrixIndex].GlobalTransform;
 		auto ParentMatrix = Matrix;
-		if( Bones[MatrixIndex].ParentIndex > -1 )
+		if( AnimationInstance.Bones[MatrixIndex].ParentIndex > -1 )
 		{
-			ParentMatrix = Bones[Bones[MatrixIndex].ParentIndex].GlobalTransform;
+			ParentMatrix = AnimationInstance.Bones[AnimationInstance.Bones[MatrixIndex].ParentIndex].GlobalTransform;
 		}
 
 		// Matrix = Skeleton.GlobalMatrixInverse * Matrix;
@@ -376,7 +286,7 @@ void CMeshEntity::TickAnimation()
 		Vector3D PointTarget = WorldTransform.Transform( Current );
 		NewBoundVertices.emplace_back( PointTarget );
 		
-		if( IsDebugEnabled() )
+		if( IsDebugEnabled() && Mesh )
 		{
 			Vector3D RandomJitter = Vector3D( Math::Random(), Math::Random(), Math::Random() ) * 0.001f;
 			const auto Parent = ParentMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
@@ -384,13 +294,13 @@ void CMeshEntity::TickAnimation()
 
 			Vector3D PointCenter = PointSource + ( PointTarget - PointSource ) * 0.5f;
 
-			const auto Bind = Bones[MatrixIndex].BoneToModel.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+			const auto Bind = AnimationInstance.Bones[MatrixIndex].BoneToModel.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
 			Vector3D PointBind = WorldTransform.Transform( Bind );
 
-			auto ParentBindMatrix = Bones[MatrixIndex].BoneToModel;
-			if( Bones[MatrixIndex].ParentIndex > -1 )
+			auto ParentBindMatrix = AnimationInstance.Bones[MatrixIndex].BoneToModel;
+			if( AnimationInstance.Bones[MatrixIndex].ParentIndex > -1 )
 			{
-				ParentBindMatrix = Bones[Bones[MatrixIndex].ParentIndex].BoneToModel;
+				ParentBindMatrix = AnimationInstance.Bones[AnimationInstance.Bones[MatrixIndex].ParentIndex].BoneToModel;
 			}
 
 			const auto ParentBind = ParentBindMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
@@ -404,7 +314,7 @@ void CMeshEntity::TickAnimation()
 			UI::AddLine( PointSource, PointCenter, ::Color( 0, 0, 255 ) );
 			UI::AddLine( PointCenter, PointTarget, ::Color( 255, 0, 0 ) );
 			UI::AddCircle( PointTarget, 3.0f, ::Color( 255, 0, 0 ) );
-			UI::AddText( PointTarget, Skeleton.MatrixNames[MatrixIndex].c_str() );
+			UI::AddText( PointTarget, Mesh->GetSkeleton().MatrixNames[MatrixIndex].c_str() );
 
 			UI::AddCircle( PointParentBind, 3.0f, ::Color( 0, 255, 255 ) );
 			UI::AddLine( PointParentBind, PointBind, ::Color( 255, 255, 0 ) );
@@ -426,7 +336,8 @@ void CMeshEntity::TickAnimation()
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 	RenderData.WorldBounds = WorldBounds;
 
-	SubmitAnimation();
+	UseLightOrigin = true;
+	LightOrigin = RenderData.WorldBounds.Center();
 }
 
 void CMeshEntity::Frame()
@@ -625,15 +536,15 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "animation" && Property->Value.length() > 0 )
 		{
-			CurrentAnimation = Property->Value;
+			AnimationInstance.CurrentAnimation = Property->Value;
 		}
 		else if( Property->Key == "playrate" && Property->Value.length() > 0 )
 		{
-			PlayRate = ParseFloat( Property->Value.c_str() );
+			AnimationInstance.PlayRate = ParseFloat( Property->Value.c_str() );
 		}
 		else if( Property->Key == "loop" && Property->Value.length() > 0 )
 		{
-			Extract( Property->Value, LoopAnimation );
+			Extract( Property->Value, AnimationInstance.LoopAnimation );
 		}
 		else if( Property->Key == "maximum_render_distance" && Property->Value.length() > 0 )
 		{
@@ -786,31 +697,31 @@ const FTransform& CMeshEntity::GetTransform()
 
 void CMeshEntity::SetAnimation( const std::string& Name, const bool& Loop )
 {
-	const auto SameAnimation = CurrentAnimation == Name;
-	CurrentAnimation = Name;
-	LoopAnimation = Loop;
-	AnimationFinished = false;
-	AnimationTime = 0.0f;
+	const auto SameAnimation = AnimationInstance.CurrentAnimation == Name;
+	AnimationInstance.CurrentAnimation = Name;
+	AnimationInstance.LoopAnimation = Loop;
+	AnimationInstance.AnimationFinished = false;
+	AnimationInstance.Time = 0.0f;
 
 	ForceAnimationTick = true;
 
 	if( !Mesh && !SameAnimation )
 		return;
 
-	AnimationBlendEntry Entry;
+	Animator::BlendEntry Entry;
 	Entry.Weight = 1.0f;
 
 	const auto& Set = Mesh->GetAnimationSet();
-	if( !Set.Lookup( CurrentAnimation, Entry.Animation ) )
+	if( !Set.Lookup( AnimationInstance.CurrentAnimation, Entry.Animation ) )
 		return;
 
-	BlendStack.clear();
-	BlendStack.emplace_back( Entry );
+	AnimationInstance.Stack.clear();
+	AnimationInstance.Stack.emplace_back( Entry );
 }
 
 const std::string& CMeshEntity::GetAnimation() const
 {
-	return CurrentAnimation;
+	return AnimationInstance.CurrentAnimation;
 }
 
 bool CMeshEntity::HasAnimation( const std::string& Name ) const
@@ -828,30 +739,30 @@ bool CMeshEntity::HasAnimation( const std::string& Name ) const
 
 bool CMeshEntity::IsAnimationFinished() const
 {
-	if( LoopAnimation )
+	if( AnimationInstance.LoopAnimation )
 		return true;
 
-	return AnimationFinished;
+	return AnimationInstance.AnimationFinished;
 }
 
 float CMeshEntity::GetPlayRate() const
 {
-	return PlayRate;
+	return AnimationInstance.PlayRate;
 }
 
 void CMeshEntity::SetPlayRate( const float& PlayRate )
 {
-	this->PlayRate = PlayRate;
+	this->AnimationInstance.PlayRate = AnimationInstance.PlayRate;
 }
 
 float CMeshEntity::GetAnimationTime() const
 {
-	return AnimationTime;
+	return AnimationInstance.Time;
 }
 
 void CMeshEntity::SetAnimationTime( const float& Value )
 {
-	AnimationTime = Value;
+	AnimationInstance.Time = Value;
 }
 
 void CMeshEntity::SetPosition( const Vector3D& Position, const bool& Teleport )
@@ -887,23 +798,6 @@ void CMeshEntity::SetSize( const Vector3D& Size )
 	if( PhysicsBody )
 	{
 		PhysicsBody->PreviousTransform = Transform;
-	}
-}
-
-void CMeshEntity::SubmitAnimation()
-{
-	if( !Renderable )
-		return;
-
-	for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
-	{
-		const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
-		Renderable->SetUniform( BoneLocationName, Bones[MatrixIndex].BoneTransform );
-	}
-
-	if( !Bones.empty() )
-	{
-		Renderable->HasSkeleton = true;
 	}
 }
 
@@ -949,8 +843,10 @@ void CMeshEntity::ConstructRenderable()
 	if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
 	{
 		const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
-		SetAnimation( FirstAnimation, LoopAnimation );
+		SetAnimation( FirstAnimation, AnimationInstance.LoopAnimation );
 	}
+
+	AnimationInstance.Mesh = Mesh;
 }
 
 void CMeshEntity::ConstructPhysics()

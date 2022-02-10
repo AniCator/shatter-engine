@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Animation/Animator.h>
 #include <Engine/Physics/Body/Shared.h>
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math.h>
@@ -12,19 +13,6 @@ class CShader;
 class CTexture;
 class CRenderable;
 class CBody;
-
-struct AnimationBlendEntry
-{
-	AnimationBlendEntry() = default;
-	AnimationBlendEntry( const Animation& Anim, const float& Weight )
-	{
-		this->Animation = Anim;
-		this->Weight = Weight;
-	}
-
-	Animation Animation{};
-	float Weight = 1.0f;
-};
 
 class CMeshEntity : public CPointEntity
 {
@@ -79,7 +67,6 @@ public:
 	void SetOrientation( const Vector3D& Orientation );
 	void SetSize( const Vector3D& Size );
 
-public:
 	CMesh* Mesh;
 	CMesh* CollisionMesh;
 	CShader* Shader;
@@ -101,15 +88,16 @@ public:
 	// Set to true when the sequencer is making use of this entity.
 	bool UsedBySequence = false;
 
-	// Animation blending stack.
-	std::vector<AnimationBlendEntry> BlendStack;
-
 	// Distance from the camera at which the object should be culled, infinite when negative.
 	float MaximumRenderDistance = -1.0f;
 
-protected:
-	void SubmitAnimation();
+	// When true, the LightOrigin parameter is used instead of the transform origin for fetching lighting information.
+	bool UseLightOrigin = false;
 
+	// Location used for fetching light data when UseLightOrigin is true.
+	Vector3D LightOrigin = Vector3D::Zero;
+
+protected:
 	void ConstructRenderable();
 	void ConstructPhysics();
 
@@ -121,19 +109,7 @@ protected:
 	bool Stationary;
 	CBody* PhysicsBody;
 
-	// Name of the current animation.
-	std::string CurrentAnimation;
-	bool LoopAnimation = false;
-	bool AnimationFinished = true;
-
-	// Current bone transformations, updated by TickAnimation.
-	std::vector<Bone> Bones;
-
-	float AnimationTime = 0.0f;
-	float PlayRate = 1.0f;
-
-	// Determines how often animations should tick. (zero means, never)
-	uint32_t AnimationTickRate = 1;
+	Animator::Instance AnimationInstance;
 
 	// Ensures an animation tick will be performed on the next tick.
 	bool ForceAnimationTick = false;

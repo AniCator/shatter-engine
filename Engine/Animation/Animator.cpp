@@ -1,7 +1,117 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Animator.h"
 
+#include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Utility/Math.h>
+
+void Animator::Update( Instance& Data, const double& DeltaTime, const bool& ForceUpdate )
+{
+	if( !Data.Mesh )
+		return;
+
+	// Fetch the animation set and its associated skeletal information.
+	const auto& Set = Data.Mesh->GetAnimationSet();
+	const auto& Skeleton = Set.Skeleton;
+	if( Skeleton.Bones.empty() )
+	{
+		// Got no bones to pick.
+		return;
+	}
+
+	if( Skeleton.RootIndex < 0 )
+	{
+		// No root found.
+		return;
+	}
+
+	Animation Animation;
+	if( !Set.Lookup( Data.CurrentAnimation, Animation ) )
+	{
+		Data.CurrentAnimation = "";
+		return;
+	}
+
+	// Update the animation time.
+	const float AdjustedDeltaTime = static_cast<float>( DeltaTime ) * Data.PlayRate;
+	const auto NewTime = Data.Time + AdjustedDeltaTime;
+	if( !Data.LoopAnimation && NewTime > Animation.Duration )
+	{
+		Data.AnimationFinished = true;
+		return;
+	}
+
+	// Update the animation time before throttling
+	Data.Time = fmod( NewTime, Animation.Duration );
+
+	if( Data.TickRate == 0 && !ForceUpdate )
+		return; // Animation disabled.
+
+	// Increment the instance's tick.
+	Data.Ticks++;
+
+	// Perform a reduced amount of animation updates when the tick rate is staggered above 1 tick.
+	if( Data.TickRate > 1 && !ForceUpdate )
+	{
+		// Stagger using the entity ID.
+		const auto TickDelta = ( Data.Ticks + Data.TickOffset ) % Data.TickRate;
+		if( TickDelta != 0 )
+		{
+			// Skip this tick.
+			return;
+		}
+	}
+
+	// Clear the transformed bones vector.
+	Data.Bones.clear();
+	Data.Bones.resize( Skeleton.Bones.size() );
+
+	// Initialize the bone matrices.
+	for( auto& Bone : Data.Bones )
+	{
+		Bone.BoneTransform = Matrix4D();
+		Bone.GlobalTransform = Matrix4D();
+	}
+
+	// Collect the root bones since it's possible for multiple bones to be disconnected.
+	std::vector<const Bone*> RootBones;
+	for( const auto& Bone : Skeleton.Bones )
+	{
+		if( Bone.ParentIndex < 0 )
+		{
+			RootBones.emplace_back( &Bone );
+		}
+	}
+
+	// Ensure the first weight is always present in the final result.
+	if( !Data.Stack.empty() )
+	{
+		Data.Stack.front().Weight = 1.0f;
+	}
+
+	// Transform all of the bones in the skeletal hierarchy.
+	for( const auto* Bone : RootBones )
+	{
+		Traverse( Data, Skeleton, nullptr, Bone );
+	}
+}
+
+static const std::string BoneLocationNamePrefix = "Bones[";
+void Animator::Submit( const Instance& Data, CRenderable* Target )
+{
+	if( !Target )
+		return;
+
+	for( size_t MatrixIndex = 0; MatrixIndex < Data.Bones.size(); MatrixIndex++ )
+	{
+		const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
+		Target->SetUniform( BoneLocationName, Data.Bones[MatrixIndex].BoneTransform );
+	}
+
+	if( !Data.Bones.empty() )
+	{
+		Target->HasSkeleton = true;
+	}
+}
 
 Animator::Matrices Animator::GetMatrices( const Animation& Animation, const float& Time, const int32_t& BoneIndex )
 {
@@ -273,4 +383,55 @@ float Animator::GetRelativeTime( const Key& A, const Key& B, const float& Time )
 	}
 
 	return 0.0f;
+}
+
+void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* Parent, const Bone* Bone )
+{
+	if( !Bone )
+	{
+		return;
+	}
+
+	Animator::CompoundKey Blend;
+	for( auto& Array : Data.Stack )
+	{
+		const auto Key = Animator::Get( Array.Animation, fmod( Data.Time, Array.Animation.Duration ), Bone->Index );
+		Blend = Animator::Blend( Blend, Key, Array.Weight );
+	}
+
+	const auto Matrices = Animator::Get( Blend );
+
+	Data.Bones[Bone->Index] = *Bone;
+
+	// Local bone data
+	const auto& ModelToBone = Bone->ModelToBone;
+	const auto& BoneToModel = Bone->BoneToModel;
+	const auto& ModelMatrix = Bone->ModelMatrix;
+	const auto& InverseModelMatrix = Bone->InverseModelMatrix;
+
+	// Concatenate all the keyframe transformations.
+	const auto LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
+
+	Data.Bones[Bone->Index].LocalTransform = LocalTransform;
+
+	// Look up the parent matrix.
+	if( Parent )
+	{
+		Data.Bones[Bone->Index].GlobalTransform = Parent->GlobalTransform * LocalTransform;
+	}
+	else
+	{
+		// Set the global transform to just the local transform if no parent is found.
+		Data.Bones[Bone->Index].GlobalTransform = LocalTransform;
+	}
+
+	Data.Bones[Bone->Index].BoneTransform = Data.Bones[Bone->Index].GlobalTransform * ModelToBone;
+
+	for( const int& ChildIndex : Bone->Children )
+	{
+		if( ChildIndex > -1 && ChildIndex < Data.Bones.size() )
+		{
+			Traverse( Data, Skeleton, &Data.Bones[Bone->Index], &Skeleton.Bones[ChildIndex] );
+		}
+	}
 }

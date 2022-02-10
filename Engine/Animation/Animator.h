@@ -13,7 +13,53 @@ struct Animator
 {
 	typedef std::vector<Bone> TransformationResult;
 
-	void Submit( class CRenderable* Target );
+	struct BlendEntry
+	{
+		BlendEntry() = default;
+		BlendEntry( const Animation& Anim, const float& Weight )
+		{
+			this->Animation = Anim;
+			this->Weight = Weight;
+		}
+
+		Animation Animation{};
+		float Weight = 1.0f;
+	};
+
+	/// <summary>
+	/// Per instance, animation data.
+	/// </summary>
+	struct Instance
+	{
+		// Name of the current animation.
+		std::string CurrentAnimation;
+		bool LoopAnimation = false;
+		bool AnimationFinished = true;
+
+		// Current bone transformations.
+		std::vector<Bone> Bones;
+
+		float Time = 0.0f;
+		float PlayRate = 1.0f;
+
+		class CMesh* Mesh = nullptr;
+		std::vector<BlendEntry> Stack;
+
+		// Determines how often animations should tick. (zero means, never)
+		uint32_t TickRate = 1;
+
+		// The tick offset can be used to stagger animations ticks.
+		uint32_t TickOffset = 0;
+
+	protected:
+		uint32_t Ticks = 0;
+
+		// Give the Animator struct direct access to any instance data.
+		friend struct Animator;
+	};
+
+	static void Update( Instance& Data, const double& DeltaTime, const bool& ForceUpdate = false );
+	static void Submit( const Instance& Data, class CRenderable* Target );
 
 	struct CompoundKey
 	{
@@ -91,21 +137,11 @@ struct Animator
 
 	// Returns how much time has progressed between the keys. (0-1)
 	static float GetRelativeTime( const Key& A, const Key& B, const float& Time );
-
-	AnimationSet Set;
 protected:
-	void Transform( 
-		const float& Time, 
-		const Animation& Animation, 
+	static void Traverse(
+		Instance& Data,
+		const Skeleton& Skeleton,
 		const Bone* Parent, 
-		const Bone* Bone, 
-		TransformationResult& Result
-	);
-
-	void Transform(
-		const float& Time,
-		const Bone* Parent,
-		const Bone* Bone,
-		TransformationResult& Result
+		const Bone* Bone
 	);
 };
