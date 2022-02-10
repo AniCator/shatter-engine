@@ -35,12 +35,18 @@ namespace Node
 		std::unordered_set<Data*> Neighbors;
 	};
 
+	struct Route
+	{
+		std::vector<Data*> Nodes;
+	};
+
 	class Entity : public CEntity
 	{
 	public:
 		Entity() = default;
 
 		void Construct() override;
+		void Destroy() override;
 
 		void Load( const JSON::Vector& Objects ) override;
 		void Reload() override;
@@ -50,19 +56,19 @@ namespace Node
 		void Import( CData& Data ) override;
 		void Export( CData& Data ) override;
 
+		static Route Path( const Vector3D& Start, const Vector3D& End );
+
 	protected:
 		Data NodeData;
 	};
 
 	struct Network
 	{
+		void Add( Data* Node );
+		void Remove( Data* Node );
+
 		std::unordered_set<Data*> Nodes;
 		std::unordered_map<Data*, State> States;
-
-		struct Route
-		{
-			std::vector<Data*> Nodes;
-		};
 		
 		Route Path( const Vector3D& Start, const Vector3D& End );
 	};

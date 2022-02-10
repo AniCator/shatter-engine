@@ -9,9 +9,18 @@ using namespace Node;
 
 static CEntityFactory<Entity> Factory( "node" );
 
+static Network GlobalNetwork;
+
 void Entity::Construct()
 {
 	Tag( "node" );
+}
+
+void Entity::Destroy()
+{
+	GlobalNetwork.Remove( &NodeData );
+
+	CEntity::Destroy();
 }
 
 void Entity::Load( const JSON::Vector& Objects )
@@ -42,7 +51,7 @@ void Entity::Load( const JSON::Vector& Objects )
 
 void Entity::Reload()
 {
-	// 
+	GlobalNetwork.Add( &NodeData );
 }
 
 void Entity::Debug()
@@ -76,7 +85,37 @@ void Entity::Export( CData& Data )
 	Data << NodeData.IsBlocked;
 }
 
-Network::Route Network::Path( const Vector3D& Start, const Vector3D& End )
+Route Entity::Path( const Vector3D& Start, const Vector3D& End )
+{
+	return GlobalNetwork.Path( Start, End );
+}
+
+void Network::Add( Data* Node )
+{
+	Nodes.insert( Node );
+}
+
+void Network::Remove( Data* Node )
+{
+	auto Iterator = Nodes.find( Node );
+	if( Iterator == Nodes.end() )
+		return;
+
+	// Remove the node from the network.
+	Nodes.erase( Iterator );
+
+	// Remove the node from its neighbors.
+	for( auto* Neighbor : Node->Neighbors )
+	{
+		Iterator = Neighbor->Neighbors.find( Node );
+		if( Iterator == Neighbor->Neighbors.end() )
+			continue;
+
+		Neighbor->Neighbors.erase( Iterator );
+	}
+}
+
+Route Network::Path( const Vector3D& Start, const Vector3D& End )
 {
 	Route Route;
 
@@ -139,7 +178,7 @@ Network::Route Network::Path( const Vector3D& Start, const Vector3D& End )
 			auto& NeighborState = States[Neighbor];
 			if( !NeighborState.Visited && !Neighbor->IsBlocked )
 			{
-				Untested.push_back( Neighbor );
+				Untested.emplace_back( Neighbor );
 			}
 
 			const auto LocalDistance = CurrentState.Local + CurrentNode->Position.DistanceSquared( Neighbor->Position );
