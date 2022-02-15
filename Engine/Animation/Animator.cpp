@@ -4,6 +4,92 @@
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Utility/Math.h>
 
+void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop )
+{
+	const auto SameAnimation = CurrentAnimation == Name;
+	CurrentAnimation = Name;
+	LoopAnimation = Loop;
+	AnimationFinished = false;
+	Time = 0.0f;
+
+	// ForceAnimationTick = true;
+
+	if( !Mesh && !SameAnimation )
+		return;
+
+	BlendEntry Entry;
+	Entry.Weight = 1.0f;
+
+	const auto& Set = Mesh->GetAnimationSet();
+	if( !Set.Lookup( CurrentAnimation, Entry.Animation ) )
+		return;
+
+	Stack.clear();
+	Stack.emplace_back( Entry );
+}
+
+const std::string& Animator::Instance::GetAnimation() const
+{
+	return CurrentAnimation;
+}
+
+bool Animator::Instance::HasAnimation( const std::string& Name ) const
+{
+	if( !Mesh )
+		return false;
+
+	static auto Dummy = Animation();
+	const auto& Set = Mesh->GetAnimationSet();
+	if( Set.Lookup( Name, Dummy ) )
+		return true;
+
+	return false;
+}
+
+bool Animator::Instance::IsAnimationFinished() const
+{
+	if( LoopAnimation )
+		return true;
+
+	return AnimationFinished;
+}
+
+float Animator::Instance::GetPlayRate() const
+{
+	return PlayRate;
+}
+
+void Animator::Instance::SetPlayRate( const float& PlayRate )
+{
+	this->PlayRate = PlayRate;
+}
+
+float Animator::Instance::GetAnimationTime() const
+{
+	return Time;
+}
+
+void Animator::Instance::SetAnimationTime( const float& Value )
+{
+	Time = Value;
+}
+
+BoundingBox Animator::Instance::CalculateBounds( const FTransform& Transform ) const
+{
+	static auto NewBoundVertices = std::vector<Vector3D>();
+	NewBoundVertices.clear();
+
+	const auto TestVector = Vector3D( 0.0f, 0.2f, 0.0f ); // Vector has a small offset to push out the bounds a bit.
+	for( const auto& Bone : Bones )
+	{
+		const auto Current = Bone.GlobalTransform.Transform( TestVector );
+		Vector3D PointTarget = Transform.Transform( Current );
+		NewBoundVertices.emplace_back( PointTarget );
+	}
+
+	return Math::AABB( NewBoundVertices.data(), NewBoundVertices.size() );
+}
+
 void Animator::Update( Instance& Data, const double& DeltaTime, const bool& ForceUpdate )
 {
 	if( !Data.Mesh )
@@ -15,6 +101,12 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 	if( Skeleton.Bones.empty() )
 	{
 		// Got no bones to pick.
+		return;
+	}
+
+	if( Skeleton.Animations.empty() )
+	{
+		// This lad has no animations.
 		return;
 	}
 
@@ -176,7 +268,7 @@ Matrix4D Animator::GetScale( const Key& Key )
 	);
 }
 
-size_t Animator::GetNearestIndex( const float& Time, const float& Duration, const int32_t BoneIndex, const std::vector<Key>& Keys )
+size_t Animator::GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys )
 {
 	size_t Output = 0;
 	for( size_t KeyIndex = 0; KeyIndex < Keys.size(); KeyIndex++ )
@@ -194,13 +286,13 @@ size_t Animator::GetNearestIndex( const float& Time, const float& Duration, cons
 	return Output;
 }
 
-Key Animator::GetNearest(const float& Time, const float& Duration, const int32_t BoneIndex, const std::vector<Key>& Keys )
+Key Animator::GetNearest(const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys )
 {
 	const auto Index = GetNearestIndex( Time, Duration, BoneIndex, Keys );
 	return Keys[Index];
 }
 
-std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration, const int32_t BoneIndex, const std::vector<Key>& Keys )
+std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys )
 {
 	// Find the nearest index.
 	const auto Index = GetNearestIndex( Time, Duration, BoneIndex, Keys );
@@ -224,7 +316,7 @@ std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration,
 	return Pair;
 }
 
-std::pair<Animator::CompoundKey, Animator::CompoundKey> Animator::GetPair( const Animation& Animation, const float& Time, const int32_t BoneIndex )
+std::pair<Animator::CompoundKey, Animator::CompoundKey> Animator::GetPair( const Animation& Animation, const float& Time, const int32_t& BoneIndex )
 {
 	std::pair<CompoundKey, CompoundKey> Pair;
 
@@ -392,14 +484,14 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 		return;
 	}
 
-	Animator::CompoundKey Blend;
+	CompoundKey Blend;
 	for( auto& Array : Data.Stack )
 	{
-		const auto Key = Animator::Get( Array.Animation, fmod( Data.Time, Array.Animation.Duration ), Bone->Index );
+		const auto Key = Get( Array.Animation, fmod( Data.Time, Array.Animation.Duration ), Bone->Index );
 		Blend = Animator::Blend( Blend, Key, Array.Weight );
 	}
 
-	const auto Matrices = Animator::Get( Blend );
+	const auto Matrices = Get( Blend );
 
 	Data.Bones[Bone->Index] = *Bone;
 

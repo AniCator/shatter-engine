@@ -5,6 +5,7 @@
 #include <algorithm>
 #include <stack>
 
+#include <Engine/Animation/Animator.h>
 #include <Engine/Audio/Sound.h>
 #include <Engine/Application/ApplicationMenu.h>
 #include <Engine/Application/AssetHelper.h>
@@ -15,6 +16,7 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/DataString.h>
 #include <Engine/Utility/Gizmo.h>
+#include <Engine/World/Entity/LightEntity/LightEntity.h>
 #include <Engine/World/World.h>
 
 #include <Engine/Sequencer/Events/ImageEvent.h>
@@ -25,7 +27,7 @@
 #include <ThirdParty/imgui-1.70/imgui.h>
 
 #include <Engine/Input/InputMapGLFW.h>
-#include "Engine/Utility/Locator/InputLocator.h"
+#include <Engine/Utility/Locator/InputLocator.h>
 
 static bool TimelineCamera = true;
 static CCamera* ActiveTimelineCamera = nullptr;
@@ -158,7 +160,7 @@ struct FEventAudio : TrackEvent
 		ImGui::Text( "%s", Name.length() > 0 && Sound != nullptr ? Name.c_str() : "no sound selected" );
 		
 		ImGui::Separator();
-		int InputLength = (int) Length;
+		int InputLength = StaticCast<int>( Length );
 		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
 		{
 			Length = static_cast<Timecode>( InputLength );
@@ -406,7 +408,7 @@ struct FEventCamera : TrackEvent
 		ImGui::Text( "FOV: %.2f", CameraSetup.FieldOfView );
 
 		ImGui::Separator();
-		int InputLength = ( int) Length;
+		int InputLength = StaticCast<int>( Length );
 		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
 		{
 			Length = static_cast<Timecode>( InputLength );
@@ -668,22 +670,69 @@ private:
 
 struct FEventRenderable : TrackEvent
 {
-	virtual void Execute() override
+	void Evaluate( const Timecode& Marker ) override
 	{
+		StoredMarker = Marker;
+		TrackEvent::Evaluate( Marker );
+	}
+
+	void Execute() override
+	{
+		auto* Mesh = Renderable.GetMesh();
+		if( !Mesh )
+			return;
+
+		// Make sure the mesh is up to date.
+		Animation.Mesh = Mesh;
+
+		const auto IsAnimating = 
+			Animation.Mesh && 
+			!Animation.CurrentAnimation.empty() && 
+			!Animation.Mesh->GetSkeleton().Animations.empty()
+		;
+
+		if( IsAnimating )
+		{
+			// Calculate the animation time relative to the event.
+			const auto MarkerTime = StoredMarker - Start;
+			const auto AnimationTime = MarkerToTime( MarkerTime ) * PlayRate;
+
+			// Apply the event-relative animation time.
+			Animation.LoopAnimation = LoopAnimation;
+			Animation.Time = static_cast<float>( AnimationTime );
+			Animation.PlayRate = 0.0f;
+
+			Animator::Update( Animation, 0.0, true );
+			Animator::Submit( Animation, &Renderable );
+		}
+
+		auto& RenderData = Renderable.GetRenderData();
+		if( IsAnimating )
+		{
+			RenderData.WorldBounds = Animation.CalculateBounds( RenderData.Transform );
+		}
+		else
+		{
+			RenderData.WorldBounds = Math::AABB( Mesh->GetBounds(), RenderData.Transform );
+		}
+
+		const auto LightOrigin = RenderData.WorldBounds.Center();
+		RenderData.LightIndex = LightEntity::Fetch( LightOrigin );
+
 		CWindow::Get().GetRenderer().QueueRenderable( &Renderable );
 	}
 
-	virtual void Reset() override
+	void Reset() override
 	{
 		
 	}
 
-	virtual void Context() override
+	void Context() override
 	{
 		ImGui::Text( "Renderable" );
 
 		ImGui::Separator();
-		int InputLength = ( int) Length;
+		int InputLength = StaticCast<int>( Length );
 		if( ImGui::InputInt( "Length", &InputLength, Timebase / 4 ) )
 		{
 			Length = static_cast<Timecode>( InputLength );
@@ -691,95 +740,145 @@ struct FEventRenderable : TrackEvent
 
 		ImGui::Separator();
 
-		if( ImGui::BeginCombo( "##MeshAssets", Name.c_str() ) )
+		static AssetDropdownData MeshData;
+		MeshData.Name = MeshName;
+		DisplayAssetDropdown( EAsset::Mesh, MeshData );
+
+		CMesh* AssignedMesh = nullptr;
+		MeshData.Assign( MeshName, AssignedMesh );
+
+		if( AssignedMesh )
 		{
-			auto& Assets = CAssets::Get();
-			for( auto& Pair : Assets.Meshes.Get() )
-			{
-				if( ImGui::Selectable( Pair.first.c_str() ) )
-				{
-					Name = Pair.first;
-					Renderable.SetMesh( Assets.Meshes.Get( Pair.second ) );
-				}
-
-				ImGui::Separator();
-			}
-
-			ImGui::EndCombo();
+			Renderable.SetMesh( AssignedMesh );
+			Animation.Mesh = AssignedMesh;
 		}
 
-		if( ImGui::BeginCombo( "##ShaderAssets", Name.c_str() ) )
+		static AssetDropdownData ShaderData;
+		ShaderData.Name = ShaderName;
+		DisplayAssetDropdown( EAsset::Shader, ShaderData );
+
+		CShader* AssignedShader = nullptr;
+		ShaderData.Assign( ShaderName, AssignedShader );
+
+		if( AssignedShader )
 		{
-			auto& Assets = CAssets::Get();
-			for( auto& Pair : Assets.Shaders.Get() )
-			{
-				if( ImGui::Selectable( Pair.first.c_str() ) )
-				{
-					Renderable.SetShader( Assets.Shaders.Get( Pair.second ) );
-				}
-
-				ImGui::Separator();
-			}
-
-			ImGui::EndCombo();
+			Renderable.SetShader( AssignedShader );
 		}
 
-		if( ImGui::BeginCombo( "##TextureAssets", Name.c_str() ) )
+		static AssetDropdownData TextureData;
+		TextureData.Name = TextureName;
+		DisplayAssetDropdown( EAsset::Texture, TextureData );
+
+		CTexture* AssignedTexture = nullptr;
+		TextureData.Assign( TextureName, AssignedTexture );
+
+		if( AssignedTexture )
 		{
-			auto& Assets = CAssets::Get();
-			for( auto& Pair : Assets.Textures.Get() )
-			{
-				if( ImGui::Selectable( Pair.first.c_str() ) )
-				{
-					Renderable.SetTexture( Assets.Textures.Get( Pair.second ), ETextureSlot::Slot0 );
-				}
-
-				ImGui::Separator();
-			}
-
-			ImGui::EndCombo();
+			Renderable.SetTexture( AssignedTexture, ETextureSlot::Slot0 );
 		}
 
 		auto& RenderData = Renderable.GetRenderData();
 		auto& Transform = RenderData.Transform;
 		auto Position = Transform.GetPosition();
-		if( ImGui::InputFloat3( "##mp", &Position.X, "%.2f" ) ) //
+		if( ImGui::DragFloat3( "##mp", &Position.X, 0.1f ) ) //
 		{
 			Transform.SetPosition( Position );
 		}
 
 		auto Orientation = Transform.GetOrientation();
-		if( ImGui::InputFloat3( "##mo", &Orientation.X, "%.2f" ) )
+		if( ImGui::DragFloat3( "##mo", &Orientation.X ) )
 		{
 			Transform.SetOrientation( Orientation );
 		}
+
+		if( !Animation.Mesh )
+			return;
+
+		UI::AddAABB( Renderable.GetRenderData().WorldBounds.Minimum, Renderable.GetRenderData().WorldBounds.Maximum );
+
+		const auto& Set = Animation.Mesh->GetAnimationSet();
+		const auto& Skeleton = Set.Skeleton;
+		if( Skeleton.Bones.empty() )
+		{
+			// Got no bones to pick.
+			return;
+		}
+
+		if( Set.Skeleton.Animations.empty() )
+		{
+			ImGui::Text( "Renderable has no animations." );
+			return;
+		}
+
+		if( ImGui::BeginCombo( "##AnimationAssets", Animation.CurrentAnimation.c_str() ) )
+		{
+			for( const auto& Pair : Set.Skeleton.Animations )
+			{
+				if( ImGui::Selectable( Pair.first.c_str() ) )
+				{
+					Animation.SetAnimation( Pair.first, LoopAnimation );
+				}
+
+				ImGui::Separator();
+			}
+
+			ImGui::EndCombo();
+		}
+
+		ImGui::Checkbox( "Loop##LoopAnimation", &LoopAnimation );
+		ImGui::DragFloat( "Play Rate", &PlayRate, 0.01f );
 	}
 
-	virtual const char* GetName() override
+	const char* GetName() override
 	{
-		return Name.c_str();
+		return MeshName.c_str();
 	}
 
-	virtual const char* GetType() override
+	const char* GetType() override
 	{
 		return "Mesh";
 	}
 
-	std::string Name = std::string();
+	Timecode StoredMarker = 0;
 	CRenderable Renderable;
+	Animator::Instance Animation;
+	bool LoopAnimation = false;
+	float PlayRate = 1.0f;
+
+	std::string MeshName = std::string();
+	std::string ShaderName = std::string();
+	std::string TextureName = std::string();
 
 	virtual void Export( CData& Data ) override
 	{
 		TrackEvent::Export( Data );
 
-		DataString::Encode( Data, Name );
+		Serialize::Export( Data, "msh", MeshName );
+		Serialize::Export( Data, "shd", ShaderName );
+		Serialize::Export( Data, "tex", TextureName );
+		Serialize::Export( Data, "lpa", LoopAnimation );
+		Serialize::Export( Data, "prt", PlayRate );
+		Serialize::Export( Data, "anm", Animation.CurrentAnimation );
 	}
 
 	virtual void Import( CData& Data ) override
 	{
 		TrackEvent::Import( Data );
 
-		DataString::Decode( Data, Name );
+		Serialize::Import( Data, "msh", MeshName );
+		Serialize::Import( Data, "shd", ShaderName );
+		Serialize::Import( Data, "tex", TextureName );
+		Serialize::Import( Data, "lpa", LoopAnimation );
+		Serialize::Import( Data, "prt", PlayRate );
+		Serialize::Import( Data, "anm", Animation.CurrentAnimation );
+
+		const auto& Assets = CAssets::Get();
+		Renderable.SetMesh( Assets.Meshes.Find( MeshName ) );
+		Renderable.SetShader( Assets.Shaders.Find( ShaderName ) );
+		Renderable.SetTexture( Assets.Textures.Find( TextureName ), ETextureSlot::Slot0 );
+
+		Animation.Mesh = Renderable.GetMesh();
+		Animation.SetAnimation( Animation.CurrentAnimation, LoopAnimation );
 	}
 };
 

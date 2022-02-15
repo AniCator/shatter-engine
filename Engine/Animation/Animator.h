@@ -51,6 +51,20 @@ struct Animator
 		// The tick offset can be used to stagger animations ticks.
 		uint32_t TickOffset = 0;
 
+		void SetAnimation( const std::string& Name, const bool& Loop = false );
+		const std::string& GetAnimation() const;
+		bool HasAnimation( const std::string& Name ) const;
+
+		bool IsAnimationFinished() const;
+
+		float GetPlayRate() const;
+		void SetPlayRate( const float& PlayRate );
+
+		float GetAnimationTime() const;
+		void SetAnimationTime( const float& Value );
+
+		BoundingBox CalculateBounds( const struct FTransform& Transform ) const;
+
 	protected:
 		uint32_t Ticks = 0;
 
@@ -105,22 +119,22 @@ struct Animator
 	// Returns scaling matrix.
 	static Matrix4D GetScale( const Key& Key );
 
-	static size_t GetNearestIndex( const float& Time, const float& Duration, const int32_t BoneIndex, const std::vector<Key>& Keys );
+	static size_t GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys );
 
 	// Returns the key closest to the time.
-	static Key GetNearest( const float& Time, const float& Duration, const int32_t BoneIndex, const std::vector<Key>& Keys );
+	static Key GetNearest( const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys );
 
 	static std::pair<Key,Key> GetPair( 
 		const float& Time, 
 		const float& Duration,
-		const int32_t BoneIndex,
+		const int32_t& BoneIndex,
 		const std::vector<Key>& Keys
 	);
 
 	static std::pair<CompoundKey, CompoundKey> GetPair(
 		const Animation& Animation,
 		const float& Time,
-		const int32_t BoneIndex
+		const int32_t& BoneIndex
 	);
 
 	// Blend between two compound keys.

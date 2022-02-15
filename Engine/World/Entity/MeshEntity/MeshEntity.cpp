@@ -65,6 +65,7 @@ CMeshEntity::~CMeshEntity()
 void CMeshEntity::Spawn( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform )
 {
 	this->Mesh = Mesh;
+	AnimationInstance.Mesh = Mesh;
 	this->Shader = Shader;
 	Textures.clear();
 	Textures.emplace_back( Texture );
@@ -187,57 +188,6 @@ size_t GetNextKey( const size_t& CurrentIndex, const std::vector<Key>& Keys )
 
 	return CurrentIndex;
 }
-
-void TransformBones( const float& Time, const Skeleton& Skeleton, const std::vector<Animator::BlendEntry>& Animations, const Bone* Parent, const Bone* Bone, std::vector<::Bone>& Result )
-{
-	if( !Bone )
-	{
-		return;
-	}
-
-	Animator::CompoundKey Blend;
-	for( auto& Array : Animations )
-	{
-		const auto Key = Animator::Get( Array.Animation, fmod( Time, Array.Animation.Duration ), Bone->Index );
-		Blend = Animator::Blend( Blend, Key, Array.Weight );
-	}
-	
-	const auto Matrices = Animator::Get( Blend );
-
-	Result[Bone->Index] = *Bone;
-
-	// Local bone data
-	const auto& ModelToBone = Bone->ModelToBone;
-	const auto& BoneToModel = Bone->BoneToModel;
-	const auto& ModelMatrix = Bone->ModelMatrix;
-	const auto& InverseModelMatrix = Bone->InverseModelMatrix;
-	
-	// Concatenate all the keyframe transformations.
-	const auto LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
-	
-	Result[Bone->Index].LocalTransform = LocalTransform;
-
-	// Look up the parent matrix.
-	if( Parent )
-	{
-		Result[Bone->Index].GlobalTransform = Parent->GlobalTransform * LocalTransform;
-	}
-	else
-	{
-		// Set the global transform to just the local transform if no parent is found.
-		Result[Bone->Index].GlobalTransform = LocalTransform;
-	}
-
-	Result[Bone->Index].BoneTransform = Result[Bone->Index].GlobalTransform * ModelToBone;
-
-	for( const int& ChildIndex : Bone->Children )
-	{
-		if( ChildIndex > -1 && ChildIndex < Result.size() )
-		{
-			TransformBones( Time, Skeleton, Animations, &Result[Bone->Index], &Skeleton.Bones[ChildIndex], Result );
-		}
-	}
-};
 
 void CMeshEntity::TickAnimation()
 {
@@ -697,72 +647,43 @@ const FTransform& CMeshEntity::GetTransform()
 
 void CMeshEntity::SetAnimation( const std::string& Name, const bool& Loop )
 {
-	const auto SameAnimation = AnimationInstance.CurrentAnimation == Name;
-	AnimationInstance.CurrentAnimation = Name;
-	AnimationInstance.LoopAnimation = Loop;
-	AnimationInstance.AnimationFinished = false;
-	AnimationInstance.Time = 0.0f;
-
+	AnimationInstance.SetAnimation( Name, Loop );
 	ForceAnimationTick = true;
-
-	if( !Mesh && !SameAnimation )
-		return;
-
-	Animator::BlendEntry Entry;
-	Entry.Weight = 1.0f;
-
-	const auto& Set = Mesh->GetAnimationSet();
-	if( !Set.Lookup( AnimationInstance.CurrentAnimation, Entry.Animation ) )
-		return;
-
-	AnimationInstance.Stack.clear();
-	AnimationInstance.Stack.emplace_back( Entry );
 }
 
 const std::string& CMeshEntity::GetAnimation() const
 {
-	return AnimationInstance.CurrentAnimation;
+	return AnimationInstance.GetAnimation();
 }
 
 bool CMeshEntity::HasAnimation( const std::string& Name ) const
 {
-	if( !Mesh )
-		return false;
-
-	static auto Dummy = Animation();
-	const auto& Set = Mesh->GetAnimationSet();
-	if( Set.Lookup( Name, Dummy ) )
-		return true;
-
-	return false;
+	return AnimationInstance.HasAnimation( Name );
 }
 
 bool CMeshEntity::IsAnimationFinished() const
 {
-	if( AnimationInstance.LoopAnimation )
-		return true;
-
-	return AnimationInstance.AnimationFinished;
+	return AnimationInstance.IsAnimationFinished();
 }
 
 float CMeshEntity::GetPlayRate() const
 {
-	return AnimationInstance.PlayRate;
+	return AnimationInstance.GetPlayRate();
 }
 
 void CMeshEntity::SetPlayRate( const float& PlayRate )
 {
-	this->AnimationInstance.PlayRate = AnimationInstance.PlayRate;
+	AnimationInstance.SetPlayRate( PlayRate );
 }
 
 float CMeshEntity::GetAnimationTime() const
 {
-	return AnimationInstance.Time;
+	return AnimationInstance.GetAnimationTime();
 }
 
 void CMeshEntity::SetAnimationTime( const float& Value )
 {
-	AnimationInstance.Time = Value;
+	AnimationInstance.SetAnimationTime( Value );
 }
 
 void CMeshEntity::SetPosition( const Vector3D& Position, const bool& Teleport )
