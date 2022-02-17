@@ -546,6 +546,7 @@ void AssignAsset( const EAsset::Type& Type, AssetDropdownData& Data )
 	}
 }
 
+uint32_t AssetDropdownData::Instances = 0;
 void DisplayAssetDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 {
 	const auto CurrentName = Data.Name;
@@ -567,7 +568,7 @@ void DisplayAssetDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 		}
 	}
 
-	const auto DropDownName = "##AssetDropDown" + Data.Popup.Window.Title;
+	const auto DropDownName = "##AssetDropDown" + Data.Popup.Window.Title + std::to_string( Data.Identifier );
 	if( ImGui::BeginCombo( DropDownName.c_str(), Data.PreviewName.c_str() ) )
 	{
 		ImGui::Separator();

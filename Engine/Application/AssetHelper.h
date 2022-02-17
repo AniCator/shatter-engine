@@ -35,6 +35,11 @@ void DisplayAssetWindow( AssetNewPopup& Popup );
 
 struct AssetDropdownData
 {
+	AssetDropdownData()
+	{
+		Identifier = Instances++;
+	}
+
 	std::string Name;
 	void* Asset = nullptr;
 
@@ -70,6 +75,12 @@ struct AssetDropdownData
 			*this = AssetDropdownData(); // Clear the data.
 		}
 	}
+
+	// Unique identifier for this dropdown, useful for when you have multiple dropdowns in a window.
+	uint32_t Identifier;
+
+protected:
+	static uint32_t Instances;
 };
 
 // Searchable asset drop-down.
