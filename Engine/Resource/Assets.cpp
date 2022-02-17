@@ -161,6 +161,9 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 
 	for( auto& Payload : GenericAssets )
 	{
+		// Transform given name into lower case string
+		std::transform( Payload.Name.begin(), Payload.Name.end(), Payload.Name.begin(), ::tolower );
+
 		if( Payload.Type == EAsset::Mesh )
 		{
 			// Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
