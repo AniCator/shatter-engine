@@ -338,6 +338,7 @@
     <ClInclude Include="Engine\Utility\Definitions.h" />
     <ClInclude Include="Engine\Utility\File.h" />
     <ClInclude Include="Engine\Utility\Gizmo.h" />
+    <ClInclude Include="Engine\Utility\HandlePool.h" />
     <ClInclude Include="Engine\Utility\Iterate.h" />
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />

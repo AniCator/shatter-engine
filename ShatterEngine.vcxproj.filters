@@ -904,6 +904,9 @@
     <ClInclude Include="Engine\Resource\AssetPool.h">
       <Filter>Source Files\Engine\Resource</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Utility\HandlePool.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">
