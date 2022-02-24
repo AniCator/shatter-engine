@@ -19,7 +19,7 @@ class CBody : public Testable
 {
 public:
 	CBody() = default;
-	virtual ~CBody();
+	~CBody() override;
 
 	void Construct();
 	void Construct( class CPhysics* Physics );
