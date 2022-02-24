@@ -8,7 +8,7 @@
 #include <Engine/Audio/SoLoud/Bus.h>
 #include <Engine/Utility/Math/Vector.h>
 
-static const int32_t InvalidHandle = -1;
+constexpr int32_t InvalidHandle = -1;
 
 template<typename HandleType>
 HandleType EmptyHandle()
@@ -56,10 +56,11 @@ struct FStream
 	SoLoudHandle Stream = 0;
 	StreamHandle Buffer;
 	float FadeDuration = -1.0f;
-	float StartTime = -1.0f;
+	double StartTime = -1.0f;
 	bool FadeIn = false;
 	float Volume = 1.0f;
 	bool Playing = false;
+	double TimeSinceStart = 0.0;
 };
 
 namespace Attenuation
@@ -147,7 +148,7 @@ public:
 	static void Speak( const std::string& Sentence, const Spatial Information = Spatial() );
 
 	static SoundHandle Start( SoundBufferHandle Handle, const Spatial Information = Spatial() );
-	static StreamHandle Start( StreamHandle Handle, const Spatial Information = Spatial() );
+	static StreamHandle Start( StreamHandle BufferHandle, const Spatial Information = Spatial() );
 
 	static void Stop( SoundHandle Handle );
 	static void Stop( StreamHandle Handle, const float FadeOut = -1.0f );
@@ -168,8 +169,10 @@ public:
 	static double Length( SoundHandle Handle );
 	static double Length( StreamHandle Handle );
 
-	static void Offset( SoundHandle Handle, const float Offset );
-	static void Offset( StreamHandle Handle, const float Offset );
+	static void Offset( SoundHandle Handle, const double& Offset );
+	static void Offset( StreamHandle Handle, const double& Offset );
+
+	static void Synchronize( const StreamHandle& Source, const StreamHandle& Target );
 
 	static bool Playing( SoundHandle Handle );
 	static bool Playing( StreamHandle Handle );
@@ -204,6 +207,9 @@ public:
 
 	static void Initialize();
 	static void Shutdown();
+
+	static SoLoud::Wav* GetSound( const SoundHandle& Handle );
+	static SoLoud::WavStream* GetStream( const StreamHandle& Handle );
 
 private:
 	static std::deque<FSound> Sounds;

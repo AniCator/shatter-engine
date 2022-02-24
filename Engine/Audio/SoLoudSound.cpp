@@ -24,6 +24,8 @@
 #undef GetCurrentTime
 #include <Game/Game.h>
 
+#include "Sound.h"
+
 std::deque<FSound> SoLoudSound::Sounds;
 std::vector<SoLoud::Wav*> SoLoudSound::SoundBuffers;
 std::vector<SoLoud::WavStream*> SoLoudSound::StreamBuffers;
@@ -309,24 +311,24 @@ SoundHandle SoLoudSound::Start( SoundBufferHandle Handle, const Spatial Informat
 	return EmptyHandle<SoundHandle>();
 }
 
-StreamHandle SoLoudSound::Start( StreamHandle Handle, const Spatial Information )
+StreamHandle SoLoudSound::Start( StreamHandle BufferHandle, const Spatial Information )
 {
 	if( GlobalVolume == 0.0f )
 		return EmptyHandle<StreamHandle>();
 
-	if( Handle.Handle == InvalidHandle )
+	if( BufferHandle.Handle == InvalidHandle )
 		return EmptyHandle<StreamHandle>();
 
-	if( Handle.Handle < StreamBuffers.size() )
+	if( BufferHandle.Handle < StreamBuffers.size() )
 	{
-		auto& AudioSource = *StreamBuffers[Handle.Handle];
+		auto& AudioSource = *StreamBuffers[BufferHandle.Handle];
 		
 		FStream NewStream;
 		NewStream.Playing = true;
 		NewStream.FadeDuration = Information.FadeIn;
 		NewStream.FadeIn = Information.FadeIn > 0.0f;
-		NewStream.StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
-		NewStream.Buffer = Handle;
+		NewStream.StartTime = GameLayersInstance->GetRealTime();
+		NewStream.Buffer = BufferHandle;
 
 		NewStream.Stream = PlaySound( AudioSource, Information );
 
@@ -340,7 +342,8 @@ StreamHandle SoLoudSound::Start( StreamHandle Handle, const Spatial Information 
 
 		if( NewStream.FadeIn )
 		{
-			Fade( Handle, Information.Volume, Information.FadeIn );
+			Engine.setVolume( NewStream.Stream, 0.0f );
+			Engine.fadeVolume( NewStream.Stream, Information.Volume * 0.01f, Information.FadeIn );
 		}
 		else
 		{
@@ -387,7 +390,7 @@ void SoLoudSound::Stop( StreamHandle Handle, const float FadeOut )
 
 			Streams[Handle.Handle].FadeDuration = FadeOut;
 			Streams[Handle.Handle].FadeIn = false;
-			Streams[Handle.Handle].StartTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
+			Streams[Handle.Handle].StartTime = GameLayersInstance->GetRealTime();
 
 			Fade( Handle, 0.0f, FadeOut );
 
@@ -455,7 +458,7 @@ double SoLoudSound::Time( SoundHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
-		return Engine.getStreamTime( Sounds[Handle.Handle].Voice );
+		return Engine.getStreamPosition( Sounds[Handle.Handle].Voice );
 	}
 	
 	return 0.0;
@@ -465,7 +468,8 @@ double SoLoudSound::Time( StreamHandle Handle )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
-		return Engine.getStreamTime( Streams[Handle.Handle].Stream );
+		const auto& Stream = Streams[Handle.Handle];
+		return Engine.getStreamPosition( Stream.Stream );;
 	}
 	
 	return 0.0;
@@ -491,7 +495,7 @@ double SoLoudSound::Length( StreamHandle Handle )
 	return -1.0;
 }
 
-void SoLoudSound::Offset( SoundHandle Handle, const float Offset )
+void SoLoudSound::Offset( SoundHandle Handle, const double& Offset )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
@@ -499,11 +503,22 @@ void SoLoudSound::Offset( SoundHandle Handle, const float Offset )
 	}
 }
 
-void SoLoudSound::Offset( StreamHandle Handle, const float Offset )
+void SoLoudSound::Offset( StreamHandle Handle, const double& Offset )
 {
 	if( Handle.Handle > InvalidHandle )
 	{
 		Engine.seek( Streams[Handle.Handle].Stream, Offset );
+	}
+}
+
+void SoLoudSound::Synchronize(const StreamHandle& Source, const StreamHandle& Target )
+{
+	if( Source.Handle > InvalidHandle && Target.Handle > InvalidHandle )
+	{
+		const auto& SourceStream = Streams[Source.Handle];
+		auto& TargetStream = Streams[Target.Handle];
+
+		Engine.sync( SourceStream.Stream, TargetStream.Stream );
 	}
 }
 
@@ -840,31 +855,62 @@ void SoLoudSound::Shutdown()
 	Engine.deinit();
 }
 
-SoundQueue::SoundQueue()
+SoLoud::Wav* SoLoudSound::GetSound( const SoundHandle& Handle )
 {
-	Instance = new SoLoud::Queue();
+	if( Handle.Handle == InvalidHandle )
+		return nullptr;
+
+	return SoundBuffers[Handle.Handle];
 }
 
-SoundQueue::~SoundQueue()
+SoLoud::WavStream* SoLoudSound::GetStream( const StreamHandle& Handle )
+{
+	if( Handle.Handle == InvalidHandle )
+		return nullptr;
+
+	return StreamBuffers[Handle.Handle];
+}
+
+void SoundQueue::Construct()
+{
+	Instance = new SoLoud::Queue();
+	Mixer[Bus::Music].play( *Instance );
+}
+
+void SoundQueue::Destroy()
 {
 	delete Instance;
 }
 
-void SoundQueue::Add( const std::string& ResourcePath )
+// TODO: This doesn't seem to work. No sound is produced.
+void SoundQueue::Add( const CSound* Sound )
 {
-	SoLoud::WavStream Stream;
-	if( Stream.load( ResourcePath.c_str() ) != 0 )
-		return; // Failed to load.
+	if( !Sound )
+		return;
 
-	Instance->play( Stream );
+	const auto& Handles = Sound->GetStreamBufferHandles();
+	if( Handles.empty() )
+		return;
+
+	if( !Instance )
+		Construct();
+
+	Instance->play( *SoLoudSound::GetStream( Handles[0] ) );
+	Instance->setVolume( 10.0f );
 }
 
 uint32_t SoundQueue::Count() const
 {
+	if( !Instance )
+		return 0;
+
 	return Instance->getQueueCount();
 }
 
 bool SoundQueue::Playing() const
 {
+	if( !Instance )
+		return false;
+
 	return Instance->getQueueCount() > 0;
 }
