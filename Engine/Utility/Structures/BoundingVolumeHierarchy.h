@@ -21,6 +21,9 @@ public:
 	class Node : public Testable
 	{
 	public:
+		Node() = default;
+		~Node() override = default;
+
 		void Build( const RawObjectList& Source, const size_t& Start, const size_t& End );
 		void Destroy();
 

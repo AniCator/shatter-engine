@@ -78,18 +78,23 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 
 void BoundingVolumeHierarchy::Node::Destroy()
 {
+	// BUG: For some unknown reason the nodes can be non-RTTI objects.
+	return;
+
 	auto* LeftNode = dynamic_cast<Node*>( Left );
 	if( LeftNode )
 	{
 		LeftNode->Destroy();
-		delete Left;
+		delete LeftNode;
+		Left = nullptr;
 	}
 
 	auto* RightNode = dynamic_cast<Node*>( Right );
 	if( RightNode )
 	{
 		RightNode->Destroy();
-		delete Right;
+		delete RightNode;
+		Right = nullptr;
 	}
 }
 
