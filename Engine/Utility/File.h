@@ -90,6 +90,8 @@ float ParseFloat( const char* p );
 
 void Extract( const std::string& String, float& Out );
 void Extract( const char* Start, float& Out );
+void Extract( const std::string& String, double& Out );
+void Extract( const char* Start, double& Out );
 void Extract( const std::string& String, bool& Out );
 void Extract( const char* Start, int32_t& Out );
 void Extract( const std::string& String, int32_t& Out );

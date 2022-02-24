@@ -358,6 +358,11 @@ void Extract( const std::string& String, float& Out )
 	Extract( String.c_str(), Out );
 }
 
+void Extract( const std::string& String, double& Out )
+{
+	Extract( String.c_str(), Out );
+}
+
 void Extract( const std::string& String, int32_t& Out )
 {
 	Extract( String.c_str(), Out );
@@ -391,6 +396,11 @@ void Extract( const char* Start, float& Out )
 	{
 		Out = TokenDistance[0];
 	}
+}
+
+void Extract( const char* Start, double& Out )
+{
+	Out = ParseDouble( Start );
 }
 
 void Extract( const std::string& String, bool& Out )
