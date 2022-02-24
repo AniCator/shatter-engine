@@ -44,18 +44,18 @@ public:
 
 	void Clear( const bool& Unload = false );
 
-	int32_t Start( const Spatial Information = Spatial() );
-	void Stop( const float FadeOut = -1.0f );
-	void Loop( const bool Loop );
-	void Rate( const float Rate );
-	float Time() const;
-	float Length() const;
-	void Offset( const float Offset );
+	int32_t Start( const Spatial& Information = Spatial() );
+	void Stop( const float& FadeOut = -1.0f );
+	void Loop( const bool& Loop );
+	void Rate( const float& Rate );
+	double Time() const;
+	double Length() const;
+	void Offset( const double& Offset );
 	bool Playing();
-	void Volume( const float Volume );
-	void Fade( const float Volume, const float Time );
+	void Volume( const float& Volume );
+	void Fade( const float& Volume, const float& Time );
 
-	void SetPlayMode( ESoundPlayMode::Type NewPlayMode );
+	void SetPlayMode( const ESoundPlayMode::Type& NewPlayMode );
 
 	void Update( const int32_t& Handle, const Vector3D& Position, const Vector3D& Velocity );
 

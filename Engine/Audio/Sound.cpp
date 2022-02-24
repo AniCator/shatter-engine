@@ -8,14 +8,12 @@
 SoundInstance::SoundInstance( CSound* Sound )
 {
 	Asset = Sound;
-
-	if( !Asset )
-		return;
 }
 
 SoundInstance::~SoundInstance()
 {
-	Stop();
+	if( AutoStop )
+		Stop();
 }
 
 void SoundInstance::Start( const Spatial& Information )
@@ -23,7 +21,8 @@ void SoundInstance::Start( const Spatial& Information )
 	if( !Asset )
 		return;
 
-	Stop();
+	if( AutoStop )
+		Stop();
 
 	Handle = Asset->Start( Information );
 	SoundHandle.Handle = Handle;
@@ -75,10 +74,10 @@ void SoundInstance::Rate( const float& Rate ) const
 	}
 }
 
-float SoundInstance::Time() const
+double SoundInstance::Time() const
 {
 	if( !Asset )
-		return 0.0f;
+		return 0.0;
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
@@ -88,10 +87,10 @@ float SoundInstance::Time() const
 	return SoLoudSound::Time( StreamHandle );
 }
 
-float SoundInstance::Length() const
+double SoundInstance::Length() const
 {
 	if( !Asset )
-		return 0.0f;
+		return 0.0;
 
 	if( Asset->GetSoundType() == ESoundType::Memory )
 	{
@@ -101,7 +100,7 @@ float SoundInstance::Length() const
 	return SoLoudSound::Length( StreamHandle );
 }
 
-void SoundInstance::Offset( const float& Offset ) const
+void SoundInstance::Offset( const double& Offset ) const
 {
 	if( !Asset )
 		return;
@@ -172,6 +171,29 @@ void SoundInstance::Update( const Vector3D& Position, const Vector3D& Velocity )
 	{
 		SoLoudSound::Update( StreamHandle, Position, Velocity );
 	}
+}
+
+void SoundInstance::Set( CSound* Sound )
+{
+	if( !Sound )
+		return;
+
+	if( AutoStop )
+		Stop();
+
+	Asset = Sound;
+}
+
+void SoundInstance::Synchronize( const SoundInstance& Source ) const
+{
+	if( !Asset || Handle < 0 || !Source.Asset || Source.Handle < 0 )
+		return;
+
+	// Only supports streams.
+	if( Asset->GetSoundType() != ESoundType::Stream || Source.Asset->GetSoundType() != ESoundType::Stream )
+		return;
+
+	SoLoudSound::Synchronize( Source.StreamHandle, StreamHandle );
 }
 
 CSound::CSound( ESoundType::Type TypeIn )
@@ -266,7 +288,7 @@ void CSound::Clear( const bool& Unload )
 	}
 }
 
-int32_t CSound::Start( const Spatial Information )
+int32_t CSound::Start( const Spatial& Information )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -291,7 +313,7 @@ int32_t CSound::Start( const Spatial Information )
 	return -1;
 }
 
-void CSound::Stop( const float FadeOut )
+void CSound::Stop( const float& FadeOut )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -309,7 +331,7 @@ void CSound::Stop( const float FadeOut )
 	}
 }
 
-void CSound::Loop( const bool Loop )
+void CSound::Loop( const bool& Loop )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -327,7 +349,7 @@ void CSound::Loop( const bool Loop )
 	}
 }
 
-void CSound::Rate( const float Rate )
+void CSound::Rate( const float& Rate )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -345,7 +367,7 @@ void CSound::Rate( const float Rate )
 	}
 }
 
-float CSound::Time() const
+double CSound::Time() const
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -362,10 +384,10 @@ float CSound::Time() const
 		}
 	}
 
-	return 0.0f;
+	return 0.0;
 }
 
-float CSound::Length() const
+double CSound::Length() const
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -382,10 +404,10 @@ float CSound::Length() const
 		}
 	}
 	
-	return -1.0f;
+	return -1.0;
 }
 
-void CSound::Offset( const float Offset )
+void CSound::Offset( const double& Offset )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -433,7 +455,7 @@ bool CSound::Playing()
 	return IsPlaying;
 }
 
-void CSound::Volume( const float Volume )
+void CSound::Volume( const float& Volume )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -451,7 +473,7 @@ void CSound::Volume( const float Volume )
 	}
 }
 
-void CSound::Fade( const float Volume, const float Time )
+void CSound::Fade( const float& Volume, const float& Time )
 {
 	if( SoundType == ESoundType::Memory )
 	{
@@ -469,7 +491,7 @@ void CSound::Fade( const float Volume, const float Time )
 	}
 }
 
-void CSound::SetPlayMode( ESoundPlayMode::Type NewPlayMode )
+void CSound::SetPlayMode( const ESoundPlayMode::Type& NewPlayMode )
 {
 	PlayMode = NewPlayMode;
 }
