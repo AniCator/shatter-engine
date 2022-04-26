@@ -83,6 +83,8 @@ private:
 	std::map<std::string, std::string> DebugMessages;
 
 	std::map<FName, size_t> MemoryCounters;
+	bool FirstMemoryEntry = true;
+	size_t MemoryStartBytes = 0;
 
 #ifdef ProfileBuild
 	bool Enabled = true;
@@ -100,6 +102,8 @@ public:
 	TimerScope( const FName& ScopeNameIn, bool TextOnly = true );
 	TimerScope( const FName& ScopeNameIn, const uint64_t& Delta );
 	~TimerScope();
+
+	static void Submit( const FName& ScopeNameIn, const std::chrono::steady_clock::time_point& StartTime, const uint64_t& Delta );
 
 private:
 	FName ScopeName = FName::Invalid;

@@ -51,7 +51,6 @@ uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable )
 	if( !Renderable )
 		return 0;
 
-	Profile( PassName.c_str() );
 	Begin();
 
 	Draw( Renderable );
@@ -66,7 +65,6 @@ uint32_t CRenderPass::RenderRenderable( CRenderable* Renderable, std::unordered_
 	if( !Renderable )
 		return 0;
 
-	Profile( PassName.c_str() );
 	Begin();
 
 	Setup( Renderable, Uniforms );

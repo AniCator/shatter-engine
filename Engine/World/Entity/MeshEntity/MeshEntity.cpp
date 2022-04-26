@@ -194,7 +194,7 @@ void CMeshEntity::TickAnimation()
 	if( !Renderable->GetRenderData().ShouldRender )
 		return; // Mesh is invisible.
 
-	Profile( "Animation" );
+	// Profile( "Animation" );
 
 	AnimationInstance.TickOffset = GetEntityID().ID;
 

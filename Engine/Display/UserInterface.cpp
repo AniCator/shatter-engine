@@ -124,10 +124,7 @@ namespace UI
 			}
 
 			this->Text = new char[Length + 1];
-			for( size_t Index = 0; Index < Length; Index++ )
-			{
-				Text[Index] = Start[Index];
-			}
+			memcpy( Text, Start, Length + 1 );
 
 			this->Color = Color;
 			this->Offset = Offset;
@@ -135,7 +132,7 @@ namespace UI
 
 		Vector3D Position;
 		Vector2D Offset;
-		char* Text;
+		char* Text = nullptr;
 		size_t Length;
 		Color Color;
 	};
@@ -158,17 +155,14 @@ namespace UI
 			}
 
 			this->Text = new char[Length + 1];
-			for( size_t Index = 0; Index < Length; Index++ )
-			{
-				Text[Index] = Start[Index];
-			}
+			memcpy( Text, Start, Length + 1 );
 
 			this->Color = Color;
 			this->Size = Size;
 		}
 
 		Vector2D Position;
-		char* Text;
+		char* Text = nullptr;
 		size_t Length;
 		Color Color;
 		float Size;
@@ -671,7 +665,11 @@ namespace UI
 			const auto EndTime = Line.StartTime + Line.Duration;
 			if( CurrentTime > EndTime )
 			{
-				LineIterator = Lines.erase( LineIterator ); // Note: It's possible that we sometimes may get stuck here when a lot of lines are drawn.
+				// Note: It's possible that we sometimes may get stuck here when a lot of lines are drawn.
+				const auto Offset = LineIterator - Lines.begin();
+				std::swap( *LineIterator, Lines.back() );
+				Lines.pop_back();
+				LineIterator = Lines.begin() + Offset;
 			}
 			else
 			{
@@ -682,7 +680,17 @@ namespace UI
 		Circles.clear();
 		CirclesScreen.clear();
 		Images.clear();
+
+		for( const auto& Text : Texts )
+		{
+			delete[] Text.Text;
+		}
 		Texts.clear();
+
+		for( const auto& Text : TextsScreen )
+		{
+			delete[] Text.Text;
+		}
 		TextsScreen.clear();
 
 		CConfiguration& Configuration = CConfiguration::Get();

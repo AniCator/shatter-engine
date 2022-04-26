@@ -19,7 +19,7 @@ using VerifyEnum = std::enable_if_t<std::is_enum<T>::value>;
 namespace Event
 {
 	using PayloadType = std::unordered_map<std::string, Property>;
-	using PayloadData = const std::unordered_map<std::string, Property>&;
+	using PayloadData = const PayloadType&;
 	struct Message
 	{
 		EventType ID = NoneEventType;

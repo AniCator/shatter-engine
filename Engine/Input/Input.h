@@ -6,10 +6,10 @@
 #include <vector>
 #include <map>
 
-static const constexpr EKeyType MaximumKeyboardInputs = static_cast<EKeyType>( EKey::Maximum );
-static const constexpr int MaximumJoysticks = 16;
-static const constexpr EMouseType MaximumMouseButtons = static_cast<EMouseType>( EMouse::Maximum );
-static const constexpr EGamepadType MaximumGamepadButtons = static_cast<EGamepadType>( EGamepad::Maximum );
+static constexpr EKeyType MaximumKeyboardInputs = static_cast<EKeyType>( EKey::Maximum );
+static constexpr int MaximumJoysticks = 16;
+static constexpr EMouseType MaximumMouseButtons = static_cast<EMouseType>( EMouse::Maximum );
+static constexpr EGamepadType MaximumGamepadButtons = static_cast<EGamepadType>( EGamepad::Maximum );
 
 struct FKeyInput
 {

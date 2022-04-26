@@ -46,12 +46,12 @@ bool CPlaneBody::Collision( CBody* Body )
 	if( ShouldIgnoreBody( Body ) )
 		return Collided;
 
-	const BoundingBox& BoundsA = Body->GetBounds();
-	const BoundingBox& BoundsB = GetBounds();
+	const BoundingBox& BoundsA = Body->WorldBounds;
+	const BoundingBox& BoundsB = WorldBounds;
 	if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
 	 	return Collided;
 
-	const auto Bounds = Body->GetBounds();
+	const auto Bounds = Body->WorldBounds;
 	const auto Center = ( Bounds.Maximum + Bounds.Minimum ) * 0.5f;
 	const auto Delta = Center - PlaneOrigin;
 	const auto Distance = PlaneNormal.Dot( Delta );

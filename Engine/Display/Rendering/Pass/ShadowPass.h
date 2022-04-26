@@ -16,6 +16,7 @@ public:
 
 	class CShader* ShadowShader = nullptr;
 	class CShader* SkinnedShadowShader = nullptr;
+	class CTexture* Noise = nullptr;
 	class CRenderTexture* ShadowMap = nullptr;
 	glm::mat4 ProjectionView;
 

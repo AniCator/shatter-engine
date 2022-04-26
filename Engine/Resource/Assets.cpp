@@ -567,7 +567,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 	if( CTexture* ExistingTexture = Textures.Find( NameString ) )
 		return ExistingTexture;
 
-	ProfileMemory( "Texture" );
+	ProfileMemory( "Textures" );
 
 	CTexture* NewTexture = new CTexture( FileLocation );
 	const bool bSuccessfulCreation = NewTexture->Load( Mode, Format, GenerateMipMaps );
@@ -608,7 +608,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 	if( CTexture* ExistingTexture = Textures.Find( NameString ) )
 		return ExistingTexture;
 
-	ProfileMemory( "Texture" );
+	ProfileMemory( "Textures" );
 
 	CTexture* NewTexture = new CTexture();
 	const bool bSuccessfulCreation = NewTexture->Load( Data, Width, Height, Channels, Mode, Format, GenerateMipMaps );
@@ -822,6 +822,8 @@ CSequence* CAssets::CreateNamedSequence( const char* Name, const char* FileLocat
 	{
 		return ExistingSequence;
 	}
+
+	ProfileMemory( "Sequences" );
 
 	CSequence* NewSequence = new CSequence();
 	const bool bSuccessfulCreation = NewSequence->Load( FileLocation );

@@ -220,9 +220,8 @@ void CWindow::Create( const char* Title )
 	}
 #endif
 
-	// const int SwapInterval = FullScreen ? config.GetInteger( "vsync", 0 ) : 0;
-	// Log::Event( "Swap interval: %i\n", SwapInterval );
-	SetVSYNC( false );
+	const auto EnableSync = config.GetInteger( "vsync", 1 ) > 0;
+	SetVSYNC( EnableSync );
 
 	Log::Event( "Initializing ImGui.\n" );
 #if defined( IMGUI_ENABLED )
@@ -587,7 +586,9 @@ bool CWindow::IsFullscreenBorderless() const
 
 void CWindow::SetVSYNC( const bool& Enable )
 {
-	glfwSwapInterval( Enable ? 1 : 0 );
+	const auto Interval = Enable ? 1 : 0;
+	glfwSwapInterval( Interval );
+	CConfiguration::Get().Store( "vsync", Interval );
 }
 
 GLFWmonitor* CWindow::GetTargetMonitor() const

@@ -325,6 +325,30 @@ struct FEventCamera : TrackEvent
 		return BlendD.Lerp( BlendE, Factor );
 	}
 
+	static CCamera HandheldSimulation( const CCamera& Camera, const float& Factor, const double& Time )
+	{
+		CCamera HandheldCamera = Camera;
+
+		HandheldCamera.CameraOrientation.Pitch += sinf( Time * 3.0 ) * 0.314f * Factor;
+		HandheldCamera.CameraOrientation.Yaw += cosf( Time * 2.0 ) * 0.314f * Factor;
+
+		HandheldCamera.CameraOrientation.Pitch -= cosf( Time * 6.0 ) * 0.0314f * Factor;
+		HandheldCamera.CameraOrientation.Yaw -= sinf( Time * 7.0 ) * 0.0314f * Factor;
+
+		HandheldCamera.CameraOrientation.Pitch += sinf( Time * 12.0 ) * 0.0314f * Factor;
+		HandheldCamera.CameraOrientation.Yaw += cosf( Time * 14.0 ) * 0.0314f * Factor;
+
+		HandheldCamera.CameraOrientation.Pitch -= cosf( Time * 24.0 ) * 0.00314f * Factor;
+		HandheldCamera.CameraOrientation.Yaw -= sinf( Time * 28.0 ) * 0.00314f * Factor;
+
+		HandheldCamera.CameraOrientation.Pitch -= sinf( Time * 96.0 ) * 0.000314f * Factor;
+		HandheldCamera.CameraOrientation.Yaw -= cosf( Time * 112.0 ) * 0.000314f * Factor;
+
+		HandheldCamera.SetCameraOrientation( HandheldCamera.CameraOrientation );
+
+		return HandheldCamera;
+	}
+
 	void BezierBlendCameras()
 	{
 		const auto Factor = static_cast<float>( MarkerToTime( Offset ) / MarkerToTime( Length ) );
@@ -359,13 +383,29 @@ struct FEventCamera : TrackEvent
 		BlendResult.Update();
 	}
 	
-	virtual void Execute() override
+	void Execute() override
 	{
 		auto* World = CWorld::GetPrimaryWorld();
 		if( !World )
 			return;
 
+		static auto PreviousResult = BlendResult;
 		BlendCameras();
+
+		auto HandheldVelocity = 1.0f;
+		if( HandheldFactor > 0.0f )
+		{
+			const auto Difference = BlendResult.GetCameraPosition() - PreviousResult.GetCameraPosition();
+			HandheldVelocity = Difference.Length();
+
+			const auto HandheldShift = 1.0 - Math::Abs( static_cast<float>( MarkerToTime( Offset ) / MarkerToTime( Length ) ) * 2.0 - 1.0 );
+			const auto HandheldTime = MarkerToTime( StoredMarker );
+			BlendResult = HandheldSimulation( BlendResult, HandheldFactor, HandheldTime * HandheldSpeed );
+			// BlendResult = LerpCamera( PreviousResult, BlendResult, HandheldVelocity );
+		}
+
+		PreviousResult = BlendResult;
+
 		ActiveTimelineCamera = &BlendResult;
 
 		if( TimelineCamera && World->GetActiveCamera() != &BlendResult )
@@ -546,6 +586,10 @@ struct FEventCamera : TrackEvent
 		}
 
 		ImGui::Separator();
+
+		ImGui::DragFloat( "Handheld Simulation", &HandheldFactor, 0.01f, 0.0f, 10.0f );
+		ImGui::DragFloat( "Handheld Speed", &HandheldSpeed, 0.01f, 0.0f, 10.0f );
+
 		ImGui::Separator();
 
 		if( ImGui::Button( "Apply to Active" ) )
@@ -630,6 +674,9 @@ struct FEventCamera : TrackEvent
 	bool Blend = false;
 	bool Bezier = false;
 
+	float HandheldFactor = 0.0f;
+	float HandheldSpeed = 1.0f;
+
 	virtual void Export( CData& Data )
 	{
 		TrackEvent::Export( Data );
@@ -643,6 +690,9 @@ struct FEventCamera : TrackEvent
 		Serialize::Export( Data, "bz", Bezier );
 		Serialize::Export( Data, "tn", Tangent );
 		Serialize::Export( Data, "tn", TangentB );
+
+		Serialize::Export( Data, "hd", HandheldFactor );
+		Serialize::Export( Data, "hs", HandheldSpeed );
 	}
 
 	virtual void Import( CData& Data )
@@ -658,6 +708,9 @@ struct FEventCamera : TrackEvent
 		Serialize::Import( Data, "bz", Bezier );
 		Serialize::Import( Data, "tn", Tangent );
 		Serialize::Import( Data, "tn", TangentB );
+
+		Serialize::Import( Data, "hd", HandheldFactor );
+		Serialize::Import( Data, "hs", HandheldSpeed );
 	}
 
 private:
@@ -670,12 +723,6 @@ private:
 
 struct FEventRenderable : TrackEvent
 {
-	void Evaluate( const Timecode& Marker ) override
-	{
-		StoredMarker = Marker;
-		TrackEvent::Evaluate( Marker );
-	}
-
 	void Execute() override
 	{
 		auto* Mesh = Renderable.GetMesh();
@@ -839,7 +886,6 @@ struct FEventRenderable : TrackEvent
 		return "Mesh";
 	}
 
-	Timecode StoredMarker = 0;
 	CRenderable Renderable;
 	Animator::Instance Animation;
 	bool LoopAnimation = false;
@@ -930,6 +976,7 @@ void TrackEvent::UpdateInternalMarkers( const Timecode& Marker )
 		PreviousOffset = Offset;
 	}
 
+	StoredMarker = Marker;
 	Offset = Math::Clamp( Marker - Start, StaticCast<Timecode>( 0 ), Length );
 }
 

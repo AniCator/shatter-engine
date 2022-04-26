@@ -118,3 +118,10 @@ enum class EImageFormat : uint32_t
 };
 
 typedef std::underlying_type<EImageFormat>::type EImageFormatType;
+
+constexpr int Resolution256 = ( 1 << 8 );
+constexpr int Resolution512 = ( 1 << 9 );
+constexpr int Resolution1K = ( 1 << 10 );
+constexpr int Resolution2K = ( 1 << 11 );
+constexpr int Resolution4K = ( 1 << 12 );
+constexpr int Resolution8K = ( 1 << 13 );

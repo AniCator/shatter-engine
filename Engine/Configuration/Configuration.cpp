@@ -81,10 +81,7 @@ float CConfiguration::GetFloat( const char* KeyName, const float Default )
 
 void CConfiguration::Initialize()
 {
-	ProfileBare( __FUNCTION__ );
-
 	Log::Event( "Loading configuration.\n" );
-
 	Reload();
 }
 
@@ -112,6 +109,7 @@ void CConfiguration::Reload()
 
 	SetFile( StorageCategory::Application, EngineConfigurationFile );
 
+	const auto PreviousSettings = StoredSettings;
 	StoredSettings.clear();
 
 	bool IsFirstFile = true;
@@ -153,8 +151,23 @@ void CConfiguration::Reload()
 			const bool IgnoreLine = Line[0] == ';' || Line[0] == '#';
 			if( !IgnoreLine && std::regex_search( Line, Match, FilterSettings ) )
 			{
-				Log::Event( "%s = %s\n", Match[1].str().c_str(), Match[2].str().c_str() );
-				StoredSettings.insert_or_assign( Match[1].str(), Match[2].str() );
+				const auto& Key = Match[1].str();
+				const auto& Value = Match[2].str();
+				Log::Event( "%s = %s\n", Key.c_str(), Value.c_str() );
+				StoredSettings.insert_or_assign( Key, Value );
+
+				// Check if any callbacks need to be executed.
+				if( HasCallback( Key ) )
+				{
+					const auto Iterator = PreviousSettings.find( Key );
+					if( Iterator != PreviousSettings.end() )
+					{
+						if( Value != Iterator->second )
+						{
+							ExecuteCallback( Key, Value );
+						}
+					}
+				}
 			}
 		}
 
@@ -171,28 +184,53 @@ void CConfiguration::Save()
 	std::wstring SavePath;
 	for( const auto& FilePath : FilePaths )
 	{
-		if( FilePath.length() > 0 )
+		if( FilePath.length() == 0 )
+			continue;
+		
+		SavePath = FilePath;
+	}
+
+	if( SavePath.length() == 0 )
+		return;
+
+	std::ofstream ConfigurationStream;
+	ConfigurationStream.open( SavePath.c_str() );
+
+	if( ConfigurationStream.good() )
+	{
+		Log::Event( "Saving configuration file to \"%S\".\n", SavePath.c_str() );
+
+		for( auto& Setting : StoredSettings )
 		{
-			SavePath = FilePath;
+			ConfigurationStream << Setting.first << "=" << Setting.second << std::endl;
 		}
 	}
 
-	if( SavePath.length() > 0 )
+	ConfigurationStream.close();
+}
+
+void CConfiguration::SetCallback( const std::string& Key, const std::function<void( const std::string& )> Function )
+{
+	if( HasCallback( Key ) )
 	{
-		std::ofstream ConfigurationStream;
-		ConfigurationStream.open( SavePath.c_str() );
+		Log::Event( Log::Warning, "New callback set for \"%s\", previous callback will no longer be active.\n" );
+	}
 
-		if( ConfigurationStream.good() )
-		{
-			Log::Event( "Saving configuration file to \"%S\".\n", SavePath.c_str() );
+	Callbacks.insert_or_assign( Key, Function );
+}
 
-			for( auto& Setting : StoredSettings )
-			{
-				ConfigurationStream << Setting.first << "=" << Setting.second << std::endl;
-			}
-		}
+bool CConfiguration::HasCallback( const std::string& Key ) const
+{
+	const auto Iterator = Callbacks.find( Key );
+	return Iterator != Callbacks.end();
+}
 
-		ConfigurationStream.close();
+void CConfiguration::ExecuteCallback( const std::string& Key, const std::string& Value ) const
+{
+	const auto Iterator = Callbacks.find( Key );
+	if( Iterator != Callbacks.end() )
+	{
+		Iterator->second( Value );
 	}
 }
 
@@ -203,13 +241,14 @@ std::regex CConfiguration::ConfigureFilter( const char* KeyName )
 	return FilterSettings;
 }
 
-const std::string& CConfiguration::GetValue( const char* KeyName )
+const std::string& CConfiguration::GetValue( const std::string& KeyName ) const
 {
-	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
+	const auto Iterator = StoredSettings.find( KeyName );
+	if( Iterator == StoredSettings.end() )
 	{
 		static std::string UnknownEntry( "null" );
 		return UnknownEntry;
 	}
 
-	return StoredSettings[KeyName];
+	return Iterator->second;
 }

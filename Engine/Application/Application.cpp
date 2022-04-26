@@ -517,6 +517,17 @@ std::string CApplication::Relative( const std::string& UTF8 )
 	return Path;
 }
 
+void PollInput()
+{
+	// Always poll input.
+	if( !MainWindow.IsWindowless() )
+	{
+		SetMouseWheel( ImGui::GetIO().MouseWheel );
+	}
+
+	MainWindow.ProcessInput();
+}
+
 void CApplication::Run()
 {
 	CRenderer& Renderer = MainWindow.GetRenderer();
@@ -526,7 +537,7 @@ void CApplication::Run()
 	Renderer.SetCamera( DefaultCamera );
 
 	CTimer InputTimer( false );
-	CTimer GameTimer( false );
+	CTimer GameTimer( true );
 	CTimer RenderTimer( false );
 
 	InputTimer.Start();
@@ -543,6 +554,9 @@ void CApplication::Run()
 
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
 	SoLoudSound::Volume( GlobalVolume );
+
+	static uint64_t GameAccumulator = 0.0;
+	constexpr uint64_t GameDeltaTick = 1000 / 60;
 
 	// const auto TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
 
@@ -573,9 +587,19 @@ void CApplication::Run()
 			}
 		}
 
+		GameLayersInstance->RealTime( StaticCast<double>( RealTime.GetElapsedTimeMilliseconds() ) * 0.001 );
+
 		const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
-		if( GameDeltaTime >= MaximumGameTime )
+		GameAccumulator += GameDeltaTime;
+		while( GameAccumulator > MaximumGameTime )
 		{
+			GameAccumulator -= MaximumGameTime;
+
+			if( GameAccumulator > ( MaximumGameTime * 4 ) )
+			{
+				GameAccumulator = MaximumGameTime;
+			}
+
 			MainWindow.EnableCursor( false );
 			
 			if( Tools )
@@ -592,14 +616,12 @@ void CApplication::Run()
 				Renderer.RefreshFrame();
 
 				const auto GameTimeScale = GameLayersInstance->GetTimeScale();
-				const auto TimeScale = ScaleTime ? GameTimeScale * 0.1 : GameTimeScale * 1.0;
+				const auto TimeScale = ScaleTime ? GameTimeScale * 0.1 : GameTimeScale;
 
-				// Clamp the maximum time added to avoid excessive tick spikes.
-				ScaledGameTime += Math::Clamp( static_cast<double>( GameDeltaTime ) * 0.001, 0.0, 1.0 ) * TimeScale;
+				ScaledGameTime += static_cast<double>( MaximumGameTime ) * 0.001 * TimeScale;
 
 				// Update game time.
 				GameLayersInstance->Time( ScaledGameTime );
-				GameLayersInstance->SetTimeScale( GameTimeScale );
 
 				// Update the renderable stage for tick functions.
 				Renderer.UpdateRenderableStage( RenderableStage::Tick );
@@ -617,8 +639,6 @@ void CApplication::Run()
 				}
 #endif
 
-				GameTimer.Start();
-
 				if( FrameStep )
 				{
 					FrameStep = false;
@@ -632,34 +652,16 @@ void CApplication::Run()
 			CInputLocator::Get().Tick();
 		}
 
-		// Always poll input.
-		if( !MainWindow.IsWindowless() )
-		{
-			SetMouseWheel( ImGui::GetIO().MouseWheel );
-		}
+		PollInput();
 
-		MainWindow.ProcessInput();
-
-		/*const uint64_t InputDeltaTime = InputTimer.GetElapsedTimeMilliseconds();
-		if( InputDeltaTime >= MaximumInputTime )
-		{
-			if( !MainWindow.IsWindowless() )
-			{
-				SetMouseWheel( ImGui::GetIO().MouseWheel );
-			}
-
-			MainWindow.ProcessInput();
-
-			InputTimer.Start();
-		}*/
-
-		const uint64_t MaximumFrameTime = FPSLimit > 0 ? 1000 / FPSLimit : 999;
+		const auto UnboundedFramerate = FPSLimit < 1;
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
-		if( RenderDeltaTime >= MaximumFrameTime || FPSLimit < 1 )
+		const uint64_t MaximumFrameTime = UnboundedFramerate ? RenderDeltaTime : 1000 / FPSLimit;
+		if( RenderDeltaTime > MaximumFrameTime || UnboundedFramerate )
 		{
-			TimerScope Scope_( "Frametime", RenderDeltaTime );
-
-			GameLayersInstance->FrameTime( StaticCast<double>( RealTime.GetElapsedTimeMilliseconds() ) * 0.001 );
+			TimerScope::Submit( "Frametime", RenderTimer.GetStartTime(), RenderDeltaTime );
+			GameLayersInstance->FrameTime( StaticCast<double>( RenderDeltaTime ) * 0.001 );
+			RenderTimer.Start( UnboundedFramerate ? 0 : RenderDeltaTime - MaximumFrameTime );
 
 			MainWindow.BeginFrame();
 
@@ -683,7 +685,6 @@ void CApplication::Run()
 #endif
 
 				MainWindow.RenderFrame();
-				RenderTimer.Start();
 			}
 		}
 

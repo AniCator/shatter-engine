@@ -195,7 +195,13 @@ Property::Property( const bool& Value )
 	Type = PropertyType::Boolean;
 }
 
-const static std::string Empty = "";
+Property::Property( void* Value )
+{
+	Pointer = Value;
+	Type = PropertyType::Pointer;
+}
+
+const static std::string Empty;
 const std::string& Property::GetString() const
 {
 	if( Type == PropertyType::String )
@@ -327,6 +333,17 @@ const bool& Property::GetBoolean() const
 	return EmptyBoolean;
 }
 
+constexpr void* EmptyPointer = nullptr;
+void* Property::GetPointer() const
+{
+	if( Type == PropertyType::Pointer )
+	{
+		return Pointer;
+	}
+
+	return EmptyPointer;
+}
+
 CData& operator<<( CData& Data, const Property& Value )
 {
 	Data << Value.Type;
@@ -377,6 +394,10 @@ CData& operator<<( CData& Data, const Property& Value )
 	else if( Value.Type == PropertyType::Boolean )
 	{
 		Data << Value.Boolean;
+	}
+	else if( Value.Type == PropertyType::Pointer )
+	{
+		Data << EmptyU64;
 	}
 
 	return Data;
@@ -433,6 +454,10 @@ CData& operator<<( CData& Data, Property& Value )
 	{
 		Data << Value.Boolean;
 	}
+	else if( Value.Type == PropertyType::Pointer )
+	{
+		Data << EmptyU64;
+	}
 
 	return Data;
 }
@@ -487,6 +512,11 @@ CData& operator>>( CData& Data, Property& Value )
 	else if( Value.Type == PropertyType::Boolean )
 	{
 		Data >> Value.Boolean;
+	}
+	else if( Value.Type == PropertyType::Pointer )
+	{
+		Data >> Value.Unsigned64;
+		Value.Pointer = nullptr;
 	}
 
 	return Data;

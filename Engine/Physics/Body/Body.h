@@ -5,7 +5,7 @@
 
 #include <Engine/Physics/Body/Shared.h>
 #include <Engine/Physics/GeometryResult.h>
-#include <Engine/Utility/Structures/BoundingVolumeHierarchy.h>
+#include <Engine/Utility/Structures/Testable.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
 struct CollisionResponse
@@ -37,7 +37,8 @@ public:
 	void Destroy();
 
 	virtual void CalculateBounds();
-	const BoundingBox& GetBounds() const;
+	BoundingBoxSIMD GetBounds() const;
+	BoundingBox GetWorldBounds() const;
 	virtual void SetBounds( const BoundingBox& Bounds )
 	{
 		LocalBounds = Bounds;
@@ -61,7 +62,7 @@ public:
 	// Setting Clear to true will remove the body from the list. (if it exists)
 	virtual void Ignore( CMeshEntity* Entity, const bool Clear = false );
 
-	void Query( const BoundingBox& Box, QueryResult& Result ) const override;
+	void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const override;
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore = std::vector<Testable*>() ) const override;
 	
 	CMeshEntity* Owner = nullptr;
@@ -97,6 +98,7 @@ public:
 	BoundingBox WorldBounds;
 	BoundingBox WorldBoundsSwept;
 	BoundingSphere WorldSphere;
+	BoundingBoxSIMD WorldBoundsSIMD;
 
 	// Velocity that is applied to the body multiplied by the time delta.
 	Vector3D LinearVelocity = Vector3D::Zero;

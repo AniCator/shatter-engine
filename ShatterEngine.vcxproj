@@ -76,11 +76,12 @@
       <Optimization>Disabled</Optimization>
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;ThirdParty\asio-1.18.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>OptickBuild;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OptickBuild;DebugBuild;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
       <MinimalRebuild>false</MinimalRebuild>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -104,12 +105,13 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;ThirdParty\asio-1.18.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>false</ShowIncludes>
-      <PreprocessorDefinitions>OptickBuild;DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>OptickBuild;DevelopmentBuild;DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -135,12 +137,13 @@
       <SDLCheck>true</SDLCheck>
       <AdditionalIncludeDirectories>$(ProjectDir);ThirdParty;ThirdParty\glad\include;ThirdParty\SFML-2.5.1\include;ThirdParty\assimp\include;ThirdParty\asio-1.18.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <ShowIncludes>false</ShowIncludes>
-      <PreprocessorDefinitions>DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>ReleaseBuild;DiscordPresence;_MBCS;SFML_STATIC;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <MultiProcessorCompilation>true</MultiProcessorCompilation>
       <DisableSpecificWarnings>4267</DisableSpecificWarnings>
       <WholeProgramOptimization>false</WholeProgramOptimization>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <EnableEnhancedInstructionSet>AdvancedVectorExtensions</EnableEnhancedInstructionSet>
     </ClCompile>
     <Link>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -230,6 +233,7 @@
     <ClCompile Include="Engine\Utility\Structures\BoundingVolumeHierarchy.cpp" />
     <ClCompile Include="Engine\Utility\Structures\JSON.cpp" />
     <ClCompile Include="Engine\Utility\Structures\Name.cpp" />
+    <ClCompile Include="Engine\Utility\Structures\Octree.cpp" />
     <ClCompile Include="Engine\Utility\Structures\SpatialHash.cpp" />
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Engine\Utility\Thread.cpp" />
@@ -363,6 +367,7 @@
     <ClInclude Include="Engine\Utility\Structures\JSON.h" />
     <ClInclude Include="Engine\Utility\Structures\KeyValue.h" />
     <ClInclude Include="Engine\Utility\Structures\Name.h" />
+    <ClInclude Include="Engine\Utility\Structures\Octree.h" />
     <ClInclude Include="Engine\Utility\Structures\QueryResult.h" />
     <ClInclude Include="Engine\Utility\Structures\SpatialGrid.h" />
     <ClInclude Include="Engine\Utility\Structures\SpatialHash.h" />

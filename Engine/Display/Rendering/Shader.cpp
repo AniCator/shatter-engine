@@ -286,7 +286,7 @@ bool LogProgramCompilationErrors( GLuint v )
 	GLint ByteLength = 0;
 	GLsizei StringLength = 0;
 
-	glGetProgramiv( v, GL_LINK_STATUS, &ByteLength );
+	glGetProgramiv( v, GL_INFO_LOG_LENGTH, &ByteLength );
 
 	if( ByteLength > 1 )
 	{

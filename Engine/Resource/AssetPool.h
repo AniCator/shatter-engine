@@ -7,8 +7,19 @@
 
 constexpr size_t InvalidAssetHandle = -1;
 
-typedef size_t AssetHandle;
-typedef std::unordered_map<std::string, AssetHandle> AssetHandleMap;
+using AssetHandle = size_t;
+using AssetHandleMap = std::unordered_map<std::string, AssetHandle>;
+
+struct AssetEntry
+{
+	AssetEntry() = default;
+	AssetEntry( const AssetHandle& Handle )
+	{
+		this->Handle = Handle;
+	}
+
+	AssetHandle Handle = InvalidAssetHandle;
+};
 
 /// <summary>
 /// A pool that stores pointers to assets.

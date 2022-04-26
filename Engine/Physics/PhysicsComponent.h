@@ -52,16 +52,35 @@ public:
 		Static = false;
 		Stationary = true;
 
+		// HACK: It's possible for entities to suddenly get deleted from the trigger body. This should help retain them after each physics tick.
+		/*std::unordered_set<TriggerType> PersistingEntities;
+		for( auto* Entity : Entities )
+		{
+			auto* MeshEntity = dynamic_cast<CMeshEntity*>( Entity );
+			if( !MeshEntity )
+				continue;
+
+			const auto& BoundsA = MeshEntity->GetBody()->GetBounds();
+			const auto& BoundsB = GetBounds();
+			if( !BoundsA.Intersects( BoundsB ) )
+				continue;
+
+			PersistingEntities.insert( Entity );
+		}*/
+
 		Entities.clear();
 		Entities.reserve( 100 );
+
+		// Entities.insert( PersistingEntities.begin(), PersistingEntities.end() );
+
 		CBody::PreCollision();
 	}
 
 	virtual bool Collision( CBody* Body ) override
 	{
-		const auto BoundsB = GetBounds();
-		const BoundingBox& BoundsA = Body->GetBounds();
-		if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
+		const auto& BoundsB = GetBounds();
+		const auto& BoundsA = Body->GetBounds();
+		if( !BoundsA.Intersects( BoundsB ) )
 			return false;
 
 		CEntity* Target = Body->Owner ? Body->Owner : Body->Ghost;

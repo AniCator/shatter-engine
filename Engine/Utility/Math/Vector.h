@@ -103,6 +103,14 @@ public:
 		);
 	}
 
+	Vector2D operator/( const float& Scalar ) const
+	{
+		return Vector2D(
+			X / Scalar,
+			Y / Scalar
+		);
+	}
+
 	Vector2D operator+=( const Vector2D& Vector )
 	{
 		X += Vector.X;

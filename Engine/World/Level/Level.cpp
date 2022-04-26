@@ -281,6 +281,8 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 							{
 								if( !IsLevel && !AssetsOnly )
 								{
+									ProfileMemory( "Entities" );
+
 									if( FoundName )
 									{
 										Link.Entity = Spawn( ClassName, EntityName );
@@ -621,7 +623,11 @@ CData& operator>> ( CData& Data, CLevel& Level )
 				UniqueIdentifier Identifier;
 				Chunk.Data >> Identifier.ID;
 
-				Level.Entities[Index] = Level.Spawn( ClassName, EntityName, Identifier );
+				{
+					ProfileMemory( "Entities" );
+					Level.Entities[Index] = Level.Spawn( ClassName, EntityName, Identifier );
+				}
+
 				Chunk.Data >> Level.Entities[Index];
 			}
 		}

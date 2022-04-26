@@ -4,11 +4,9 @@
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Physics/Geometry.h>
 
-#include <Engine/Profiling/Profiling.h>
-
 QueryResult::QueryResult()
 {
-	Objects.reserve( 8192 );
+	// Objects.reserve( 8192 );
 }
 
 void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const size_t& Start, const size_t& End )
@@ -16,12 +14,6 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 	// Invalid span.
 	if( Start == End )
 		return;
-
-	// Increment the depth value.
-	Depth++;
-
-	// If a maximum depth is defined, we want to consider this to be the final node if we exceed this depth value.
-	const auto ForceFinalNode = MaximumDepth > 0 ? Depth > MaximumDepth : false;
 	
 	const auto Axis = Math::RandomRangeInteger( 0, 2 );
 	const auto Span = End - Start;
@@ -32,7 +24,7 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 
 		Bounds = Left->GetBounds();
 	}
-	else if( Span == 2 || ForceFinalNode )
+	else if( Span == 2 )
 	{
 		// Determine which of the two objects goes on which side.
 		if( Compare( Source[Start], Source[Start + 1], Axis ) )
@@ -46,7 +38,7 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 			Right = Source[Start];
 		}
 
-		Bounds = BoundingBox::Combine( Left->GetBounds(), Right->GetBounds() );
+		Bounds = BoundingBox::Combine( Left->GetBounds().Fetch(), Right->GetBounds().Fetch() );
 	}
 	else
 	{
@@ -72,14 +64,14 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 
 		Right = RightNode;
 
-		Bounds = BoundingBox::Combine( Left->GetBounds(), Right->GetBounds() );
+		Bounds = BoundingBox::Combine( Left->GetBounds().Fetch(), Right->GetBounds().Fetch() );
 	}
 }
 
 void BoundingVolumeHierarchy::Node::Destroy()
 {
 	// BUG: For some unknown reason the nodes can be non-RTTI objects.
-	return;
+	// return;
 
 	auto* LeftNode = dynamic_cast<Node*>( Left );
 	if( LeftNode )
@@ -98,25 +90,25 @@ void BoundingVolumeHierarchy::Node::Destroy()
 	}
 }
 
-void BoundingVolumeHierarchy::Node::Query( const BoundingBox& Box, QueryResult& Result ) const
+void BoundingVolumeHierarchy::Node::Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const
 {
-	if( !Bounds.Intersects( Box ) )
+	if( !Box.Intersects( Bounds ) )
 		return;
 
-	if( Left )
-	{
-		Left->Query( Box, Result );
-	}
+	if( !Left )
+		return;
 
-	if( Right )
-	{
-		Right->Query( Box, Result );
-	}
+	Left->Query( Box, Result );
+
+	if( !Right )
+		return;
+
+	Right->Query( Box, Result );
 }
 
 Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const
 {
-	Geometry::Result Result = Geometry::LineInBoundingBox( Start, End, Bounds );
+	Geometry::Result Result = Geometry::LineInBoundingBox( Start, End, Bounds.Fetch() );
 
 	// Check if the bounds of this node were hit.
 	if( !Result.Hit )
@@ -151,19 +143,17 @@ Color DebugColors[6] = {
 	Color( 255, 0, 255 )
 };
 
-size_t BoundingVolumeHierarchy::Node::Depth = 0;
 void BoundingVolumeHierarchy::Node::Debug() const
 {
-	const size_t DebugIndex = Depth % 6;
-
-	const uint32_t InverseDepth = 100 / ( Depth + 1 );
 	Color ActualColor = DebugColor;
+
+	/*const uint32_t InverseDepth = 100 / ( Depth + 1 );
 	ActualColor.R *= InverseDepth;
 	ActualColor.G *= InverseDepth;
-	ActualColor.B *= InverseDepth;
-	UI::AddAABB( Bounds.Minimum, Bounds.Maximum, ActualColor );
+	ActualColor.B *= InverseDepth;*/
 
-	Depth++;
+	const auto Bounds = this->Bounds.Fetch();
+	UI::AddAABB( Bounds.Minimum, Bounds.Maximum, ActualColor );
 
 	DebugColor = DebugLeft;
 	if( Left )
@@ -174,7 +164,7 @@ void BoundingVolumeHierarchy::Node::Debug() const
 		Right->Debug();
 }
 
-const BoundingBox& BoundingVolumeHierarchy::Node::GetBounds() const
+BoundingBoxSIMD BoundingVolumeHierarchy::Node::GetBounds() const
 {
 	return Bounds;
 }
@@ -194,20 +184,11 @@ bool BoundingVolumeHierarchy::Node::Cast( const RawObject& Node, const Vector3D&
 
 bool BoundingVolumeHierarchy::Node::Compare( const RawObject& A, const RawObject& B, const int32_t& Axis )
 {
-	return A->GetBounds().Minimum[Axis] < B->GetBounds().Minimum[Axis];
+	return A->GetBounds().Fetch().Minimum[Axis] < B->GetBounds().Fetch().Minimum[Axis];
 }
 
-size_t BoundingVolumeHierarchy::MaximumDepth = 0; // Default to 0, which means no maximum depth.
 std::shared_ptr<Testable> BoundingVolumeHierarchy::Build( const RawObjectList& Source )
 {
-	OptickEvent();
-
-	// Reset the node depth.
-	Node::Depth = 0;
-
-	// Configure the maximum depth.
-	MaximumDepth = 0;
-
 	const auto Result = std::make_shared<Node>();
 	Result->Build( Source, 0, Source.size() );
 

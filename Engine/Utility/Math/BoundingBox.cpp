@@ -36,7 +36,7 @@ bool BoundingBox::Intersects( const BoundingBox& B ) const
 	//	return false;
 
 	//return true;
-
+	
 	// Branched version in function call. (inlined)
 	return Math::BoundingBoxIntersection( Minimum, Maximum, B.Minimum, B.Maximum );
 }
@@ -77,19 +77,26 @@ BoundingSphere::BoundingSphere( const Vector3D& Center, const float& Radius )
 {
 	this->Center = Center;
 	this->Radius = Radius;
+	RadiusSquared = Radius * Radius;
 }
 
 BoundingSphere::BoundingSphere( const BoundingBox& Box )
 {
 	Center = Box.Center();
 	Radius = Box.Size().Length() * 0.5f;
+	RadiusSquared = Radius * Radius;
 }
 
 bool BoundingSphere::Intersects( const BoundingSphere& B ) const
 {
-	const auto RadiusSquared = Radius * Radius;
 	const auto Difference = Center - B.Center;
 	return Difference.LengthSquared() < RadiusSquared;
+}
+
+BoundingBoxSIMD::BoundingBoxSIMD( const BoundingBox& Box )
+{
+	this->Minimum = _mm_setr_ps( Box.Minimum.X, Box.Minimum.Y, Box.Minimum.Z, 0.0f );
+	this->Maximum = _mm_setr_ps( Box.Maximum.X, Box.Maximum.Y, Box.Maximum.Z, 1.0f );
 }
 
 BoundingBoxSIMD::BoundingBoxSIMD( const Vector3D& Minimum, const Vector3D& Maximum )
@@ -142,24 +149,24 @@ bool BoundingBoxSIMD::Intersects( const BoundingBoxSIMD& B ) const
 	// Less than, greater than, AND
 
 	// Set mask to 0
-	const auto ComparisonMask = _mm_set_ps1( 0 );
+    const auto ComparisonMask = _mm_set_ps1( 0 );
 
-	// Minimum A is less than Maximum B
-	const auto ResultMin = _mm_cmple_ps( Minimum, B.Maximum );
+    // Minimum A is less than Maximum B
+    const auto ResultMin = _mm_cmple_ps( Minimum, B.Maximum );
 
-	// Maximum A is larger than Minimum B
-	const auto ResultMax = _mm_cmpge_ps( Maximum, B.Minimum );
+    // Maximum A is larger than Minimum B
+    const auto ResultMax = _mm_cmpge_ps( Maximum, B.Minimum );
 
-	// Compare the two.
-	const auto ResultAnd = _mm_and_ps( ResultMin, ResultMax );
+    // Compare the two.
+    const auto ResultAnd = _mm_and_ps( ResultMin, ResultMax );
 
-	// Check for equality with 0 mask.
-	const auto ResultCmp = _mm_cmpeq_ss( ResultAnd, ComparisonMask );
+    // Check for equality with 0 mask.
+    const auto ResultCmp = _mm_cmpeq_ps( ResultAnd, ComparisonMask );
 
-	// Get the result.
-	const auto Mask = _mm_movemask_ps( ResultCmp );
+    // Get the result.
+    const auto Mask = _mm_movemask_ps( ResultCmp );
 
-	return ( Mask & 0x01 ) == 0;
+    return ( Mask & 0x0F ) == 0;
 
 	// Store the result.
 	Vector4D Vector = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );

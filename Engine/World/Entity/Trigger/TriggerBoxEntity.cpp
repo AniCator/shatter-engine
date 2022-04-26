@@ -21,7 +21,7 @@ void CTriggerBoxEntity::Construct()
 	{
 		Volume = new CTriggerBody<Interactable*>( this );
 		Volume->Construct();
-		Volume->SetBounds( Bounds );
+		Volume->SetBounds( { Vector3D( -1.0f ), Vector3D( 1.0f ) } );
 	}
 
 	Tag( "trigger" );
@@ -105,11 +105,26 @@ void CTriggerBoxEntity::Debug()
 {
 	CPointEntity::Debug();
 
+	Volume->Debug();
+
 	UI::AddAABB( 
 		Transform.GetPosition() + Bounds.Minimum, 
 		Transform.GetPosition() + Bounds.Maximum, 
 		Latched ? Color::Green : Color::Red 
 	);
+
+	std::string EntityString;
+	for( auto* Interactable : Volume->Entities )
+	{
+		EntityString += (dynamic_cast<CEntity*>( Interactable ))->Name.String() + "\n";
+	}
+
+	if( Volume->Entities.empty() )
+	{
+		EntityString = "(none)";
+	}
+
+	UI::AddText( Transform.GetPosition() + Bounds.Maximum, EntityString.c_str() );
 }
 
 void CTriggerBoxEntity::Export( CData& Data )
@@ -147,7 +162,8 @@ bool CTriggerBoxEntity::CanTrigger() const
 		// Check if the filtered entity is among the interactables.
 		for( auto* Interactable : Volume->Entities )
 		{
-			if( Cast<CEntity>( Interactable ) == Filter )
+			const auto* MeshEntity = Cast<CMeshEntity>( Interactable );
+			if( MeshEntity && MeshEntity == Filter && Volume->WorldBounds.Intersects( MeshEntity->GetWorldBounds() ) )
 			{
 				// We've found a match.
 				return true;

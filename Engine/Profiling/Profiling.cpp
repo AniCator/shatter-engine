@@ -88,6 +88,9 @@ const char* GamepadLabels[] =
 // NOTE: Crappy memory tracker.
 static size_t MemoryUsageBytes = 0;
 static size_t LargestAllocation = 0;
+
+// Only perform crappy memory tracking in non-release builds.
+#ifndef ReleaseBuild
 void* operator new( size_t Size )
 {
 	MemoryUsageBytes += Size;
@@ -103,6 +106,15 @@ void* operator new( size_t Size )
 	throw std::bad_alloc{};
 }
 
+void* operator new[]( size_t Size )
+{
+	// NOTE: We're not counting these allocations because we don't know for what size they're freed.
+	if( void* MemoryPointer = std::malloc( Size ) )
+		return MemoryPointer;
+
+	throw std::bad_alloc{};
+}
+
 void operator delete( void* Data, size_t Size ) noexcept
 {
 	MemoryUsageBytes -= Size;
@@ -112,10 +124,10 @@ void operator delete( void* Data, size_t Size ) noexcept
 
 void operator delete[]( void* Data, size_t Size ) noexcept
 {
-	MemoryUsageBytes -= Size;
-
+	// NOTE: We're not counting these allocations because we don't know for what size they're freed.
 	std::free( Data );
 }
+#endif
 
 #ifdef _WIN32
 PROCESS_MEMORY_COUNTERS GetMemoryCounters()
@@ -283,6 +295,14 @@ void CProfiler::AddMemoryEntry( const FName& Name, const size_t& Bytes )
 	// if( !Enabled )
 	// 	return;
 
+	if( FirstMemoryEntry )
+	{
+		FirstMemoryEntry = false;
+
+		// The first memory entry should be ignored and just set the starting value.
+		MemoryStartBytes = CProfiler::GetMemoryUsageInBytes();
+	}
+
 	const auto Iterator = MemoryCounters.find( Name );
 	if( Iterator == MemoryCounters.end() )
 	{
@@ -421,6 +441,8 @@ void CProfiler::Display()
 	ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
 	if( ImGui::Begin( "Profiler", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
 	{
+		const auto& CurrentMemoryUsageBytes = GetMemoryUsageInBytes();
+
 		if( TimeEntries.size() > 0 )
 		{
 			if( Enabled )
@@ -529,13 +551,13 @@ void CProfiler::Display()
 				ImGui::Separator();
 
 				// First pass, check how much memory we've accounted for.
-				size_t AccountedBytes = 0;
+				size_t AccountedBytes = MemoryStartBytes;
 				for( const auto& Counter : MemoryCounters )
 				{
 					AccountedBytes += Counter.second;
 				}
 
-				const auto& Unaccounted = BytesToString( GetMemoryUsageInBytes() - AccountedBytes );
+				const auto& Unaccounted = BytesToString( CurrentMemoryUsageBytes - AccountedBytes );
 				ImGui::Text( "Unaccounted: %s", Unaccounted.c_str() );
 
 				const auto& Accounted = BytesToString( AccountedBytes );
@@ -716,6 +738,7 @@ TimerScope::TimerScope( const FName& ScopeNameIn, bool TextOnlyIn )
 	TextOnly = TextOnlyIn;
 	StartTime = std::chrono::steady_clock::now();
 }
+
 TimerScope::TimerScope( const FName& ScopeNameIn, const uint64_t& Milliseconds )
 {
 	Depth++;
@@ -742,12 +765,20 @@ TimerScope::~TimerScope()
 	Depth--;
 }
 
+void TimerScope::Submit( const FName& ScopeNameIn, const std::chrono::steady_clock::time_point& StartTime, const uint64_t& Delta )
+{
+	const auto Time = std::chrono::milliseconds( Delta );
+	const auto DeltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>( Time ).count();
+
+	const auto StartTimeValue = std::chrono::duration_cast<std::chrono::nanoseconds>( StartTime.time_since_epoch() ).count();
+	CProfiler::Get().AddTimeEntry( ProfileTimeEntry( ScopeNameIn, int64_t( DeltaTime ), int64_t( StartTimeValue ), Depth + 1 ) );
+}
+
 #undef ProfileMemory
 ProfileMemory::ProfileMemory( const FName& ScopeNameIn, const bool& ClearPrevious )
 {
 	ScopeName = ScopeNameIn;
-	// MemoryStartSize = CProfiler::GetMemoryUsageInBytes();
-	MemoryStartSize = MemoryUsageBytes;
+	MemoryStartSize = CProfiler::GetMemoryUsageInBytes();
 	Clear = ClearPrevious;
 }
 
@@ -758,8 +789,7 @@ ProfileMemory::~ProfileMemory()
 		CProfiler::Get().ClearMemoryEntry( ScopeName );
 	}
 
-	// const auto Difference = CProfiler::GetMemoryUsageInBytes() - MemoryStartSize;
-	const auto Difference = MemoryUsageBytes - MemoryStartSize;
+	const auto Difference = CProfiler::GetMemoryUsageInBytes() - MemoryStartSize;
 	if( Difference > 0 )
 	{
 		CProfiler::Get().AddMemoryEntry( ScopeName, Difference );
@@ -779,7 +809,17 @@ CTimer::~CTimer()
 
 void CTimer::Start()
 {
-	StartTime = std::chrono::steady_clock::now();
+	Start( std::chrono::milliseconds( 0 ) );
+}
+
+void CTimer::Start( const uint64_t& Offset )
+{
+	Start( std::chrono::milliseconds( Offset ) );
+}
+
+void CTimer::Start( const std::chrono::milliseconds& Offset )
+{
+	StartTime = std::chrono::steady_clock::now() - Offset;
 	IsRunning = true;
 }
 
@@ -792,6 +832,33 @@ void CTimer::Stop()
 bool CTimer::Enabled() const
 {
 	return IsRunning;
+}
+
+int64_t CTimer::GetElapsedTimeNanoseconds()
+{
+	if( IsRunning )
+	{
+		std::chrono::steady_clock::time_point EndTime = std::chrono::steady_clock::now();
+		const auto DeltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>( EndTime - StartTime ).count();
+
+		if( UpdatedOnGetElapsed )
+		{
+			StartTime = std::chrono::steady_clock::now();
+		}
+
+		return DeltaTime;
+	}
+	else
+	{
+		const auto DeltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>( StopTime - StartTime ).count();
+
+		if( UpdatedOnGetElapsed )
+		{
+			StartTime = std::chrono::steady_clock::now();
+		}
+
+		return DeltaTime;
+	}
 }
 
 int64_t CTimer::GetElapsedTimeMicroseconds()
@@ -852,6 +919,16 @@ double CTimer::GetElapsedTimeSeconds()
 {
 	const int64_t Time = GetElapsedTimeMilliseconds();
 	return static_cast<double>( Time ) / 1000.0;
+}
+
+std::chrono::steady_clock::time_point CTimer::GetStartTime()
+{
+	return StartTime;
+}
+
+std::chrono::steady_clock::time_point CTimer::GetStopTime()
+{
+	return StopTime;
 }
 
 bool ProfileTimeEntry::operator<( const ProfileTimeEntry& Entry ) const

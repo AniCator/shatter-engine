@@ -826,7 +826,7 @@ void SoLoudSound::Initialize()
 	static SoLoud::Limiter Limiter;
 
 	Stacks[Bus::Master].Add( &Limiter, {
-		3.0f, // Pre-Gain
+		2.0f, // Pre-Gain
 		0.95f, // Post-Gain
 		0.01f, // Release
 		1.0f // Oof owie my ears clipper

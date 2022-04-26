@@ -1763,77 +1763,82 @@ void RenderMenuPanels()
 
 std::string OpenFileDialog( const DialogFormats& Formats )
 {
+	std::string InvalidFile;
 #if defined(_WIN32)
-	HRESULT hr = CoInitializeEx( NULL, 0 );
+	HRESULT hr = CoInitializeEx( nullptr, 0 );
+	if( !SUCCEEDED( hr ) )
+		return InvalidFile;
+
+	IFileOpenDialog* FileDialog;
+
+	// Create the FileOpenDialog object.
+	hr = CoCreateInstance( CLSID_FileOpenDialog, nullptr, CLSCTX_ALL,
+		IID_IFileOpenDialog, reinterpret_cast<void**>( &FileDialog ) );
+
+	if( !SUCCEEDED( hr ) )
+	{
+		FileDialog->Release();
+		CoUninitialize();
+		return InvalidFile;
+	}
+
+	auto* FilterSpecification = new COMDLG_FILTERSPEC[Formats.size()];
+	int FormatIndex = 0;
+	for( auto& Format : Formats )
+	{
+		FilterSpecification[FormatIndex].pszName = Format.first.c_str();
+		FilterSpecification[FormatIndex].pszSpec = Format.second.c_str();
+		FormatIndex++;
+	}
+
+	/*DWORD dwFlags;
+	pFileOpen->GetOptions( &dwFlags );
+	pFileOpen->SetOptions( dwFlags | FOS_ALLOWMULTISELECT );*/
+	
+	hr = FileDialog->SetFileTypes( 1, FilterSpecification );
+
+	delete FilterSpecification;
+
+	if( !SUCCEEDED( hr ) )
+		return InvalidFile;
+
+	// Show the Open dialog box.
+	hr = FileDialog->Show( nullptr );
+
+	// Get the file name from the dialog box.
+	if( !SUCCEEDED( hr ) )
+		return InvalidFile;
+	
+	IShellItem* pItem;
+	hr = FileDialog->GetResult( &pItem );
 	if( SUCCEEDED( hr ) )
 	{
-		IFileOpenDialog* pFileOpen;
+		PWSTR pszFilePath;
+		hr = pItem->GetDisplayName( SIGDN_FILESYSPATH, &pszFilePath );
 
-		// Create the FileOpenDialog object.
-		hr = CoCreateInstance( CLSID_FileOpenDialog, NULL, CLSCTX_ALL,
-			IID_IFileOpenDialog, reinterpret_cast<void**>( &pFileOpen ) );
-
+		// Display the file name to the user.
 		if( SUCCEEDED( hr ) )
 		{
-			COMDLG_FILTERSPEC* rgSpec = new COMDLG_FILTERSPEC[Formats.size()];
-			int FormatIndex = 0;
-			for( auto& Format : Formats )
+			size_t Converted;
+			char FilePath[256];
+			auto Result = wcstombs_s( &Converted, FilePath, pszFilePath, sizeof( FilePath ) );
+			if( Result == 256 )
 			{
-				rgSpec[FormatIndex].pszName = Format.first.c_str();
-				rgSpec[FormatIndex].pszSpec = Format.second.c_str();
-				FormatIndex++;
+				FilePath[255] = '\0';
 			}
 
-			/*DWORD dwFlags;
-			pFileOpen->GetOptions( &dwFlags );
-			pFileOpen->SetOptions( dwFlags | FOS_ALLOWMULTISELECT );*/
-			
-			hr = pFileOpen->SetFileTypes( 1, rgSpec );
+			CoTaskMemFree( pszFilePath );
 
-			delete rgSpec;
-
-			if( SUCCEEDED( hr ) )
-			{
-				// Show the Open dialog box.
-				hr = pFileOpen->Show( NULL );
-
-				// Get the file name from the dialog box.
-				if( SUCCEEDED( hr ) )
-				{
-					IShellItem* pItem;
-					hr = pFileOpen->GetResult( &pItem );
-					if( SUCCEEDED( hr ) )
-					{
-						PWSTR pszFilePath;
-						hr = pItem->GetDisplayName( SIGDN_FILESYSPATH, &pszFilePath );
-
-						// Display the file name to the user.
-						if( SUCCEEDED( hr ) )
-						{
-							size_t Converted;
-							char FilePath[256];
-							auto Result = wcstombs_s( &Converted, FilePath, pszFilePath, sizeof( FilePath ) );
-							if( Result == 256 )
-							{
-								FilePath[255] = '\0';
-							}
-
-							CoTaskMemFree( pszFilePath );
-
-							return FilePath;
-						}
-						pItem->Release();
-					}
-				}
-			}
-
-			pFileOpen->Release();
+			return FilePath;
 		}
-		CoUninitialize();
+		pItem->Release();
 	}
+
+	FileDialog->Release();
+	CoUninitialize();
 #endif
 
-	return "";
+	return InvalidFile;
 }
 
 Bus::Type ImGui::BusSelector( const Bus::Type& Bus )

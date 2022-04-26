@@ -628,39 +628,38 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 
 bool CBody::Collision( CBody* Body )
 {
-	if( !Body->Block )
-		return false;
-
-	if( ShouldIgnoreBody( Body ) )
+	if( !Block )
 		return false;
 
 	if( !WorldSphere.Intersects( Body->WorldSphere ) )
 		return false;
 
-	const BoundingBox& BoundsA = Body->GetBounds();
-	const BoundingBox& BoundsB = GetBounds();
+	if( ShouldIgnoreBody( Body ) )
+		return false;
 
 	Geometry::Result SweptResult;
-	if( Body->Continuous )
+	if( Continuous )
 	{
-		if( !SweptIntersection( BoundsA, Body->LinearVelocity, BoundsB, SweptResult ) )
+		if( !SweptIntersection( WorldBounds, LinearVelocity, Body->WorldBounds, SweptResult ) )
 			return false;
 	}
 	else
 	{
-		if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
+		if( !WorldBounds.Intersects( Body->WorldBounds ) )
 			return false;
 	}
 
 	if( IsType<CPlaneBody>( Body ) )
 		return false;
+
 	const auto Transform = GetTransform();
-
-	Contact = true;
-
 	const auto Collided = Integrate( this, Body, SweptResult );
-	Contacts++;
-	Body->Contacts++;
+	if( Collided )
+	{
+		Contacts++;
+		Body->Contacts++;
+		Contact = true;
+	}
 
 #if DrawNormalAndDistance == 1
 	const auto BodyTransform = Body->GetTransform();
@@ -1089,6 +1088,7 @@ void CBody::CalculateBounds()
 
 	// Ensure we have at least some volume.
 	EnsureVolume( WorldBounds );
+	WorldBoundsSIMD = WorldBounds;
 
 	WorldSphere = WorldBounds;
 
@@ -1101,7 +1101,12 @@ void CBody::CalculateBounds()
 	}
 }
 
-const BoundingBox& CBody::GetBounds() const
+BoundingBoxSIMD CBody::GetBounds() const
+{
+	return WorldBoundsSIMD;
+}
+
+BoundingBox CBody::GetWorldBounds() const
 {
 	return WorldBounds;
 }
@@ -1173,7 +1178,7 @@ void CBody::Debug() const
 	}
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
-	UI::AddSphere( WorldSphere.Center, WorldSphere.Radius, BoundsColor );
+	UI::AddSphere( WorldSphere.Origin(), WorldSphere.GetRadius(), BoundsColor );
 	VisualizeBounds( Tree, &PreviousTransform );
 
 	if( Static || Sleeping )
@@ -1253,14 +1258,14 @@ void CBody::Ignore( CMeshEntity* Entity, const bool Clear )
 	}
 }
 
-void CBody::Query( const BoundingBox& Box, QueryResult& Result ) const
+void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const
 {
-	if( Continuous )
+	/*if( Continuous )
 	{
 		if( !Box.Intersects( WorldBoundsSwept ) )
 			return;
 	}
-	else
+	else*/
 	{
 		if( !Box.Intersects( GetBounds() ) )
 			return;
@@ -1284,7 +1289,7 @@ Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const 
 		}
 	}
 
-	Geometry::Result Result = Geometry::LineInBoundingBox( Start, End, GetBounds() );
+	Geometry::Result Result = Geometry::LineInBoundingBox( Start, End, WorldBounds );
 	Result.Body = const_cast<CBody*>( this );
 
 	// if( Result.Hit )

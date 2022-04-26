@@ -36,6 +36,7 @@ struct TrackEvent
 	// The marker position relative to the event.
 	Timecode Offset = 0;
 	Timecode PreviousOffset = 0;
+	Timecode StoredMarker = 0;
 
 	void UpdateInternalMarkers( const Timecode& Marker );
 

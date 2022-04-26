@@ -9,6 +9,19 @@
 #include <atomic>
 #include <string>
 
+void SetThreadName( std::thread& Thread, const std::string& Name );
+
+enum ThreadPriority
+{
+	Lowest = -2,
+	BelowNormal,
+	Normal,
+	AboveNormal,
+	Highest,
+};
+
+void SetThreadPriority( std::thread& Thread, const ThreadPriority& Priority );
+
 struct Task
 {
 	virtual ~Task() {};
@@ -40,6 +53,7 @@ struct Worker
 
 	~Worker()
 	{
+		Ready = true;
 		Alive = false;
 		Task = nullptr;
 		Notify.notify_one();
@@ -72,6 +86,7 @@ struct Worker
 	}
 
 	void SetName( const std::string& Name );
+	void SetPriority( const ThreadPriority& Priority );
 
 private:
 	void Work();

@@ -151,6 +151,8 @@ Route Network::Path( const Vector3D& Start, const Vector3D& End )
 		}
 	}
 
+	return Route; // TODO: This stuff is broken.
+
 	std::list<Data*> Untested;
 	Untested.emplace_back( ClosestNodeStart );
 
@@ -163,7 +165,7 @@ Route Network::Path( const Vector3D& Start, const Vector3D& End )
 				return States[A].Global < States[B].Global;
 			} );
 
-		while( !Untested.empty() && States[Untested.front()].Visited )
+		while( ( !Untested.empty() && States[Untested.front()].Visited && Untested.front() != nullptr ) )
 			Untested.pop_front();
 
 		if( Untested.empty() )

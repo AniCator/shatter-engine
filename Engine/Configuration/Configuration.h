@@ -1,9 +1,10 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <functional>
 #include <regex>
 #include <string>
-#include <map>
+#include <unordered_map>
 
 #include <Engine/Utility/Singleton.h>
 
@@ -50,11 +51,21 @@ public:
 
 	void Save();
 
+	/// <summary>
+	/// Used to configure a callback that is executed when the key's value changes.
+	/// </summary>
+	/// <param name="Key">Configuration key that should be monitored.</param>
+	/// <param name="Function">To be executed when the given key's value changes.</param>
+	void SetCallback( const std::string& Key, const std::function<void( const std::string& )> Function );
+	bool HasCallback( const std::string& Key ) const;
+	void ExecuteCallback( const std::string& Key, const std::string& Value ) const;
+
 private:
 	static std::regex ConfigureFilter( const char* KeyName );
-	const std::string& GetValue( const char* KeyName );
+	const std::string& GetValue( const std::string& KeyName ) const;
 
 	std::wstring FilePaths[StorageCategory::Maximum];
-	std::map<std::string, std::string> StoredSettings;
+	std::unordered_map<std::string, std::string> StoredSettings;
+	std::unordered_map<std::string, std::function<void(std::string)>> Callbacks;
 	bool Initialized = false;
 };

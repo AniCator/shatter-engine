@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Display/Color.h>
 #include <Engine/Physics/GeometryResult.h>
 #include <Engine/Utility/Math/BoundingBox.h>
 #include <Engine/Utility/Structures/Testable.h>
@@ -22,14 +23,23 @@ public:
 		int32_t Y = 0;
 		int32_t Z = 0;
 
+		Coordinate() = default;
+		Coordinate( const int32_t& X, const int32_t& Y, const int32_t& Z );
 		Coordinate( const Vector3D& Vector, const float Spacing );
 		bool operator<( const Coordinate& B ) const;
+
+		BoundingBoxSIMD GetBounds() const;
+
+		void Debug( const Color& DebugColor = Color::Green ) const;
 	};
 
 	class Node : public Testable
 	{
 	public:
-		void Query( const BoundingBox& Box, QueryResult& Result ) const override;
+		void Insert( const RawObjectList& Source );
+		void Destroy();
+
+		void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const override;
 		Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const override;
 		void Debug() const override;
 
@@ -48,10 +58,14 @@ public:
 			}
 		};
 
-		// Determines the size of each cell.
-		float Spacing = 10.0f;
-
 		std::unordered_multimap<Coordinate, RawObject, Hash, Equality> Grid;
-		const BoundingBox& GetBounds() const override;
+		BoundingBoxSIMD GetBounds() const override;
+
+		Coordinate Minimum;
+		Coordinate Maximum;
+		BoundingBoxSIMD Bounds;
 	};
+
+	static std::shared_ptr<Testable> Build( const RawObjectList& Source );
+	static void Destroy( std::shared_ptr<Testable>& Hierarchy );
 };

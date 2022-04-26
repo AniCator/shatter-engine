@@ -28,8 +28,25 @@ struct BoundingSphere
 
 	bool Intersects( const BoundingSphere& B ) const;
 
+	Vector3D Origin() const
+	{
+		return Center;
+	}
+
+	float GetRadius() const
+	{
+		return Radius;
+	}
+
+	float GetRadiusSquared() const
+	{
+		return RadiusSquared;
+	}
+
+protected:
 	Vector3D Center = Vector3D::Zero;
 	float Radius = 0.0f;
+	float RadiusSquared = 0.0f;
 };
 
 struct BoundingPoints
@@ -55,6 +72,7 @@ struct BoundingPoints
 struct BoundingBoxSIMD
 {
 	BoundingBoxSIMD() = default;
+	BoundingBoxSIMD( const BoundingBox& Box );
 	BoundingBoxSIMD( const Vector3D& Minimum, const Vector3D& Maximum );
 	BoundingBoxSIMD( const __m128& Minimum, const __m128& Maximum );
 

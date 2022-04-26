@@ -24,7 +24,8 @@ enum class PropertyType : uint8_t
 	I16,
 	I8,
 
-	Boolean
+	Boolean,
+	Pointer
 };
 
 struct Property
@@ -49,6 +50,7 @@ struct Property
 	Property( const int8_t& Value );
 
 	Property( const bool& Value );
+	Property( void* Value );
 
 	~Property() {}
 
@@ -67,6 +69,7 @@ struct Property
 	const int8_t& GetI8() const;
 
 	const bool& GetBoolean() const;
+	void* GetPointer() const;
 
 	friend CData& operator<<( CData& Data, const Property& Value );
 	friend CData& operator<<( CData& Data, Property& Value );
@@ -94,6 +97,7 @@ protected:
 		int8_t Signed8;
 
 		bool Boolean;
+		void* Pointer;
 	};
 };
 

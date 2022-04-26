@@ -80,6 +80,7 @@ void CWorld::Tick()
 	// Make sure the physics scene has finished its tasks.
 	if( Physics )
 	{
+		ProfileAlways( "Waiting for Physics" );
 		OptickEvent( "Waiting for Physics" );
 		Physics->Guard();
 	}
@@ -128,8 +129,6 @@ void CWorld::Tick()
 
 void CWorld::Destroy()
 {
-	Physics->Destroy();
-
 	if( PrimaryWorld == this )
 	{
 		PrimaryWorld = nullptr;
@@ -147,6 +146,8 @@ void CWorld::Destroy()
 	}
 	
 	Camera = nullptr;
+
+	Physics->Destroy();
 
 	for( auto Level : Levels )
 	{

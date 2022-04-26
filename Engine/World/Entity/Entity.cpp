@@ -162,7 +162,7 @@ void CEntity::Traverse()
 	const bool ShouldTick = NextTickTime < CurrentTime;
 	if( ShouldTick )
 	{
-		OptickEvent();
+		// OptickEvent();
 
 		if( Math::Equal( LastTickTime, 0.0 ) )
 		{

@@ -21,9 +21,31 @@ class IGameLayer
 public:
 	virtual ~IGameLayer() = default;
 
+	/// <summary>
+	/// Called at the start of the program.
+	/// </summary>
 	virtual void Initialize() = 0;
+
 	virtual void Frame() = 0;
+
+	/// <summary>
+	/// Executed before any accumulated ticks are run. (optional)
+	/// </summary>
+	virtual void PreTick() = 0;
+
+	/// <summary>
+	/// The main tick function that is called whenever ticks accumulate over time.
+	/// </summary>
 	virtual void Tick() = 0;
+
+	/// <summary>
+	/// Executed after all accumulated ticks have run. (optional)
+	/// </summary>
+	virtual void PostTick() = 0;
+
+	/// <summary>
+	/// Called on program exit and application restart.
+	/// </summary>
 	virtual void Shutdown() = 0;
 
 	virtual Version GetVersion() const = 0;
@@ -44,6 +66,7 @@ public:
 
 	void Time( const double& Time );
 	void FrameTime( const double& FrameTime );
+	void RealTime( const double& RealTime );
 
 	double GetPreviousTime() const;
 	double GetCurrentTime() const;
@@ -53,7 +76,7 @@ public:
 	double GetTimeScale() const;
 	void SetTimeScale( const double& TimeScale );
 
-	float GetFrameTime() const;
+	double GetFrameTime() const;
 
 	std::vector<IGameLayer*> GetGameLayers() const;
 
@@ -66,9 +89,9 @@ private:
 
 	double TimeScale = 1.0;
 
-	double PreviousFrameTime = 0.0;
-	double CurrentFrameTime = 0.0;
 	double DeltaFrameTime = 0.0;
+
+	double CurrentRealTime = 0.0;
 };
 
 extern CGameLayers* GameLayersInstance;

@@ -65,7 +65,10 @@ struct FMessage
 };
 
 class CEntity;
+
+// A message input returns a boolean which allows those calling the inputs to check if the input was called successfully.
 typedef std::map<FName, std::function<bool(CEntity*)>> MessageInput;
+
 typedef std::map<FName, std::vector<FMessage>> MessageOutput;
 
 struct LevelUID

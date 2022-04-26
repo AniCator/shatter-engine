@@ -167,7 +167,11 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 	ShadowMap->Bind( ETextureSlot::Slot8 );
 	ShadowMap->Bind( ETextureSlot::Slot9 );
 
-	const auto* Noise = CAssets::Get().FindTexture( "noise256" );
+	if( !Noise )
+	{
+		Noise = CAssets::Get().FindTexture( "noise256" );
+	}
+
 	if( Noise )
 	{
 		Noise->Bind( ETextureSlot::Slot10 );

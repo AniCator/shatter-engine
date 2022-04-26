@@ -34,16 +34,30 @@ void SetThreadName( DWORD dwThreadID, const char* threadName ) {
 void SetThreadName( std::thread& Thread, const std::string& Name )
 {
 	auto* Handle = Thread.native_handle();
-	if( Handle )
-	{
-		SetThreadName(
-			::GetThreadId( static_cast<HANDLE>( Handle ) ),
-			Name.c_str()
-		);
-	}
+	if( !Handle )
+		return;
+	
+	SetThreadName(
+		::GetThreadId( static_cast<HANDLE>( Handle ) ),
+		Name.c_str()
+	);
+}
+
+void SetThreadPriority( std::thread& Thread, const ThreadPriority& Priority )
+{
+	auto* Handle = Thread.native_handle();
+	if( !Handle )
+		return;
+
+	SetThreadPriority( static_cast<HANDLE>( Handle ), Priority );
 }
 #else
 void SetThreadName( std::thread& Thread, const std::string& Name )
+{
+
+}
+
+void SetThreadPriority( std::thread& Thread, const ThreadPriority& Priority )
 {
 
 }
@@ -59,13 +73,21 @@ void Worker::SetName( const std::string& Name )
 	SetThreadName( Thread, Name );
 }
 
+void Worker::SetPriority( const ThreadPriority& Priority )
+{
+	SetThreadPriority( Thread, Priority );
+}
+
 void Worker::Work()
 {
 	ProfileThread( "Shatter Engine Worker");
 	while( Alive )
 	{
 		std::unique_lock<std::mutex> Lock( Mutex );
-		Notify.wait( Lock );
+		Notify.wait( Lock, [&] {
+				return Ready.load();
+			} 
+		);
 
 		Running = true;
 

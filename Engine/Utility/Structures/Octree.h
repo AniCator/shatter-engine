@@ -9,14 +9,11 @@
 #include <memory>
 #include <vector>
 
-class BoundingVolumeHierarchy
+class Octree
 {
 public:
 	typedef Testable* RawObject;
 	typedef std::vector<RawObject> RawObjectList;
-	
-	// typedef std::shared_ptr<Testable> Object;
-	// typedef std::vector<Object> ObjectList;
 
 	class Node : public Testable
 	{
@@ -27,15 +24,26 @@ public:
 		void Build( const RawObjectList& Source, const size_t& Start, const size_t& End );
 		void Destroy();
 
-		void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const override;
+		void Query( const BoundingBox& Box, QueryResult& Result ) const override;
 		Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const override;
 		void Debug() const override;
 
-		RawObject Left = nullptr;
-		RawObject Right = nullptr;
-		BoundingBoxSIMD Bounds;
+		const BoundingBox& GetBounds() const override;
 
-		BoundingBoxSIMD GetBounds() const override;
+		BoundingBox Bounds;
+
+		Node* BottomNW = nullptr;
+		Node* BottomNE = nullptr;
+		Node* BottomSE = nullptr;
+		Node* BottomSW = nullptr;
+
+		Node* TopNW = nullptr;
+		Node* TopNE = nullptr;
+		Node* TopSE = nullptr;
+		Node* TopSW = nullptr;
+
+		// Empty unless we have no more children.
+		RawObjectList Objects;
 
 		static bool Cast( const RawObject& Node, const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore, Geometry::Result& Result );
 		static bool Compare( const RawObject& A, const RawObject& B, const int32_t& Axis );

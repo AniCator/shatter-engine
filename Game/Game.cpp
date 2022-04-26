@@ -111,9 +111,12 @@ void CGameLayers::Time( const double& Time )
 
 void CGameLayers::FrameTime( const double& FrameTime )
 {
-	PreviousFrameTime = CurrentFrameTime;
-	CurrentFrameTime = FrameTime;
-	DeltaFrameTime = CurrentFrameTime - PreviousFrameTime;
+	DeltaFrameTime = FrameTime;
+}
+
+void CGameLayers::RealTime( const double& RealTime )
+{
+	CurrentRealTime = RealTime;
 }
 
 double CGameLayers::GetPreviousTime() const
@@ -128,7 +131,7 @@ double CGameLayers::GetCurrentTime() const
 
 double CGameLayers::GetRealTime() const
 {
-	return CurrentFrameTime;
+	return CurrentRealTime;
 }
 
 double CGameLayers::GetDeltaTime() const
@@ -146,7 +149,7 @@ void CGameLayers::SetTimeScale( const double& TimeScaleIn )
 	TimeScale = TimeScaleIn;
 }
 
-float CGameLayers::GetFrameTime() const
+double CGameLayers::GetFrameTime() const
 {
 	return DeltaFrameTime;
 }

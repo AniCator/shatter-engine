@@ -9,36 +9,55 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Thread.h>
+#include <Engine/Utility/Structures/BoundingVolumeHierarchy.h>
+#include <Engine/Utility/Structures/SpatialHash.h>
 
 #include <Engine/Display/UserInterface.h>
 
 #include <Game/Game.h>
 
+using AccelerationStructure = BoundingVolumeHierarchy;
+
+struct QueryRequest
+{
+	QueryRequest() = delete;
+	QueryRequest( CBody* Body )
+	{
+		this->Body = Body;
+	}
+
+	CBody* Body;
+	QueryResult Result;
+};
+
 struct QueryTask : public Task
 {
 	void Execute() override
 	{
-		if( !Scene || !Bodies || !Results )
+		if( !Scene || !Requests )
 			return;
 
 		OptickEvent("Asynchronous Physics Queries");
 
-		size_t Index = 0;
-		for( const auto* Body : *Bodies )
+		for( auto& Request : *Requests )
 		{
-			if( Index >= Results->size() )
-				return;
-
-			auto& Result = Results->at( Index );
-			Scene->Query( Body->GetBounds(), Result );
-			Index++;
+			Scene->Query( Request.Body->GetBounds(), Request.Result );
 		}
 	}
 
 	std::shared_ptr<Testable> Scene = nullptr;
-	std::shared_ptr<std::vector<CBody*>> Bodies = nullptr;
-	std::shared_ptr<std::vector<QueryResult>> Results = nullptr;
+	std::shared_ptr<std::vector<QueryRequest>> Requests = nullptr;
 };
+
+bool UsesStaticQuery( CBody* Body )
+{
+	return !Body->Sleeping && ( !Body->Static || Body->Ghost );
+}
+
+bool UsesDynamicQuery( CBody* Body )
+{
+	return !Body->Static;
+}
 
 class CPhysicsScene
 {
@@ -98,11 +117,10 @@ public:
 
 	void Destroy()
 	{
-		WaitForBodyWorker();
-		WaitForQueryWorkers();
+		Guard();
 
-		BoundingVolumeHierarchy::Destroy( StaticScene );
-		BoundingVolumeHierarchy::Destroy( DynamicScene );
+		AccelerationStructure::Destroy( StaticScene );
+		AccelerationStructure::Destroy( DynamicScene );
 		
 		// Delete all of the bodies in the array.
 		for( auto* Body : Bodies )
@@ -115,64 +133,36 @@ public:
 		Bodies.clear();
 	}
 
-	std::shared_ptr<std::vector<QueryResult>> StaticQueryResults;
-	std::shared_ptr<std::vector<QueryResult>> DynamicQueryResults;
-
-	std::shared_ptr<std::vector<CBody*>> StaticQueryBodies;
-	std::shared_ptr<std::vector<CBody*>> DynamicQueryBodies;
+	std::shared_ptr<std::vector<QueryRequest>> StaticQueryRequests;
+	std::shared_ptr<std::vector<QueryRequest>> DynamicQueryRequests;
 
 	void CreateQueryContainers()
 	{
-		if( !StaticQueryResults )
+		if( !StaticQueryRequests )
 		{
-			StaticQueryResults = std::make_shared<std::vector<QueryResult>>();
+			StaticQueryRequests = std::make_shared<std::vector<QueryRequest>>();
 		}
 
-		if( !DynamicQueryResults )
+		if( !DynamicQueryRequests )
 		{
-			DynamicQueryResults = std::make_shared<std::vector<QueryResult>>();
-		}
-
-		if( !StaticQueryBodies )
-		{
-			StaticQueryBodies = std::make_shared<std::vector<CBody*>>();
-		}
-
-		if( !DynamicQueryBodies )
-		{
-			DynamicQueryBodies = std::make_shared<std::vector<CBody*>>();
-		}
-	}
-
-	static void ClearQueryResult( const std::shared_ptr<std::vector<QueryResult>>& Results, const size_t& Candidates )
-	{
-		Results->clear();
-
-		QueryResult Result;
-		for( size_t Index = 0; Index < Candidates; Index++ )
-		{
-			Results->emplace_back( Result );
+			DynamicQueryRequests = std::make_shared<std::vector<QueryRequest>>();
 		}
 	}
 
 	void RefreshQueryContainers( const size_t& StaticCandidates, const size_t& DynamicCandidates ) const
 	{
-		ClearQueryResult( StaticQueryResults, StaticCandidates );
-		ClearQueryResult( DynamicQueryResults, DynamicCandidates );
+		StaticQueryRequests->clear();
+		StaticQueryRequests->reserve( StaticCandidates );
 
-		StaticQueryBodies->clear();
-		StaticQueryBodies->reserve( StaticCandidates );
-
-		DynamicQueryBodies->clear();
-		DynamicQueryBodies->reserve( DynamicCandidates );
+		DynamicQueryRequests->clear();
+		DynamicQueryRequests->reserve( DynamicCandidates );
 	}
 
 	void Tick()
 	{
 		OptickCategory( "Physics Tick", Optick::Category::Physics );
 
-		WaitForBodyWorker();
-		WaitForQueryWorkers();
+		Guard();
 		IsSimulating = false;
 
 		CreateQueryContainers();
@@ -182,7 +172,13 @@ public:
 			BuildStaticScene();
 		}
 
-		BuildDynamicScene();
+		if( !DynamicScene )
+		{
+			BuildDynamicScene();
+		}
+
+		// StaticScene->Debug();
+		// DynamicScene->Debug();
 		
 		for( auto* BodyA : Bodies )
 		{
@@ -199,14 +195,11 @@ public:
 			if( !BodyA )
 				continue;
 
-			if( !BodyA->Sleeping )
-			{
-				const auto NeedsStaticQuery = !BodyA->Static || BodyA->Ghost;
-				if( NeedsStaticQuery )
-					StaticBodiesToQuery++;
+			if( UsesStaticQuery( BodyA ) )
+				StaticBodiesToQuery++;
 
+			if( UsesDynamicQuery( BodyA ) )
 				DynamicBodiesToQuery++;
-			}
 		}
 
 		ScheduleBodyUpdate( StaticBodiesToQuery, DynamicBodiesToQuery );
@@ -220,52 +213,30 @@ public:
 		for( auto* Object : Query.Objects )
 		{
 			auto* B = ::Cast<CBody>( Object );
-			if( !A || !B || B == A )
+			if( B == A || !B || !A )
 				continue;
 
 			if( B->Owner != A->Owner )
 			{
 				A->Collision( B );
+				B->Collision( A );
 			}
 		}
 	}
 
 	void ResolveCollisions()
 	{
-		size_t StaticQueryIndex = 0;
-		size_t QueryIndex = 0;
-		for( auto* BodyA : Bodies )
+		if( IsSimulating )
+			return;
+
+		for( const auto& Request : *StaticQueryRequests )
 		{
-			if( !BodyA )
-				continue;
+			ResolveCollisions( Request.Body, Request.Result );
+		}
 
-			if( !BodyA->Sleeping )
-			{
-				QueryResult Query;
-				if( !IsSimulating && QueryIndex < StaticQueryResults->size() )
-				{
-					const auto HasStaticQuery = !BodyA->Static || BodyA->Ghost;
-					if( HasStaticQuery || true )
-					{
-						Query = StaticQueryResults->at( StaticQueryIndex );
-						StaticQueryIndex++;
-					}
-
-					const QueryResult DynamicQuery = DynamicQueryResults->at( QueryIndex );
-					if( DynamicQuery.Hit )
-					{
-						Query = DynamicQuery;
-					}
-					QueryIndex++;
-				}
-				else
-				{
-					// StaticScene->Query( BodyA->GetBounds(), Query );
-					// DynamicScene->Query( BodyA->GetBounds(), Query );
-				}
-
-				ResolveCollisions( BodyA, Query );
-			}
+		for( const auto& Request : *DynamicQueryRequests )
+		{
+			ResolveCollisions( Request.Body, Request.Result );
 		}
 	}
 
@@ -305,12 +276,16 @@ public:
 
 	void Accumulate()
 	{
-		while( Accumulator > TimeStep )
+		/*while( Accumulator > TimeStep )
 		{
 			OptickEvent();
 			UpdateBodies();
 			Accumulator -= TimeStep;
-		}
+		}*/
+
+		// Don't use the accumulator because the application is already using fixed time.
+		OptickEvent();
+		UpdateBodies();
 	}
 
 	void ScheduleBodyUpdate( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
@@ -318,8 +293,9 @@ public:
 		BodyWorker.Start( std::make_shared<LambdaTask>( [this, StaticBodiesToQuery, DynamicBodiesToQuery] ()
 			{
 				OptickEvent( "Physics Body Update" );
-				const bool CanUpdateBodies = StaticQueryResults->capacity() >= DynamicBodiesToQuery;
-				if( !IsSimulating && CanUpdateBodies )
+				BuildDynamicScene();
+
+				if( !IsSimulating )
 				{
 					Accumulate();
 				}
@@ -331,47 +307,39 @@ public:
 
 	void ScheduleQueries( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
 	{
-		RefreshQueryContainers( DynamicBodiesToQuery, DynamicBodiesToQuery );
+		RefreshQueryContainers( StaticBodiesToQuery, DynamicBodiesToQuery );
 
-		if( true )
+		for( auto* BodyA : Bodies )
 		{
-			for( auto* BodyA : Bodies )
+			if( !BodyA )
+				continue;
+
+			if( UsesStaticQuery( BodyA ) )
 			{
-				if( !BodyA )
-					continue;
-
-				if( !BodyA->Sleeping )
-				{
-					const auto NeedsStaticQuery = !BodyA->Static || BodyA->Ghost;
-					if( NeedsStaticQuery )
-					{
-						StaticQueryBodies->emplace_back( BodyA );
-					}
-
-					DynamicQueryBodies->emplace_back( BodyA );
-				}
+				StaticQueryRequests->emplace_back( BodyA );
 			}
 
-			IsSimulating = true;
-
-			const auto StaticQuery = std::make_shared<QueryTask>();
-			StaticQuery->Scene = StaticScene;
-			StaticQuery->Bodies = StaticQueryBodies;
-			StaticQuery->Results = StaticQueryResults;
-			StaticQueryWorker.Start( StaticQuery );
-
-			const auto DynamicQuery = std::make_shared<QueryTask>();
-			DynamicQuery->Scene = DynamicScene;
-			DynamicQuery->Bodies = DynamicQueryBodies;
-			DynamicQuery->Results = DynamicQueryResults;
-			DynamicQueryWorker.Start( DynamicQuery );
+			if( UsesDynamicQuery( BodyA ) )
+			{
+				DynamicQueryRequests->emplace_back( BodyA );
+			}
 		}
+
+		IsSimulating = true;
+
+		const auto StaticQuery = std::make_shared<QueryTask>();
+		StaticQuery->Scene = StaticScene;
+		StaticQuery->Requests = StaticQueryRequests;
+		StaticQueryWorker.Start( StaticQuery );
+
+		const auto DynamicQuery = std::make_shared<QueryTask>();
+		DynamicQuery->Scene = DynamicScene;
+		DynamicQuery->Requests = DynamicQueryRequests;
+		DynamicQueryWorker.Start( DynamicQuery );
 	}
 
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>(), const PollType& Type = PollType::All ) const
 	{
-		OptickEvent();
-
 		Geometry::Result Empty;
 
 		const bool PollStaticScene = Type == PollType::All || Type == PollType::Static;
@@ -472,8 +440,6 @@ public:
 
 	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const
 	{
-		OptickEvent();
-
 		const bool PollStaticScene = Type == PollType::All || Type == PollType::Static;
 		const bool PollDynamicScene = Type == PollType::All || Type == PollType::Dynamic;
 
@@ -528,9 +494,9 @@ public:
 		ProfileMemoryClear( "Physics Static Scene" );
 
 		if( StaticScene )
-			BoundingVolumeHierarchy::Destroy( StaticScene );
+			AccelerationStructure::Destroy( StaticScene );
 		
-		BoundingVolumeHierarchy::RawObjectList StaticVector;
+		AccelerationStructure::RawObjectList StaticVector;
 		
 		StaticVector.reserve( Bodies.size() );
 		
@@ -542,18 +508,17 @@ public:
 			}
 		}
 
-		StaticScene = BoundingVolumeHierarchy::Build( StaticVector );
+		StaticScene = AccelerationStructure::Build( StaticVector );
 	}
 
 	void BuildDynamicScene()
 	{
-		OptickEvent();
 		ProfileMemoryClear( "Physics Dynamic Scene" );
 
 		if( DynamicScene )
-			BoundingVolumeHierarchy::Destroy( DynamicScene );
+			AccelerationStructure::Destroy( DynamicScene );
 		
-		BoundingVolumeHierarchy::RawObjectList DynamicVector;
+		AccelerationStructure::RawObjectList DynamicVector;
 		for( auto* Body : Bodies )
 		{
 			if( !Body->Static || Body->Stationary )
@@ -562,7 +527,7 @@ public:
 			}
 		}
 
-		DynamicScene = BoundingVolumeHierarchy::Build( DynamicVector );
+		DynamicScene = AccelerationStructure::Build( DynamicVector );
 	}
 
 private:
@@ -594,8 +559,6 @@ void CPhysics::Guard() const
 
 void CPhysics::Tick( const double& Time )
 {
-	ProfileAlways( "Physics" );
-
 	const auto PreviousTime = CurrentTime;
 	CurrentTime = Time;
 	ActualDeltaTime = CurrentTime - PreviousTime;
@@ -625,18 +588,18 @@ void CPhysics::Unregister( CBody* Body ) const
 
 Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const PollType& Type ) const
 {
-	ProfileAlways( "Physics" );
+	// ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End );
 }
 
 Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore, const PollType& Type ) const
 {
-	ProfileAlways( "Physics" );
+	// ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End, Ignore );
 }
 
 std::vector<CBody*> CPhysics::Query( const BoundingBox& AABB, const PollType& Type ) const
 {
-	ProfileAlways( "Physics" );
+	// ProfileAlways( "Physics" );
 	return Scene->Query( AABB );
 }
