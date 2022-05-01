@@ -276,6 +276,9 @@ public:
 
 	void Accumulate()
 	{
+		if( IsSimulating )
+			return;
+
 		/*while( Accumulator > TimeStep )
 		{
 			OptickEvent();
@@ -293,13 +296,9 @@ public:
 		BodyWorker.Start( std::make_shared<LambdaTask>( [this, StaticBodiesToQuery, DynamicBodiesToQuery] ()
 			{
 				OptickEvent( "Physics Body Update" );
+
 				BuildDynamicScene();
-
-				if( !IsSimulating )
-				{
-					Accumulate();
-				}
-
+				Accumulate();
 				ScheduleQueries( StaticBodiesToQuery, DynamicBodiesToQuery );
 			} )
 		);
@@ -307,6 +306,8 @@ public:
 
 	void ScheduleQueries( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
 	{
+		IsSimulating = true;
+
 		RefreshQueryContainers( StaticBodiesToQuery, DynamicBodiesToQuery );
 
 		for( auto* BodyA : Bodies )
@@ -325,8 +326,6 @@ public:
 			}
 		}
 
-		IsSimulating = true;
-
 		const auto StaticQuery = std::make_shared<QueryTask>();
 		StaticQuery->Scene = StaticScene;
 		StaticQuery->Requests = StaticQueryRequests;
@@ -340,6 +339,8 @@ public:
 
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>(), const PollType& Type = PollType::All ) const
 	{
+		Guard();
+
 		Geometry::Result Empty;
 
 		const bool PollStaticScene = Type == PollType::All || Type == PollType::Static;
@@ -440,6 +441,8 @@ public:
 
 	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const
 	{
+		Guard();
+
 		const bool PollStaticScene = Type == PollType::All || Type == PollType::Static;
 		const bool PollDynamicScene = Type == PollType::All || Type == PollType::Dynamic;
 
