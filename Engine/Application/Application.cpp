@@ -536,15 +536,15 @@ void CApplication::Run()
 	Setup.AspectRatio = static_cast<float>( MainWindow.GetWidth() ) / static_cast<float>( MainWindow.GetHeight() );
 	Renderer.SetCamera( DefaultCamera );
 
-	CTimer InputTimer( false );
-	CTimer GameTimer( true );
-	CTimer RenderTimer( false );
+	Timer InputTimer( false );
+	Timer GameTimer( true );
+	Timer RenderTimer( false );
 
 	InputTimer.Start();
 	GameTimer.Start();
 	RenderTimer.Start();
 
-	CTimer RealTime( false );
+	Timer RealTime( false );
 	RealTime.Start();
 
 	SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 300 ) );
@@ -578,7 +578,7 @@ void CApplication::Run()
 
 		if( SimulateJitter )
 		{
-			CTimer JitterTimer;
+			Timer JitterTimer;
 			JitterTimer.Start();
 			const int64_t JitterTime = Math::RandomRangeInteger( 1, 33 );
 			while( JitterTimer.GetElapsedTimeMilliseconds() < JitterTime )
@@ -591,6 +591,17 @@ void CApplication::Run()
 
 		const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
 		GameAccumulator += GameDeltaTime;
+
+		const auto Frozen = PauseGame && !FrameStep;
+		const auto ExecuteTicks = GameAccumulator > MaximumGameTime;
+		if( !Frozen && ExecuteTicks )
+		{
+			for( const auto& PreTick : Ticks.Functions[AdditionalTick::PreTick] )
+			{
+				PreTick();
+			}
+		}
+
 		while( GameAccumulator > MaximumGameTime )
 		{
 			GameAccumulator -= MaximumGameTime;
@@ -610,7 +621,8 @@ void CApplication::Run()
 				}
 			}
 
-			if( !PauseGame || FrameStep )
+			// const auto NotFrozen = !PauseGame || FrameStep;
+			if( !Frozen )
 			{
 				CProfiler::Get().Clear();
 				Renderer.RefreshFrame();
@@ -631,6 +643,11 @@ void CApplication::Run()
 				// Tick all game layers
 				GameLayersInstance->Tick();
 
+				for( const auto& Tick : Ticks.Functions[AdditionalTick::Tick] )
+				{
+					Tick();
+				}
+
 #ifdef OptickBuild
 				if( Capturing )
 				{
@@ -646,7 +663,15 @@ void CApplication::Run()
 			}
 		}
 
-		if( PauseGame && !FrameStep )
+		if( !Frozen && ExecuteTicks )
+		{
+			for( const auto& PostTick : Ticks.Functions[AdditionalTick::PostTick] )
+			{
+				PostTick();
+			}
+		}
+
+		if( Frozen )
 		{
 			GameTimer.Start();
 			CInputLocator::Get().Tick();
@@ -832,6 +857,29 @@ void CApplication::SetDirectoryName( const wchar_t* Name )
 	DirectoryName = Name;
 }
 
+void AdditionalTick::Register( const Execute& Location, TickFunction Function )
+{
+	Functions[Location].emplace_back( Function );
+}
+
+void AdditionalTick::Unregister( const Execute& Location, TickFunction Function )
+{
+	// TODO: Fix this.
+	return;
+	auto Iterator = Functions[Location].begin();
+	while( Iterator != Functions[Location].end() )
+	{
+		if( *Iterator == Function )
+		{
+			std::iter_swap( Iterator, Functions[Location].end() );
+			Functions[Location].pop_back();
+			return;
+		}
+
+		Iterator++;
+	}
+}
+
 const std::wstring& CApplication::GetAppDataDirectory()
 {
 	static std::wstring AppDataDirectory;
@@ -930,8 +978,8 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 
 			if( Index + 1 < argc )
 			{			
-				CTimer LoadTimer;
-				CTimer ParseTimer;
+				Timer LoadTimer;
+				Timer ParseTimer;
 
 				const char* Location = argv[Index + 1];
 				CFile File( Location );

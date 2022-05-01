@@ -37,7 +37,7 @@ ETestResult CStringPerformanceTest::Run()
 
 		Log::Event( "Test String: %s\n", TestString );
 
-		CTimer CreatePoolTimer( false );
+		Timer CreatePoolTimer( false );
 		CreatePoolTimer.Start();
 
 		std::string Line;
@@ -48,7 +48,7 @@ ETestResult CStringPerformanceTest::Run()
 
 		CreatePoolTimer.Stop();
 
-		CTimer PollPoolTimer( false );
+		Timer PollPoolTimer( false );
 		PollPoolTimer.Start();
 
 		auto& Symbol = TestPool.Find( std::string( TestString ) );
@@ -64,7 +64,7 @@ ETestResult CStringPerformanceTest::Run()
 			Log::Event( "Pool: Test string found: %s\n", Symbol.c_str() );
 		}
 
-		CTimer GetPoolTimer( false );
+		Timer GetPoolTimer( false );
 		GetPoolTimer.Start();
 
 		const std::string& GetString = TestPool.Find( std::string( TestString ) );
@@ -82,7 +82,7 @@ ETestResult CStringPerformanceTest::Run()
 		std::ifstream BigTextStream2;
 		BigTextStream2.open( "big.txt" );
 
-		CTimer CreateMapTimer( false );
+		Timer CreateMapTimer( false );
 		CreateMapTimer.Start();
 
 		std::string LineB;
@@ -93,7 +93,7 @@ ETestResult CStringPerformanceTest::Run()
 
 		CreateMapTimer.Stop();
 
-		CTimer PollMapTimer( false );
+		Timer PollMapTimer( false );
 		PollMapTimer.Start();
 
 		auto Result = TestSet.find( TestString );
@@ -110,7 +110,7 @@ ETestResult CStringPerformanceTest::Run()
 			Log::Event( "Set: Test string found: %s\n", ResultString.c_str() );
 		}
 
-		CTimer GetMapTimer( false );
+		Timer GetMapTimer( false );
 		GetMapTimer.Start();
 
 		const std::string& GetString2 = *TestSet.find( TestString );

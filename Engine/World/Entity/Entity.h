@@ -55,6 +55,9 @@ struct UniqueIdentifier
 	void Random();
 	void Set( const char* Identifier );
 	bool Valid() const;
+
+	friend CData& operator<<( CData& Data, const UniqueIdentifier& Identifier );
+	friend CData& operator>>( CData& Data, UniqueIdentifier& Identifier );
 };
 
 struct FMessage
@@ -78,7 +81,7 @@ struct LevelUID
 		ID = -1;
 	}
 
-	LevelUID( size_t Identifier )
+	LevelUID( int64_t Identifier )
 	{
 		ID = Identifier;
 	}

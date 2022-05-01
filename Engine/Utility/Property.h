@@ -71,6 +71,8 @@ struct Property
 	const bool& GetBoolean() const;
 	void* GetPointer() const;
 
+	PropertyType GetType() const;
+
 	friend CData& operator<<( CData& Data, const Property& Value );
 	friend CData& operator<<( CData& Data, Property& Value );
 	friend CData& operator>>( CData& Data, Property& Value );

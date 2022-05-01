@@ -691,7 +691,7 @@ bool* DisplayAssets()
 void ReloadMesh( const std::string& Name, const std::string& Location )
 {
 	auto& Assets = CAssets::Get();
-	CTimer LoadTimer;
+	Timer LoadTimer;
 
 	LoadTimer.Start();
 	auto* Mesh = Assets.CreateNamedMesh( Name.c_str(), Location.c_str(), true );

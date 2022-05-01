@@ -24,7 +24,7 @@ public:
 	virtual void Export( CData& Data ) override;
 	virtual void Import( CData& Data ) override;
 private:
-	CTimer Timer;
+	Timer Timer;
 
 	int32_t TriggerCount;
 };

@@ -107,7 +107,6 @@ void CMeshEntity::Tick()
 			}
 		}
 	}
-	
 
 	if( !IsCulled && Renderable )
 	{
@@ -133,8 +132,6 @@ void CMeshEntity::Tick()
 		{
 			RenderData.LightIndex = LightEntity::Fetch( LightOrigin );
 		}
-
-		QueueRenderable( Renderable );
 	}
 
 	CPointEntity::Tick();
@@ -198,8 +195,7 @@ void CMeshEntity::TickAnimation()
 
 	AnimationInstance.TickOffset = GetEntityID().ID;
 
-	Animator::Update( AnimationInstance, GameLayersInstance->GetDeltaTime(), ForceAnimationTick );
-	Animator::Submit( AnimationInstance, Renderable );
+	Animator::Update( AnimationInstance, DeltaTime, ForceAnimationTick );
 
 	if( ForceAnimationTick )
 	{
@@ -209,15 +205,7 @@ void CMeshEntity::TickAnimation()
 	if( AnimationInstance.Bones.empty() )
 		return;
 
-	// Set global transform
-	// Bones[Skeleton.RootIndex].Matrix = WorldTransform.GetTransformationMatrix() * Skeleton.Bones[Skeleton.RootIndex].Matrix;
-
-	static int DebugIndex = 0;
-	DebugIndex++;
-	DebugIndex = DebugIndex % AnimationInstance.Bones.size();
-
-	auto WorldTransform = GetTransform();
-	// WorldTransform = FTransform();
+	const auto WorldTransform = GetTransform();
 	static auto NewBoundVertices = std::vector<Vector3D>();
 	NewBoundVertices.clear();
 	for( size_t MatrixIndex = 0; MatrixIndex < AnimationInstance.Bones.size(); MatrixIndex++ )
@@ -228,9 +216,6 @@ void CMeshEntity::TickAnimation()
 		{
 			ParentMatrix = AnimationInstance.Bones[AnimationInstance.Bones[MatrixIndex].ParentIndex].GlobalTransform;
 		}
-
-		// Matrix = Skeleton.GlobalMatrixInverse * Matrix;
-		// ParentMatrix = Skeleton.GlobalMatrixInverse * ParentMatrix;
 
 		const auto Current = Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
 		Vector3D PointTarget = WorldTransform.Transform( Current );
@@ -255,10 +240,6 @@ void CMeshEntity::TickAnimation()
 
 			const auto ParentBind = ParentBindMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
 			Vector3D PointParentBind = WorldTransform.Transform( ParentBind );
-
-			// FBounds AABB( ( Vector3D::One * -1.0f ), Vector3D::One );
-			// AABB = Math::AABB( AABB, Matrix );
-			// UI::AddAABB( AABB.Minimum, AABB.Maximum );
 			
 			UI::AddCircle( PointSource, 3.0f, ::Color( 0, 0, 255 ) );
 			UI::AddLine( PointSource, PointCenter, ::Color( 0, 0, 255 ) );
@@ -269,17 +250,7 @@ void CMeshEntity::TickAnimation()
 			UI::AddCircle( PointParentBind, 3.0f, ::Color( 0, 255, 255 ) );
 			UI::AddLine( PointParentBind, PointBind, ::Color( 255, 255, 0 ) );
 			UI::AddCircle( PointBind, 3.0f, ::Color( 0, 255, 255 ) );
-			// UI::AddText( PointBind, Skeleton.MatrixNames[MatrixIndex].c_str() );
-			
-			// 
-			// int TextIndex = MatrixIndex * 1;
-			// const std::string MatrixName = Skeleton.MatrixNames[MatrixIndex] + "[" + std::to_string( Skeleton.Bones[MatrixIndex].Index ) + "]";
-			// UI::AddText( Vector2D( 30.0f, 30.0f + ( TextIndex + 0 ) * 20.0f ), MatrixName, Origin );
 		}
-
-		// Bones[Bones[MatrixIndex].ParentIndex]
-
-		// UI::AddText( PointC + Vector3D( 0.0f, 0.0f, -0.1f ), std::to_string( ChosenTime ).c_str() );
 	}
 
 	WorldBounds = Math::AABB( NewBoundVertices.data(), NewBoundVertices.size() );
@@ -292,7 +263,25 @@ void CMeshEntity::TickAnimation()
 
 void CMeshEntity::Frame()
 {
-	// 
+	bool IsCulled = !IsVisible();
+	if( !IsCulled && MaximumRenderDistance > 0.0f )
+	{
+		if( const auto* Camera = GetWorld()->GetActiveCamera() )
+		{
+			const auto RenderDistanceSquared = MaximumRenderDistance * MaximumRenderDistance;
+			const auto DistanceSquared = Transform.GetPosition().DistanceSquared( Camera->GetCameraPosition() );
+			if( DistanceSquared > RenderDistanceSquared )
+			{
+				IsCulled = true;
+			}
+		}
+	}
+
+	if( IsCulled || !Renderable )
+		return;
+
+	Animator::Submit( AnimationInstance, Renderable );
+	QueueRenderable( Renderable );
 }
 
 void CMeshEntity::Destroy()

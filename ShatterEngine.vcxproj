@@ -90,6 +90,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)Library\$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>$(EnginePath)\ThirdParty\SoLoud\lib\;$(EnginePath)\ThirdParty\glfw-3.3.2.bin.WIN64\lib-vc2015;$(EnginePath)\ThirdParty\SFML-2.5.1\lib;$(EnginePath)\ThirdParty\discord-rpc\win64-static\lib;$(EnginePath)\ThirdParty\assimp\lib;$(EnginePath)\ThirdParty\Optick\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <ProjectReference />
     <ProjectReference>
@@ -154,6 +155,7 @@
     </Link>
     <Lib>
       <OutputFile>$(ProjectDir)Library\$(TargetName)$(TargetExt)</OutputFile>
+      <AdditionalLibraryDirectories>$(EnginePath)\ThirdParty\SoLoud\lib\;$(EnginePath)\ThirdParty\glfw-3.3.2.bin.WIN64\lib-vc2015;$(EnginePath)\ThirdParty\SFML-2.5.1\lib;$(EnginePath)\ThirdParty\discord-rpc\win64-static\lib;$(EnginePath)\ThirdParty\assimp\lib;$(EnginePath)\ThirdParty\Optick\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
     <ProjectReference />
     <ProjectReference>

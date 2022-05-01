@@ -3,11 +3,11 @@
 
 #include <chrono>
 
-class CTimer
+class Timer
 {
 public:
-	CTimer( bool UpdateOnGetElapsed = false );
-	~CTimer();
+	Timer( bool UpdateOnGetElapsed = false );
+	~Timer();
 
 	void Start();
 	void Start( const uint64_t& Offset );

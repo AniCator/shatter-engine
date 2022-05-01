@@ -10,12 +10,14 @@ namespace SoLoud
 
 struct SoundQueue
 {
-	SoundQueue();
-	~SoundQueue();
+	void Construct();
+	void Destroy();
 
-	void Add( const std::string& ResourcePath );
+	void Add( const class CSound* Sound );
 	uint32_t Count() const;
 	bool Playing() const;
 protected:
 	SoLoud::Queue* Instance = nullptr;
+
+	friend class SoLoudSound;
 };

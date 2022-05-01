@@ -534,3 +534,19 @@ bool UniqueIdentifier::Valid() const
 
 	return true;
 }
+
+CData& operator<<( CData& Data, const UniqueIdentifier& Identifier )
+{
+	DataString::Encode( Data, Identifier.ID );
+
+	return Data;
+}
+
+CData& operator>>( CData& Data, UniqueIdentifier& Identifier )
+{
+	std::string ID;
+	DataString::Decode( Data, ID );	
+	strcpy_s( Identifier.ID, ID.c_str() );
+
+	return Data;
+}

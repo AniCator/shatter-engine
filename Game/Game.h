@@ -26,22 +26,15 @@ public:
 	/// </summary>
 	virtual void Initialize() = 0;
 
-	virtual void Frame() = 0;
-
 	/// <summary>
-	/// Executed before any accumulated ticks are run. (optional)
+	/// Executed once per frame.
 	/// </summary>
-	virtual void PreTick() = 0;
+	virtual void Frame() = 0;
 
 	/// <summary>
 	/// The main tick function that is called whenever ticks accumulate over time.
 	/// </summary>
 	virtual void Tick() = 0;
-
-	/// <summary>
-	/// Executed after all accumulated ticks have run. (optional)
-	/// </summary>
-	virtual void PostTick() = 0;
 
 	/// <summary>
 	/// Called on program exit and application restart.

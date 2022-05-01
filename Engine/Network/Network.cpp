@@ -52,7 +52,7 @@ void Network::HTTPRequest::Execute()
 		if( !Success( ErrorCode ) )
 			continue;
 
-		CTimer Timeout;
+		Timer Timeout;
 		Timeout.Start();
 
 		// Time out request operation after 2 seconds.

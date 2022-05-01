@@ -726,40 +726,10 @@ void SoLoudSound::Tick()
 		}
 	}
 
-	/*size_t ActiveSounds = 0;
-	{
-		OptickEvent( "Sound Update" );
-
-		size_t SoundIndex = 0;
-		for( auto& Sound : Sounds )
-		{
-			SoundIndex++;
-			if( Sound.Voice && Sound.Playing )
-			{
-				ActiveSounds++;
-
-				if( ActiveSounds > 200 )
-				{
-					Engine.stop( Sound.Voice );
-					Sound.Playing = false;
-					continue;
-				}
-
-				SoundHandle Handle;
-				Handle.Handle = SoundIndex - 1;
-				Sound.Playing = Playing( Handle );
-				Engine.setVolume( Sound.Voice, Sound.Volume );
-			}
-		}
-	}*/
-
 	{
 		OptickEvent( "3D Audio Update" );
 		Engine.update3dAudio();
 	}
-
-	/*const auto SoundEntry = FProfileTimeEntry( "Active Sounds", ActiveSounds );
-	Profiler.AddCounterEntry( SoundEntry, false, true );*/
 
 	const auto StreamEntry = ProfileTimeEntry( "Active Streams", ActiveStreams );
 	Profiler.AddCounterEntry( StreamEntry, false, true );
@@ -770,7 +740,13 @@ void SoLoudSound::Tick()
 
 void SoLoudSound::Initialize()
 {
-	Engine.init( 0 );
+	unsigned int Flags = 0;
+	unsigned int Backend = 0;
+	unsigned int SampleRate = 44100;
+	unsigned int BufferSize = 2048;
+	unsigned int Channels = 2;
+
+	Engine.init( Flags, Backend, SampleRate, BufferSize, Channels );
 
 	Engine.setMaxActiveVoiceCount( 128 );
 	Engine.setVisualizationEnable( true );

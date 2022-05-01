@@ -80,7 +80,7 @@ namespace Log
 		std::string LogPath;
 		std::string ShatterLogPath;
 
-		CTimer Timer;
+		Timer Timer;
 		static std::vector<FHistory> LogHistory;
 
 		mutable std::shared_mutex LogMutex;

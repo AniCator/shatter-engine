@@ -133,7 +133,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 {
 	OptickEvent();
 
-	CTimer LoadTimer;
+	Timer LoadTimer;
 	LoadTimer.Start();
 
 	std::vector<std::future<void>> Futures;

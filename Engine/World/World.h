@@ -16,7 +16,7 @@ class CPhysics;
 
 //struct Event
 //{
-//	CTimer Timer;
+//	Timer Timer;
 //	float Interval;
 //	std::function<void> Callback;
 //};

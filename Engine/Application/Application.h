@@ -3,9 +3,30 @@
 
 #include <functional>
 #include <map>
+#include <vector>
 #include <Engine/Utility/Service/ServiceRegistry.h>
 
 typedef std::function<void(bool)> DebugUIFunction;
+
+struct AdditionalTick
+{
+	using TickFunction = void( * )( void );
+	enum Execute
+	{
+		Frame = 0, // Executed once per frame.
+
+		PreTick, // Executed before any accumulated ticks are run.
+		Tick, // The main tick function that is called whenever ticks accumulate over time.
+		PostTick, // Executed after all accumulated ticks have run.
+
+		Maximum
+	};
+
+	void Register( const Execute& Location, TickFunction Function );
+	void Unregister( const Execute& Location, TickFunction Function );
+
+	std::vector<TickFunction> Functions[Execute::Maximum];
+};
 
 class CApplication
 {
@@ -61,6 +82,8 @@ public:
 	static bool IsPaused();
 
 	CServiceRegistry ServiceRegistry;
+
+	AdditionalTick Ticks;
 
 private:
 	static const std::wstring& GetAppDataDirectory();

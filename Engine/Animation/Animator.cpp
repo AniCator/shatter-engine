@@ -203,6 +203,10 @@ void Animator::Submit( const Instance& Data, CRenderable* Target )
 	{
 		Target->HasSkeleton = true;
 	}
+	else
+	{
+		Target->HasSkeleton = false;
+	}
 }
 
 Animator::Matrices Animator::GetMatrices( const Animation& Animation, const float& Time, const int32_t& BoneIndex )

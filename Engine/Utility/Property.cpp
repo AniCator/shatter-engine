@@ -344,6 +344,11 @@ void* Property::GetPointer() const
 	return EmptyPointer;
 }
 
+PropertyType Property::GetType() const
+{
+	return Type;
+}
+
 CData& operator<<( CData& Data, const Property& Value )
 {
 	Data << Value.Type;

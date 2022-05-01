@@ -796,45 +796,45 @@ ProfileMemory::~ProfileMemory()
 	}
 }
 
-CTimer::CTimer( bool UpdateOnGetElapsed )
+Timer::Timer( bool UpdateOnGetElapsed )
 {
 	IsRunning = false;
 	this->UpdatedOnGetElapsed = UpdateOnGetElapsed;
 }
 
-CTimer::~CTimer()
+Timer::~Timer()
 {
 
 }
 
-void CTimer::Start()
+void Timer::Start()
 {
 	Start( std::chrono::milliseconds( 0 ) );
 }
 
-void CTimer::Start( const uint64_t& Offset )
+void Timer::Start( const uint64_t& Offset )
 {
 	Start( std::chrono::milliseconds( Offset ) );
 }
 
-void CTimer::Start( const std::chrono::milliseconds& Offset )
+void Timer::Start( const std::chrono::milliseconds& Offset )
 {
 	StartTime = std::chrono::steady_clock::now() - Offset;
 	IsRunning = true;
 }
 
-void CTimer::Stop()
+void Timer::Stop()
 {
 	StopTime = std::chrono::steady_clock::now();
 	IsRunning = false;
 }
 
-bool CTimer::Enabled() const
+bool Timer::Enabled() const
 {
 	return IsRunning;
 }
 
-int64_t CTimer::GetElapsedTimeNanoseconds()
+int64_t Timer::GetElapsedTimeNanoseconds()
 {
 	if( IsRunning )
 	{
@@ -861,7 +861,7 @@ int64_t CTimer::GetElapsedTimeNanoseconds()
 	}
 }
 
-int64_t CTimer::GetElapsedTimeMicroseconds()
+int64_t Timer::GetElapsedTimeMicroseconds()
 {
 	if( IsRunning )
 	{
@@ -888,7 +888,7 @@ int64_t CTimer::GetElapsedTimeMicroseconds()
 	}
 }
 
-int64_t CTimer::GetElapsedTimeMilliseconds()
+int64_t Timer::GetElapsedTimeMilliseconds()
 {
 	if( IsRunning )
 	{
@@ -915,18 +915,18 @@ int64_t CTimer::GetElapsedTimeMilliseconds()
 	}
 }
 
-double CTimer::GetElapsedTimeSeconds()
+double Timer::GetElapsedTimeSeconds()
 {
 	const int64_t Time = GetElapsedTimeMilliseconds();
 	return static_cast<double>( Time ) / 1000.0;
 }
 
-std::chrono::steady_clock::time_point CTimer::GetStartTime()
+std::chrono::steady_clock::time_point Timer::GetStartTime()
 {
 	return StartTime;
 }
 
-std::chrono::steady_clock::time_point CTimer::GetStopTime()
+std::chrono::steady_clock::time_point Timer::GetStopTime()
 {
 	return StopTime;
 }
