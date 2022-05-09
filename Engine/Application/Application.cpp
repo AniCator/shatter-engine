@@ -208,8 +208,28 @@ void GenerateThemes()
 	Themes.insert_or_assign( "Gruvbox (Dark)", ThemeGruvboxDark );
 	Themes.insert_or_assign( "Gruvbox (Light)", ThemeGruvboxLight );
 
-	// Default theme
-	ThemeGruvboxDark();
+	const auto& Theme = CConfiguration::Get().GetString( "theme", "Gruvbox (Dark)" );
+	if ( Theme == "Gruvbox (Light)" )
+	{
+		ThemeGruvboxLight();
+	}
+	else if( Theme == "Cherry" )
+	{
+		ThemeCherry();
+	}
+	else if( Theme == "Dracula" )
+	{
+		ThemeDracula();
+	}
+	else if( Theme == "ImGui" )
+	{
+		ThemeDefault();
+	}
+	else
+	{
+		// Default to the dark theme.
+		ThemeGruvboxDark();
+	}
 }
 
 void SetTheme( const std::string& Theme )
@@ -218,6 +238,9 @@ void SetTheme( const std::string& Theme )
 	if( Iterator != Themes.end() )
 	{
 		Iterator->second();
+
+		CConfiguration::Get().Store( "theme", Theme );
+		CConfiguration::Get().Save();
 	}
 }
 
