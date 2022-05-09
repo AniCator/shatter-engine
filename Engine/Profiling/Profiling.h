@@ -138,7 +138,7 @@ private:
 #ifdef OptickBuild
 #include <ThirdParty/Optick/optick.h>
 #define ProfileScope() OPTICK_EVENT()
-#define Profile( Name ) OPTICK_EVENT()
+#define Profile( Name ) OPTICK_EVENT( Name )
 #define ProfileBareScope() OPTICK_EVENT()
 #define ProfileBare( Name ) OPTICK_EVENT()
 #define ProfileThread( Name ) OPTICK_THREAD( Name )
