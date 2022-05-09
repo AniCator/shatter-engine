@@ -80,6 +80,12 @@ public:
 	void SetFPSLimit( const int& Limit = 0 );
 
 	static bool IsPaused();
+	static void SetPause( const bool& Pause );
+
+	static bool IsPowerSaving();
+	static void SetPowerSaving( const bool& Enable );
+
+	static bool IsSleeping();
 
 	CServiceRegistry ServiceRegistry;
 

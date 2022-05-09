@@ -39,6 +39,7 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/Utility/Script/AngelEngine.h>
+#include <Engine/Utility/Thread.h>
 #include <Engine/World/World.h>
 
 #include <Game/Game.h>
@@ -63,6 +64,13 @@ bool ScaleTime = false;
 bool SimulateJitter = false;
 bool CursorVisible = true;
 bool RestartLayers = false;
+
+// Mode that reduces framerate based on input frequency.
+bool PowerSaving = false;
+double LastInputTime = -1.0;
+FFixedPosition2D LastMousePosition;
+
+std::atomic<bool> Sleeping( false );
 
 #ifdef OptickBuild
 bool CaptureFrame = false;
@@ -275,6 +283,17 @@ void DebugMenu( CApplication* Application )
 			if( ImGui::MenuItem( "Simulate Frame Jitter", nullptr, SimulateJitter ) )
 			{
 				SimulateJitter = !SimulateJitter;
+			}
+
+			if( ImGui::MenuItem( "Power Save Mode", nullptr, PowerSaving ) )
+			{
+				PowerSaving = !PowerSaving;
+
+				if( !PowerSaving )
+				{
+					// Default to configured amount when disabling power saving.
+					Application->SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 0 ) );
+				}
 			}
 
 			ImGui::Separator();
@@ -547,7 +566,7 @@ void CApplication::Run()
 	Timer RealTime( false );
 	RealTime.Start();
 
-	SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 300 ) );
+	SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 0 ) );
 
 	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
 	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
@@ -557,6 +576,8 @@ void CApplication::Run()
 
 	static uint64_t GameAccumulator = 0.0;
 	constexpr uint64_t GameDeltaTick = 1000 / 60;
+
+	double TimeSinceInput = -1.0;
 
 	// const auto TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
 
@@ -592,7 +613,7 @@ void CApplication::Run()
 		const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
 		GameAccumulator += GameDeltaTime;
 
-		const auto Frozen = PauseGame && !FrameStep;
+		const auto Frozen = ( PauseGame && !FrameStep );
 		const auto ExecuteTicks = GameAccumulator > MaximumGameTime;
 		if( !Frozen && ExecuteTicks )
 		{
@@ -610,20 +631,19 @@ void CApplication::Run()
 			{
 				GameAccumulator = MaximumGameTime;
 			}
-
-			MainWindow.EnableCursor( false );
 			
 			if( Tools )
 			{
-				if( !MainWindow.IsCursorEnabled() )
-				{
-					MainWindow.EnableCursor( true );
-				}
+				MainWindow.EnableCursor( true );
 			}
 
-			// const auto NotFrozen = !PauseGame || FrameStep;
 			if( !Frozen )
 			{
+				if( !Tools )
+				{
+					MainWindow.EnableCursor( false );
+				}
+
 				CProfiler::Get().Clear();
 				Renderer.RefreshFrame();
 
@@ -679,6 +699,76 @@ void CApplication::Run()
 
 		PollInput();
 
+		if( IsPowerSaving() )
+		{
+			const auto& Input = CInputLocator::Get();
+			const auto MousePosition = Input.GetMousePosition();
+			auto DeltaPosition = LastMousePosition;
+			DeltaPosition.X -= MousePosition.X;
+			DeltaPosition.Y -= MousePosition.Y;
+
+			DeltaPosition.X = abs( DeltaPosition.X );
+			DeltaPosition.Y = abs( DeltaPosition.Y );
+
+			const auto MouseMoved = DeltaPosition.X > 0 || DeltaPosition.Y > 0;
+			const auto CurrentTime = static_cast<double>( RealTime.GetElapsedTimeMilliseconds() ) / 1000.0;
+
+			if( Input.IsAnyKeyDown() || MouseMoved || LastInputTime < 0.0 )
+			{
+				LastInputTime = CurrentTime;
+				LastMousePosition = MousePosition;
+
+				FPSLimit = 0;
+			}
+
+			int FPSTarget = 0;
+			TimeSinceInput = CurrentTime - LastInputTime;
+			if( TimeSinceInput > 30.0 )
+			{
+				FPSTarget = 5;
+			}
+			else if( TimeSinceInput > 20.0 )
+			{
+				FPSTarget = 15;
+			}
+			else if( TimeSinceInput > 10.0 )
+			{
+				FPSTarget = 30;
+			}
+			else if( TimeSinceInput > 4.0 )
+			{
+				FPSTarget = 60;
+			}
+
+			if( TimeSinceInput > 4.0 && FPSLimit < 1 )
+			{
+				FPSLimit = 300;
+			}
+
+			FPSLimit = FPSLimit * 0.99999 + FPSTarget * 0.00001;
+
+			const auto ConfiguredFPS = CConfiguration::Get().GetInteger( "fps", 0 );
+			if( ConfiguredFPS > 0 )
+			{
+				FPSLimit = Math::Min( FPSLimit, ConfiguredFPS );
+			}
+
+			if ( ( !MainWindow.IsFocused() && TimeSinceInput > 1.0 ) || TimeSinceInput > 6.0 )
+			{
+				Sleeping = true;
+				// std::this_thread::yield();
+				std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+			}
+			else
+			{
+				Sleeping = false;
+			}
+		}
+		else
+		{
+			Sleeping = false;
+		}
+
 		const auto UnboundedFramerate = FPSLimit < 1;
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
 		const uint64_t MaximumFrameTime = UnboundedFramerate ? RenderDeltaTime : 1000 / FPSLimit;
@@ -686,7 +776,7 @@ void CApplication::Run()
 		{
 			TimerScope::Submit( "Frametime", RenderTimer.GetStartTime(), RenderDeltaTime );
 			GameLayersInstance->FrameTime( StaticCast<double>( RenderDeltaTime ) * 0.001 );
-			RenderTimer.Start( UnboundedFramerate ? 0 : RenderDeltaTime - MaximumFrameTime );
+			RenderTimer.Start( 0 );
 
 			MainWindow.BeginFrame();
 
@@ -1193,6 +1283,26 @@ void CApplication::SetFPSLimit( const int& Limit )
 bool CApplication::IsPaused()
 {
 	return PauseGame && !FrameStep;
+}
+
+void CApplication::SetPause( const bool& Pause )
+{
+	PauseGame = Pause;
+}
+
+bool CApplication::IsPowerSaving()
+{
+	return PowerSaving;
+}
+
+void CApplication::SetPowerSaving( const bool& Enable )
+{
+	PowerSaving = Enable;
+}
+
+bool CApplication::IsSleeping()
+{
+	return Sleeping;
 }
 
 #if defined(_WIN32)
