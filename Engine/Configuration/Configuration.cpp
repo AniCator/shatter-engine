@@ -8,7 +8,7 @@
 #include <fstream>
 #include <sstream>
 
-bool CConfiguration::IsValidKey( const char* KeyName )
+bool CConfiguration::IsValidKey( const std::string& KeyName )
 {
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
 	{
@@ -37,7 +37,7 @@ bool CConfiguration::IsEnabled( const char* KeyName, const bool Default )
 	return false;
 }
 
-const char* CConfiguration::GetString( const char* KeyName, const char* Default )
+std::string CConfiguration::GetString( const std::string& KeyName, const std::string& Default )
 {
 	if( !IsValidKey( KeyName ) )
 	{
@@ -46,7 +46,7 @@ const char* CConfiguration::GetString( const char* KeyName, const char* Default 
 		return Default;
 	}
 
-	return GetValue( KeyName ).c_str();
+	return GetValue( KeyName );
 }
 
 int CConfiguration::GetInteger( const char* KeyName, const int Default )

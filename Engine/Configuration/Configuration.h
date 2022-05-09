@@ -30,9 +30,9 @@ namespace StorageCategory
 class CConfiguration : public Singleton<CConfiguration>
 {
 public:
-	bool IsValidKey( const char* KeyName );
+	bool IsValidKey( const std::string& KeyName );
 	bool IsEnabled( const char* KeyName, const bool Default = false );
-	const char* GetString( const char* KeyName, const char* Default = "undefined" );
+	std::string GetString( const std::string& KeyName, const std::string& Default = "undefined" );
 	int GetInteger( const char* KeyName, const int Default = -1 );
 	double GetDouble( const char* KeyName, const double Default = -1.0f );
 	float GetFloat( const char* KeyName, const float Default = -1.0f );
