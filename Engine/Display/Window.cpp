@@ -591,6 +591,11 @@ void CWindow::SetVSYNC( const bool& Enable )
 	CConfiguration::Get().Store( "vsync", Interval );
 }
 
+bool CWindow::IsFocused() const
+{
+	return glfwGetWindowAttrib( WindowHandle, GLFW_FOCUSED ) == 1;
+}
+
 GLFWmonitor* CWindow::GetTargetMonitor() const
 {
 	const int TargetMonitor = CConfiguration::Get().GetInteger( "monitor", -1 );

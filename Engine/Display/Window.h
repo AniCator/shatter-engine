@@ -84,6 +84,8 @@ public:
 	bool IsFullscreenBorderless() const;
 	void SetVSYNC( const bool& Enable );
 
+	bool IsFocused() const;
+
 private:
 	void Recreate();
 
