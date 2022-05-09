@@ -47,13 +47,105 @@ struct Key
 	Vector4D Value{ 0.0f,0.0f,0.0f,0.0f };
 };
 
+template<typename T>
+struct FixedVector
+{
+	FixedVector( const size_t& Size )
+	{
+		this->Size = Size;
+		Data = new T[Size];
+	}
+
+	~FixedVector()
+	{
+		delete Data;
+	}
+
+	T& operator[]( const size_t& Index )
+	{
+		return Data[Index];
+	}
+
+	const T& operator[]( const size_t& Index ) const
+	{
+		return Data[Index];
+	}
+
+	size_t size() const
+	{
+		return Size;
+	}
+
+	// Copy
+	FixedVector( FixedVector const& Vector )
+	{
+		if( this == &Vector )
+			return;
+
+		delete Data;
+		Size = Vector.Size;
+		Data = new T[Size];
+
+		for( size_t Index = 0; Index < Size; Index++ )
+		{
+			Data[Index] = Vector.Data[Index];
+		}
+	}
+
+	FixedVector& operator=( FixedVector const& Vector )
+	{
+		if( this == &Vector )
+			return *this;
+
+		delete Data;
+		Size = Vector.Size;
+		Data = new T[Size];
+
+		for( size_t Index = 0; Index < Size; Index++ )
+		{
+			Data[Index] = Vector.Data[Index];
+		}
+
+		return *this;
+	}
+
+	// Move.
+	FixedVector( FixedVector&& Vector ) noexcept
+	{
+		Size = Vector.Size;
+		Data = Vector.Data;
+
+		Vector.Size = 0;
+		Vector.Data = nullptr;
+	}
+
+	FixedVector& operator=( FixedVector&& Vector ) noexcept
+	{
+		if( this == &Vector )
+			return *this;
+
+		Size = Vector.Size;
+		Data = Vector.Data;
+
+		Vector.Size = 0;
+		Vector.Data = nullptr;
+
+		return *this;
+	}
+
+	FixedVector() = default;
+protected:
+	size_t Size = 0;
+	T* Data = nullptr;
+};
+
 struct Animation
 {
 	std::string Name;
 	float Duration;
-	std::vector<Key> PositionKeys;
-	std::vector<Key> RotationKeys;
-	std::vector<Key> ScalingKeys;
+	FixedVector<Key> PositionKeys;
+	FixedVector<Key> RotationKeys;
+	FixedVector<Key> ScalingKeys;
 };
 
 struct Bone

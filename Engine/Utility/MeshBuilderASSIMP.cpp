@@ -452,6 +452,10 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 				NewAnimation.Duration /= Math::Float( TickRate );
 			}
 
+			std::vector<Key> PositionKeys;
+			std::vector<Key> RotationKeys;
+			std::vector<Key> ScalingKeys;
+
 			for( size_t ChannelIndex = 0; ChannelIndex < Sequence->mNumChannels; ChannelIndex++ )
 			{
 				auto Channel = Sequence->mChannels[ChannelIndex];
@@ -496,7 +500,7 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 
 							// Key.Value = Vector4D( TranslationCorrection.Transform( Vector3D( Key.Value.X, Key.Value.Y, Key.Value.Z ) ), 1.0f );
 
-							NewAnimation.PositionKeys.emplace_back( Key );
+							PositionKeys.emplace_back( Key );
 						}
 
 						for( size_t KeyIndex = 0; KeyIndex < Channel->mNumRotationKeys; KeyIndex++ )
@@ -523,7 +527,7 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 							Key.Value.Z = Quat.z;
 							Key.Value.W = Quat.w;
 
-							NewAnimation.RotationKeys.emplace_back( Key );
+							RotationKeys.emplace_back( Key );
 						}
 
 						for( size_t KeyIndex = 0; KeyIndex < Channel->mNumScalingKeys; KeyIndex++ )
@@ -538,15 +542,34 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 							Key.Value.Y = ChannelKey.mValue.y;
 							Key.Value.Z = ChannelKey.mValue.z;
 
-							NewAnimation.ScalingKeys.emplace_back( Key );
+							ScalingKeys.emplace_back( Key );
 						}
 					}
 				}
 			}
 
-			std::sort( NewAnimation.PositionKeys.begin(), NewAnimation.PositionKeys.end(), CompareAnimationKeys );
-			std::sort( NewAnimation.RotationKeys.begin(), NewAnimation.RotationKeys.end(), CompareAnimationKeys );
-			std::sort( NewAnimation.ScalingKeys.begin(), NewAnimation.ScalingKeys.end(), CompareAnimationKeys );
+			std::sort( PositionKeys.begin(), PositionKeys.end(), CompareAnimationKeys );
+			std::sort( RotationKeys.begin(), RotationKeys.end(), CompareAnimationKeys );
+			std::sort( ScalingKeys.begin(), ScalingKeys.end(), CompareAnimationKeys );
+
+			NewAnimation.PositionKeys = FixedVector<Key>( PositionKeys.size() );
+			NewAnimation.RotationKeys = FixedVector<Key>( RotationKeys.size() );
+			NewAnimation.ScalingKeys = FixedVector<Key>( ScalingKeys.size() );
+
+			for( size_t Index = 0; Index < PositionKeys.size(); Index++ )
+			{
+				NewAnimation.PositionKeys[Index] = PositionKeys[Index];
+			}
+
+			for( size_t Index = 0; Index < RotationKeys.size(); Index++ )
+			{
+				NewAnimation.RotationKeys[Index] = RotationKeys[Index];
+			}
+
+			for( size_t Index = 0; Index < ScalingKeys.size(); Index++ )
+			{
+				NewAnimation.ScalingKeys[Index] = ScalingKeys[Index];
+			}
 
 			MeshData.Animations.insert_or_assign( NewAnimation.Name, NewAnimation );
 			// Log::Event( "Imported animation \"%s\" (%i keys)\n", NewAnimation.Name.c_str(), NewAnimation.PositionKeys.size() + NewAnimation.RotationKeys.size() + NewAnimation.ScalingKeys.size() );

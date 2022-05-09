@@ -119,16 +119,16 @@ struct Animator
 	// Returns scaling matrix.
 	static Matrix4D GetScale( const Key& Key );
 
-	static size_t GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys );
+	static size_t GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys );
 
 	// Returns the key closest to the time.
-	static Key GetNearest( const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys );
+	static Key GetNearest( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys );
 
 	static std::pair<Key,Key> GetPair( 
 		const float& Time, 
 		const float& Duration,
 		const int32_t& BoneIndex,
-		const std::vector<Key>& Keys
+		const FixedVector<Key>& Keys
 	);
 
 	static std::pair<CompoundKey, CompoundKey> GetPair(

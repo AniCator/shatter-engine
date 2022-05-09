@@ -272,7 +272,7 @@ Matrix4D Animator::GetScale( const Key& Key )
 	);
 }
 
-size_t Animator::GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys )
+size_t Animator::GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys )
 {
 	size_t Output = 0;
 	for( size_t KeyIndex = 0; KeyIndex < Keys.size(); KeyIndex++ )
@@ -290,13 +290,13 @@ size_t Animator::GetNearestIndex( const float& Time, const float& Duration, cons
 	return Output;
 }
 
-Key Animator::GetNearest(const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys )
+Key Animator::GetNearest(const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys )
 {
 	const auto Index = GetNearestIndex( Time, Duration, BoneIndex, Keys );
 	return Keys[Index];
 }
 
-std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration, const int32_t& BoneIndex, const std::vector<Key>& Keys )
+std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys )
 {
 	// Find the nearest index.
 	const auto Index = GetNearestIndex( Time, Duration, BoneIndex, Keys );

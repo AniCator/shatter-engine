@@ -115,7 +115,7 @@ void CMeshEntity::Tick()
 			GetTransform();
 		}
 
-		TickAnimation();
+		WantsAnimationUpdate = true;
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
@@ -263,6 +263,12 @@ void CMeshEntity::TickAnimation()
 
 void CMeshEntity::Frame()
 {
+	if( WantsAnimationUpdate )
+	{
+		TickAnimation();
+		WantsAnimationUpdate = false;
+	}
+
 	bool IsCulled = !IsVisible();
 	if( !IsCulled && MaximumRenderDistance > 0.0f )
 	{

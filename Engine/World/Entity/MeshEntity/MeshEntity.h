@@ -113,4 +113,7 @@ protected:
 
 	// Ensures an animation tick will be performed on the next tick.
 	bool ForceAnimationTick = false;
+
+	// Should TickAnimation be called during the next game frame?
+	bool WantsAnimationUpdate = false;
 };
