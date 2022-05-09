@@ -629,6 +629,7 @@ void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 
 void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location, CRenderTexture* Target )
 {
+	OptickEvent();
 	CRenderTexture* PassTarget = Target ? Target : &Framebuffer;
 	
 	const bool RenderOnlyMainPass = SkipRenderPasses || ForceWireFrame;
