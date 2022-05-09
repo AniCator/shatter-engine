@@ -42,12 +42,13 @@ public:
 	void Reload();
 
 	template<typename T>
-	void Store( const char* KeyName, const T Value )
+	void Store( const std::string& KeyName, const T Value )
 	{
 		std::stringstream Stream;
 		Stream << Value;
 		StoredSettings.insert_or_assign( KeyName, Stream.str() );
-	};
+		ExecuteCallback( KeyName, Stream.str() );
+	}
 
 	void Save();
 
@@ -56,7 +57,7 @@ public:
 	/// </summary>
 	/// <param name="Key">Configuration key that should be monitored.</param>
 	/// <param name="Function">To be executed when the given key's value changes.</param>
-	void SetCallback( const std::string& Key, const std::function<void( const std::string& )> Function );
+	void SetCallback( const std::string& Key, const std::function<void( const std::string& )>& Function );
 	bool HasCallback( const std::string& Key ) const;
 	void ExecuteCallback( const std::string& Key, const std::string& Value ) const;
 

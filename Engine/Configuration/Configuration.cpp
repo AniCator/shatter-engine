@@ -18,7 +18,6 @@ bool CConfiguration::IsValidKey( const char* KeyName )
 
 	return true;
 }
-
 bool CConfiguration::IsEnabled( const char* KeyName, const bool Default )
 {
 	if( !IsValidKey( KeyName ) )
@@ -209,7 +208,7 @@ void CConfiguration::Save()
 	ConfigurationStream.close();
 }
 
-void CConfiguration::SetCallback( const std::string& Key, const std::function<void( const std::string& )> Function )
+void CConfiguration::SetCallback( const std::string& Key, const std::function<void( const std::string& )>& Function )
 {
 	if( HasCallback( Key ) )
 	{
