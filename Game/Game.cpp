@@ -73,7 +73,7 @@ void CGameLayers::Tick()
 	Time.X = static_cast<float>( GetCurrentTime() );
 	Time.Y = static_cast<float>( GetDeltaTime() );
 	Time.Z = static_cast<float>( GetPreviousTime() );
-	Time.W = static_cast<float>( GetTimeScale() );
+	Time.W = static_cast<float>( GetRealTime() );
 
 	CWindow& Window = CWindow::Get();
 	Window.GetRenderer().SetUniformBuffer( "Time", Time );
