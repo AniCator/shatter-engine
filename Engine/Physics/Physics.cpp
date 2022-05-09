@@ -5,6 +5,7 @@
 #include <deque>
 #include <vector>
 
+#include <Engine/Configuration/Configuration.h>
 #include <Engine/Physics/PhysicsComponent.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Math.h>
@@ -49,12 +50,16 @@ struct QueryTask : public Task
 	std::shared_ptr<std::vector<QueryRequest>> Requests = nullptr;
 };
 
-bool UsesStaticQuery( CBody* Body )
+bool AlwaysUseStaticQueries = false;
+bool UsesStaticQuery( const CBody* Body )
 {
-	return !Body->Sleeping && ( !Body->Static || Body->Ghost );
+	if( AlwaysUseStaticQueries )
+		return true;
+
+	return !Body->Static || Body->Ghost;
 }
 
-bool UsesDynamicQuery( CBody* Body )
+bool UsesDynamicQuery( const CBody* Body )
 {
 	return !Body->Static;
 }
@@ -164,6 +169,8 @@ public:
 
 		Guard();
 		IsSimulating = false;
+
+		AlwaysUseStaticQueries = CConfiguration::Get().GetInteger( "debug.Physics.AlwaysUseStaticQueries", 0 ) != 0;
 
 		CreateQueryContainers();
 
@@ -276,8 +283,7 @@ public:
 
 	void Accumulate()
 	{
-		if( IsSimulating )
-			return;
+		std::unique_lock<std::mutex> Lock( Mutex );
 
 		/*while( Accumulator > TimeStep )
 		{
@@ -306,6 +312,7 @@ public:
 
 	void ScheduleQueries( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
 	{
+		std::unique_lock<std::mutex> Lock( Mutex );
 		IsSimulating = true;
 
 		RefreshQueryContainers( StaticBodiesToQuery, DynamicBodiesToQuery );
@@ -496,6 +503,8 @@ public:
 		OptickEvent();
 		ProfileMemoryClear( "Physics Static Scene" );
 
+		std::unique_lock<std::mutex> Lock( Mutex );
+
 		if( StaticScene )
 			AccelerationStructure::Destroy( StaticScene );
 		
@@ -517,6 +526,8 @@ public:
 	void BuildDynamicScene()
 	{
 		ProfileMemoryClear( "Physics Dynamic Scene" );
+
+		std::unique_lock<std::mutex> Lock( Mutex );
 
 		if( DynamicScene )
 			AccelerationStructure::Destroy( DynamicScene );
@@ -543,6 +554,7 @@ private:
 	Worker DynamicQueryWorker;
 	Worker BodyWorker;
 	bool IsSimulating = false;
+	std::mutex Mutex;
 };
 
 CPhysics::CPhysics()
@@ -591,18 +603,16 @@ void CPhysics::Unregister( CBody* Body ) const
 
 Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const PollType& Type ) const
 {
-	// ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End );
 }
 
 Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore, const PollType& Type ) const
 {
-	// ProfileAlways( "Physics" );
 	return Scene->Cast( Start, End, Ignore );
 }
 
 std::vector<CBody*> CPhysics::Query( const BoundingBox& AABB, const PollType& Type ) const
 {
-	// ProfileAlways( "Physics" );
+	OptickEvent(); // For profiling external queries.
 	return Scene->Query( AABB );
 }
