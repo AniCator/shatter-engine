@@ -401,7 +401,7 @@ void CInput::Tick()
 		}
 		else if( Input.Action == EAction::Press )
 		{
-			AnyKey = true;
+			// AnyKey = true;
 		}
 	}
 
