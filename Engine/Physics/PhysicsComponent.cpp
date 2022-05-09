@@ -1272,7 +1272,8 @@ void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const
 	}
 	
 	Result.Hit = true;
-	Result.Objects.emplace_back( const_cast<Testable*>( static_cast<const Testable*>( this ) ) );
+	auto* Object = const_cast<Testable*>( static_cast<const Testable*>( this ) );
+	Result.Objects.emplace_back( Object );
 }
 
 Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const
