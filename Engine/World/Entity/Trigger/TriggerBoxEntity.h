@@ -13,7 +13,6 @@ public:
 	void Tick() override;
 	void Destroy() override;
 	void Load( const JSON::Vector& Objects ) override;
-	void Reload() override;
 
 	void Debug() override;
 

@@ -24,6 +24,11 @@ void CTriggerBoxEntity::Construct()
 		Volume->SetBounds( { Vector3D( -1.0f ), Vector3D( 1.0f ) } );
 	}
 
+	if( const auto* World = GetWorld() )
+	{
+		Filter = World->Find( FilterName );
+	}
+
 	Tag( "trigger" );
 }
 
@@ -90,17 +95,6 @@ void CTriggerBoxEntity::Load( const JSON::Vector& Objects )
 	}
 }
 
-void CTriggerBoxEntity::Reload()
-{
-	const auto* World = GetWorld();
-	if( !World )
-		return;
-	
-	Filter = World->Find( FilterName );
-	
-	CPointEntity::Reload();
-}
-
 void CTriggerBoxEntity::Debug()
 {
 	CPointEntity::Debug();
@@ -121,7 +115,12 @@ void CTriggerBoxEntity::Debug()
 
 	if( Volume->Entities.empty() )
 	{
-		EntityString = "(none)";
+		EntityString = "(none)\n";
+	}
+
+	if( FilterName.length() > 0 )
+	{
+		EntityString += "Filter: " + FilterName + "\n";
 	}
 
 	UI::AddText( Transform.GetPosition() + Bounds.Maximum, EntityString.c_str() );
@@ -175,5 +174,5 @@ bool CTriggerBoxEntity::CanTrigger() const
 	}
 
 	// No filter was specified and any interactable will cause this trigger to fire.
-	return true;
+	return FilterName.empty();
 }
