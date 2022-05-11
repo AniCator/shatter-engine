@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "PhysicsComponent.h"
 
+#include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/Rendering/Mesh.h>
 
 #include <Engine/Physics/Physics.h>
@@ -1149,6 +1150,9 @@ void CBody::SetTransform( const FTransform& NewTransform ) const
 	}
 }
 
+ConfigurationVariable<bool> DisplayBodyInfo( "debug.Physics.DisplayBodyInfo", false );
+ConfigurationVariable<bool> DisplayTriangleTree( "debug.Physics.DisplayTriangleTree", false );
+ConfigurationVariable<bool> DisplaySphereBounds( "debug.Physics.DisplaySphereBounds", true );
 void CBody::Debug() const
 {
 	if( !Owner && !Ghost )
@@ -1178,10 +1182,14 @@ void CBody::Debug() const
 	}
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
-	UI::AddSphere( WorldSphere.Origin(), WorldSphere.GetRadius(), BoundsColor );
-	VisualizeBounds( Tree, &PreviousTransform );
 
-	if( Static || Sleeping )
+	if( DisplaySphereBounds )
+		UI::AddSphere( WorldSphere.Origin(), WorldSphere.GetRadius(), BoundsColor );
+
+	if( DisplayTriangleTree )
+		VisualizeBounds( Tree, &PreviousTransform );
+
+	if( Static || Sleeping || !DisplayBodyInfo )
 		return;
 
 	Vector2D Offset = { 0.0f,0.0f };
