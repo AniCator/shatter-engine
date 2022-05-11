@@ -311,6 +311,8 @@ public:
 			{
 				OptickEvent( "Physics Body Update" );
 
+				WaitForQueryWorkers();
+
 				BuildDynamicScene();
 				Accumulate();
 				ScheduleQueries( StaticBodiesToQuery, DynamicBodiesToQuery );
