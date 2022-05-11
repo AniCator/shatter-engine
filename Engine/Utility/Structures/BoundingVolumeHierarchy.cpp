@@ -1,21 +1,40 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "BoundingVolumeHierarchy.h"
 
+#include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Physics/Geometry.h>
+
+ConfigurationVariable<bool> DrawBVHBounds( "debug.Physics.DrawBVHBounds", false );
+ConfigurationVariable<bool> LogBVHBuild( "debug.Physics.LogBVHBuild", false );
+static size_t LogNodeCount = 0;
 
 QueryResult::QueryResult()
 {
 	// Objects.reserve( 8192 );
 }
 
+static int32_t GlobalAxis = 0;
 void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const size_t& Start, const size_t& End )
 {
+	if( LogBVHBuild )
+	{
+		LogNodeCount++;
+	}
+
 	// Invalid span.
 	if( Start == End )
+	{
+		if( LogBVHBuild )
+		{
+			Log::Event( Log::Warning, "Invalid object span.\n" );
+		}
+
 		return;
-	
-	const auto Axis = Math::RandomRangeInteger( 0, 2 );
+	}
+
+	GlobalAxis = ( GlobalAxis + 1 ) % 3;
+	const auto Axis = GlobalAxis;
 	const auto Span = End - Start;
 	if( Span == 1 )
 	{
@@ -44,6 +63,7 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 	{
 		// We're dealing with more than two objects.
 		// We'll have to sort the testable object list and then split it.
+		const auto LocalAxis = Axis;
 		const auto Predicate = [this, Axis] ( const RawObject& A, const RawObject& B )
 		{
 			return Compare( A, B, Axis );
@@ -95,15 +115,15 @@ void BoundingVolumeHierarchy::Node::Query( const BoundingBoxSIMD& Box, QueryResu
 	if( !Box.Intersects( Bounds ) )
 		return;
 
-	if( !Left )
-		return;
+	if( Left )
+	{
+		Left->Query( Box, Result );
+	}
 
-	Left->Query( Box, Result );
-
-	if( !Right )
-		return;
-
-	Right->Query( Box, Result );
+	if( Right )
+	{
+		Right->Query( Box, Result );
+	}
 }
 
 Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const
@@ -141,8 +161,11 @@ Color DebugColors[6] = {
 
 void BoundingVolumeHierarchy::Node::Debug() const
 {
-	const auto Bounds = this->Bounds.Fetch();
-	UI::AddAABB( Bounds.Minimum, Bounds.Maximum, Color::Purple );
+	if( DrawBVHBounds )
+	{
+		const auto Bounds = this->Bounds.Fetch();
+		UI::AddAABB( Bounds.Minimum, Bounds.Maximum, Color::Purple );
+	}
 
 	if( Left )
 		Left->Debug();
@@ -176,8 +199,21 @@ bool BoundingVolumeHierarchy::Node::Compare( const RawObject& A, const RawObject
 
 std::shared_ptr<Testable> BoundingVolumeHierarchy::Build( const RawObjectList& Source )
 {
+	if( LogBVHBuild )
+	{
+		LogNodeCount = 0;
+		Log::Event( "Building BVH for %u objects.\n", Source.size() );
+	}
+
+	GlobalAxis = 0;
+
 	const auto Result = std::make_shared<Node>();
 	Result->Build( Source, 0, Source.size() );
+
+	if( LogBVHBuild )
+	{
+		Log::Event( "BVH node count: %u.\n", LogNodeCount );
+	}
 
 	return Result;
 }

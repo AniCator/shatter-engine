@@ -31,9 +31,9 @@ public:
 		Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const override;
 		void Debug() const override;
 
+		BoundingBoxSIMD Bounds;
 		RawObject Left = nullptr;
 		RawObject Right = nullptr;
-		BoundingBoxSIMD Bounds;
 
 		BoundingBoxSIMD GetBounds() const override;
 
