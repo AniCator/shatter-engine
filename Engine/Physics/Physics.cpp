@@ -50,7 +50,10 @@ struct QueryTask : public Task
 	std::shared_ptr<std::vector<QueryRequest>> Requests = nullptr;
 };
 
-bool AlwaysUseStaticQueries = false;
+ConfigurationVariable<bool> AlwaysUseStaticQueries( "debug.Physics.AlwaysUseStaticQueries", false );
+ConfigurationVariable<bool> DrawDebugStaticQueries( "debug.Physics.DrawDebugStaticQueries", false );
+ConfigurationVariable<bool> DrawDebugDynamicQueries( "debug.Physics.DrawDebugDynamicQueries", false );
+
 bool UsesStaticQuery( const CBody* Body )
 {
 	if( AlwaysUseStaticQueries )
@@ -170,8 +173,6 @@ public:
 		Guard();
 		IsSimulating = false;
 
-		AlwaysUseStaticQueries = CConfiguration::Get().GetInteger( "debug.Physics.AlwaysUseStaticQueries", 0 ) != 0;
-
 		CreateQueryContainers();
 
 		if( !StaticScene )
@@ -184,8 +185,15 @@ public:
 			BuildDynamicScene();
 		}
 
-		// StaticScene->Debug();
-		// DynamicScene->Debug();
+		if( DrawDebugStaticQueries )
+		{
+			StaticScene->Debug();
+		}
+
+		if( DrawDebugDynamicQueries )
+		{
+			DynamicScene->Debug();
+		}
 		
 		for( auto* BodyA : Bodies )
 		{
