@@ -88,7 +88,22 @@ public:
 
 		~CallbackTracker()
 		{
-			Get().ClearCallback( Key );
+			if( !Key.empty() )
+				Get().ClearCallback( Key );
+		}
+
+		CallbackTracker( const CallbackTracker& ) = delete;
+		CallbackTracker& operator=( const CallbackTracker& ) = delete;
+
+		CallbackTracker( CallbackTracker&& RHS ) noexcept
+		{
+			std::swap( Key, RHS.Key );
+		}
+
+		CallbackTracker& operator=( CallbackTracker&& RHS ) noexcept
+		{
+			Key = std::move( RHS.Key );
+			return *this;
 		}
 
 		std::string Key;

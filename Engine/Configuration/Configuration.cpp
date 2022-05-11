@@ -127,11 +127,6 @@ void CConfiguration::SetFile( const StorageCategory::Type& Location, const std::
 
 void CConfiguration::Reload()
 {
-	if( !Initialized )
-	{
-		Initialized = true;
-	}
-
 	static const std::wstring DefaultEngineConfigurationFile = L"ShatterEngine.default.ini";
 	static const std::wstring EngineConfigurationFile = L"ShatterEngine.ini";
 
@@ -139,6 +134,8 @@ void CConfiguration::Reload()
 
 	const auto PreviousSettings = StoredSettings;
 	StoredSettings.clear();
+
+	bool FoundMissingSetting = false;
 
 	bool IsFirstFile = true;
 	for( const auto& FilePath : FilePaths )
@@ -199,6 +196,21 @@ void CConfiguration::Reload()
 			}
 		}
 
+		if( !Initialized && !IsFirstFile )
+		{
+			// Include missing settings when initializing.
+			// These are usually global configuration variables that have never been saved before.
+			for( const auto& Entry : PreviousSettings )
+			{
+				const auto& Iterator = StoredSettings.find( Entry.first );
+				if( Iterator == StoredSettings.end() )
+				{
+					StoredSettings.insert_or_assign( Entry.first, Entry.second );
+					FoundMissingSetting = true;
+				}
+			}
+		}
+
 		Log::Event( "\n" );
 
 		configurationFileStream.close();
@@ -206,7 +218,18 @@ void CConfiguration::Reload()
 		IsFirstFile = false;
 	}
 
+	if( FoundMissingSetting )
+	{
+		// Make sure the missing entries are saved.
+		Save();
+	}
+
 	ModificationTime = Math::Max( ModificationTime, GetModificationTime( GetFile() ) );
+
+	if( !Initialized )
+	{
+		Initialized = true;
+	}
 }
 
 void CConfiguration::Save()
