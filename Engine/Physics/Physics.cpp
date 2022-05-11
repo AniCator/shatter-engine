@@ -19,6 +19,16 @@
 
 using AccelerationStructure = BoundingVolumeHierarchy;
 
+ConfigurationVariable<bool> AlwaysUseStaticQueries( "debug.Physics.AlwaysUseStaticQueries", false );
+
+ConfigurationVariable<bool> DrawDebugStaticQueries( "debug.Physics.DrawDebugStaticQueries", false );
+ConfigurationVariable<bool> DrawDebugDynamicQueries( "debug.Physics.DrawDebugDynamicQueries", false );
+
+ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", true );
+
+ConfigurationVariable<bool> AllowFallbackCasting( "physics.AllowFallbackCasting", true );
+ConfigurationVariable<bool> DrawFallbackCasting( "debug.Physics.DrawFallbackCasting", false );
+
 struct QueryRequest
 {
 	QueryRequest() = delete;
@@ -49,10 +59,6 @@ struct QueryTask : public Task
 	std::shared_ptr<Testable> Scene = nullptr;
 	std::shared_ptr<std::vector<QueryRequest>> Requests = nullptr;
 };
-
-ConfigurationVariable<bool> AlwaysUseStaticQueries( "debug.Physics.AlwaysUseStaticQueries", false );
-ConfigurationVariable<bool> DrawDebugStaticQueries( "debug.Physics.DrawDebugStaticQueries", false );
-ConfigurationVariable<bool> DrawDebugDynamicQueries( "debug.Physics.DrawDebugDynamicQueries", false );
 
 bool UsesStaticQuery( const CBody* Body )
 {
@@ -313,7 +319,11 @@ public:
 
 				WaitForQueryWorkers();
 
-				BuildDynamicScene();
+				if( UpdateDynamicScene )
+				{
+					BuildDynamicScene();
+				}
+
 				Accumulate();
 				ScheduleQueries( StaticBodiesToQuery, DynamicBodiesToQuery );
 			} )
@@ -424,36 +434,49 @@ public:
 		}
 
 		// UI::AddLine( Start, End, Color::Red );
-		
-		for( auto* Body : Bodies )
-		{
-			if( !Body )
-				continue;
 
-			bool Skip = false;
-			for( auto* Ignored : Ignore )
+		if( AllowFallbackCasting )
+		{
+			for( auto* Body : Bodies )
 			{
-				if( Body == Ignored )
+				if( !Body )
+					continue;
+
+				bool Skip = false;
+				for( auto* Ignored : Ignore )
 				{
-					Skip = true;
-					break;
+					if( Body == Ignored )
+					{
+						Skip = true;
+						break;
+					}
+				}
+
+				// Don't test ignored bodies.
+				if( Skip )
+					continue;
+
+				const auto Result = Body->Cast( Start, End );
+				if( Result.Hit && Result.Distance < ClosestDistance )
+				{
+					ClosestDistance = Result.Distance;
+					ClosestResult = Result;
+					ClosestResult.Body = Body;
 				}
 			}
 
-			// Don't test ignored bodies.
-			if( Skip )
-				continue;
-
-			const auto Result = Body->Cast( Start, End );
-			if( Result.Hit && Result.Distance < ClosestDistance )
+			if( DrawFallbackCasting )
 			{
-				ClosestDistance = Result.Distance;
-				ClosestResult = Result;
-				ClosestResult.Body = Body;
+				if( ClosestResult.Hit )
+					ClosestResult.Body->Debug();
 			}
-		}
 
-		return ClosestResult;
+			return ClosestResult;
+		}
+		else
+		{
+			return Empty;
+		}
 	}
 
 	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const
