@@ -130,10 +130,6 @@ Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, con
 	return Result;
 }
 
-Color DebugLeft = Color( 255, 0, 255 );
-Color DebugRight = Color( 0, 255, 255 );
-Color DebugColor = DebugLeft;
-
 Color DebugColors[6] = {
 	Color( 255, 0, 0 ),
 	Color( 255, 255, 0 ),
@@ -145,21 +141,12 @@ Color DebugColors[6] = {
 
 void BoundingVolumeHierarchy::Node::Debug() const
 {
-	Color ActualColor = DebugColor;
-
-	/*const uint32_t InverseDepth = 100 / ( Depth + 1 );
-	ActualColor.R *= InverseDepth;
-	ActualColor.G *= InverseDepth;
-	ActualColor.B *= InverseDepth;*/
-
 	const auto Bounds = this->Bounds.Fetch();
-	UI::AddAABB( Bounds.Minimum, Bounds.Maximum, ActualColor );
+	UI::AddAABB( Bounds.Minimum, Bounds.Maximum, Color::Purple );
 
-	DebugColor = DebugLeft;
 	if( Left )
 		Left->Debug();
 
-	DebugColor = DebugRight;
 	if( Right )
 		Right->Debug();
 }
