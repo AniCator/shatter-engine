@@ -3,16 +3,33 @@
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
+#include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
 
 #include <fstream>
 #include <sstream>
 
+time_t GetModificationTime( const std::wstring& FilePath )
+{
+	struct _stat Buffer;
+	const bool Exists = _wstat( FilePath.c_str(), &Buffer ) == 0 || errno == 132;
+	if( !Exists )
+		return 0;
+
+	return Buffer.st_mtime;
+}
+
 bool CConfiguration::IsValidKey( const std::string& KeyName )
 {
+	// Reload the configuration file if it was modified.
+	const auto NewModificationTime = GetModificationTime( GetFile() );
+	if( Initialized && NewModificationTime > ModificationTime )
+	{
+		Reload();
+	}
+
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
 	{
-		Log::Event( Log::Warning, "Invalid key \"%s\"\n", KeyName );
 		return false;
 	}
 
@@ -82,6 +99,18 @@ void CConfiguration::Initialize()
 {
 	Log::Event( "Loading configuration.\n" );
 	Reload();
+}
+
+const std::wstring& CConfiguration::GetFile() const
+{
+	size_t FileIndex = 0;
+	for( size_t Index = 0; Index < StorageCategory::Maximum; Index++ )
+	{
+		if( FilePaths[Index].length() > 0 )
+			FileIndex = Index;
+	}
+
+	return FilePaths[FileIndex];
 }
 
 void CConfiguration::SetFile( const StorageCategory::Type& Location, const std::wstring& FilePath )
@@ -176,6 +205,8 @@ void CConfiguration::Reload()
 
 		IsFirstFile = false;
 	}
+
+	ModificationTime = Math::Max( ModificationTime, GetModificationTime( GetFile() ) );
 }
 
 void CConfiguration::Save()
@@ -218,6 +249,56 @@ void CConfiguration::SetCallback( const std::string& Key, const std::function<vo
 	Callbacks.insert_or_assign( Key, Function );
 }
 
+void CConfiguration::Track( const std::string& Key, bool& Target, const bool& Default )
+{
+	Target = IsEnabled( Key.c_str(), Default );
+	SetCallback( Key, [&Target] ( const std::string& Value )
+		{
+			Target = Value == "1" || Value == "true";
+		}
+	);
+}
+
+void CConfiguration::Track( const std::string& Key, std::string& Target, const std::string& Default )
+{
+	Target = GetString( Key.c_str(), Default );
+	SetCallback( Key, [&Target] ( const std::string& Value )
+		{
+			Target = Value;
+		}
+	);
+}
+
+void CConfiguration::Track( const std::string& Key, int& Target, const int& Default )
+{
+	Target = GetInteger( Key.c_str(), Default );
+	SetCallback( Key, [&Target] ( const std::string& Value )
+		{
+			Target = Math::Integer( Value );
+		}
+	);
+}
+
+void CConfiguration::Track( const std::string& Key, double& Target, const double& Default )
+{
+	Target = GetDouble( Key.c_str(), Default );
+	SetCallback( Key, [&Target] ( const std::string& Value )
+		{
+			Target = Math::Float( Value );
+		}
+	);
+}
+
+void CConfiguration::Track( const std::string& Key, float& Target, const float& Default )
+{
+	Target = GetFloat( Key.c_str(), Default );
+	SetCallback( Key, [&Target] ( const std::string& Value )
+		{
+			Target = Math::Float( Value );
+		}
+	);
+}
+
 bool CConfiguration::HasCallback( const std::string& Key ) const
 {
 	const auto Iterator = Callbacks.find( Key );
@@ -230,6 +311,15 @@ void CConfiguration::ExecuteCallback( const std::string& Key, const std::string&
 	if( Iterator != Callbacks.end() )
 	{
 		Iterator->second( Value );
+	}
+}
+
+void CConfiguration::ClearCallback( const std::string& Key )
+{
+	const auto Iterator = Callbacks.find( Key );
+	if( Iterator != Callbacks.end() )
+	{
+		Callbacks.erase( Iterator );
 	}
 }
 

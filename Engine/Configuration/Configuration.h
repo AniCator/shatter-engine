@@ -38,11 +38,12 @@ public:
 	float GetFloat( const char* KeyName, const float Default = -1.0f );
 
 	void Initialize();
+	const std::wstring& GetFile() const;
 	void SetFile( const StorageCategory::Type& Location, const std::wstring& FilePath );
 	void Reload();
 
 	template<typename T>
-	void Store( const std::string& KeyName, const T Value )
+	void Store( const std::string& KeyName, const T& Value )
 	{
 		std::stringstream Stream;
 		Stream << Value;
@@ -58,8 +59,40 @@ public:
 	/// <param name="Key">Configuration key that should be monitored.</param>
 	/// <param name="Function">To be executed when the given key's value changes.</param>
 	void SetCallback( const std::string& Key, const std::function<void( const std::string& )>& Function );
+
+	/// <summary>
+	/// Assigns the configured value, if present, and sets a callback for said key.
+	/// </summary>
+	/// <param name="Key">Configuration key that should be tracked.</param>
+	/// <param name="Target">The address the configured value is assigned to.</param>
+	/// <param name="Default">The default value that is assigned to the target if the key isn't configured.</param>
+	void Track( const std::string& Key, bool& Target, const bool& Default = false );
+	void Track( const std::string& Key, std::string& Target, const std::string& Default );
+	void Track( const std::string& Key, int& Target, const int& Default = -1 );
+	void Track( const std::string& Key, double& Target, const double& Default = 0.0 );
+	void Track( const std::string& Key, float& Target, const float& Default = 0.0f );
+
 	bool HasCallback( const std::string& Key ) const;
 	void ExecuteCallback( const std::string& Key, const std::string& Value ) const;
+	void ClearCallback( const std::string& Key );
+
+	template<typename T>
+	struct CallbackTracker
+	{
+		CallbackTracker() = default;
+		CallbackTracker( const std::string& Key, T& Target, const T& Default )
+		{
+			this->Key = Key;
+			Get().Track( Key, Target, Default );
+		}
+
+		~CallbackTracker()
+		{
+			Get().ClearCallback( Key );
+		}
+
+		std::string Key;
+	};
 
 private:
 	static std::regex ConfigureFilter( const char* KeyName );
@@ -69,4 +102,42 @@ private:
 	std::unordered_map<std::string, std::string> StoredSettings;
 	std::unordered_map<std::string, std::function<void(std::string)>> Callbacks;
 	bool Initialized = false;
+
+	time_t ModificationTime = 0;
 };
+
+template<typename T>
+struct ConfigurationVariable
+{
+	ConfigurationVariable() = delete;
+	ConfigurationVariable( const std::string& Name, const T& Default )
+	{
+		Value = Default;
+		Callback = { Name, Value, Default };
+	}
+
+	T Get() const
+	{
+		return Value;
+	}
+
+	void Set( const T& Value )
+	{
+		CConfiguration::Get().Store( Callback.Key, Value );
+	}
+
+	explicit operator bool() const
+	{
+		return Value;
+	}
+
+protected:
+	CConfiguration::CallbackTracker<T> Callback;
+	T Value;
+};
+
+template<typename T>
+using ConsoleVariable = ConfigurationVariable<T>;
+
+template<typename T>
+using ConVar = ConsoleVariable<T>;
