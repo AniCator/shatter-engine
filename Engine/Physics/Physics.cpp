@@ -20,6 +20,7 @@
 using AccelerationStructure = BoundingVolumeHierarchy;
 
 ConfigurationVariable<bool> AlwaysUseStaticQueries( "debug.Physics.AlwaysUseStaticQueries", false );
+ConfigurationVariable<bool> AlwaysUpdateStaticScene( "debug.Physics.AlwaysUpdateStaticScene", false );
 
 ConfigurationVariable<bool> DrawDebugStaticQueries( "debug.Physics.DrawDebugStaticQueries", false );
 ConfigurationVariable<bool> DrawDebugDynamicQueries( "debug.Physics.DrawDebugDynamicQueries", false );
@@ -318,6 +319,11 @@ public:
 				OptickEvent( "Physics Body Update" );
 
 				WaitForQueryWorkers();
+
+				if( AlwaysUpdateStaticScene )
+				{
+					BuildStaticScene();
+				}
 
 				if( UpdateDynamicScene )
 				{

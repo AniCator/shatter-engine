@@ -24,14 +24,7 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 
 	// Invalid span.
 	if( Start == End )
-	{
-		if( LogBVHBuild )
-		{
-			Log::Event( Log::Warning, "Invalid object span.\n" );
-		}
-
 		return;
-	}
 
 	GlobalAxis = ( GlobalAxis + 1 ) % 3;
 	const auto Axis = GlobalAxis;
@@ -39,7 +32,7 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 	if( Span == 1 )
 	{
 		// We're left with only one object.
-		Left = Source.front();
+		Left = Source[Start];
 
 		Bounds = Left->GetBounds();
 	}
@@ -163,8 +156,8 @@ void BoundingVolumeHierarchy::Node::Debug() const
 {
 	if( DrawBVHBounds )
 	{
-		const auto Bounds = this->Bounds.Fetch();
-		UI::AddAABB( Bounds.Minimum, Bounds.Maximum, Color::Purple );
+		const auto DebugBounds = this->Bounds.Fetch();
+		UI::AddAABB( DebugBounds.Minimum, DebugBounds.Maximum, Color::Purple );
 	}
 
 	if( Left )
