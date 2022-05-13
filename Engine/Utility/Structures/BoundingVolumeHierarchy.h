@@ -24,7 +24,7 @@ public:
 		Node() = default;
 		~Node() override = default;
 
-		void Build( const RawObjectList& Source, const size_t& Start, const size_t& End );
+		void Build( RawObjectList& Source, const size_t& Start, const size_t& End );
 		void Destroy();
 
 		void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const override;
@@ -41,6 +41,6 @@ public:
 		static bool Compare( const RawObject& A, const RawObject& B, const int32_t& Axis );
 	};
 
-	static std::shared_ptr<Testable> Build( const RawObjectList& Source );
+	static std::shared_ptr<Testable> Build( RawObjectList& Source );
 	static void Destroy( std::shared_ptr<Testable>& Hierarchy );
 };

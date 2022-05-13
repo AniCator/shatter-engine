@@ -15,7 +15,7 @@ QueryResult::QueryResult()
 }
 
 static int32_t GlobalAxis = 0;
-void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const size_t& Start, const size_t& End )
+void BoundingVolumeHierarchy::Node::Build( RawObjectList& Source, const size_t& Start, const size_t& End )
 {
 	if( LogBVHBuild )
 	{
@@ -56,24 +56,23 @@ void BoundingVolumeHierarchy::Node::Build( const RawObjectList& Source, const si
 	{
 		// We're dealing with more than two objects.
 		// We'll have to sort the testable object list and then split it.
-		const auto LocalAxis = Axis;
 		const auto Predicate = [this, Axis] ( const RawObject& A, const RawObject& B )
 		{
 			return Compare( A, B, Axis );
 		};
 
-		// Copy the source array of testable objects.
-		auto Objects = Source;
-		std::sort( Objects.begin() + Start, Objects.begin() + End, Predicate );
+		std::sort( Source.begin() + Start, Source.begin() + End, Predicate );
 
 		const auto Split = Start + Span / 2;
 		auto* LeftNode = new Node();
-		LeftNode->Build( Objects, Start, Split );
+		LeftNode->Build( Source, Start, Split );
 
 		Left = LeftNode;
 
+		std::sort( Source.begin() + Start, Source.begin() + End, Predicate );
+
 		auto* RightNode = new Node();
-		RightNode->Build( Objects, Split, End );
+		RightNode->Build( Source, Split, End );
 
 		Right = RightNode;
 
@@ -190,7 +189,7 @@ bool BoundingVolumeHierarchy::Node::Compare( const RawObject& A, const RawObject
 	return A->GetBounds().Fetch().Minimum[Axis] < B->GetBounds().Fetch().Minimum[Axis];
 }
 
-std::shared_ptr<Testable> BoundingVolumeHierarchy::Build( const RawObjectList& Source )
+std::shared_ptr<Testable> BoundingVolumeHierarchy::Build( RawObjectList& Source )
 {
 	if( LogBVHBuild )
 	{
