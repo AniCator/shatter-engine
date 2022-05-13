@@ -253,7 +253,10 @@ void CConfiguration::Save()
 	{
 		Log::Event( "Saving configuration file to \"%S\".\n", SavePath.c_str() );
 
-		for( auto& Setting : StoredSettings )
+		std::map<std::string, std::string> SortedSettings;
+		SortedSettings.insert( StoredSettings.begin(), StoredSettings.end() );
+
+		for( auto& Setting : SortedSettings )
 		{
 			ConfigurationStream << Setting.first << "=" << Setting.second << std::endl;
 		}
