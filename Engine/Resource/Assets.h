@@ -126,17 +126,6 @@ public:
 	static const std::string& GetReadableImageFormat( EImageFormat Format );
 	static EImageFormat GetImageFormatFromString( const std::string& Format );
 
-	template<class T>
-	inline T* Find( const std::string& Name, std::unordered_map<std::string, T*> Data ) const
-	{
-		if( Data.find( Name ) != Data.end() )
-		{
-			return Data[Name];
-		}
-
-		return nullptr;
-	};
-
 	void ReloadShaders();
 
 	void RegisterAssetType( const std::string& Name, const std::function<Asset*( AssetParameters& )>& Loader )
@@ -160,11 +149,10 @@ public:
 	AssetPool<CSound> Sounds;
 	AssetPool<CSequence> Sequences;
 
-	// Generic assets of any other type.
+	// Assets of any other type.
 	AssetPool<Asset> Assets;
 
 private:
-	// Generic asset loaders.
 	std::unordered_map<std::string, std::function<Asset*( AssetParameters& )>> AssetLoaders;
 
 public:
