@@ -52,8 +52,6 @@ struct Property
 	Property( const bool& Value );
 	Property( void* Value );
 
-	~Property() {}
-
 	const std::string& GetString() const;
 	const float& GetFloat() const;
 	const Vector3D& GetVector3D() const;
