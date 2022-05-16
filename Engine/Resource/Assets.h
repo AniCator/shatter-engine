@@ -143,14 +143,14 @@ public:
 		return false;
 	}
 
-	AssetPool<CMesh> Meshes;
-	AssetPool<CShader> Shaders;
-	AssetPool<CTexture> Textures;
-	AssetPool<CSound> Sounds;
-	AssetPool<CSequence> Sequences;
+	AssetPool<CMesh*> Meshes;
+	AssetPool<CShader*> Shaders;
+	AssetPool<CTexture*> Textures;
+	AssetPool<CSound*> Sounds;
+	AssetPool<CSequence*> Sequences;
 
 	// Assets of any other type.
-	AssetPool<Asset> Assets;
+	AssetPool<Asset*> Assets;
 
 private:
 	std::unordered_map<std::string, std::function<Asset*( AssetParameters& )>> AssetLoaders;

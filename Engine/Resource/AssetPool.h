@@ -28,13 +28,15 @@ struct AssetEntry
 template<typename AssetType>
 struct AssetPool
 {
+	using AssetVector = std::vector<AssetType>;
+
 	/// <summary>
 	/// Adds an asset to the pool, if it doesn't exist yet.
 	/// </summary>
 	/// <param name="Name">The name we want to assign to the asset.</param>
 	/// <param name="Asset">The pointer to the asset itself.</param>
 	/// <returns>True, if the asset was succesfully created. False, when the asset already exists under the given name.</returns>
-	bool Create( const std::string& Name, AssetType* Asset )
+	bool Create( const std::string& Name, const AssetType& Asset )
 	{
 		if( Find( Name ) )
 			return false; // Asset already exists.
@@ -50,7 +52,7 @@ struct AssetPool
 	/// </summary>
 	/// <param name="Name">The asset name we want to search for.</param>
 	/// <returns>The pointer to the asset or a null pointer if the asset does not exist.</returns>
-	AssetType* Find( const std::string& Name ) const
+	AssetType Find( const std::string& Name ) const
 	{
 		const auto Iterator = NameToHandle.find( Name );
 		if( Iterator == NameToHandle.end() )
@@ -64,7 +66,7 @@ struct AssetPool
 	/// </summary>
 	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
 	/// <returns>The pointer to the asset or a null pointer if the handle is invalid.</returns>
-	AssetType* Get( const AssetHandle& Handle ) const
+	AssetType Get( const AssetHandle& Handle ) const
 	{
 		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
 			return nullptr; // Invalid handle.
@@ -93,7 +95,7 @@ struct AssetPool
 	}
 
 	/// <returns>A vector of asset pointers.</returns>
-	const std::vector<AssetType*>& GetAssets() const
+	const AssetVector& GetAssets() const
 	{
 		return Assets;
 	}
@@ -121,5 +123,5 @@ struct AssetPool
 
 protected:
 	AssetHandleMap NameToHandle;
-	std::vector<AssetType*> Assets;
+	AssetVector Assets;
 };
