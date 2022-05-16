@@ -99,7 +99,7 @@ struct AssetPool
 	/// Looks up an asset by its handle and returns it.
 	/// </summary>
 	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
-	/// <returns>The asset or throws and exception if the handle is invalid.</returns>
+	/// <returns>The asset, the asset pointer or throws an exception if the handle is invalid.</returns>
 	const AssetType& Get( const AssetHandle& Handle ) const
 	{
 		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
@@ -122,7 +122,7 @@ struct AssetPool
 	/// Looks up an asset by its handle and returns it.
 	/// </summary>
 	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
-	/// <returns>The asset or throws and exception if the handle is invalid.</returns>
+	/// <returns>The asset, the asset pointer, or throws an exception if the handle is invalid.</returns>
 	AssetType& Get( const AssetHandle& Handle )
 	{
 		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
