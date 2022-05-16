@@ -74,7 +74,7 @@ std::vector<ParticleSystem> ParticleSystem::LoadDefinitions( const std::string& 
 }
 
 // Loads a single particle asset.
-CAsset* ParticleAssetLoader( AssetParameters& Parameters )
+Asset* ParticleAssetLoader( AssetParameters& Parameters )
 {
 	if( Parameters.empty() )
 		return nullptr;
@@ -96,7 +96,7 @@ CAsset* ParticleAssetLoader( AssetParameters& Parameters )
 }
 
 // Loads particle assets from a definition file.
-CAsset* ParticleDefinitionLoader( AssetParameters& Parameters )
+Asset* ParticleDefinitionLoader( AssetParameters& Parameters )
 {
 	if( Parameters.empty() )
 		return nullptr;

@@ -16,7 +16,7 @@ class CShader;
 class CTexture;
 class CSound;
 class CSequence;
-class CAsset;
+class Asset;
 
 struct PrimitivePayload
 {
@@ -77,7 +77,7 @@ public:
 	T* CreateNamedAsset( const char* Name )
 	{
 		// Check if we can cast from T to CAsset.
-		static_assert( std::is_base_of<CAsset, T>(), "Trying to create asset that doesn't derive from CAsset." );
+		static_assert( std::is_base_of<Asset, T>(), "Trying to create asset that doesn't derive from CAsset." );
 		
 		// Transform given name into lower case string
 		std::string NameString = Name;
@@ -91,21 +91,18 @@ public:
 
 		T* NewAsset = new T();
 		Assets.Create( NameString, NewAsset );
-
-		CProfiler& Profiler = CProfiler::Get();
-		const int64_t Asset = 1;
-		Profiler.AddCounterEntry( ProfileTimeEntry( "Assets", Asset ), false );
+		CProfiler::Get().AddCounterEntry( ProfileTimeEntry( "Assets", 1 ), false );
 
 		Log::Event( "Created asset \"%s\".\n", NameString.c_str() );
 
 		return NewAsset;
 	}
 
-	CAsset* CreateNamedAsset( const std::string& Name, const std::string& Type, AssetParameters& Parameters );
+	Asset* CreateNamedAsset( const std::string& Name, const std::string& Type, AssetParameters& Parameters );
 
 	// This function can be used to register an asset that was created in a deferred manner.
 	// Returns true upon successful registration.
-	bool RegisterNamedAsset( const std::string& Name, CAsset* Asset );
+	bool RegisterNamedAsset( const std::string& Name, Asset* Asset );
 
 	// This is a special method that can be used to run asset loaders that generate multiple assets.
 	void CreateAssets( const std::string& Type, const std::string& Location );
@@ -121,7 +118,7 @@ public:
 		return Cast<T>( Assets.Find( Name ) );
 	}
 
-	CAsset* FindAsset( const std::string& Name ) const
+	Asset* FindAsset( const std::string& Name ) const
 	{
 		return Assets.Find( Name );
 	}
@@ -142,7 +139,7 @@ public:
 
 	void ReloadShaders();
 
-	void RegisterAssetType( const std::string& Name, const std::function<CAsset*( AssetParameters& )>& Loader )
+	void RegisterAssetType( const std::string& Name, const std::function<Asset*( AssetParameters& )>& Loader )
 	{
 		AssetLoaders.insert_or_assign( Name, Loader );
 	}
@@ -164,11 +161,11 @@ public:
 	AssetPool<CSequence> Sequences;
 
 	// Generic assets of any other type.
-	AssetPool<CAsset> Assets;
+	AssetPool<Asset> Assets;
 
 private:
 	// Generic asset loaders.
-	std::unordered_map<std::string, std::function<CAsset*( AssetParameters& )>> AssetLoaders;
+	std::unordered_map<std::string, std::function<Asset*( AssetParameters& )>> AssetLoaders;
 
 public:
 	// Loads any assets specified in the object.

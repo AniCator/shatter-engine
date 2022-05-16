@@ -873,7 +873,7 @@ CSequence* CAssets::CreateNamedSequence( const char* Name )
 	return NewSequence;
 }
 
-CAsset* CAssets::CreateNamedAsset( const std::string& Name, const std::string& Type, AssetParameters& Parameters )
+Asset* CAssets::CreateNamedAsset( const std::string& Name, const std::string& Type, AssetParameters& Parameters )
 {
 	if( !IsValidAssetType( Type ) )
 	{
@@ -900,7 +900,7 @@ CAsset* CAssets::CreateNamedAsset( const std::string& Name, const std::string& T
 	return Asset;
 }
 
-bool CAssets::RegisterNamedAsset( const std::string& Name, CAsset* Asset )
+bool CAssets::RegisterNamedAsset( const std::string& Name, Asset* Asset )
 {
 	if( !Asset )
 		return false;

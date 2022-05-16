@@ -41,7 +41,7 @@ struct ParticleSystem
 	static void RegisterAssetLoader();
 };
 
-class ParticleAsset : public CAsset
+class ParticleAsset : public Asset
 {
 public:
 	~ParticleAsset() override = default;

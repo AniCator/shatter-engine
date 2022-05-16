@@ -3,11 +3,11 @@
 
 #include <string>
 
-class CAsset
+class Asset
 {
 public:
-	CAsset() = default;
-	virtual ~CAsset() = default;
+	Asset() = default;
+	virtual ~Asset() = default;
 
 	virtual const std::string& GetType() const = 0;
 };
