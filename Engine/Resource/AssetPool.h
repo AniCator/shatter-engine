@@ -51,12 +51,46 @@ struct AssetPool
 	/// Looks up an asset by its name and returns the asset pointer if it is valid.
 	/// </summary>
 	/// <param name="Name">The asset name we want to search for.</param>
-	/// <returns>The pointer to the asset or a null pointer if the asset does not exist.</returns>
-	AssetType Find( const std::string& Name ) const
+	/// <returns>The asset, the asset pointer, or throws an exception if the asset does not exist.</returns>
+	const AssetType& Find( const std::string& Name ) const
 	{
 		const auto Iterator = NameToHandle.find( Name );
 		if( Iterator == NameToHandle.end() )
-			return nullptr;
+		{
+			if( std::is_pointer_v<AssetType> )
+			{
+				static AssetType NullType = nullptr;
+				return NullType;
+			}
+			else
+			{
+				throw std::exception( "Asset does not exist." );
+			}
+		}
+
+		return Assets[Iterator->second];
+	}
+
+	/// <summary>
+	/// Looks up an asset by its name and returns the asset pointer if it is valid.
+	/// </summary>
+	/// <param name="Name">The asset name we want to search for.</param>
+	/// <returns>The asset, the asset pointer, or throws an exception if the asset does not exist.</returns>
+	AssetType& Find( const std::string& Name )
+	{
+		const auto Iterator = NameToHandle.find( Name );
+		if( Iterator == NameToHandle.end() )
+		{
+			if( std::is_pointer_v<AssetType> )
+			{
+				static AssetType NullType = nullptr;
+				return NullType;
+			}
+			else
+			{
+				throw std::exception( "Asset does not exist." );
+			}
+		}
 
 		return Assets[Iterator->second];
 	}
@@ -65,11 +99,44 @@ struct AssetPool
 	/// Looks up an asset by its handle and returns it.
 	/// </summary>
 	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
-	/// <returns>The pointer to the asset or a null pointer if the handle is invalid.</returns>
-	AssetType Get( const AssetHandle& Handle ) const
+	/// <returns>The asset or throws and exception if the handle is invalid.</returns>
+	const AssetType& Get( const AssetHandle& Handle ) const
 	{
 		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
-			return nullptr; // Invalid handle.
+		{
+			if( std::is_pointer_v<AssetType> )
+			{
+				static AssetType NullType = nullptr;
+				return NullType;
+			}
+			else
+			{
+				throw std::exception( "Invalid asset handle provided." );
+			}
+		}
+
+		return Assets[Handle];
+	}
+
+	/// <summary>
+	/// Looks up an asset by its handle and returns it.
+	/// </summary>
+	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
+	/// <returns>The asset or throws and exception if the handle is invalid.</returns>
+	AssetType& Get( const AssetHandle& Handle )
+	{
+		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
+		{
+			if( std::is_pointer_v<AssetType> )
+			{
+				static AssetType NullType = nullptr;
+				return NullType;
+			}
+			else
+			{
+				throw std::exception( "Invalid asset handle provided." );
+			}
+		}
 
 		return Assets[Handle];
 	}
