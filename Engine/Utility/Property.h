@@ -100,9 +100,3 @@ protected:
 		void* Pointer;
 	};
 };
-
-struct PropertyPair
-{
-	FName Key;
-	Property Value;
-};
