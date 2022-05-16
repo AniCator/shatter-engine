@@ -35,6 +35,7 @@ namespace JSON
 			if( this->Key == Key )
 			{
 				Value = NewValue;
+				return;
 			}
 			
 			if( const auto & Object = this->operator[]( Key ) )
@@ -54,11 +55,9 @@ namespace JSON
 			{
 				return Object->Value;
 			}
-			else
-			{
-				const static std::string EmptyString;
-				return EmptyString;
-			}
+
+			const static std::string EmptyString;
+			return EmptyString;
 		}
 
 		Object* operator[]( const std::string& Search ) const
