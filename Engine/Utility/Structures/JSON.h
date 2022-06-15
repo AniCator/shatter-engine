@@ -284,6 +284,8 @@ namespace JSON
 		}
 	}
 
+	std::string Stringify( const JSON::Object* Object );
+
 	struct Container
 	{
 		std::list<Object> Objects;

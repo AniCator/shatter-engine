@@ -234,7 +234,7 @@ namespace JSON
 		return Tree( Data.c_str(), Data.size() );
 	}
 
-	void StringifyObject( std::stringstream& Stream, Object* Object, const uint32_t Offset, const bool Last )
+	void Stringify( std::stringstream& Stream, const Object* Object, const uint32_t Offset, const bool Last )
 	{
 		std::string OffsetString;
 
@@ -267,7 +267,7 @@ namespace JSON
 			for( auto& Iterator : Object->Objects )
 			{
 				const uint32_t NewOffset = Offset + 1;
-				StringifyObject( Stream, Iterator, NewOffset, Iterator == Object->Objects.back() );
+				Stringify( Stream, Iterator, NewOffset, Iterator == Object->Objects.back() );
 			}
 
 			if( HasKey )
@@ -290,6 +290,8 @@ namespace JSON
 		{
 			if( Object->Value.length() > 0 || true )
 			{
+				// std::string Value = Object->Value;
+				// Value.replace( "\"", "\\\"" );
 				Stream << OffsetString << "\"" << Object->Key << "\" : \"" << Object->Value;
 			}
 			else
@@ -373,6 +375,14 @@ namespace JSON
 		}
 	}
 
+	std::string Stringify( const JSON::Object* Object )
+	{
+		std::stringstream Stream;
+		Stringify( Stream, Object, 1, true );
+
+		return Stream.str();
+	}
+
 	Container& Container::operator+=( const Container& Container )
 	{
 		for( auto& Branch : Container.Tree )
@@ -452,9 +462,9 @@ namespace JSON
 
 		Stream << "{\n";
 
-		for( auto& Iterator : Tree )
+		for( const auto& Iterator : Tree )
 		{
-			StringifyObject( Stream, Iterator, 1, Iterator == Tree.back() );
+			Stringify( Stream, Iterator, 1, Iterator == Tree.back() );
 		}
 
 		Stream << "}";
