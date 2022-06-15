@@ -112,7 +112,7 @@ struct DataString
 struct DataVector
 {
 	template<typename T>
-	static void Encode( CData& Data, std::vector<T>& Vector )
+	static void Encode( CData& Data, const std::vector<T>& Vector )
 	{
 		const uint32_t Count = Vector.size();
 		Data << Count;
