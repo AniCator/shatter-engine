@@ -8,15 +8,18 @@ class CLogicSequenceEntity : public CEntity
 public:
 	CLogicSequenceEntity();
 
-	virtual void Destroy() override;
+	void Tick() override;
+	void Destroy() override;
 
-	virtual void Load( const JSON::Vector& Objects ) override;
-	virtual void Reload() override;
+	void Load( const JSON::Vector& Objects ) override;
+	void Reload() override;
 
-	virtual void Export( CData& Data ) override;
-	virtual void Import( CData& Data ) override;
+	void Export( CData& Data ) override;
+	void Import( CData& Data ) override;
 
 protected:
 	std::string SequenceAsset;
 	class CSequence* Sequence = nullptr;
+
+	bool IsPlaying = false;
 };

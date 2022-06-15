@@ -42,6 +42,28 @@ CLogicSequenceEntity::CLogicSequenceEntity()
 	};
 }
 
+void CLogicSequenceEntity::Tick()
+{
+	if( !Sequence )
+		return;
+
+	const auto CurrentlyPlaying = Sequence->Playing();
+	const auto StartedPlaying = !IsPlaying && CurrentlyPlaying;
+	if( StartedPlaying )
+	{
+		IsPlaying = true;
+		Send( "OnStart", this );
+		return;
+	}
+
+	const auto StoppedPlaying = IsPlaying && !CurrentlyPlaying;
+	if( StoppedPlaying )
+	{
+		IsPlaying = false;
+		Send( "OnFinish", this );
+	}
+}
+
 void CLogicSequenceEntity::Destroy()
 {
 	if( Sequence && Sequence->Playing() )
@@ -50,13 +72,7 @@ void CLogicSequenceEntity::Destroy()
 
 void CLogicSequenceEntity::Load( const JSON::Vector& Objects )
 {
-	for( auto* Property : Objects )
-	{
-		if( Property->Key == "sequence" )
-		{
-			SequenceAsset = Property->Value;
-		}
-	}
+	JSON::Assign( Objects, "sequence", SequenceAsset );
 }
 
 void CLogicSequenceEntity::Reload()
