@@ -188,8 +188,16 @@ bool CreateSequence( const AssetNewData& Data, const AssetSequence& Sequence )
 	if( Assets.Sequences.Find( Data.Name ) )
 		return false;
 
-	/*if( !CFile::Exists( Sequence.Location ) )
-		return false;*/
+	if( !CFile::Exists( Sequence.Location ) )
+	{
+		// Try to generate the file.
+		CSequence Dummy;
+		Dummy.Save( Sequence.Location.c_str() );
+
+		// Load it again to get the file path saved.
+		Dummy.Load( Sequence.Location.c_str() );
+		Dummy.Save();
+	}
 
 	auto* Asset = Assets.CreateNamedSequence( Data.Name.c_str(), Sequence.Location.c_str() );
 	if( !Asset )
