@@ -108,7 +108,9 @@ public:
 	FCameraSetup GetCameraSetup() const;
 	Frustum GetFrustum() const;
 
-	CCamera Lerp( const CCamera& B, const float& Alpha ) const;
+	static CCamera Lerp( const CCamera& A, const CCamera& B, const float& Alpha );
+	static CCamera BezierBlend( const CCamera& A, const float& TangentA, const CCamera& B, const float& TangentB, const float& Factor );
+	static CCamera HandheldSimulation( const CCamera& Camera, const float& Factor, const double& Time );
 
 	Vector3D CameraOrientation;
 private:

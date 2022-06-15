@@ -357,19 +357,69 @@ Frustum CCamera::GetFrustum() const
 	return Frustum;
 }
 
-CCamera CCamera::Lerp( const CCamera& B, const float& Alpha ) const
+CCamera CCamera::Lerp( const CCamera& A, const CCamera& B, const float& Alpha )
 {
-	CCamera Blended = *this;
+	CCamera Blended = A;
 
 	FCameraSetup& BlendSetup = Blended.GetCameraSetup();
-	const auto& SetupA = GetCameraSetup();
+	const auto& SetupA = A.GetCameraSetup();
 	const auto& SetupB = B.GetCameraSetup();
 
 	BlendSetup.CameraPosition = Math::Lerp( SetupA.CameraPosition, SetupB.CameraPosition, Alpha );
 	BlendSetup.FieldOfView = Math::Lerp( SetupA.FieldOfView, SetupB.FieldOfView, Alpha );
-	Blended.SetCameraOrientation( Math::Lerp( CameraOrientation, B.CameraOrientation, Alpha ) );
+	Blended.SetCameraOrientation( Math::Lerp( A.CameraOrientation, B.CameraOrientation, Alpha ) );
 	BlendSetup.CameraDirection = Math::Lerp( SetupA.CameraDirection, SetupB.CameraDirection, Alpha );
 
 	Blended.Update();
 	return Blended;
+}
+
+CCamera CreateControlPoint( const CCamera& Setup, const float& Tangent )
+{
+	CCamera ControlPoint = Setup;
+
+	auto& ControlPointSetup = ControlPoint.GetCameraSetup();
+	ControlPointSetup.CameraPosition += ControlPointSetup.CameraDirection * Tangent;
+
+	return ControlPoint;
+}
+
+CCamera CCamera::BezierBlend( const CCamera& A, const float& TangentA, const CCamera& B, const float& TangentB, const float& Factor )
+{
+	const auto ControlPointA = CreateControlPoint( A, TangentA );
+	const auto ControlPointB = CreateControlPoint( B, TangentB );
+
+	// De Casteljau blending.
+	const auto BlendA = CCamera::Lerp( A, ControlPointA, Factor );
+	const auto BlendB = CCamera::Lerp( ControlPointA, ControlPointB, Factor );
+	const auto BlendC = CCamera::Lerp( ControlPointB, B, Factor );
+
+	const auto BlendD = CCamera::Lerp( BlendA, BlendB, Factor );
+	const auto BlendE = CCamera::Lerp( BlendB, BlendC, Factor );
+
+	return CCamera::Lerp( BlendD, BlendE, Factor );
+}
+
+CCamera CCamera::HandheldSimulation( const CCamera& Camera, const float& Factor, const double& Time )
+{
+	CCamera HandheldCamera = Camera;
+
+	HandheldCamera.CameraOrientation.Pitch += sinf( Time * 3.0 ) * 0.314f * Factor;
+	HandheldCamera.CameraOrientation.Yaw += cosf( Time * 2.0 ) * 0.314f * Factor;
+
+	HandheldCamera.CameraOrientation.Pitch -= cosf( Time * 6.0 ) * 0.0314f * Factor;
+	HandheldCamera.CameraOrientation.Yaw -= sinf( Time * 7.0 ) * 0.0314f * Factor;
+
+	HandheldCamera.CameraOrientation.Pitch += sinf( Time * 12.0 ) * 0.0314f * Factor;
+	HandheldCamera.CameraOrientation.Yaw += cosf( Time * 14.0 ) * 0.0314f * Factor;
+
+	HandheldCamera.CameraOrientation.Pitch -= cosf( Time * 24.0 ) * 0.00314f * Factor;
+	HandheldCamera.CameraOrientation.Yaw -= sinf( Time * 28.0 ) * 0.00314f * Factor;
+
+	HandheldCamera.CameraOrientation.Pitch -= sinf( Time * 96.0 ) * 0.000314f * Factor;
+	HandheldCamera.CameraOrientation.Yaw -= cosf( Time * 112.0 ) * 0.000314f * Factor;
+
+	HandheldCamera.SetCameraOrientation( HandheldCamera.CameraOrientation );
+
+	return HandheldCamera;
 }
