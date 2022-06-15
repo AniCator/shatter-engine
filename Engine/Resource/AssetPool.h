@@ -30,6 +30,11 @@ struct AssetPool
 {
 	using AssetVector = std::vector<AssetType>;
 
+	template<typename T>
+	using Pointer = typename std::enable_if_t<std::is_pointer_v<T>, T>;
+	template<typename T>
+	using Reference = typename std::enable_if_t<!std::is_pointer_v<T>, T>;
+
 	/// <summary>
 	/// Adds an asset to the pool, if it doesn't exist yet.
 	/// </summary>
@@ -38,7 +43,7 @@ struct AssetPool
 	/// <returns>True, if the asset was succesfully created. False, when the asset already exists under the given name.</returns>
 	bool Create( const std::string& Name, const AssetType& Asset )
 	{
-		if( Find( Name ) )
+		if( Get( Name ) != InvalidAssetHandle )
 			return false; // Asset already exists.
 
 		NameToHandle[Name] = Assets.size();
@@ -52,70 +57,54 @@ struct AssetPool
 	/// </summary>
 	/// <param name="Name">The asset name we want to search for.</param>
 	/// <returns>The asset, the asset pointer, or throws an exception if the asset does not exist.</returns>
-	const AssetType& Find( const std::string& Name ) const
+	template<typename T = AssetType>
+	const Pointer<T>& Find( const std::string& Name ) const
 	{
 		const auto Iterator = NameToHandle.find( Name );
 		if( Iterator == NameToHandle.end() )
 		{
-			if( std::is_pointer_v<AssetType> )
-			{
-				static AssetType NullType = nullptr;
-				return NullType;
-			}
-			else
-			{
-				throw std::exception( "Asset does not exist." );
-			}
+			static Pointer<T> Null = nullptr;
+			return Null;
 		}
 
 		return Assets[Iterator->second];
 	}
 
-	/// <summary>
-	/// Looks up an asset by its name and returns the asset pointer if it is valid.
-	/// </summary>
-	/// <param name="Name">The asset name we want to search for.</param>
-	/// <returns>The asset, the asset pointer, or throws an exception if the asset does not exist.</returns>
-	AssetType& Find( const std::string& Name )
+	template<typename T = AssetType>
+	const Reference<T>& Find( const std::string& Name ) const
 	{
 		const auto Iterator = NameToHandle.find( Name );
 		if( Iterator == NameToHandle.end() )
 		{
-			if( std::is_pointer_v<AssetType> )
-			{
-				static AssetType NullType = nullptr;
-				return NullType;
-			}
-			else
-			{
-				throw std::exception( "Asset does not exist." );
-			}
+			throw std::exception( "Invalid asset." );
 		}
 
 		return Assets[Iterator->second];
 	}
 
-	/// <summary>
-	/// Looks up an asset by its handle and returns it.
-	/// </summary>
-	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
-	/// <returns>The asset, the asset pointer or throws an exception if the handle is invalid.</returns>
-	const AssetType& Get( const AssetHandle& Handle ) const
+	template<typename T = AssetType>
+	Pointer<T>& Find( const std::string& Name )
 	{
-		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
+		const auto Iterator = NameToHandle.find( Name );
+		if( Iterator == NameToHandle.end() )
 		{
-			if( std::is_pointer_v<AssetType> )
-			{
-				static AssetType NullType = nullptr;
-				return NullType;
-			}
-			else
-			{
-				throw std::exception( "Invalid asset handle provided." );
-			}
+			static Pointer<T> Null = nullptr;
+			return Null;
 		}
 
-		return Assets[Handle];
+		return Assets[Iterator->second];
+	}
+
+	template<typename T = AssetType>
+	Reference<T>& Find( const std::string& Name )
+	{
+		const auto Iterator = NameToHandle.find( Name );
+		if( Iterator == NameToHandle.end() )
+		{
+			throw std::exception( "Invalid asset." );
+		}
+
+		return Assets[Iterator->second];
 	}
 
 	/// <summary>
@@ -123,19 +112,47 @@ struct AssetPool
 	/// </summary>
 	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
 	/// <returns>The asset, the asset pointer, or throws an exception if the handle is invalid.</returns>
-	AssetType& Get( const AssetHandle& Handle )
+	template<typename T = AssetType>
+	const Pointer<T>& Get( const AssetHandle& Handle ) const
 	{
 		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
 		{
-			if( std::is_pointer_v<AssetType> )
-			{
-				static AssetType NullType = nullptr;
-				return NullType;
-			}
-			else
-			{
-				throw std::exception( "Invalid asset handle provided." );
-			}
+			static Pointer<T> Null = nullptr;
+			return Null;
+		}
+
+		return Assets[Handle];
+	}
+
+	template<typename T = AssetType>
+	const Reference<T>& Get( const AssetHandle& Handle ) const
+	{
+		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
+		{
+			throw std::exception( "Invalid asset." );
+		}
+
+		return Assets[Handle];
+	}
+
+	template<typename T = AssetType>
+	Pointer<T>& Get( const AssetHandle& Handle )
+	{
+		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
+		{
+			static Pointer<T> Null = nullptr;
+			return Null;
+		}
+
+		return Assets[Handle];
+	}
+
+	template<typename T = AssetType>
+	Reference<T>& Get( const AssetHandle& Handle )
+	{
+		if( Handle >= Assets.size() || Handle == InvalidAssetHandle )
+		{
+			throw std::exception( "Invalid asset." );
 		}
 
 		return Assets[Handle];
