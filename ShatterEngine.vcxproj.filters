@@ -479,6 +479,9 @@
     <ClCompile Include="Engine\Utility\Structures\Octree.cpp">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Sequencer\Timeline.cpp">
+      <Filter>Source Files\Engine\Sequencer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -912,6 +915,12 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Structures\Octree.h">
       <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Math\Unit.h">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sequencer\Timeline.h">
+      <Filter>Source Files\Engine\Sequencer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

@@ -12,9 +12,9 @@ struct EventEntity : TrackEvent
 	void Context() override;
 
 	const char* GetName() override;
-	const char* GetType() override;
+	const char* GetType() const override;
 
-	void Export( CData& Data ) override;
+	void Export( CData& Data ) const override;
 	void Import( CData& Data ) override;
 
 protected:
@@ -37,6 +37,4 @@ protected:
 	bool LoopAnimation = false;
 
 	bool DisplayGizmo = false;
-
-	Timecode StoredMarker = 0;
 };

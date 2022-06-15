@@ -9,8 +9,8 @@ struct FEventImage : TrackEvent
 	void Reset() override {};
 	void Context() override;
 	const char* GetName() override;
-	const char* GetType() override;
-	void Export( CData& Data ) override;
+	const char* GetType() const override;
+	void Export( CData& Data ) const override;
 	void Import( CData& Data ) override;
 
 protected:

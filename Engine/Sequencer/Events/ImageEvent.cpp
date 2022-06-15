@@ -63,12 +63,12 @@ const char* FEventImage::GetName()
 	return Name.c_str();
 }
 
-const char* FEventImage::GetType()
+const char* FEventImage::GetType() const
 {
 	return "Image";
 }
 
-void FEventImage::Export( CData& Data )
+void FEventImage::Export( CData& Data ) const
 {
 	TrackEvent::Export( Data );
 

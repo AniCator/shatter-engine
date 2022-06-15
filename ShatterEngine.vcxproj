@@ -217,6 +217,7 @@
     <ClCompile Include="Engine\Sequencer\Events\EntityEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Events\ImageEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Sequencer.cpp" />
+    <ClCompile Include="Engine\Sequencer\Timeline.cpp" />
     <ClCompile Include="Engine\Utility\Chunk.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\Gizmo.cpp" />
@@ -337,6 +338,7 @@
     <ClInclude Include="Engine\Sequencer\Events\EntityEvent.h" />
     <ClInclude Include="Engine\Sequencer\Events\ImageEvent.h" />
     <ClInclude Include="Engine\Sequencer\Sequencer.h" />
+    <ClInclude Include="Engine\Sequencer\Timeline.h" />
     <ClInclude Include="Engine\Utility\BuildTime.h" />
     <ClInclude Include="Engine\Utility\Chunk.h" />
     <ClInclude Include="Engine\Utility\Data.h" />
@@ -352,6 +354,7 @@
     <ClInclude Include="Engine\Utility\Math\BoundingBox.h" />
     <ClInclude Include="Engine\Utility\Math\Matrix.h" />
     <ClInclude Include="Engine\Utility\Math\Transform.h" />
+    <ClInclude Include="Engine\Utility\Math\Unit.h" />
     <ClInclude Include="Engine\Utility\Math\Vector.h" />
     <ClInclude Include="Engine\Utility\MeshBuilder.h" />
     <ClInclude Include="Engine\Utility\Presence\Precense.h" />

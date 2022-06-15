@@ -15,7 +15,6 @@ DragTransform DragB;
 
 void EventEntity::Evaluate( const Timecode& Marker )
 {
-	StoredMarker = Marker;
 	TrackEvent::Evaluate( Marker );
 
 	if( !Entity )
@@ -303,12 +302,12 @@ const char* EventEntity::GetName()
 	return Name;
 }
 
-const char* EventEntity::GetType()
+const char* EventEntity::GetType() const
 {
 	return "Entity";
 }
 
-void EventEntity::Export( CData& Data )
+void EventEntity::Export( CData& Data ) const
 {
 	TrackEvent::Export( Data );
 

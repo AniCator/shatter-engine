@@ -10,6 +10,7 @@ static const Timecode Timebase = 1536;
 double MarkerToTime( const Timecode& Marker );
 double MarkerRangeToTime( const Timecode& StartMarker, const Timecode& EndMarker );
 
+constexpr size_t InvalidTrackIndex = -1;
 struct TrackEvent
 {
 	virtual void Evaluate( const Timecode& Marker );
@@ -28,7 +29,7 @@ struct TrackEvent
 	static void AddType( const std::string& Name, const std::function<TrackEvent* ( )>& Generator );
 
 	virtual const char* GetName() = 0;
-	virtual const char* GetType() = 0;
+	virtual const char* GetType() const = 0;
 
 	Timecode Start = 0;
 	Timecode Length = 0;
@@ -37,6 +38,8 @@ struct TrackEvent
 	Timecode Offset = 0;
 	Timecode PreviousOffset = 0;
 	Timecode StoredMarker = 0;
+	size_t TrackIndex = InvalidTrackIndex;
+	class CTimeline* Timeline = nullptr;
 
 	void UpdateInternalMarkers( const Timecode& Marker );
 
@@ -60,10 +63,10 @@ struct TrackEvent
 		return Marker >= Start && Marker < ( Start + Length );
 	}
 
-	virtual void Export( CData& Data );
+	virtual void Export( CData& Data ) const;
 	virtual void Import( CData& Data );
 
-	friend CData& operator<<( CData& Data, TrackEvent* Track )
+	friend CData& operator<<( CData& Data, const TrackEvent* Track )
 	{
 		Track->Export( Data );
 		return Data;
@@ -120,7 +123,7 @@ public:
 	}
 
 public:
-	friend CData& operator<<( CData& Data, CSequence& Sequence );
+	friend CData& operator<<( CData& Data, const CSequence& Sequence );
 	friend CData& operator>>( CData& Data, CSequence& Sequence );
 
 private:
