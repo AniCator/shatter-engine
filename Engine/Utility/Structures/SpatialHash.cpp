@@ -99,7 +99,7 @@ void SpatialHash::Node::Destroy()
 	Grid.clear();
 }
 
-void SpatialHash::Node::Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const
+void SpatialHash::Node::Query( const BoundingBoxSIMD& Box, QueryResult& Result )
 {
 	const auto BoxCenter = Box.Fetch().Center() * 0.5f;
 	const auto CenterCell = Coordinate( BoxCenter, Spacing );

@@ -27,7 +27,7 @@ public:
 		void Build( RawObjectList& Source, const size_t& Start, const size_t& End );
 		void Destroy();
 
-		void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const override;
+		void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) override;
 		Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const override;
 		void Debug() const override;
 

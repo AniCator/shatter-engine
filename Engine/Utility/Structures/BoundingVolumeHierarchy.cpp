@@ -102,7 +102,7 @@ void BoundingVolumeHierarchy::Node::Destroy()
 	}
 }
 
-void BoundingVolumeHierarchy::Node::Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const
+void BoundingVolumeHierarchy::Node::Query( const BoundingBoxSIMD& Box, QueryResult& Result )
 {
 	if( !Box.Intersects( Bounds ) )
 		return;
