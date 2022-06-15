@@ -52,7 +52,10 @@ CShader* CRenderable::GetShader()
 
 void CRenderable::SetShader( CShader* Shader )
 {
-	if( Shader && this->Shader != Shader || Shader->GetHandles().Program != this->Shader->GetHandles().Program )
+	if( !Shader )
+		return;
+
+	if( this->Shader != Shader || Shader->GetHandles().Program != this->Shader->GetHandles().Program )
 	{
 		this->Shader = Shader;
 
