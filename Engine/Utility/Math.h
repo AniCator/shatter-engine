@@ -285,7 +285,7 @@ namespace Math
 	template<typename T, typename G>
 	inline T Max( const T& A, const G& B )
 	{
-		return A > B ? A : B;
+		return A > static_cast<T>( B ) ? A : static_cast<T>( B );
 	}
 
 	// Returns the largest.
@@ -302,7 +302,7 @@ namespace Math
 	template<typename T, typename G>
 	inline T Min( const T& A, const G& B )
 	{
-		return A < B ? A : B;
+		return A < static_cast<T>( B ) ? A : static_cast<T>( B );
 	}
 
 	// Returns the smallest.
@@ -388,9 +388,21 @@ namespace Math
 		return A + Vector4D( Alpha, Alpha, Alpha, Alpha ) * ( B - A );
 	}
 
-	inline float Map( const float& X, const float& Minimum, const float& Maximum, const float& NewMinimum, const float& NewMaximum )
+	template<typename T>
+	T Map( const T& X, const T& Minimum, const T& Maximum, const T& NewMinimum, const T& NewMaximum )
 	{
 		return NewMinimum + ( X - Minimum ) * ( NewMaximum - NewMinimum ) / ( Maximum - Minimum );
+	}
+
+	template<typename T>
+	T MapClamp( const T& X, const T& Minimum, const T& Maximum, const T& NewMinimum, const T& NewMaximum )
+	{
+		return Clamp( Map( X, Minimum, Maximum, NewMinimum, NewMaximum ), NewMinimum, NewMaximum );
+	}
+
+	inline double Abs( const double& Value )
+	{
+		return std::abs( Value );
 	}
 
 	inline float Abs( const float& Value )
