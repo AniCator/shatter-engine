@@ -119,8 +119,8 @@ void CWindow::Create( const char* Title )
 	const bool DebugContext = config.IsEnabled( "opengldebugcontext", false );
 	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, DebugContext ? 1 : 0 );
 
-	const int MajorVersion = config.GetInteger( "openglversionmajor", 4 );
-	const int MinorVersion = config.GetInteger( "openglversionminor", 3 );
+	const int MajorVersion = 4; // config.GetInteger( "openglversionmajor", 4 );
+	const int MinorVersion = 3; // config.GetInteger( "openglversionminor", 3 );
 
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, MajorVersion );
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, MinorVersion );
