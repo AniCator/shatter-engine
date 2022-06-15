@@ -29,6 +29,7 @@ ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", tr
 
 ConfigurationVariable<bool> AllowFallbackCasting( "physics.AllowFallbackCasting", true );
 ConfigurationVariable<bool> DrawFallbackCasting( "debug.Physics.DrawFallbackCasting", false );
+ConfigurationVariable<bool> DisplayCasting( "debug.Physics.DisplayCasting", false );
 
 struct QueryRequest
 {
@@ -46,19 +47,22 @@ struct QueryTask : public Task
 {
 	void Execute() override
 	{
+		std::unique_lock<std::mutex> Lock( Mutex );
 		if( !Scene || !Requests )
 			return;
 
 		OptickEvent("Asynchronous Physics Queries");
 
+		auto* Testable = Scene.get();
 		for( auto& Request : *Requests )
 		{
-			Scene->Query( Request.Body->GetBounds(), Request.Result );
+			Testable->Query( Request.Body->GetBounds(), Request.Result );
 		}
 	}
 
 	std::shared_ptr<Testable> Scene = nullptr;
 	std::shared_ptr<std::vector<QueryRequest>> Requests = nullptr;
+	std::mutex Mutex;
 };
 
 bool UsesStaticQuery( const CBody* Body )
@@ -164,7 +168,7 @@ public:
 		}
 	}
 
-	void RefreshQueryContainers( const size_t& StaticCandidates, const size_t& DynamicCandidates ) const
+	void RefreshQueryContainers( const size_t& StaticCandidates, const size_t& DynamicCandidates )
 	{
 		StaticQueryRequests->clear();
 		StaticQueryRequests->reserve( StaticCandidates );
@@ -298,8 +302,6 @@ public:
 
 	void Accumulate()
 	{
-		std::unique_lock<std::mutex> Lock( Mutex );
-
 		/*while( Accumulator > TimeStep )
 		{
 			OptickEvent();
@@ -336,11 +338,15 @@ public:
 		);
 	}
 
+	std::shared_ptr<QueryTask> StaticQuery = std::make_shared<QueryTask>();
+	std::shared_ptr<QueryTask> DynamicQuery = std::make_shared<QueryTask>();
 	void ScheduleQueries( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
 	{
-		std::unique_lock<std::mutex> Lock( Mutex );
 		IsSimulating = true;
 
+		std::lock_guard<std::mutex, std::mutex> Guard( StaticQuery->Mutex, DynamicQuery->Mutex );
+
+		// BUG: This refresh somehow seems to happen while the query workers are still running.
 		RefreshQueryContainers( StaticBodiesToQuery, DynamicBodiesToQuery );
 
 		for( auto* BodyA : Bodies )
@@ -359,12 +365,10 @@ public:
 			}
 		}
 
-		const auto StaticQuery = std::make_shared<QueryTask>();
 		StaticQuery->Scene = StaticScene;
 		StaticQuery->Requests = StaticQueryRequests;
 		StaticQueryWorker.Start( StaticQuery );
 
-		const auto DynamicQuery = std::make_shared<QueryTask>();
 		DynamicQuery->Scene = DynamicScene;
 		DynamicQuery->Requests = DynamicQueryRequests;
 		DynamicQueryWorker.Start( DynamicQuery );
@@ -405,8 +409,6 @@ public:
 		Geometry::Result StaticResult;
 		Geometry::Result DynamicResult;
 
-		// UI::AddLine( Start, End, Color::Green );
-
 		if( PollStaticScene && StaticScene )
 		{
 			StaticResult = StaticScene->Cast( Start, End, IgnoreList );
@@ -431,11 +433,21 @@ public:
 
 		if( StaticResult.Hit && StaticResult.Body )
 		{
+			if( DisplayCasting )
+			{
+				UI::AddLine( Start, StaticResult.Position, Color::Purple );
+			}
+
 			return StaticResult;
 		}
 
 		if( DynamicResult.Hit && DynamicResult.Body )
 		{
+			if( DisplayCasting )
+			{
+				UI::AddLine( Start, DynamicResult.Position, Color::Yellow );
+			}
+
 			return DynamicResult;
 		}
 
@@ -469,6 +481,11 @@ public:
 					ClosestResult = Result;
 					ClosestResult.Body = Body;
 				}
+			}
+
+			if( DisplayCasting && ClosestResult.Hit && ClosestResult.Body )
+			{
+				UI::AddLine( Start, ClosestResult.Position, Color::Blue );
 			}
 
 			if( DrawFallbackCasting )
@@ -542,8 +559,6 @@ public:
 		OptickEvent();
 		ProfileMemoryClear( "Physics Static Scene" );
 
-		std::unique_lock<std::mutex> Lock( Mutex );
-
 		if( StaticScene )
 			AccelerationStructure::Destroy( StaticScene );
 		
@@ -565,8 +580,6 @@ public:
 	void BuildDynamicScene()
 	{
 		ProfileMemoryClear( "Physics Dynamic Scene" );
-
-		std::unique_lock<std::mutex> Lock( Mutex );
 
 		if( DynamicScene )
 			AccelerationStructure::Destroy( DynamicScene );
@@ -593,7 +606,6 @@ private:
 	Worker DynamicQueryWorker;
 	Worker BodyWorker;
 	bool IsSimulating = false;
-	std::mutex Mutex;
 };
 
 CPhysics::CPhysics()

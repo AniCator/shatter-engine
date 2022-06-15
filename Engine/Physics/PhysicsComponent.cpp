@@ -1266,7 +1266,7 @@ void CBody::Ignore( CMeshEntity* Entity, const bool Clear )
 	}
 }
 
-void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const
+void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result )
 {
 	/*if( Continuous )
 	{
@@ -1280,8 +1280,7 @@ void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const
 	}
 	
 	Result.Hit = true;
-	auto* Object = const_cast<Testable*>( static_cast<const Testable*>( this ) );
-	Result.Objects.emplace_back( Object );
+	Result.Objects.push_back( this );
 }
 
 Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const

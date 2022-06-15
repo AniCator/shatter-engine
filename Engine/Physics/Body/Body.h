@@ -62,7 +62,7 @@ public:
 	// Setting Clear to true will remove the body from the list. (if it exists)
 	virtual void Ignore( CMeshEntity* Entity, const bool Clear = false );
 
-	void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) const override;
+	void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) override;
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore = std::vector<Testable*>() ) const override;
 	
 	CMeshEntity* Owner = nullptr;
