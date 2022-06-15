@@ -25,7 +25,8 @@ enum class PropertyType : uint8_t
 	I8,
 
 	Boolean,
-	Pointer
+	Pointer,
+	Data
 };
 
 struct Property
@@ -51,6 +52,7 @@ struct Property
 
 	Property( const bool& Value );
 	Property( void* Value );
+	Property( const CData& Value );
 
 	const std::string& GetString() const;
 	const float& GetFloat() const;
@@ -68,6 +70,7 @@ struct Property
 
 	const bool& GetBoolean() const;
 	void* GetPointer() const;
+	const CData& GetData() const;
 
 	PropertyType GetType() const;
 
@@ -76,10 +79,12 @@ struct Property
 	friend CData& operator>>( CData& Data, Property& Value );
 
 protected:
-	PropertyType Type;
+	PropertyType Type = PropertyType::Boolean;
 
 	// Strings cannot be a part of the union.
 	std::string String;
+
+	CData Data;
 
 	union
 	{
@@ -96,7 +101,7 @@ protected:
 		int16_t Signed16;
 		int8_t Signed8;
 
-		bool Boolean;
+		bool Boolean = false;
 		void* Pointer;
 	};
 };
