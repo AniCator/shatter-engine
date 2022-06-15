@@ -41,6 +41,20 @@ namespace SoLoud
 	class Wav;
 	class WavStream;
 	class Queue;
+	class Filter;
+}
+
+namespace Effects
+{
+	enum Type
+	{
+		Reverb, // SoLoud::FreeverbFilter (built-in)
+		Delay, // SoLoud::EchoFilter (built-in)
+		Bitcrusher, // SoLoud::LofiFilter (built-in)
+		Limiter, // SoLoud::Limiter
+	};
+
+	SoLoud::Filter* Create( const Type& Type );
 }
 
 struct FSound
