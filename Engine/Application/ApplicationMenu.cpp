@@ -22,8 +22,6 @@
 
 #if defined( IMGUI_ENABLED )
 #include <ThirdParty/imgui-1.70/imgui.h>
-#include <Engine/Display/imgui_impl_glfw.h>
-#include <Engine/Display/imgui_impl_opengl3.h>
 #endif
 
 CMesh* PreviewMesh = nullptr;
