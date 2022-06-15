@@ -56,7 +56,7 @@ struct AssetPool
 	/// Looks up an asset by its name and returns the asset pointer if it is valid.
 	/// </summary>
 	/// <param name="Name">The asset name we want to search for.</param>
-	/// <returns>The asset, the asset pointer, or throws an exception if the asset does not exist.</returns>
+	/// <returns>The asset pointer, or null.</returns>
 	template<typename T = AssetType>
 	const Pointer<T>& Find( const std::string& Name ) const
 	{
@@ -70,6 +70,11 @@ struct AssetPool
 		return Assets[Iterator->second];
 	}
 
+	/// <summary>
+	/// Looks up an asset by its name and returns the asset reference.
+	/// </summary>
+	/// <param name="Name">The asset name we want to search for.</param>
+	/// <returns>The asset reference, or throws an exception if the handle is invalid.</returns>
 	template<typename T = AssetType>
 	const Reference<T>& Find( const std::string& Name ) const
 	{
@@ -82,6 +87,11 @@ struct AssetPool
 		return Assets[Iterator->second];
 	}
 
+	/// <summary>
+	/// Looks up an asset by its name and returns the asset pointer if it is valid.
+	/// </summary>
+	/// <param name="Name">The asset name we want to search for.</param>
+	/// <returns>The asset pointer, or null.</returns>
 	template<typename T = AssetType>
 	Pointer<T>& Find( const std::string& Name )
 	{
@@ -95,6 +105,11 @@ struct AssetPool
 		return Assets[Iterator->second];
 	}
 
+	/// <summary>
+	/// Looks up an asset by its name and returns the asset reference.
+	/// </summary>
+	/// <param name="Name">The asset name we want to search for.</param>
+	/// <returns>The asset reference, or throws an exception if the handle is invalid.</returns>
 	template<typename T = AssetType>
 	Reference<T>& Find( const std::string& Name )
 	{
@@ -111,7 +126,7 @@ struct AssetPool
 	/// Looks up an asset by its handle and returns it.
 	/// </summary>
 	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
-	/// <returns>The asset, the asset pointer, or throws an exception if the handle is invalid.</returns>
+	/// <returns>The asset pointer, or null.</returns>
 	template<typename T = AssetType>
 	const Pointer<T>& Get( const AssetHandle& Handle ) const
 	{
@@ -124,6 +139,11 @@ struct AssetPool
 		return Assets[Handle];
 	}
 
+	/// <summary>
+	/// Looks up an asset by its handle and returns it.
+	/// </summary>
+	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
+	/// <returns>The asset reference, or throws an exception if the handle is invalid.</returns>
 	template<typename T = AssetType>
 	const Reference<T>& Get( const AssetHandle& Handle ) const
 	{
@@ -135,6 +155,11 @@ struct AssetPool
 		return Assets[Handle];
 	}
 
+	/// <summary>
+	/// Looks up an asset by its handle and returns it.
+	/// </summary>
+	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
+	/// <returns>The asset pointer, or null.</returns>
 	template<typename T = AssetType>
 	Pointer<T>& Get( const AssetHandle& Handle )
 	{
@@ -147,6 +172,11 @@ struct AssetPool
 		return Assets[Handle];
 	}
 
+	/// <summary>
+	/// Looks up an asset by its handle and returns it.
+	/// </summary>
+	/// <param name="Handle">The handle of the asset we'd like to fetch.</param>
+	/// <returns>The asset reference, or throws an exception if the handle is invalid.</returns>
 	template<typename T = AssetType>
 	Reference<T>& Get( const AssetHandle& Handle )
 	{
