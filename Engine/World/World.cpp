@@ -294,7 +294,8 @@ const FCameraSetup& CWorld::GetActiveCameraSetup() const
 		return Camera->GetCameraSetup();
 	}
 
-	return {};
+	static FCameraSetup NullSetup;
+	return NullSetup;
 }
 
 uint32_t CWorld::GetCameraPriority() const
