@@ -123,10 +123,7 @@ public:
 	///	Entities should subscribe either during or after their Construct method has been called, not when constructed.
 	///	<para>Don't forget to unsubscribe during the entity's lifetime.</para>
 	///	</remarks>
-	template<class T,
-		class = std::enable_if_t<std::is_same<std::underlying_type<T>::type, EventType>::value>,
-		class = std::enable_if_t<std::is_enum<T>::value>
-	>
+	template<typename T>
 	Event::Listener* Subscribe( const T& ID, const std::function<void( Event::PayloadData )>& Notify )
 	{
 		return EventQueue.Subscribe( static_cast<EventType>( ID ), Notify );
@@ -138,13 +135,28 @@ public:
 	/// <typeparam name="T">Enum class derived from EventType</typeparam>
 	/// <param name="ID">Event type the listener is unsubscribing from.</param>
 	/// <param name="Listener">Listener to be added.</param>
-	template<class T,
-		class = std::enable_if_t<std::is_same<std::underlying_type<T>::type, EventType>::value>,
-		class = std::enable_if_t<std::is_enum<T>::value>
-	>
+	template<typename T>
 	void Unsubscribe( const T& ID, Event::Listener*& Listener )
 	{
 		EventQueue.Unsubscribe( static_cast<EventType>( ID ), Listener );
+	}
+
+	/// <summary>
+	/// Pass events from this world's queue to the given queue.
+	/// </summary>
+	/// <param name="Queue">The queue which events will be passed to in addition to this world's queue.</param>
+	void Subscribe( Event::Queue& Queue )
+	{
+		return EventQueue.Subscribe( &Queue );
+	}
+
+	/// <summary>
+	/// Remove a queue from this world's queue passthrough list.
+	/// </summary>
+	/// <param name="Queue">The queue that was registered for passthrough earlier.</param>
+	void Unsubscribe( const Event::Queue& Queue )
+	{
+		return EventQueue.Unsubscribe( &Queue );
 	}
 
 	/// <summary>
@@ -164,6 +176,8 @@ public:
 		Message.Payload = Payload;
 		EventQueue.Push( Message );
 	}
+
+	bool TickPhysics = true;
 
 private:
 	std::deque<CLevel> Levels;

@@ -118,7 +118,7 @@ void CWorld::Tick()
 
 	PreviousCamera = Camera;
 
-	if( Physics )
+	if( Physics && TickPhysics )
 	{
 		Physics->Tick( GameLayersInstance->GetCurrentTime() );
 	}
