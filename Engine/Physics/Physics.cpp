@@ -26,6 +26,7 @@ ConfigurationVariable<bool> DrawDebugStaticQueries( "debug.Physics.DrawDebugStat
 ConfigurationVariable<bool> DrawDebugDynamicQueries( "debug.Physics.DrawDebugDynamicQueries", false );
 
 ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", true );
+ConfigurationVariable<bool> Synchronous( "physics.Synchronous", false );
 
 ConfigurationVariable<bool> AllowFallbackCasting( "physics.AllowFallbackCasting", true );
 ConfigurationVariable<bool> DrawFallbackCasting( "debug.Physics.DrawFallbackCasting", false );
@@ -316,7 +317,7 @@ public:
 
 	void ScheduleBodyUpdate( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
 	{
-		BodyWorker.Start( std::make_shared<LambdaTask>( [this, StaticBodiesToQuery, DynamicBodiesToQuery] ()
+		const auto BodyUpdate = std::make_shared<LambdaTask>( [this, StaticBodiesToQuery, DynamicBodiesToQuery] ()
 			{
 				OptickEvent( "Physics Body Update" );
 
@@ -334,8 +335,17 @@ public:
 
 				Accumulate();
 				ScheduleQueries( StaticBodiesToQuery, DynamicBodiesToQuery );
-			} )
+			}
 		);
+
+		if( Synchronous )
+		{
+			BodyUpdate->Execute();
+		}
+		else
+		{
+			BodyWorker.Start( BodyUpdate );
+		}
 	}
 
 	std::shared_ptr<QueryTask> StaticQuery = std::make_shared<QueryTask>();
@@ -367,11 +377,20 @@ public:
 
 		StaticQuery->Scene = StaticScene;
 		StaticQuery->Requests = StaticQueryRequests;
-		StaticQueryWorker.Start( StaticQuery );
 
 		DynamicQuery->Scene = DynamicScene;
 		DynamicQuery->Requests = DynamicQueryRequests;
-		DynamicQueryWorker.Start( DynamicQuery );
+
+		if( Synchronous )
+		{
+			StaticQuery->Execute();
+			DynamicQuery->Execute();
+		}
+		else
+		{
+			StaticQueryWorker.Start( StaticQuery );
+			DynamicQueryWorker.Start( DynamicQuery );
+		}
 	}
 
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>(), const PollType& Type = PollType::All ) const
