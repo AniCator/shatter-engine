@@ -85,6 +85,8 @@ void CWorld::Tick()
 		Physics->Guard();
 	}
 
+	WaitingForPhysics = false;
+
 	EventQueue.Poll();
 
 	for( auto Level : Levels )
@@ -121,6 +123,7 @@ void CWorld::Tick()
 	if( Physics && TickPhysics )
 	{
 		Physics->Tick( GameLayersInstance->GetCurrentTime() );
+		WaitingForPhysics = true;
 	}
 
 	// Increment the tick counter.

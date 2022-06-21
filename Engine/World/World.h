@@ -178,6 +178,7 @@ public:
 	}
 
 	bool TickPhysics = true;
+	bool WaitingForPhysics = false;
 
 private:
 	std::deque<CLevel> Levels;
