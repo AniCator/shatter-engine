@@ -26,7 +26,8 @@ ConfigurationVariable<bool> DrawDebugStaticQueries( "debug.Physics.DrawDebugStat
 ConfigurationVariable<bool> DrawDebugDynamicQueries( "debug.Physics.DrawDebugDynamicQueries", false );
 
 ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", true );
-ConfigurationVariable<bool> Synchronous( "physics.Synchronous", false );
+ConfigurationVariable<bool> SynchronousBodyUpdate( "physics.SynchronousBodyUpdate", false );
+ConfigurationVariable<bool> SynchronousQuery( "physics.SynchronousQuery", false );
 
 ConfigurationVariable<bool> AllowFallbackCasting( "physics.AllowFallbackCasting", true );
 ConfigurationVariable<bool> DrawFallbackCasting( "debug.Physics.DrawFallbackCasting", false );
@@ -48,9 +49,13 @@ struct QueryTask : public Task
 {
 	void Execute() override
 	{
-		std::unique_lock<std::mutex> Lock( Mutex );
 		if( !Scene || !Requests )
 			return;
+
+		if( !SynchronousQuery )
+		{
+			Mutex.lock();
+		}
 
 		OptickEvent("Asynchronous Physics Queries");
 
@@ -58,6 +63,11 @@ struct QueryTask : public Task
 		for( auto& Request : *Requests )
 		{
 			Testable->Query( Request.Body->GetBounds(), Request.Result );
+		}
+
+		if( !SynchronousQuery )
+		{
+			Mutex.unlock();
 		}
 	}
 
@@ -232,7 +242,7 @@ public:
 		ScheduleBodyUpdate( StaticBodiesToQuery, DynamicBodiesToQuery );
 	}
 
-	void ResolveCollisions( CBody* A, const QueryResult& Query )
+	static void ResolveCollisions( CBody* A, const QueryResult& Query )
 	{
 		if( !Query )
 			return;
@@ -301,20 +311,6 @@ public:
 	double TimeStep = 1.0 / 60.0;
 	double Accumulator = 0.0;
 
-	void Accumulate()
-	{
-		/*while( Accumulator > TimeStep )
-		{
-			OptickEvent();
-			UpdateBodies();
-			Accumulator -= TimeStep;
-		}*/
-
-		// Don't use the accumulator because the application is already using fixed time.
-		OptickEvent();
-		UpdateBodies();
-	}
-
 	void ScheduleBodyUpdate( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
 	{
 		const auto BodyUpdate = std::make_shared<LambdaTask>( [this, StaticBodiesToQuery, DynamicBodiesToQuery] ()
@@ -333,12 +329,12 @@ public:
 					BuildDynamicScene();
 				}
 
-				Accumulate();
+				UpdateBodies();
 				ScheduleQueries( StaticBodiesToQuery, DynamicBodiesToQuery );
 			}
 		);
 
-		if( Synchronous )
+		if( SynchronousBodyUpdate )
 		{
 			BodyUpdate->Execute();
 		}
@@ -354,7 +350,11 @@ public:
 	{
 		IsSimulating = true;
 
-		std::lock_guard<std::mutex, std::mutex> Guard( StaticQuery->Mutex, DynamicQuery->Mutex );
+		if( !SynchronousQuery )
+		{
+			StaticQuery->Mutex.lock();
+			DynamicQuery->Mutex.lock();
+		}
 
 		// BUG: This refresh somehow seems to happen while the query workers are still running.
 		RefreshQueryContainers( StaticBodiesToQuery, DynamicBodiesToQuery );
@@ -381,7 +381,7 @@ public:
 		DynamicQuery->Scene = DynamicScene;
 		DynamicQuery->Requests = DynamicQueryRequests;
 
-		if( Synchronous )
+		if( SynchronousQuery )
 		{
 			StaticQuery->Execute();
 			DynamicQuery->Execute();
@@ -390,6 +390,12 @@ public:
 		{
 			StaticQueryWorker.Start( StaticQuery );
 			DynamicQueryWorker.Start( DynamicQuery );
+		}
+
+		if( !SynchronousQuery )
+		{
+			StaticQuery->Mutex.unlock();
+			DynamicQuery->Mutex.unlock();
 		}
 	}
 
