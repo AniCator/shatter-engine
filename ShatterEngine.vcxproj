@@ -325,6 +325,7 @@
     <ClInclude Include="Engine\Physics\Body\Body.h" />
     <ClInclude Include="Engine\Physics\Body\Plane.h" />
     <ClInclude Include="Engine\Physics\Body\Shared.h" />
+    <ClInclude Include="Engine\Physics\Body\TriggerBody.h" />
     <ClInclude Include="Engine\Physics\Geometry.h" />
     <ClInclude Include="Engine\Physics\GeometryResult.h" />
     <ClInclude Include="Engine\Physics\Physics.h" />

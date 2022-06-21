@@ -1,6 +1,7 @@
 ﻿// Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Physics/Body/TriggerBody.h>
 #include <Engine/Physics/PhysicsComponent.h>
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 

@@ -922,6 +922,9 @@
     <ClInclude Include="Engine\Sequencer\Timeline.h">
       <Filter>Source Files\Engine\Sequencer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Physics\Body\TriggerBody.h">
+      <Filter>Source Files\Engine\Physics\Body</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">
