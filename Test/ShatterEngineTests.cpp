@@ -309,7 +309,7 @@ namespace EngineTest
 				File.Load();
 				FPrimitive Primitive;
 
-				CTimer Timer;
+				Timer Timer;
 				Timer.Start();
 				MeshBuilder::OBJ( Primitive, File );
 				Timer.Stop();
