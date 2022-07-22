@@ -290,7 +290,7 @@ void CProfiler::AddDebugMessage( const char* NameIn, const char* Body )
 	}
 }
 
-void CProfiler::AddMemoryEntry( const FName& Name, const size_t& Bytes )
+void CProfiler::AddMemoryEntry( const NameSymbol& Name, const size_t& Bytes )
 {
 	// if( !Enabled )
 	// 	return;
@@ -314,7 +314,7 @@ void CProfiler::AddMemoryEntry( const FName& Name, const size_t& Bytes )
 	}
 }
 
-void CProfiler::ClearMemoryEntry(const FName& Name)
+void CProfiler::ClearMemoryEntry(const NameSymbol& Name)
 {
 	// if( !Enabled )
 	// 	return;
@@ -731,7 +731,7 @@ std::string CProfiler::GetMemoryUsageAsString()
 }
 
 std::atomic<size_t> TimerScope::Depth = 0;
-TimerScope::TimerScope( const FName& ScopeNameIn, bool TextOnlyIn )
+TimerScope::TimerScope( const NameSymbol& ScopeNameIn, bool TextOnlyIn )
 {
 	Depth++;
 	ScopeName = ScopeNameIn;
@@ -739,7 +739,7 @@ TimerScope::TimerScope( const FName& ScopeNameIn, bool TextOnlyIn )
 	StartTime = std::chrono::steady_clock::now();
 }
 
-TimerScope::TimerScope( const FName& ScopeNameIn, const uint64_t& Milliseconds )
+TimerScope::TimerScope( const NameSymbol& ScopeNameIn, const uint64_t& Milliseconds )
 {
 	Depth++;
 	ScopeName = ScopeNameIn;
@@ -765,7 +765,7 @@ TimerScope::~TimerScope()
 	Depth--;
 }
 
-void TimerScope::Submit( const FName& ScopeNameIn, const std::chrono::steady_clock::time_point& StartTime, const uint64_t& Delta )
+void TimerScope::Submit( const NameSymbol& ScopeNameIn, const std::chrono::steady_clock::time_point& StartTime, const uint64_t& Delta )
 {
 	const auto Time = std::chrono::milliseconds( Delta );
 	const auto DeltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>( Time ).count();
@@ -775,7 +775,7 @@ void TimerScope::Submit( const FName& ScopeNameIn, const std::chrono::steady_clo
 }
 
 #undef ProfileMemory
-ProfileMemory::ProfileMemory( const FName& ScopeNameIn, const bool& ClearPrevious )
+ProfileMemory::ProfileMemory( const NameSymbol& ScopeNameIn, const bool& ClearPrevious )
 {
 	ScopeName = ScopeNameIn;
 	MemoryStartSize = CProfiler::GetMemoryUsageInBytes();

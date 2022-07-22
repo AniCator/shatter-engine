@@ -22,25 +22,25 @@ public:
 	std::shared_mutex Mutex;
 };
 
-struct FName
+struct NameSymbol
 {
 public:
-	FName() = delete;
-	FName( const char* Name );
-	FName( const std::string& Name );
-	FName( const NameIndex& Index );
+	NameSymbol() = delete;
+	NameSymbol( const char* Name );
+	NameSymbol( const std::string& Name );
+	NameSymbol( const NameIndex& Index );
 
-	FName& operator=( const FName& Name );
-	FName& operator=( const std::string& String );
+	NameSymbol& operator=( const NameSymbol& Name );
+	NameSymbol& operator=( const std::string& String );
 
 	// Fetches the string from the pool. Note: This is an expensive lookup.
 	const std::string& String() const;
 
-	bool operator==( const FName& Name ) const;
-	bool operator!=( const FName& Name ) const;
-	bool operator<( const FName& Name ) const;
+	bool operator==( const NameSymbol& Name ) const;
+	bool operator!=( const NameSymbol& Name ) const;
+	bool operator<( const NameSymbol& Name ) const;
 
-	static FName Invalid;
+	static NameSymbol Invalid;
 
 	const NameIndex& Get() const
 	{
@@ -53,9 +53,9 @@ private:
 namespace std {
 
 	template <>
-	struct hash<FName>
+	struct hash<NameSymbol>
 	{
-		std::size_t operator()( const FName& Name ) const
+		std::size_t operator()( const NameSymbol& Name ) const
 		{
 			return ( std::hash<uint32_t>()( Name.Get() ) );
 		}

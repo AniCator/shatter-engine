@@ -5,9 +5,9 @@
 
 static NameIndex PoolIndex = 0;
 
-FName FName::Invalid = FName( "INVALID STRING" );
+NameSymbol NameSymbol::Invalid = NameSymbol( "INVALID STRING" );
 
-FName::FName( const char* Name )
+NameSymbol::NameSymbol( const char* Name )
 {
 	std::lock_guard<std::shared_mutex> Lock( NamePool::Get().Mutex );
 
@@ -26,7 +26,7 @@ FName::FName( const char* Name )
 	}
 }
 
-FName::FName( const std::string& Name )
+NameSymbol::NameSymbol( const std::string& Name )
 {
 	std::lock_guard<std::shared_mutex> Lock( NamePool::Get().Mutex );
 
@@ -44,12 +44,12 @@ FName::FName( const std::string& Name )
 	}
 }
 
-FName::FName( const NameIndex& Index )
+NameSymbol::NameSymbol( const NameIndex& Index )
 {
 	this->Index = Index;
 }
 
-const std::string& FName::String() const
+const std::string& NameSymbol::String() const
 {
 	const auto& NamePool = NamePool::Get().Pool();
 	for( const auto& Iterator : NamePool )
@@ -63,28 +63,28 @@ const std::string& FName::String() const
 	return Invalid.String();
 }
 
-bool FName::operator<( const FName& Name ) const
+bool NameSymbol::operator<( const NameSymbol& Name ) const
 {
 	return Index < Name.Index;
 }
 
-bool FName::operator==( const FName& Name ) const
+bool NameSymbol::operator==( const NameSymbol& Name ) const
 {
 	return Index == Name.Index;
 }
 
-bool FName::operator!=( const FName& Name ) const
+bool NameSymbol::operator!=( const NameSymbol& Name ) const
 {
 	return Index != Name.Index;
 }
 
-FName& FName::operator=( const std::string& String )
+NameSymbol& NameSymbol::operator=( const std::string& String )
 {
-	*this = FName( String );
+	*this = NameSymbol( String );
 	return *this;
 }
 
-FName& FName::operator=( const FName& Name )
+NameSymbol& NameSymbol::operator=( const NameSymbol& Name )
 {
 	Index = Name.Index;
 	return *this;

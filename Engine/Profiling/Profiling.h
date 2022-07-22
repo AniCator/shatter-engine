@@ -15,7 +15,7 @@ struct ProfileTimeEntry
 {
 	ProfileTimeEntry() = default;
 	
-	ProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn, const int64_t& StartTimeIn, const size_t& DepthIn )
+	ProfileTimeEntry( const NameSymbol& NameIn, const int64_t& TimeIn, const int64_t& StartTimeIn, const size_t& DepthIn )
 	{
 		Name = NameIn;
 		Time = TimeIn;
@@ -23,7 +23,7 @@ struct ProfileTimeEntry
 		Depth = DepthIn;
 	}
 
-	ProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn, const size_t& DepthIn )
+	ProfileTimeEntry( const NameSymbol& NameIn, const int64_t& TimeIn, const size_t& DepthIn )
 	{
 		Name = NameIn;
 		Time = TimeIn;
@@ -31,7 +31,7 @@ struct ProfileTimeEntry
 		Depth = DepthIn;
 	}
 
-	ProfileTimeEntry( const FName& NameIn, const int64_t& TimeIn )
+	ProfileTimeEntry( const NameSymbol& NameIn, const int64_t& TimeIn )
 	{
 		Name = NameIn;
 		Time = TimeIn;
@@ -41,7 +41,7 @@ struct ProfileTimeEntry
 
 	bool operator<( const ProfileTimeEntry& Entry ) const;
 
-	FName Name = FName::Invalid;
+	NameSymbol Name = NameSymbol::Invalid;
 	int64_t Time = 0;
 	int64_t StartTime = 0;
 	size_t Depth = 0;
@@ -59,8 +59,8 @@ public:
 
 	void AddDebugMessage( const char* NameIn, const char* Body );
 
-	void AddMemoryEntry( const FName& Name, const size_t& Bytes );
-	void ClearMemoryEntry( const FName& Name );
+	void AddMemoryEntry( const NameSymbol& Name, const size_t& Bytes );
+	void ClearMemoryEntry( const NameSymbol& Name );
 
 	void Display();
 	void Clear();
@@ -76,13 +76,13 @@ public:
 	static std::string GetMemoryUsageAsString();
 
 private:
-	std::map<FName, RingBuffer<ProfileTimeEntry, TimeWindow>> TimeEntries;
+	std::map<NameSymbol, RingBuffer<ProfileTimeEntry, TimeWindow>> TimeEntries;
 
-	std::map<FName, int64_t> TimeCounters;
-	std::map<FName, int64_t> TimeCountersFrame;
+	std::map<NameSymbol, int64_t> TimeCounters;
+	std::map<NameSymbol, int64_t> TimeCountersFrame;
 	std::map<std::string, std::string> DebugMessages;
 
-	std::map<FName, size_t> MemoryCounters;
+	std::map<NameSymbol, size_t> MemoryCounters;
 	bool FirstMemoryEntry = true;
 	size_t MemoryStartBytes = 0;
 
@@ -99,14 +99,14 @@ class TimerScope
 {
 public:
 	TimerScope() = delete;
-	TimerScope( const FName& ScopeNameIn, bool TextOnly = true );
-	TimerScope( const FName& ScopeNameIn, const uint64_t& Delta );
+	TimerScope( const NameSymbol& ScopeNameIn, bool TextOnly = true );
+	TimerScope( const NameSymbol& ScopeNameIn, const uint64_t& Delta );
 	~TimerScope();
 
-	static void Submit( const FName& ScopeNameIn, const std::chrono::steady_clock::time_point& StartTime, const uint64_t& Delta );
+	static void Submit( const NameSymbol& ScopeNameIn, const std::chrono::steady_clock::time_point& StartTime, const uint64_t& Delta );
 
 private:
-	FName ScopeName = FName::Invalid;
+	NameSymbol ScopeName = NameSymbol::Invalid;
 	std::chrono::steady_clock::time_point StartTime;
 
 	bool TextOnly;
@@ -118,10 +118,10 @@ class ProfileMemory
 {
 public:
 	ProfileMemory() = delete;
-	ProfileMemory( const FName& ScopeNameIn, const bool& ClearPrevious );
+	ProfileMemory( const NameSymbol& ScopeNameIn, const bool& ClearPrevious );
 	~ProfileMemory();
 private:
-	FName ScopeName = FName::Invalid;
+	NameSymbol ScopeName = NameSymbol::Invalid;
 	size_t MemoryStartSize = 0;
 	bool Clear = false;
 };
@@ -129,9 +129,9 @@ private:
 #define CONCAT_(x,y) x##y
 #define CONCAT(x,y) CONCAT_(x,y)
 #define _PROFILENAME_(x) CONCAT(x, __LINE__)
-#define _PROFILE_(Name, Bare) static FName _PROFILENAME_(ScopeName_)( Name ); TimerScope _PROFILENAME_(Scope_)( Name, Bare )
+#define _PROFILE_(Name, Bare) static NameSymbol _PROFILENAME_(ScopeName_)( Name ); TimerScope _PROFILENAME_(Scope_)( Name, Bare )
 
-#define _PROFILEMEMORY_( Name, Clear ) static FName _PROFILENAME_(ScopeName_)( Name ); ProfileMemory _PROFILENAME_(Scope_)( Name, Clear )
+#define _PROFILEMEMORY_( Name, Clear ) static NameSymbol _PROFILENAME_(ScopeName_)( Name ); ProfileMemory _PROFILENAME_(Scope_)( Name, Clear )
 
 #define ProfileAlways( Name ) _PROFILE_( Name, false )
 

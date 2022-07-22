@@ -284,7 +284,7 @@ void CInput::AddActionBinding( const FActionBinding& Binding )
 	}
 }
 
-void CInput::CreateActionBinding( const FName& ActionName )
+void CInput::CreateActionBinding( const NameSymbol& ActionName )
 {
 	// Check if the action already exists in the binding list.
 	const auto& Iterator = ActionBindings.find( ActionName );
@@ -295,7 +295,7 @@ void CInput::CreateActionBinding( const FName& ActionName )
 	}
 }
 
-void CInput::AddActionBinding( const FName& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
+void CInput::AddActionBinding( const NameSymbol& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
 {
 	FActionBinding Binding;
 	Binding.ActionName = ActionName;
@@ -308,7 +308,7 @@ void CInput::AddActionBinding( const FName& ActionName, const EKey& Key, const E
 	AddActionBinding( Binding );
 }
 
-void CInput::AddActionBinding( const FName& ActionName, const EMouse& Mouse, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
+void CInput::AddActionBinding( const NameSymbol& ActionName, const EMouse& Mouse, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
 {
 	FActionBinding Binding;
 	Binding.ActionName = ActionName;
@@ -321,7 +321,7 @@ void CInput::AddActionBinding( const FName& ActionName, const EMouse& Mouse, con
 	AddActionBinding( Binding );
 }
 
-void CInput::AddActionBinding( const FName& ActionName, const EGamepad& Gamepad, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
+void CInput::AddActionBinding( const NameSymbol& ActionName, const EGamepad& Gamepad, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
 {
 	FActionBinding Binding;
 	Binding.ActionName = ActionName;

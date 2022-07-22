@@ -70,9 +70,9 @@ struct FMessage
 class CEntity;
 
 // A message input returns a boolean which allows those calling the inputs to check if the input was called successfully.
-typedef std::map<FName, std::function<bool(CEntity*)>> MessageInput;
+typedef std::map<NameSymbol, std::function<bool(CEntity*)>> MessageInput;
 
-typedef std::map<FName, std::vector<FMessage>> MessageOutput;
+typedef std::map<NameSymbol, std::vector<FMessage>> MessageOutput;
 
 struct LevelUID
 {
@@ -168,7 +168,7 @@ public:
 	virtual void Reload() {};
 	void Link( const JSON::Vector& Objects );
 	void Relink();
-	FName Name = FName::Invalid;
+	NameSymbol Name = NameSymbol::Invalid;
 	UniqueIdentifier Identifier;
 
 	// Entity I/O
