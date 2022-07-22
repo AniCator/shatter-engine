@@ -577,6 +577,7 @@ void DisplayAssetDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 	}
 
 	const auto DropDownName = "##AssetDropDown" + Data.Popup.Window.Title + std::to_string( Data.Identifier );
+	ImGui::SetNextItemWidth( -1.0f );
 	if( ImGui::BeginCombo( DropDownName.c_str(), Data.PreviewName.c_str() ) )
 	{
 		ImGui::Separator();
@@ -591,6 +592,7 @@ void DisplayAssetDropdown( const EAsset::Type& Type, AssetDropdownData& Data )
 
 		Data.OpenedTicks++;
 
+		ImGui::SetNextItemWidth( -1.0f );
 		Data.Filter.Draw( "", 300.0f );
 
 		ImGui::SetItemDefaultFocus();
