@@ -722,7 +722,7 @@ void CApplication::Run()
 
 		PollInput();
 
-		if( IsPowerSaving() )
+		if( IsPowerSaving() || MainWindow.IsMinimized() )
 		{
 			const auto& Input = CInputLocator::Get();
 			const auto MousePosition = Input.GetMousePosition();
@@ -795,7 +795,7 @@ void CApplication::Run()
 		const auto UnboundedFramerate = FPSLimit < 1;
 		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
 		const uint64_t MaximumFrameTime = UnboundedFramerate ? RenderDeltaTime : 1000 / FPSLimit;
-		if( RenderDeltaTime > MaximumFrameTime || UnboundedFramerate )
+		if( !MainWindow.IsMinimized() && ( RenderDeltaTime > MaximumFrameTime || UnboundedFramerate ) )
 		{
 			TimerScope::Submit( "Frametime", RenderTimer.GetStartTime(), RenderDeltaTime );
 			GameLayersInstance->FrameTime( StaticCast<double>( RenderDeltaTime ) * 0.001 );
