@@ -113,6 +113,18 @@ CEntity* CEntity::GetParent() const
 	return Parent;
 }
 
+void CEntity::Construct()
+{
+	// Register loaded tags.
+	if( auto* World = GetWorld() )
+	{
+		for( auto& Tag : Tags )
+		{
+			World->Tag( this, Tag );
+		}
+	}
+}
+
 void CEntity::Destroy()
 {
 	// Unregister any remaining tags.
@@ -388,6 +400,11 @@ CData& operator<<( CData& Data, CEntity* Entity )
 			}
 		}
 
+		if( !Entity->Tags.empty() )
+		{
+			Serialize::Export( Data, "tg", Entity->Tags );
+		}
+
 		const auto OutputCount = Entity->Outputs.size();
 		Data << OutputCount;
 		if( OutputCount > 0 )
@@ -423,6 +440,7 @@ CData& operator>>( CData& Data, CEntity* Entity )
 	if( Entity )
 	{
 		Serialize::Import( Data, "pt", Entity->ParentName );
+		Serialize::Import( Data, "tg", Entity->Tags );
 
 		size_t OutputCount;
 		Data >> OutputCount;
