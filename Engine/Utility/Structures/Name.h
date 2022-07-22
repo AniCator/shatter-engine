@@ -41,6 +41,24 @@ public:
 	bool operator<( const FName& Name ) const;
 
 	static FName Invalid;
+
+	const NameIndex& Get() const
+	{
+		return Index;
+	}
 private:
 	NameIndex Index;
 };
+
+namespace std {
+
+	template <>
+	struct hash<FName>
+	{
+		std::size_t operator()( const FName& Name ) const
+		{
+			return ( std::hash<uint32_t>()( Name.Get() ) );
+		}
+	};
+
+}
