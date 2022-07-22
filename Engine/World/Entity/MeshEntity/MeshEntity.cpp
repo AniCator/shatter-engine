@@ -151,41 +151,6 @@ void PrintMatrix( const std::string& Name, const Matrix4D& Matrix )
 	PrintColumn( Matrix.Columns[3] );
 }
 
-size_t NearestKey( const float& Time, const float& Duration, const Bone* Bone, const std::vector<Key>& Keys )
-{
-	size_t Output = 0;
-	for( size_t KeyIndex = 0; KeyIndex < Keys.size(); KeyIndex++ )
-	{
-		if( Bone->Index != Keys[KeyIndex].BoneIndex )
-			continue;
-		
-		const float RelativeTime = ( Keys[KeyIndex].Time / Duration ) * Duration;
-		if( RelativeTime < Time )
-		{
-			Output = KeyIndex;
-		}
-	}
-
-	return Output;
-}
-
-size_t GetNextKey( const size_t& CurrentIndex, const std::vector<Key>& Keys )
-{
-	const auto& CurrentKey = Keys[CurrentIndex];
-	for( size_t KeyIndex = CurrentIndex; KeyIndex < Keys.size(); KeyIndex++ )
-	{
-		if( CurrentKey.BoneIndex != Keys[KeyIndex].BoneIndex )
-			continue;
-
-		if( CurrentIndex == KeyIndex )
-			continue;
-
-		return KeyIndex;
-	}
-
-	return CurrentIndex;
-}
-
 void CMeshEntity::TickAnimation()
 {
 	if( !Renderable->GetRenderData().ShouldRender )
