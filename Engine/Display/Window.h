@@ -85,6 +85,7 @@ public:
 	void SetVSYNC( const bool& Enable );
 
 	bool IsFocused() const;
+	bool IsMinimized() const;
 
 private:
 	void Recreate();

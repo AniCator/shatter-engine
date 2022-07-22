@@ -596,6 +596,11 @@ bool CWindow::IsFocused() const
 	return glfwGetWindowAttrib( WindowHandle, GLFW_FOCUSED ) == 1;
 }
 
+bool CWindow::IsMinimized() const
+{
+	return glfwGetWindowAttrib( WindowHandle, GLFW_ICONIFIED ) == 1;
+}
+
 GLFWmonitor* CWindow::GetTargetMonitor() const
 {
 	const int TargetMonitor = CConfiguration::Get().GetInteger( "monitor", -1 );
