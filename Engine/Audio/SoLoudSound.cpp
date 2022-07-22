@@ -740,11 +740,11 @@ void SoLoudSound::Tick()
 
 void SoLoudSound::Initialize()
 {
-	unsigned int Flags = 0;
-	unsigned int Backend = 0;
-	unsigned int SampleRate = 44100;
-	unsigned int BufferSize = 2048;
-	unsigned int Channels = 2;
+	constexpr unsigned int Flags = 0;
+	constexpr unsigned int Backend = 0;
+	constexpr unsigned int SampleRate = 44100;
+	constexpr unsigned int BufferSize = 1 << 11;
+	constexpr unsigned int Channels = 2;
 
 	Engine.init( Flags, Backend, SampleRate, BufferSize, Channels );
 
@@ -823,7 +823,8 @@ void SoLoudSound::Shutdown()
 	Sounds.clear();
 	Streams.clear();
 
-	while( Engine.mInsideAudioThreadMutex )
+	// TODO: This seems to freeze the application in some cases, causing it to still run in the background, waiting eternally.
+	// while( Engine.mInsideAudioThreadMutex )
 	{
 		// Wait for SoLoud to finish processing to avoid a potential crash on exit.
 	}
