@@ -42,7 +42,7 @@ namespace AnimationKey
 
 struct Key
 {
-	uint32_t BoneIndex = 0;
+	int32_t BoneIndex = -1;
 	float Time = 0.0f;
 	Vector4D Value{ 0.0f,0.0f,0.0f,0.0f };
 };
