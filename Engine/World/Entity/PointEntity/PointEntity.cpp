@@ -92,7 +92,7 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 	Vector3D Orientation( 0.0f, 0.0f, 0.0f );
 	Vector3D Size( 1.0f, 1.0f, 1.0f );
 
-	for( auto Property : Objects )
+	for( auto* Property : Objects )
 	{
 		if( Property->Key == "position" )
 		{
@@ -105,6 +105,26 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "scale" )
 		{
 			Extract( Property->Value, Size );
+		}
+		else if( Property->Key == "tags" )
+		{
+			std::string Data;
+			for( const auto& Character : Property->Value )
+			{
+				if( Character != ';' )
+				{
+					Data += Character;
+				}
+				else
+				{
+					Tag( Data );
+				}
+			}
+
+			if( !Data.empty() )
+			{
+				Tag( Data );
+			}
 		}
 	}
 
