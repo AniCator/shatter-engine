@@ -24,8 +24,15 @@ void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop
 	if( !Set.Lookup( CurrentAnimation, Entry.Animation ) )
 		return;
 
-	Stack.clear();
-	Stack.emplace_back( Entry );
+	// Add the entry if the stack is empty, otherwise just replace the first entry.
+	if( Stack.empty() )
+	{
+		Stack.emplace_back( Entry );
+	}
+	else
+	{
+		Stack[0] = Entry;
+	}
 }
 
 const std::string& Animator::Instance::GetAnimation() const
@@ -134,6 +141,17 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 
 	// Update the animation time before throttling
 	Data.Time = fmod( NewTime, Animation.Duration );
+
+	// Update the animation times of stack entries.
+	for( auto& Entry : Data.Stack )
+	{
+		// Only update non-negative entries.
+		if( Entry.Time < 0.0f )
+			continue;
+
+		const auto PlayRate = Entry.PlayRate < 0.0 ? Data.PlayRate : Entry.PlayRate;
+		Entry.Time += static_cast<float>( DeltaTime ) * PlayRate;
+	}
 
 	if( Data.TickRate == 0 && !ForceUpdate )
 		return; // Animation disabled.
@@ -303,6 +321,7 @@ std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration,
 
 	std::pair<Key, Key> Pair;
 	Pair.first = Keys[Index];
+	Pair.second = Keys[Index];
 
 	// Search for the next key based on the nearest index.
 	for( size_t NextIndex = Index; NextIndex < Keys.size(); NextIndex++ )
@@ -410,11 +429,25 @@ std::pair<Animator::CompoundKey, Animator::CompoundKey> Animator::GetPair( const
 Animator::CompoundKey Animator::Blend( const CompoundKey& A, const CompoundKey& B, const float& Alpha )
 {
 	CompoundKey Output = A;
-	Output.Position = BlendLinear( Output.Position, B.Position, Alpha );
-	Output.Position.Value.W = 1.0f;
 
-	Output.Rotation = BlendSpherical( Output.Rotation, B.Rotation, Alpha );
-	Output.Scale = BlendLinear( Output.Scale, B.Scale, Alpha );
+	// Check if this is a valid position key.
+	if( A.Position.BoneIndex == B.Position.BoneIndex )
+	{
+		Output.Position = BlendLinear( Output.Position, B.Position, Alpha );
+		Output.Position.Value.W = 1.0f;
+	}
+
+	// Check if this is a valid rotation key.
+	if( A.Rotation.BoneIndex == B.Rotation.BoneIndex )
+	{
+		Output.Rotation = BlendSpherical( Output.Rotation, B.Rotation, Alpha );
+	}
+
+	// Check if this is a valid scale key.
+	if( A.Scale.BoneIndex == B.Scale.BoneIndex )
+	{
+		Output.Scale = BlendLinear( Output.Scale, B.Scale, Alpha );
+	}
 
 	return Output;
 }
@@ -423,7 +456,9 @@ Animator::CompoundKey Animator::BlendSeparate( const CompoundKey& A, const Compo
 {
 	CompoundKey Output = A;
 
-	auto Alpha = GetRelativeTime( Output.Position, B.Position, Time );
+	auto Alpha = 0.0f;
+
+	Alpha = GetRelativeTime( Output.Position, B.Position, Time );
 	Output.Position = BlendLinear( Output.Position, B.Position, Alpha );
 	Output.Position.Value.W = 1.0f;
 
@@ -489,9 +524,14 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 	}
 
 	CompoundKey Blend;
+	Blend.Position.BoneIndex = Bone->Index;
+	Blend.Rotation.BoneIndex = Bone->Index;
+	Blend.Scale.BoneIndex = Bone->Index;
+
 	for( auto& Array : Data.Stack )
 	{
-		const auto Key = Get( Array.Animation, fmod( Data.Time, Array.Animation.Duration ), Bone->Index );
+		const auto Time = Array.Time < 0.0f ? Data.Time : Array.Time;
+		const auto Key = Get( Array.Animation, fmod( Time, Array.Animation.Duration ), Bone->Index );
 		Blend = Animator::Blend( Blend, Key, Array.Weight );
 	}
 

@@ -24,6 +24,12 @@ struct Animator
 
 		Animation Animation{};
 		float Weight = 1.0f;
+
+		// Animation time of this blend entry, use the instance one if negative.
+		float Time = -1.0f;
+
+		// Animation play rate of this blend entry, use the instance one if negative.
+		float PlayRate = -1.0f;
 	};
 
 	/// <summary>
@@ -75,13 +81,6 @@ struct Animator
 	static void Update( Instance& Data, const double& DeltaTime, const bool& ForceUpdate = false );
 	static void Submit( const Instance& Data, class CRenderable* Target );
 
-	struct CompoundKey
-	{
-		Key Position;
-		Key Rotation;
-		Key Scale;
-	};
-
 	struct Matrices
 	{
 		Matrix4D Translation;
@@ -97,6 +96,13 @@ struct Animator
 	/// <param name="BoneIndex">The bone for which we're getting the matrices.</param>
 	/// <returns>Interpolated translation, rotation and scaling matrix.</returns>
 	static Matrices GetMatrices( const Animation& Animation, const float& Time, const int32_t& BoneIndex );
+
+	struct CompoundKey
+	{
+		Key Position;
+		Key Rotation;
+		Key Scale;
+	};
 
 	/// <summary>
 	/// Retrieves animation data in compound key.
