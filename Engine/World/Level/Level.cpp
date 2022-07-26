@@ -607,6 +607,7 @@ CData& operator>> ( CData& Data, CLevel& Level )
 		uint32_t Count;
 		Chunk.Data >> Count;
 
+		// HACK: Prevents invalid count numbers from spawning a huge amount of entities.
 		Count = Math::Min( uint32_t( 32768 ), Count );
 
 		Level.Entities.reserve( Count );
