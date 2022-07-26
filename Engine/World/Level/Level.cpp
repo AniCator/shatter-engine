@@ -555,6 +555,7 @@ CData& operator<<( CData& Data, CLevel& Level )
 
 	DataString::Encode( Chunk.Data, Level.Name );
 
+	// TODO: Change this into something less confusing.
 	uint8_t Temporary = 0;
 	if( Level.Temporary )
 	{
