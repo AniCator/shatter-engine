@@ -43,7 +43,7 @@ struct AssetPool
 	/// <returns>True, if the asset was succesfully created. False, when the asset already exists under the given name.</returns>
 	bool Create( const std::string& Name, const AssetType& Asset )
 	{
-		if( Get( Name ) != InvalidAssetHandle )
+		if( Exists( Name ) )
 			return false; // Asset already exists.
 
 		NameToHandle[Name] = Assets.size();
@@ -200,6 +200,16 @@ struct AssetPool
 			return InvalidAssetHandle;
 
 		return Iterator->second;
+	}
+
+	/// <summary>
+	/// Checks if a valid asset handle exists for the given name.
+	/// </summary>
+	/// <param name="Name">The name of the asset we're looking for.</param>
+	/// <returns>Returns whether or not the asset exists.</returns>
+	bool Exists( const std::string& Name ) const
+	{
+		return Get( Name ) != InvalidAssetHandle;
 	}
 
 	/// <returns>The map of asset names and handles.</returns>

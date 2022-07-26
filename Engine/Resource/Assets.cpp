@@ -168,7 +168,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 
 		if( Payload.Type == EAsset::Mesh )
 		{
-			if( LogAssetCreation )
+			if( LogAssetCreation && !Meshes.Exists( Payload.Name ) )
 			{
 				Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
 			}
@@ -181,7 +181,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 		}
 		else if( Payload.Type == EAsset::Shader )
 		{
-			if( LogAssetCreation )
+			if( LogAssetCreation && !Shaders.Exists( Payload.Name ) )
 			{
 				Log::Event( "Loading shader \"%s\".\n", Payload.Name.c_str() );
 			}
@@ -216,7 +216,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 		}
 		else if( Payload.Type == EAsset::Texture )
 		{
-			if( LogAssetCreation )
+			if( LogAssetCreation && !Textures.Exists( Payload.Name ) )
 			{
 				Log::Event( "Loading texture \"%s\".\n", Payload.Name.c_str() );
 			}
@@ -272,7 +272,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 			std::vector<std::string> Parameters;
 			Parameters.emplace_back( Path );
 
-			if( LogAssetCreation )
+			if( LogAssetCreation && !Assets.Exists( Payload.Name ) )
 			{
 				Log::Event( "Loading asset \"%s\".\n", Payload.Name.c_str() );
 			}
