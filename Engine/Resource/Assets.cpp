@@ -20,6 +20,8 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
 
+ConfigurationVariable<bool> LogAssetCreation( "debug.Assets.LogCreation", false );
+
 void LoadASSIMPMesh( PrimitivePayload* Payload, AnimationSet& Set, CFile& File )
 {
 	if( File.Extension() == "ses" ) // Animation set
@@ -166,7 +168,11 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 
 		if( Payload.Type == EAsset::Mesh )
 		{
-			// Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
+			if( LogAssetCreation )
+			{
+				Log::Event( "Loading mesh \"%s\".\n", Payload.Name.c_str() );
+			}
+
 			auto* Mesh = CreateNamedMesh( Payload.Name.c_str(), Payload.Data[0].c_str() );
 			if( Mesh )
 			{
@@ -175,7 +181,10 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 		}
 		else if( Payload.Type == EAsset::Shader )
 		{
-			// Log::Event( "Loading shader \"%s\".\n", Payload.Name.c_str() );
+			if( LogAssetCreation )
+			{
+				Log::Event( "Loading shader \"%s\".\n", Payload.Name.c_str() );
+			}
 
 			EShaderType ShaderType = EShaderType::Fragment;
 
@@ -207,7 +216,10 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 		}
 		else if( Payload.Type == EAsset::Texture )
 		{
-			// Log::Event( "Loading texture \"%s\".\n", Payload.Name.c_str() );
+			if( LogAssetCreation )
+			{
+				Log::Event( "Loading texture \"%s\".\n", Payload.Name.c_str() );
+			}
 
 			EFilteringMode Mode = EFilteringMode::Linear;
 			EImageFormat ImageFormat = EImageFormat::RGB8;
@@ -231,6 +243,11 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 			CSound* NewSound = Sounds.Find( Payload.Name );
 			if( NewSound )
 			{
+				if( LogAssetCreation )
+				{
+					Log::Event( "Loading sound \"%s\".\n", Payload.Name.c_str() );
+				}
+
 				NewSound->Load( Payload.Data );
 			}
 		}
@@ -239,6 +256,11 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 			CSequence* NewSequence = Sequences.Find( Payload.Name );
 			if( NewSequence )
 			{
+				if( LogAssetCreation )
+				{
+					Log::Event( "Loading sequence \"%s\" (\"%s\").\n", Payload.Name.c_str(), Payload.Data[0].c_str() );
+				}
+
 				NewSequence->Load( Payload.Data[0].c_str() );
 			}
 		}
@@ -249,6 +271,11 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 
 			std::vector<std::string> Parameters;
 			Parameters.emplace_back( Path );
+
+			if( LogAssetCreation )
+			{
+				Log::Event( "Loading asset \"%s\".\n", Payload.Name.c_str() );
+			}
 
 			CreateNamedAsset( Payload.Name, SubType, Parameters );
 		}
