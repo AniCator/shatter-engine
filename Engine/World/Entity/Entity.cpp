@@ -384,98 +384,98 @@ void CEntity::Untag( const std::string& TagName )
 
 CData& operator<<( CData& Data, CEntity* Entity )
 {
-	if( Entity )
+	if( !Entity )
+		return Data;
+
+	DataString::Encode( Data, Entity->ClassName );
+	DataString::Encode( Data, Entity->Name.String() );
+
+	Data << Entity->Identifier.ID;
+
+	if( Entity->Parent )
 	{
-		DataString::Encode( Data, Entity->ClassName );
-		DataString::Encode( Data, Entity->Name.String() );
-
-		Data << Entity->Identifier.ID;
-
-		if( Entity->Parent )
+		const auto ParentName = Entity->Parent->Name.String();
+		if( ParentName.length() > 0 )
 		{
-			const auto ParentName = Entity->Parent->Name.String();
-			if( ParentName.length() > 0 )
-			{
-				Serialize::Export( Data, "pt", ParentName );
-			}
+			Serialize::Export( Data, "pt", ParentName );
 		}
+	}
 
-		if( !Entity->Tags.empty() )
-		{
-			Serialize::Export( Data, "tg", Entity->Tags );
-		}
+	if( !Entity->Tags.empty() )
+	{
+		Serialize::Export( Data, "tg", Entity->Tags );
+	}
 
-		const auto OutputCount = Entity->Outputs.size();
-		Data << OutputCount;
-		if( OutputCount > 0 )
+	const auto OutputCount = Entity->Outputs.size();
+	Data << OutputCount;
+	if( OutputCount > 0 )
+	{
+		for( auto& Output : Entity->Outputs )
 		{
-			for( auto& Output : Entity->Outputs )
+			DataString::Encode( Data, Output.first.String() );
+
+			const auto MessageCount = Output.second.size();
+			Data << MessageCount;
+			for( auto& Message : Output.second )
 			{
-				DataString::Encode( Data, Output.first.String() );
+				DataString::Encode( Data, Message.TargetName );
 
-				const auto MessageCount = Output.second.size();
-				Data << MessageCount;
-				for( auto& Message : Output.second )
+				const auto InputCount = Message.Inputs.size();
+				Data << InputCount;
+				for( auto& Input : Message.Inputs )
 				{
-					DataString::Encode( Data, Message.TargetName );
-
-					const auto InputCount = Message.Inputs.size();
-					Data << InputCount;
-					for( auto& Input : Message.Inputs )
-					{
-						DataString::Encode( Data, Input );
-					}
+					DataString::Encode( Data, Input );
 				}
 			}
 		}
-
-		Entity->Export( Data );
 	}
+
+	Entity->Export( Data );
 
 	return Data;
 }
 
 CData& operator>>( CData& Data, CEntity* Entity )
 {
-	if( Entity )
+	if( !Entity )
+		return Data;
+	
+	Serialize::Import( Data, "pt", Entity->ParentName );
+	Serialize::Import( Data, "tg", Entity->Tags );
+
+	size_t OutputCount;
+	Data >> OutputCount;
+
+	for( size_t OutputIndex = 0; OutputIndex < OutputCount; OutputIndex++ )
 	{
-		Serialize::Import( Data, "pt", Entity->ParentName );
-		Serialize::Import( Data, "tg", Entity->Tags );
-
-		size_t OutputCount;
-		Data >> OutputCount;
-
-		for( size_t OutputIndex = 0; OutputIndex < OutputCount; OutputIndex++ )
+		std::string OutputName;
+		DataString::Decode( Data, OutputName );
+		size_t MessageCount;
+		Data >> MessageCount;
+		for( size_t MessageIndex = 0; MessageIndex < MessageCount; MessageIndex++ )
 		{
-			std::string OutputName;
-			DataString::Decode( Data, OutputName );
-			size_t MessageCount;
-			Data >> MessageCount;
-			for( size_t MessageIndex = 0; MessageIndex < MessageCount; MessageIndex++ )
+			std::string TargetName;
+			DataString::Decode( Data, TargetName );
+
+			size_t InputCount;
+			Data >> InputCount;
+			for( size_t InputIndex = 0; InputIndex < InputCount; InputIndex++ )
 			{
-				std::string TargetName;
-				DataString::Decode( Data, TargetName );
+				std::string InputName;
+				DataString::Decode( Data, InputName );
 
-				size_t InputCount;
-				Data >> InputCount;
-				for( size_t InputIndex = 0; InputIndex < InputCount; InputIndex++ )
-				{
-					std::string InputName;
-					DataString::Decode( Data, InputName );
+				FMessage Message;
+				Message.TargetID = EntityUID::None();
+				Message.TargetName = TargetName;
+				Message.Inputs.emplace_back( InputName );
 
-					FMessage Message;
-					Message.TargetID = EntityUID::None();
-					Message.TargetName = TargetName;
-					Message.Inputs.emplace_back( InputName );
-
-					auto& Messsages = Entity->Outputs[OutputName];
-					Messsages.emplace_back( Message );
-				}
+				auto& Messsages = Entity->Outputs[OutputName];
+				Messsages.emplace_back( Message );
 			}
 		}
-
-		Entity->Import( Data );
 	}
+
+	Entity->Import( Data );
 	
 	return Data;
 }
