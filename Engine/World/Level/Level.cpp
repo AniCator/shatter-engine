@@ -398,28 +398,28 @@ void CLevel::Remove( CEntity* MarkEntity )
 	if( !MarkEntity )
 		return;
 
-	if( MarkEntity->GetLevel() == this )
+	if( MarkEntity->GetLevel() != this )
+		return;
+	
+	const size_t ID = MarkEntity->GetLevelID().ID;
+	if( ID >= Entities.size() )
+		return;
+	
+	if( !Entities[ID] )
+		return;
+	
+	// Move the entity pointer to the back of the vector if it isn't there already.
+	if( ( ID + 1 ) != Entities.size() )
 	{
-		const size_t ID = MarkEntity->GetLevelID().ID;
-		if( ID < Entities.size() )
-		{
-			if( Entities[ID] )
-			{
-				// Move the entity pointer to the back of the vector if it isn't there already.
-				if( ( ID + 1 ) != Entities.size() )
-				{
-					std::swap( Entities[ID], Entities.back() );
-				}
-
-				// Call the deconstructor of the entity.
-				const auto* Back = Entities.back();
-				delete Back;
-
-				// Remove it from the vector.
-				Entities.pop_back();
-			}
-		}
+		std::swap( Entities[ID], Entities.back() );
 	}
+
+	// Call the deconstructor of the entity.
+	const auto* Back = Entities.back();
+	delete Back;
+
+	// Remove it from the vector.
+	Entities.pop_back();
 }
 
 bool CLevel::Transfer( CEntity* Entity )
