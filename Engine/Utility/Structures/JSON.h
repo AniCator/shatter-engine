@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include <Engine/Utility/File.h>
+#include <Engine/Utility/String.h>
 
 namespace JSON
 {
@@ -124,6 +125,7 @@ namespace JSON
 		if( Object )
 		{
 			Target = Object->Value;
+			Target = String::Replace( Target, "\\\\n", "\n" );
 		}
 	}
 
@@ -254,6 +256,7 @@ namespace JSON
 				{
 					const auto Target = static_cast<std::string*>( Entry.Target );
 					*Target = Object->Value;
+					*Target = String::Replace( *Target, "\\\\n", "\n" );
 				}
 				else if( Entry.Type == SearchEntry::Boolean )
 				{
