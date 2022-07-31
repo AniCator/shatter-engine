@@ -6,12 +6,12 @@
 struct String
 {
     /// <summary>
-    /// Finds occuranes of a given string and replaces it with another.
+    /// Finds occurances of a given string and replaces it with another.
     /// </summary>
     /// <param name="Input">The string that will be searched.</param>
     /// <param name="Find">Text we'll be searching for.</param>
     /// <param name="Replace">Text that will replace the found string segments.</param>
-    /// <returns></returns>
+    /// <returns>String with all instances of the Find string replaced with the Replace string.</returns>
     static std::string Replace( 
         const std::string& Input, 
         const std::string& Find,
@@ -22,15 +22,15 @@ struct String
         if( Find.empty() )
             return Input;
 
-        std::string Result;
         size_t Start = 0;
         size_t End = Input.find( Find, Start );
+        std::string Output;
 
         // Find all instances of the search string.
         while( End != std::string::npos ) 
         {
             // Append the input segment, up until the position of the search string, then append the replacement string.
-            Result += Input.substr( Start, End - Start ) + Replace;
+            Output += Input.substr( Start, End - Start ) + Replace;
 
             // Update the start position to the position of the search string and jump over it.
             Start = End + Find.length();
@@ -39,8 +39,8 @@ struct String
             End = Input.find( Find, Start );
         }
 
-        // Append the remainder.
-        Result += Input.substr( Start, Input.length() - Start );
-        return Result;
+        // Append the remaining string data.
+        Output += Input.substr( Start, Input.length() - Start );
+        return Output;
     }
 };
