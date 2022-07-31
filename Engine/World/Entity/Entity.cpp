@@ -136,20 +136,24 @@ void CEntity::Destroy()
 		}
 	}
 
-	if( Level )
+	if( !Level )
 	{
-		// TODO: Is this actually used/useful?
-		for( const auto& TrackedEntityID : TrackedEntityIDs )
-		{
-			auto* Entity = Level->Find( TrackedEntityID );
-			if( Entity )
-			{
-				Entity->Unlink( GetEntityID() );
-			}
-		}
-
-		Level->Remove( this );
+		Log::Event( Log::Error, "Orphaned entity requesting destruction (%s)\n", Name.String().c_str() );
+		return;
 	}
+
+	// Check which entities can call methods on this entity, and remove those outputs.
+	for( const auto& TrackedEntityID : TrackedEntityIDs )
+	{
+		auto* Entity = Level->Find( TrackedEntityID );
+		if( !Entity )
+			continue;
+		
+		Entity->Unlink( GetEntityID() );
+	}
+
+	// Delete the entity from the level.
+	Level->Remove( this );
 }
 
 void CEntity::Traverse()
