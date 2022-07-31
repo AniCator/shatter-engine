@@ -925,6 +925,9 @@
     <ClInclude Include="Engine\Physics\Body\TriggerBody.h">
       <Filter>Source Files\Engine\Physics\Body</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Utility\String.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">
