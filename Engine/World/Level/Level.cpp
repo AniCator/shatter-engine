@@ -157,6 +157,8 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 	};
 	std::vector<EntityIdentifier> Identifiers;
 
+	Temporary = false;
+
 	size_t Pass = 0;
 	while( Pass < 2 )
 	{
@@ -169,10 +171,6 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 				if( Object->Key == "save" && Object->Value == "0" )
 				{
 					Temporary = true;
-				}
-				else
-				{
-					Temporary = false;
 				}
 
 				if( Pass == 0 )
