@@ -17,5 +17,6 @@ public:
 	virtual void Import( CData& Data ) override;
 
 private:
-	bool HasStarted;
+	bool HasStarted = false;
+	bool TriggerAlways = false;
 };

@@ -10,7 +10,10 @@ CLogicStartEntity::CLogicStartEntity()
 
 void CLogicStartEntity::Construct()
 {
-	
+	if( TriggerAlways )
+	{
+		HasStarted = false;
+	}
 }
 
 void CLogicStartEntity::Tick()
@@ -29,15 +32,17 @@ void CLogicStartEntity::Destroy()
 
 void CLogicStartEntity::Load( const JSON::Vector& Objects )
 {
-	
+	JSON::Assign( Objects, "always", TriggerAlways );
 }
 
 void CLogicStartEntity::Export( CData& Data )
 {
 	Data << HasStarted;
+	Data << TriggerAlways;
 }
 
 void CLogicStartEntity::Import( CData& Data )
 {
 	Data >> HasStarted;
+	Data >> TriggerAlways;
 }
