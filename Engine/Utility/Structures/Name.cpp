@@ -7,6 +7,11 @@ static NameIndex PoolIndex = 0;
 
 NameSymbol NameSymbol::Invalid = NameSymbol( "INVALID STRING" );
 
+NameSymbol::NameSymbol()
+{
+	Index = Invalid.Index;
+}
+
 NameSymbol::NameSymbol( const char* Name )
 {
 	std::lock_guard<std::shared_mutex> Lock( NamePool::Get().Mutex );

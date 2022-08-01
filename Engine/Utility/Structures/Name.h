@@ -22,10 +22,16 @@ public:
 	std::shared_mutex Mutex;
 };
 
+/// <summary>
+/// Indexed string for faster string comparisons.
+///	<remarks>The default constructor assigns an invalid symbol.</remarks>
+/// </summary>
 struct NameSymbol
 {
 public:
-	NameSymbol() = delete;
+	// The default constructor defaults to an invalid symbol.
+	NameSymbol();
+
 	NameSymbol( const char* Name );
 	NameSymbol( const std::string& Name );
 	NameSymbol( const NameIndex& Index );
