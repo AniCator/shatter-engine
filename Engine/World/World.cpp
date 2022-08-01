@@ -480,7 +480,8 @@ CData& operator>>( CData& Data, CWorld* World )
 			}
 		}
 
-		if( World->ActiveLevel->IsTemporary() )
+		// TODO: Figure out why this checks serialization.
+		if( !World->ActiveLevel->CanSerialize() )
 		{
 			World->ActiveLevel->Reload();
 		}

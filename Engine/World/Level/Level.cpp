@@ -21,7 +21,7 @@ static constexpr uint32_t LevelVersion = 1;
 CLevel::CLevel()
 {
 	World = nullptr;
-	Temporary = false;
+	DisableSerialization = false;
 }
 
 CLevel::CLevel( CWorld* NewWorld )
@@ -157,7 +157,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 	};
 	std::vector<EntityIdentifier> Identifiers;
 
-	Temporary = false;
+	DisableSerialization = false;
 
 	size_t Pass = 0;
 	while( Pass < 2 )
@@ -170,7 +170,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 			{
 				if( Object->Key == "save" && Object->Value == "0" )
 				{
-					Temporary = true;
+					DisableSerialization = true;
 				}
 
 				if( Pass == 0 )
@@ -555,7 +555,7 @@ CData& operator<<( CData& Data, CLevel& Level )
 
 	// TODO: Change this into something less confusing.
 	uint8_t Temporary = 0;
-	if( Level.Temporary )
+	if( Level.DisableSerialization )
 	{
 		Temporary = 1;
 		Chunk.Data << Temporary;
@@ -598,7 +598,7 @@ CData& operator>> ( CData& Data, CLevel& Level )
 
 		if( Temporary == 1 )
 		{
-			Level.Temporary = true;
+			Level.DisableSerialization = true;
 			return Data;
 		}
 

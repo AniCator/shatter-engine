@@ -121,9 +121,9 @@ public:
 	}
 	FTransform Transform;
 
-	bool IsTemporary() const
+	bool CanSerialize() const
 	{
-		return Temporary;
+		return !DisableSerialization;
 	}
 
 	// Used to indicate if the level was loaded as a sub-level in a level script.
@@ -137,7 +137,7 @@ private:
 	CWorld* World;
 	std::string Name;
 
-	bool Temporary = false;
+	bool DisableSerialization = false;
 
 public:
 	friend CData& operator<<( CData& Data, CLevel& Level );
