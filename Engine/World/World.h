@@ -66,7 +66,7 @@ public:
 	// Move multiple entities from their original level to this world's active level.
 	void Transfer( const std::vector<CEntity*>& Entities );
 
-	CEntity* Find( const std::string& Name ) const;
+	CEntity* Find( const NameSymbol& Name ) const;
 	CEntity* Find( const size_t& ID ) const;
 	CEntity* Find( const EntityUID& ID ) const;
 	CEntity* Find( const UniqueIdentifier& Identifier ) const;

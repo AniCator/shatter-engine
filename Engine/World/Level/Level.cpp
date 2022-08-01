@@ -467,15 +467,7 @@ bool CLevel::Transfer( CEntity* Entity )
 	return true;
 }
 
-template<typename T>
-void QuickSearch( const std::vector<T> Vector, const std::string& Name )
-{
-	const auto Begin = Vector.begin();
-	const auto End = Vector.end();
-	const auto Offset = Vector.size() / 2;
-}
-
-CEntity* CLevel::Find( const std::string& Name ) const
+CEntity* CLevel::Find( const NameSymbol& Name ) const
 {
 	for( auto* Entity : Entities )
 	{

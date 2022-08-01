@@ -220,7 +220,7 @@ void CWorld::Transfer( const std::vector<CEntity*>& Entities )
 	}
 }
 
-CEntity* CWorld::Find( const std::string& Name ) const
+CEntity* CWorld::Find( const NameSymbol& Name ) const
 {
 	for( const auto& Level : Levels )
 	{
