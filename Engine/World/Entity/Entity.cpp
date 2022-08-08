@@ -185,6 +185,12 @@ void CEntity::Traverse()
 			LastTickTime = CurrentTime;
 		}
 
+		if( NextTickTime > 0.0 )
+		{
+			// Invalidate the next tick time when it has previously been set by the user.
+			NextTickTime = FLT_MAX;
+		}
+
 		// Update this entity's delta time.
 		DeltaTime = CurrentTime - LastTickTime;
 
@@ -384,6 +390,11 @@ void CEntity::Untag( const std::string& TagName )
 
 		Tags.erase( std::find( Tags.begin(), Tags.end(), TagName ) );
 	}
+}
+
+double CEntity::GetCurrentTime()
+{
+	return GameLayersInstance->GetCurrentTime();
 }
 
 CData& operator<<( CData& Data, CEntity* Entity )

@@ -217,6 +217,13 @@ public:
 	// Time since this entity last ticked.
 	double DeltaTime = 0.0;
 
+	/// <summary>
+	/// Returns the current game time.
+	/// </summary>
+	///	<remarks>For ease of access, so that you don't have to always call it via the GameLayersInstance.</remarks>
+	/// <returns>The current game time.</returns>
+	static double GetCurrentTime();
+
 protected:
 	CEntity* Parent = nullptr;
 	std::vector<CEntity*> Children;
