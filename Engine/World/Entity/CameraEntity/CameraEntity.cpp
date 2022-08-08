@@ -29,16 +29,19 @@ void CCameraEntity::Construct()
 
 void CCameraEntity::Tick()
 {
-	auto World = GetWorld();
-	if( Active && World )
-	{
-		const FTransform& Transform = GetTransform();
-		FCameraSetup& CameraSetup = Camera.GetCameraSetup();
-		CameraSetup.CameraPosition = Transform.GetPosition();
-		Camera.SetCameraOrientation( Transform.GetOrientation() );
+	if( !Active )
+		return;
 
-		World->SetActiveCamera( &Camera, Priority );
-	}
+	auto* World = GetWorld();
+	if( !World )
+		return;
+	
+	const FTransform& Transform = GetTransform();
+	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
+	CameraSetup.CameraPosition = Transform.GetPosition();
+	Camera.SetCameraOrientation( Transform.GetOrientation() );
+
+	World->SetActiveCamera( &Camera, Priority );
 }
 
 void CCameraEntity::Destroy()
@@ -50,38 +53,17 @@ void CCameraEntity::Load( const JSON::Vector& Objects )
 {
 	CPointEntity::Load( Objects );
 
-	FCameraSetup& CameraSetup = Camera.GetCameraSetup();	
-	for( const auto& Property : Objects )
+	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
+
+	JSON::Assign( Objects, {
+		{"fov", CameraSetup.FieldOfView},
+		{"priority", Priority},
+		} 
+	);
+
+	if( CameraSetup.FieldOfView <= 0.0f)
 	{
-		if( Property->Key == "fov" )
-		{
-			const double PropertyFOV = ParseDouble( Property->Value.c_str() );
-			if( PropertyFOV > 0.0f )
-			{
-				CameraSetup.FieldOfView = Math::Float( PropertyFOV );
-			}
-		}
-		else if( Property->Key == "priority" )
-		{
-			Priority = Math::Integer( Property->Value );
-		}
-		else if( Property->Key == "points" )
-		{
-			// Check if any points are defined.
-			if( Property->Objects.empty() )
-				continue;
-
-			// Allocate space for the camera key-frames.
-			Keys.reserve( Property->Objects.size() );
-
-			// Parse control points.
-			for( const auto& ObjectKey : Property->Objects )
-			{
-				CameraKey Key;
-				const auto Time = ObjectKey->GetValue( "time" );
-				Key.Time = Math::Float( Time );
-			}
-		}
+		CameraSetup.FieldOfView = 60.0f;
 	}
 }
 
@@ -92,19 +74,19 @@ void CCameraEntity::Activate()
 
 void CCameraEntity::Deactivate()
 {
-	if( Active )
-	{
-		Active = false;
+	if( !Active )
+		return;
 
-		auto World = GetWorld();
-		if( World )
-		{
-			if( World->GetActiveCamera() == &Camera )
-			{
-				World->SetActiveCamera( nullptr, Priority );
-			}
-		}
-	}
+	Active = false;
+
+	auto* World = GetWorld();
+	if( !World )
+		return;
+
+	if( World->GetActiveCamera() != &Camera )
+		return;
+
+	World->SetActiveCamera( nullptr, Priority );
 }
 
 void CCameraEntity::Export( CData& Data )
