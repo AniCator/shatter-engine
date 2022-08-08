@@ -170,6 +170,33 @@ namespace UI
 
 	std::vector<DrawTextScreen> TextsScreen;
 
+	struct FixedText
+	{
+		FixedText() = delete;
+		FixedText( const char* Start, const char* End, const Color& Color )
+		{
+			if( End )
+			{
+				Length = End - Start;
+			}
+			else
+			{
+				Length = strlen( Start );
+			}
+
+			this->Text = new char[Length + 1];
+			memcpy( Text, Start, Length + 1 );
+
+			this->Color = Color;
+		}
+
+		char* Text = nullptr;
+		size_t Length;
+		Color Color;
+	};
+
+	std::vector<FixedText> FixedTextOutput;
+
 	ImU32 GetColor( Color Color )
 	{
 		return IM_COL32( Color.R, Color.G, Color.B, Color.A );
@@ -508,6 +535,36 @@ namespace UI
 		AddText( Position, VectorString.c_str(), nullptr, Color, Offset );
 	}
 
+	void AddText( const char* Start, const char* End, const Color& Color )
+	{
+		FixedText Text( Start, End, Color );
+		FixedTextOutput.emplace_back( Text );
+	}
+
+	void AddText( const std::string& Text, const Color& Color )
+	{
+		AddText( Text.c_str(), nullptr, Color );
+	}
+
+	void RenderFixedTextOutput()
+	{
+		auto Position = Vector2D( 10.0f, 20.0f );
+		for( const auto& Text : FixedTextOutput )
+		{
+			size_t LineBreaks = 0;
+			for( size_t Index = 0; Index < Text.Length; Index++ )
+			{
+				if( Text.Text[Index] == '\n')
+				{
+					LineBreaks++;
+				}
+			}
+
+			AddText2D( Position, Text.Text, Text.Text + Text.Length, Text.Color, 16.0f );
+			Position.Y += 16.0f + 16.0f * LineBreaks;
+		}
+	}
+
 	void AddImageInternal( const Vector3D& Position, const Vector2D& Size, const ImTextureID Texture, const Color& Color )
 	{	
 		if( DrawList )
@@ -692,6 +749,12 @@ namespace UI
 			delete[] Text.Text;
 		}
 		TextsScreen.clear();
+
+		for( const auto& Text : FixedTextOutput )
+		{
+			delete[] Text.Text;
+		}
+		FixedTextOutput.clear();
 
 		CConfiguration& Configuration = CConfiguration::Get();
 		Width = Configuration.GetFloat( "width" );
@@ -930,6 +993,8 @@ namespace UI
 		{
 			AddTextInternal( Text.Position, Text.Text, Text.Text + Text.Length, Text.Color, Text.Size );
 		}
+
+		RenderFixedTextOutput();
 
 		if( DrawList->CmdBuffer.empty() )
 		{
