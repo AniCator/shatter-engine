@@ -591,14 +591,13 @@ void CApplication::Run()
 
 	SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 0 ) );
 
-	const uint64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
-	const uint64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
+	const int64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
+	// const int64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
 
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
 	SoLoudSound::Volume( GlobalVolume );
 
-	static uint64_t GameAccumulator = 0.0;
-	constexpr uint64_t GameDeltaTick = 1000 / 60;
+	static int64_t GameAccumulator = 0.0;
 
 	double TimeSinceInput = -1.0;
 
@@ -624,7 +623,7 @@ void CApplication::Run()
 		{
 			Timer JitterTimer;
 			JitterTimer.Start();
-			const int64_t JitterTime = Math::RandomRangeInteger( 1, 33 );
+			const int64_t JitterTime = Math::RandomRangeInteger( 0, 33 );
 			while( JitterTimer.GetElapsedTimeMilliseconds() < JitterTime )
 			{
 				// Wait a little bit to induce jitter.
@@ -633,7 +632,7 @@ void CApplication::Run()
 
 		GameLayersInstance->RealTime( StaticCast<double>( RealTime.GetElapsedTimeMilliseconds() ) * 0.001 );
 
-		const uint64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
+		const int64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
 		GameAccumulator += GameDeltaTime;
 
 		const auto Frozen = ( PauseGame && !FrameStep );
@@ -646,13 +645,18 @@ void CApplication::Run()
 			}
 		}
 
+		if( GameAccumulator > ( MaximumGameTime * 4 ) )
+		{
+			GameAccumulator = MaximumGameTime;
+		}
+
 		while( GameAccumulator > MaximumGameTime )
 		{
 			GameAccumulator -= MaximumGameTime;
 
-			if( GameAccumulator > ( MaximumGameTime * 4 ) )
+			if( GameAccumulator < 0 )
 			{
-				GameAccumulator = MaximumGameTime;
+				GameAccumulator = 0;
 			}
 			
 			if( Tools )
