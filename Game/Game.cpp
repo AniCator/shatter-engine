@@ -11,6 +11,8 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Profiling/Logging.h>
 
+#include <Engine/Utility/ThreadPool.h>
+
 CGameLayers* GameLayersInstance = new CGameLayers();
 
 CGameLayers::CGameLayers()
@@ -31,6 +33,9 @@ void CGameLayers::Add( IGameLayer* GameLayer )
 void CGameLayers::Initialize()
 {
 	Log::Event( "Initializing game layers.\n" );
+
+	// Configure the thread pool.
+	ThreadPool::Initialize();
 
 	SoLoudSound::StopStreams();
 
@@ -93,13 +98,15 @@ void CGameLayers::Shutdown()
 {
 	SoLoudSound::StopAll();
 
-	for( auto GameLayer : GameLayers )
+	for( auto* GameLayer : GameLayers )
 	{
 		if( GameLayer )
 		{
 			GameLayer->Shutdown();
 		}
 	}
+
+	ThreadPool::Shutdown();
 }
 
 void CGameLayers::Time( const double& Time )

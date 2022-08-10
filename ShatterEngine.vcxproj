@@ -240,6 +240,7 @@
     <ClCompile Include="Engine\Utility\Structures\SpatialHash.cpp" />
     <ClCompile Include="Engine\Utility\Test\PerformanceStringTest.cpp" />
     <ClCompile Include="Engine\Utility\Thread.cpp" />
+    <ClCompile Include="Engine\Utility\ThreadPool.cpp" />
     <ClCompile Include="Engine\World\Entity\CameraEntity\CameraEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Entity.cpp" />
     <ClCompile Include="Engine\World\Entity\Info\InfoTextEntity.cpp" />
@@ -383,6 +384,7 @@
     <ClInclude Include="Engine\Utility\TestResult.h" />
     <ClInclude Include="Engine\Utility\Test\PerformanceStringTest.h" />
     <ClInclude Include="Engine\Utility\Thread.h" />
+    <ClInclude Include="Engine\Utility\ThreadPool.h" />
     <ClInclude Include="Engine\Utility\Timer.h" />
     <ClInclude Include="Engine\Utility\TranslationTable.h" />
     <ClInclude Include="Engine\World\Entity\CameraEntity\CameraEntity.h" />

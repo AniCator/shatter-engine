@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <atomic>
 #include <string>
+#include <deque>
 
 void SetThreadName( std::thread& Thread, const std::string& Name );
 
@@ -24,11 +25,10 @@ void SetThreadPriority( std::thread& Thread, const ThreadPriority& Priority );
 
 struct Task
 {
-	virtual ~Task() {};
 	virtual void Execute() = 0;
 };
 
-struct LambdaTask : public Task
+struct LambdaTask : Task
 {
 	LambdaTask( const std::function<void()>& ToExecute )
 	{
@@ -45,7 +45,6 @@ struct Worker
 {
 	Worker()
 	{
-		Ready = false;
 		Running = false;
 		Alive = true;
 		Thread = std::thread( &Worker::Work, this );
@@ -53,16 +52,14 @@ struct Worker
 
 	~Worker()
 	{
-		Ready = true;
 		Alive = false;
-		Task = nullptr;
 		Notify.notify_one();
 		Thread.join();
 	}
 
 	bool Completed() const
 	{
-		return !Ready;
+		return !Running;
 	}
 
 	bool IsRunning() const
@@ -70,16 +67,16 @@ struct Worker
 		return Running;
 	}
 
-	bool Start( const std::shared_ptr<Task>& ToExecute )
+	bool Add( const std::shared_ptr<Task>& ToExecute )
 	{
-		if( Ready )
-			return false;
-
+		// A lock is required because we're accessing and manipulating the queue's memory.
 		std::unique_lock<std::mutex> Lock( Mutex );
 
-		Task = ToExecute;
-		Ready = true;
+		// Add the tasks to the queue.
+		Tasks.emplace_back( ToExecute );
+		Running = true;
 
+		// Notify the worker thread that there is new work.
 		Notify.notify_one();
 
 		return true;
@@ -90,14 +87,14 @@ struct Worker
 
 private:
 	void Work();
+	std::shared_ptr<Task> Fetch();
 
 	std::thread Thread;
-	std::shared_ptr<Task> Task = nullptr;
+	std::deque<std::shared_ptr<Task>> Tasks;
 
 	std::mutex Mutex;
 	std::condition_variable Notify;
 
-	std::atomic<bool> Ready;
 	std::atomic<bool> Running;
 	std::atomic<bool> Alive;
 };

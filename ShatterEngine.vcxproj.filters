@@ -482,6 +482,9 @@
     <ClCompile Include="Engine\Sequencer\Timeline.cpp">
       <Filter>Source Files\Engine\Sequencer</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Utility\ThreadPool.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -926,6 +929,9 @@
       <Filter>Source Files\Engine\Physics\Body</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Utility\String.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\ThreadPool.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
   </ItemGroup>

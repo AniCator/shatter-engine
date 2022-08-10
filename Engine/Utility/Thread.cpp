@@ -83,21 +83,40 @@ void Worker::Work()
 	ProfileThread( "Shatter Engine Worker");
 	while( Alive )
 	{
-		std::unique_lock<std::mutex> Lock( Mutex );
-		Notify.wait( Lock, [&] {
-				return Ready.load();
-			} 
-		);
-
+		std::shared_ptr<Task> Task = Fetch();
 		Running = true;
 
 		if( Task )
 		{
-			OptickEvent( "Thread Task" );
+			OptickEvent( "Task" );
 			Task->Execute();
 		}
 
-		Running = false;
-		Ready = false;
+		// If there's no more work to perform, we can declare the we're no longer actively running.
+		std::unique_lock<std::mutex> Lock( Mutex );
+		if( Tasks.empty() )
+		{
+			Running = false;
+		}
 	}
+}
+
+std::shared_ptr<Task> Worker::Fetch()
+{
+	std::unique_lock<std::mutex> Lock( Mutex );
+
+	// Wait for a notification, or continue running until we've finished all our tasks.
+	Notify.wait( Lock, [&] {
+		return !Tasks.empty() || !Alive;
+		}
+	);
+
+	if( Tasks.empty() )
+		return nullptr;
+
+	// Grab a task, and pop it.
+	auto Task = std::move( Tasks.front() );
+	Tasks.pop_front();
+
+	return std::move( Task );
 }

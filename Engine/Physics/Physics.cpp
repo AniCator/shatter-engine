@@ -340,7 +340,7 @@ public:
 		}
 		else
 		{
-			BodyWorker.Start( BodyUpdate );
+			BodyWorker.Add( BodyUpdate );
 		}
 	}
 
@@ -388,8 +388,8 @@ public:
 		}
 		else
 		{
-			StaticQueryWorker.Start( StaticQuery );
-			DynamicQueryWorker.Start( DynamicQuery );
+			StaticQueryWorker.Add( StaticQuery );
+			DynamicQueryWorker.Add( DynamicQuery );
 		}
 
 		if( !SynchronousQuery )
