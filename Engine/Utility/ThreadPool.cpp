@@ -56,6 +56,12 @@ void ThreadPool::Add( const std::function<void()>& ToExecute )
 	Pool[Worker].Add( Task );
 }
 
+void ThreadPool::Flush()
+{
+	Pool[Thread::WorkerA].Flush();
+	Pool[Thread::WorkerB].Flush();
+}
+
 bool ThreadPool::IsBusy( const Thread::Type& Thread )
 {
 	return !Pool[Thread].Completed();

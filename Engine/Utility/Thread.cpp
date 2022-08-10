@@ -78,26 +78,21 @@ void Worker::SetPriority( const ThreadPriority& Priority )
 	SetThreadPriority( Thread, Priority );
 }
 
+void Worker::Flush()
+{
+	std::unique_lock<std::mutex> Lock( Mutex );
+	while( !Tasks.empty() )
+	{
+		RunNextTask();
+	}
+}
+
 void Worker::Work()
 {
 	ProfileThread( "Shatter Engine Worker");
 	while( Alive )
 	{
-		std::shared_ptr<Task> Task = Fetch();
-		Running = true;
-
-		if( Task )
-		{
-			OptickEvent( "Task" );
-			Task->Execute();
-		}
-
-		// If there's no more work to perform, we can declare the we're no longer actively running.
-		std::unique_lock<std::mutex> Lock( Mutex );
-		if( Tasks.empty() )
-		{
-			Running = false;
-		}
+		RunNextTask();
 	}
 }
 
@@ -111,6 +106,8 @@ std::shared_ptr<Task> Worker::Fetch()
 		}
 	);
 
+	Running = true;
+
 	if( Tasks.empty() )
 		return nullptr;
 
@@ -119,4 +116,21 @@ std::shared_ptr<Task> Worker::Fetch()
 	Tasks.pop_front();
 
 	return std::move( Task );
+}
+
+void Worker::RunNextTask()
+{
+	const std::shared_ptr<Task> Task = Fetch();
+	if( Task )
+	{
+		OptickEvent( "Task" );
+		Task->Execute();
+	}
+
+	// If there's no more work to perform, we can declare the we're no longer actively running.
+	std::unique_lock<std::mutex> Lock( Mutex );
+	if( Tasks.empty() )
+	{
+		Running = false;
+	}
 }

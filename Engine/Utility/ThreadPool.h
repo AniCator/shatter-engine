@@ -34,5 +34,8 @@ namespace ThreadPool
 	// Creates a task for one of the worker threads using the provided function.
 	void Add( const std::function<void()>& ToExecute );
 
+	// Finish all work that has been assigned to the worker threads.
+	void Flush();
+
 	bool IsBusy( const Thread::Type& Thread );
 }

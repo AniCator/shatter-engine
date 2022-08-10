@@ -85,9 +85,14 @@ struct Worker
 	void SetName( const std::string& Name );
 	void SetPriority( const ThreadPriority& Priority );
 
+	// Finish any work that has been assigned so far.
+	void Flush();
+
 private:
 	void Work();
 	std::shared_ptr<Task> Fetch();
+
+	void RunNextTask();
 
 	std::thread Thread;
 	std::deque<std::shared_ptr<Task>> Tasks;
