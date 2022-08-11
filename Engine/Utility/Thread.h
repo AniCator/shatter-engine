@@ -93,6 +93,7 @@ private:
 	std::shared_ptr<Task> Fetch();
 
 	void RunNextTask();
+	bool HasTasks();
 
 	std::thread Thread;
 	std::deque<std::shared_ptr<Task>> Tasks;

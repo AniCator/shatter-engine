@@ -80,8 +80,7 @@ void Worker::SetPriority( const ThreadPriority& Priority )
 
 void Worker::Flush()
 {
-	std::unique_lock<std::mutex> Lock( Mutex );
-	while( !Tasks.empty() )
+	while( HasTasks() )
 	{
 		RunNextTask();
 	}
@@ -133,4 +132,10 @@ void Worker::RunNextTask()
 	{
 		Running = false;
 	}
+}
+
+bool Worker::HasTasks()
+{
+	std::unique_lock<std::mutex> Lock( Mutex );
+	return !Tasks.empty();
 }
