@@ -118,8 +118,8 @@ void InputRestartGameLayers(CApplication* Application)
 
 	ScaledGameTime = 0.0f;
 
-	// CAngelEngine::Get().Shutdown();
-	// CAngelEngine::Get().Initialize();
+	ScriptEngine::Shutdown();
+	ScriptEngine::Initialize();
 
 	GameLayersInstance->Shutdown();
 
@@ -834,7 +834,7 @@ void CApplication::Run()
 		MainWindow.UpdateCursor();
 	}
 
-	// CAngelEngine::Get().Shutdown();
+	ScriptEngine::Shutdown();
 
 	GameLayersInstance->Shutdown();
 	delete GameLayersInstance;
@@ -1539,7 +1539,7 @@ void CApplication::Initialize()
 
 	UnregisterDebugUI();
 
-	// CAngelEngine::Get().Initialize();
+	ScriptEngine::Initialize();
 
 	// Initialize engine asset types.
 	InitializeEngineAssetLoaders();

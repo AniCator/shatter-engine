@@ -1,16 +1,11 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#if 0
-#include <stdint.h>
+#include <cstdint>
 
-#include <Engine/Utility/File.h>
-#include <Engine/Utility/Singleton.h>
+class CFile;
 
-class asIScriptEngine;
-class asIScriptContext;
-
-enum class EAngelResult : uint8_t
+enum class AngelResult : uint8_t
 {
 	Unknown = 0,
 	Engine,
@@ -21,20 +16,12 @@ enum class EAngelResult : uint8_t
 	Success
 };
 
-class CAngelEngine : public Singleton<CAngelEngine>
+namespace ScriptEngine
 {
-public:
-	~CAngelEngine();
-
-	EAngelResult Initialize();
+	AngelResult Initialize();
 	void Tick();
 	void Shutdown();
 
-	EAngelResult Add( const char* Name, CFile& File );
-	EAngelResult Execute( const char* Name );
-
-private:
-	asIScriptEngine* Engine;
-	asIScriptContext* Context;
+	AngelResult Add( const char* Name, CFile& File );
+	AngelResult Execute( const char* Name );
 };
-#endif
