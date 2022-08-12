@@ -2,6 +2,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 class CFile;
 
@@ -23,5 +24,9 @@ namespace ScriptEngine
 	void Shutdown();
 
 	AngelResult Add( const char* Name, CFile& File );
-	AngelResult Execute( const char* Name );
+	AngelResult Add( const char* Name, const std::string& Code );
+
+	AngelResult Execute( const char* Name, const char* EntryPoint = nullptr );
+
+	// void RegisterGlobalFunction( const char* Declaration, T Function );
 };

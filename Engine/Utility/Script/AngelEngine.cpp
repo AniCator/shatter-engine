@@ -23,9 +23,14 @@ void MessageCallback( const asSMessageInfo *msg, void *param )
 	Log::Event( Severity, "%s (%d, %d) : %s\n", msg->section, msg->row, msg->col, msg->message );
 }
 
-void print( std::string &msg )
+void print( const std::string &String )
 {
-	Log::Event( "%s", msg.c_str() );
+	Log::Event( "%s", String.c_str() );
+}
+
+void println( const std::string& String )
+{
+	Log::Event( "%s\n", String.c_str() );
 }
 
 AngelResult ScriptEngine::Initialize()
@@ -77,29 +82,52 @@ void ScriptEngine::Shutdown()
 	}
 }
 
+bool CreateModule( CScriptBuilder& Builder, const char* Name )
+{
+	const auto Result = Builder.StartNewModule( Engine, Name );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to create AngelScript module (%s).\n", Name );
+		return false;
+	}
+
+	return true;
+}
+
+bool CreateSection( CScriptBuilder& Builder, const char* Section, const char* Data, unsigned int Size )
+{
+	const auto Result = Builder.AddSectionFromMemory( Section, Data, Size );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to load AngelScript section (%s).\n", Section );
+		return false;
+	}
+
+	return true;
+}
+
+bool Compile( CScriptBuilder& Builder )
+{
+	const auto Result = Builder.BuildModule();
+	if( Result < 0 )
+		return false;
+
+	return true;
+}
+
 AngelResult ScriptEngine::Add( const char* Name, CFile& File )
 {
 	if( !Engine )
 		return AngelResult::Unknown;
 
 	CScriptBuilder Builder;
-	const int NewModuleResult = Builder.StartNewModule( Engine, Name );
-	if( NewModuleResult < 0 )
-	{
-		Log::Event( Log::Error, "Failed to create AngelScript module (%s).\n", Name );
+	if( !CreateModule( Builder, Name ) )
 		return AngelResult::Module;
-	}
 
-	const char* Data = File.Fetch<char>();
-	const int AddSectionResult = Builder.AddSectionFromMemory( Name, Data, static_cast<unsigned int>( File.Size() ) );
-	if( AddSectionResult < 0 )
-	{
-		Log::Event( Log::Error, "Failed to load AngelScript section (%s).\n", Name );
+	if( !CreateSection( Builder, Name, File.Fetch<char>(), static_cast<unsigned int>( File.Size() ) ) )
 		return AngelResult::Load;
-	}
 
-	const int CompileResult = Builder.BuildModule();
-	if( CompileResult < 0 )
+	if( !Compile( Builder ) )
 	{
 		Log::Event( Log::Error, "Failed to compile AngelScript module (%s).\n", Name );
 		return AngelResult::Compile;
@@ -108,7 +136,28 @@ AngelResult ScriptEngine::Add( const char* Name, CFile& File )
 	return AngelResult::Success;
 }
 
-AngelResult ScriptEngine::Execute( const char* Name )
+AngelResult ScriptEngine::Add( const char* Name, const std::string& Code )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	CScriptBuilder Builder;
+	if( !CreateModule( Builder, Name ) )
+		return AngelResult::Module;
+
+	if( !CreateSection(Builder,Name,Code.c_str(), static_cast<unsigned int>( Code.size() ) ) )
+		return AngelResult::Load;
+
+	if( !Compile( Builder ) )
+	{
+		Log::Event( Log::Error, "Failed to compile AngelScript module (%s).\n", Name );
+		return AngelResult::Compile;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint )
 {
 	if( !Engine )
 		return AngelResult::Unknown;
@@ -120,7 +169,7 @@ AngelResult ScriptEngine::Execute( const char* Name )
 	if( !Module )
 		return AngelResult::Unknown;
 	
-	asIScriptFunction* EntryFunction = Module->GetFunctionByDecl( "void main()" );
+	asIScriptFunction* EntryFunction = Module->GetFunctionByDecl( EntryPoint ? EntryPoint : "void main()" );
 	if( !EntryFunction )
 	{
 		Log::Event( Log::Warning, "Missing entry function in module \"%s\"\n", Name );
