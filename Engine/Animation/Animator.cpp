@@ -530,6 +530,10 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 
 	for( auto& Array : Data.Stack )
 	{
+		// Ignore animations that have no influence.
+		if( Array.Weight == 0.0f )
+			continue;
+
 		const auto Time = Array.Time < 0.0f ? Data.Time : Array.Time;
 		const auto Key = Get( Array.Animation, fmod( Time, Array.Animation.Duration ), Bone->Index );
 		Blend = Animator::Blend( Blend, Key, Array.Weight );
