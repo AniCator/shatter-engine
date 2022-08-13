@@ -917,8 +917,8 @@ int64_t Timer::GetElapsedTimeMilliseconds()
 
 double Timer::GetElapsedTimeSeconds()
 {
-	const int64_t Time = GetElapsedTimeMilliseconds();
-	return static_cast<double>( Time ) / 1000.0;
+	const int64_t Time = GetElapsedTimeMicroseconds();
+	return static_cast<double>( Time ) / 1000000.0;
 }
 
 std::chrono::steady_clock::time_point Timer::GetStartTime()
