@@ -673,7 +673,7 @@ void CApplication::Run()
 				const auto GameTimeScale = GameLayersInstance->GetTimeScale();
 				const auto TimeScale = ScaleTime ? GameTimeScale * 0.1 : GameTimeScale;
 
-				ScaledGameTime += static_cast<double>( MaximumGameTime ) * TimeScale;
+				ScaledGameTime += MaximumGameTime * TimeScale;
 
 				// Update game time.
 				GameLayersInstance->Time( ScaledGameTime );
