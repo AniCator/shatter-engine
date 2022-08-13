@@ -591,17 +591,13 @@ void CApplication::Run()
 
 	SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 0 ) );
 
-	const int64_t MaximumGameTime = 1000 / CConfiguration::Get().GetInteger( "tickrate", 60 );
-	// const int64_t MaximumInputTime = 1000 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
+	const double MaximumGameTime = 1.0 / CConfiguration::Get().GetInteger( "tickrate", 60 );
+	// const double MaximumInputTime = 1.0 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
 
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
 	SoLoudSound::Volume( GlobalVolume );
 
-	static int64_t GameAccumulator = 0.0;
-
-	double TimeSinceInput = -1.0;
-
-	// const auto TimeScaleParameter = CConfiguration::Get().GetDouble( "timescale", 1.0 );
+	double GameAccumulator = 0.0;
 
 	while( !MainWindow.ShouldClose() )
 	{
@@ -630,9 +626,9 @@ void CApplication::Run()
 			}
 		}
 
-		GameLayersInstance->RealTime( StaticCast<double>( RealTime.GetElapsedTimeMilliseconds() ) * 0.001 );
+		GameLayersInstance->RealTime( RealTime.GetElapsedTimeSeconds() );
 
-		const int64_t GameDeltaTime = GameTimer.GetElapsedTimeMilliseconds();
+		const double GameDeltaTime = GameTimer.GetElapsedTimeSeconds();
 		GameAccumulator += GameDeltaTime;
 
 		const auto Frozen = ( PauseGame && !FrameStep );
@@ -677,7 +673,7 @@ void CApplication::Run()
 				const auto GameTimeScale = GameLayersInstance->GetTimeScale();
 				const auto TimeScale = ScaleTime ? GameTimeScale * 0.1 : GameTimeScale;
 
-				ScaledGameTime += static_cast<double>( MaximumGameTime ) * 0.001 * TimeScale;
+				ScaledGameTime += static_cast<double>( MaximumGameTime ) * TimeScale;
 
 				// Update game time.
 				GameLayersInstance->Time( ScaledGameTime );
@@ -738,7 +734,7 @@ void CApplication::Run()
 			DeltaPosition.Y = abs( DeltaPosition.Y );
 
 			const auto MouseMoved = DeltaPosition.X > 0 || DeltaPosition.Y > 0;
-			const auto CurrentTime = static_cast<double>( RealTime.GetElapsedTimeMilliseconds() ) / 1000.0;
+			const auto CurrentTime = RealTime.GetElapsedTimeSeconds();
 
 			if( Input.IsAnyKeyDown() || MouseMoved || LastInputTime < 0.0 )
 			{
@@ -749,7 +745,7 @@ void CApplication::Run()
 			}
 
 			int FPSTarget = 0;
-			TimeSinceInput = CurrentTime - LastInputTime;
+			const double TimeSinceInput = CurrentTime - LastInputTime;
 			if( TimeSinceInput > 30.0 )
 			{
 				FPSTarget = 5;
@@ -797,12 +793,12 @@ void CApplication::Run()
 		}
 
 		const auto UnboundedFramerate = FPSLimit < 1;
-		const uint64_t RenderDeltaTime = RenderTimer.GetElapsedTimeMilliseconds();
-		const uint64_t MaximumFrameTime = UnboundedFramerate ? RenderDeltaTime : 1000 / FPSLimit;
+		const double RenderDeltaTime = RenderTimer.GetElapsedTimeSeconds();
+		const double MaximumFrameTime = UnboundedFramerate ? RenderDeltaTime : 1.0 / FPSLimit;
 		if( !MainWindow.IsMinimized() && ( RenderDeltaTime > MaximumFrameTime || UnboundedFramerate ) )
 		{
-			TimerScope::Submit( "Frametime", RenderTimer.GetStartTime(), RenderDeltaTime );
-			GameLayersInstance->FrameTime( StaticCast<double>( RenderDeltaTime ) * 0.001 );
+			TimerScope::Submit( "Frametime", RenderTimer.GetStartTime(), RenderTimer.GetElapsedTimeMilliseconds() );
+			GameLayersInstance->FrameTime( RenderDeltaTime );
 			RenderTimer.Start( 0 );
 
 			MainWindow.BeginFrame();
