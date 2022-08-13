@@ -610,6 +610,33 @@ namespace EngineTest
 				Assert::Fail( L"String to Color failed." );
 			}
 		}
+
+		TEST_METHOD( StringReplace )
+		{
+			const std::string Input = "ISayHello";
+			const std::string Find = "Say";
+			const std::string Replace = "Shout";
+			const std::string Expected = "IShoutHello";
+
+			const auto Result = String::Replace( Input, Find, Replace );
+
+			Assert::IsTrue( Result == Expected, L"Failed to replace in string." );
+		}
+
+		TEST_METHOD( StringSplit )
+		{
+			const std::string Input = "One,Two";
+			constexpr char Delimiter = ',';
+			const std::string ExpectedLeft = "One";
+			const std::string ExpectedRight = "Two";
+
+			const auto Result = String::Split( Input, Delimiter );
+
+			Assert::IsTrue( 
+				Result.first == ExpectedLeft &&
+				Result.second == ExpectedRight,
+				L"Failed to split string." );
+		}
 	};
 
 	TEST_CLASS( Mathematics )
