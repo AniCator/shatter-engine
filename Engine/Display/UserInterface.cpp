@@ -546,6 +546,18 @@ namespace UI
 		AddText( Text.c_str(), nullptr, Color );
 	}
 
+	void AddText( const std::string& Name, const Vector3D& Vector, const Color& Color )
+	{
+		const std::string VectorString = Name + ": " + std::to_string( Vector.X ) + ", " + std::to_string( Vector.Y ) + ", " + std::to_string( Vector.Z );
+		AddText( VectorString.c_str(), nullptr, Color );
+	}
+
+	void AddText( const std::string& Name, const float& Float, const Color& Color )
+	{
+		const std::string VectorString = Name + ": " + std::to_string( Float );
+		AddText( VectorString.c_str(), nullptr, Color );
+	}
+
 	void RenderFixedTextOutput()
 	{
 		auto Position = Vector2D( 10.0f, 20.0f );
