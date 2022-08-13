@@ -1145,11 +1145,11 @@ double CTimeline::Length() const
 
 void CTimeline::Feed()
 {
-	const auto RealTime = GameLayersInstance->GetRealTime();
-	const auto TimeSinceStart = RealTime - StartTime;
+	const auto CurrentTime = GameLayersInstance->GetCurrentTime();
+	const auto TimeSinceStart = CurrentTime - StartTime;
 	const auto Drift = Math::Max( 0.0, TimeSinceStart - Time() );
 	const auto StepDrift = StaticCast<uint64_t>( std::ceil( Drift * StaticCast<double>( Timebase ) ) );
-	const auto DeltaTime = RealTime - PreviousTime;
+	const auto DeltaTime = CurrentTime - PreviousTime;
 	auto Steps = StaticCast<uint64_t>( std::floor( DeltaTime * PlayRate * StaticCast<double>( Timebase ) ) );
 	Steps += StepDrift;
 
@@ -1173,7 +1173,7 @@ void CTimeline::Feed()
 		UI::AddText( Vector2D( 51.0f, 201.0f ), DebugString.c_str(), nullptr, Color::Black );
 		UI::AddText( Vector2D( 50.0f, 200.0f ), DebugString.c_str() );*/
 
-	PreviousTime = RealTime;
+	PreviousTime = CurrentTime;
 }
 
 void CTimeline::Frame()
