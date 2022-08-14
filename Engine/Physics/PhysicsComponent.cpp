@@ -481,6 +481,10 @@ void CBody::Construct( CPhysics* Physics )
 
 void CBody::PreCollision()
 {
+	// Don't reset the values if we're sleeping.
+	if( Sleeping )
+		return;
+
 	Normal = Vector3D::Zero;
 	Contact = false;
 	Contacts = 0;
