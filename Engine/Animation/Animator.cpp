@@ -233,9 +233,9 @@ Animator::Matrices Animator::GetMatrices( const Animation& Animation, const floa
 	return Get( Key );
 }
 
-Animator::CompoundKey Animator::Get( const Animation& Animation, const float& Time, const int32_t& BoneIndex )
+Animator::CompoundKey Animator::Get( const Animation& Animation, const float& Time, const int32_t& BoneIndex, const int32_t& Offset )
 {
-	const auto Pair = GetPair( Animation, Time, BoneIndex );
+	const auto Pair = GetPair( Animation, Time, BoneIndex, Offset );
 	return BlendSeparate( Pair.first, Pair.second, Time );
 }
 
@@ -290,7 +290,7 @@ Matrix4D Animator::GetScale( const Key& Key )
 	);
 }
 
-size_t Animator::GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys )
+size_t Animator::GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys, const int32_t& Offset )
 {
 	size_t Output = 0;
 	for( size_t KeyIndex = 0; KeyIndex < Keys.size(); KeyIndex++ )
@@ -305,6 +305,13 @@ size_t Animator::GetNearestIndex( const float& Time, const float& Duration, cons
 		}
 	}
 
+	if( Offset != 0 )
+	{
+		int64_t ShiftedKey = Output + Offset;
+		ShiftedKey = ShiftedKey % Keys.size();
+		Output = ShiftedKey;
+	}
+
 	return Output;
 }
 
@@ -314,11 +321,8 @@ Key Animator::GetNearest(const float& Time, const float& Duration, const int32_t
 	return Keys[Index];
 }
 
-std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys )
+std::pair<Key, Key> ConstructPair( const size_t& Index, const FixedVector<Key>& Keys )
 {
-	// Find the nearest index.
-	const auto Index = GetNearestIndex( Time, Duration, BoneIndex, Keys );
-
 	std::pair<Key, Key> Pair;
 	Pair.first = Keys[Index];
 	Pair.second = Keys[Index];
@@ -339,13 +343,20 @@ std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration,
 	return Pair;
 }
 
-std::pair<Animator::CompoundKey, Animator::CompoundKey> Animator::GetPair( const Animation& Animation, const float& Time, const int32_t& BoneIndex )
+std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys, const int32_t& Offset )
+{
+	// Find the nearest index.
+	const auto Index = GetNearestIndex( Time, Duration, BoneIndex, Keys, Offset );
+	return ConstructPair( Index, Keys );
+}
+
+std::pair<Animator::CompoundKey, Animator::CompoundKey> Animator::GetPair( const Animation& Animation, const float& Time, const int32_t& BoneIndex, const int32_t& Offset )
 {
 	std::pair<CompoundKey, CompoundKey> Pair;
 
-	const auto Position = GetPair( Time, Animation.Duration, BoneIndex, Animation.PositionKeys );
-	const auto Rotation = GetPair( Time, Animation.Duration, BoneIndex, Animation.RotationKeys );
-	const auto Scale = GetPair( Time, Animation.Duration, BoneIndex, Animation.ScalingKeys );
+	const auto Position = GetPair( Time, Animation.Duration, BoneIndex, Animation.PositionKeys, Offset );
+	const auto Rotation = GetPair( Time, Animation.Duration, BoneIndex, Animation.RotationKeys, Offset );
+	const auto Scale = GetPair( Time, Animation.Duration, BoneIndex, Animation.ScalingKeys, Offset );
 
 	Pair.first.Position = Position.first;
 	Pair.first.Rotation = Rotation.first;
@@ -425,6 +436,31 @@ std::pair<Animator::CompoundKey, Animator::CompoundKey> Animator::GetPair( const
 
 	return A;
 }*/
+
+Vector3D ExtractRootMotion( const Key& A, const Key& B, const float& Alpha, const Animation::RootMotionType& Type )
+{
+	Vector3D Motion = Vector3D::Zero;
+	if( Type == Animation::None )
+	{
+		return Motion;
+	}
+
+	if( A.BoneIndex == B.BoneIndex )
+	{
+		const auto Difference = B.Value - A.Value;
+		Motion.X = Difference.X;
+		Motion.Y = Difference.Y;
+
+		if( Type == Animation::XYZ )
+		{
+			Motion.Z = Difference.Z;
+		}
+
+		Motion *= Alpha;
+	}
+
+	return Motion;
+}
 
 Animator::CompoundKey Animator::Blend( const CompoundKey& A, const CompoundKey& B, const float& Alpha )
 {
@@ -528,6 +564,13 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 	Blend.Rotation.BoneIndex = Bone->Index;
 	Blend.Scale.BoneIndex = Bone->Index;
 
+	const auto RootBone = !Parent;
+	if( RootBone )
+	{
+		// Clear the root motion data of the previous update.
+		Data.RootMotion = Vector3D::Zero;
+	}
+
 	for( auto& Array : Data.Stack )
 	{
 		// Ignore animations that have no influence.
@@ -535,7 +578,32 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 			continue;
 
 		const auto Time = Array.Time < 0.0f ? Data.Time : Array.Time;
-		const auto Key = Get( Array.Animation, fmod( Time, Array.Animation.Duration ), Bone->Index );
+		const auto WrappedTime = fmod( Time, Array.Animation.Duration );
+		auto Key = Get( Array.Animation, WrappedTime, Bone->Index );
+
+		// Extract root motion data if there is no parent. NOTE: this assumes there's only one root bone.
+		if( RootBone && Array.Animation.PositionKeys.size() > 0 )
+		{
+			// Get the specific position pair.
+			const auto Pair = GetPair( WrappedTime, Array.Animation.Duration, Bone->Index, Array.Animation.PositionKeys );
+
+			// Calculate how much the bone has moved.
+			Data.RootMotion += ExtractRootMotion( Pair.first, Pair.second, Array.Weight, Array.Animation.RootMotion );
+
+			// Cancel out the movement.
+			const auto& FirstKey = Array.Animation.PositionKeys[0];
+			if( Array.Animation.RootMotion != Animation::None )
+			{
+				Key.Position.Value.X = FirstKey.Value.X;
+				Key.Position.Value.Y = FirstKey.Value.Y;
+			}
+
+			if( Array.Animation.RootMotion == Animation::XYZ )
+			{
+				Key.Position.Value.Z = FirstKey.Value.Z;
+			}
+		}
+
 		Blend = Animator::Blend( Blend, Key, Array.Weight );
 	}
 
@@ -563,6 +631,9 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 	{
 		// Set the global transform to just the local transform if no parent is found.
 		Data.Bones[Bone->Index].GlobalTransform = LocalTransform;
+
+		// Scale the root motion vector.
+		Data.RootMotion = Matrices.Scale.Transform( Data.RootMotion );
 	}
 
 	Data.Bones[Bone->Index].BoneTransform = Data.Bones[Bone->Index].GlobalTransform * ModelToBone;

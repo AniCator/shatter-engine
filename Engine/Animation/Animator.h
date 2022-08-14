@@ -57,6 +57,8 @@ struct Animator
 		// The tick offset can be used to stagger animations ticks.
 		uint32_t TickOffset = 0;
 
+		Vector3D RootMotion = Vector3D::Zero;
+
 		void SetAnimation( const std::string& Name, const bool& Loop = false );
 		const std::string& GetAnimation() const;
 		bool HasAnimation( const std::string& Name ) const;
@@ -111,7 +113,7 @@ struct Animator
 	/// <param name="Time">The current animation time.</param>
 	/// <param name="BoneIndex">The bone for which we're getting the matrices.</param>
 	/// <returns>Interpolated translation, rotation and scaling matrix.</returns>
-	static CompoundKey Get( const Animation& Animation, const float& Time, const int32_t& BoneIndex );
+	static CompoundKey Get( const Animation& Animation, const float& Time, const int32_t& BoneIndex, const int32_t& Offset = 0 );
 
 	// Returns the animation matrices for a given key.
 	static Matrices Get( const CompoundKey& Key );
@@ -125,7 +127,7 @@ struct Animator
 	// Returns scaling matrix.
 	static Matrix4D GetScale( const Key& Key );
 
-	static size_t GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys );
+	static size_t GetNearestIndex( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys, const int32_t& Offset = 0 );
 
 	// Returns the key closest to the time.
 	static Key GetNearest( const float& Time, const float& Duration, const int32_t& BoneIndex, const FixedVector<Key>& Keys );
@@ -134,13 +136,15 @@ struct Animator
 		const float& Time, 
 		const float& Duration,
 		const int32_t& BoneIndex,
-		const FixedVector<Key>& Keys
+		const FixedVector<Key>& Keys,
+		const int32_t& Offset = 0
 	);
 
 	static std::pair<CompoundKey, CompoundKey> GetPair(
 		const Animation& Animation,
 		const float& Time,
-		const int32_t& BoneIndex
+		const int32_t& BoneIndex,
+		const int32_t& Offset = 0
 	);
 
 	// Blend between two compound keys.
