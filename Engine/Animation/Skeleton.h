@@ -143,6 +143,15 @@ struct Animation
 {
 	std::string Name;
 	float Duration;
+
+	// Determines how the root bone will be translated.
+	enum RootMotionType
+	{
+		None,
+		XY,
+		XYZ
+	} RootMotion = None;
+
 	FixedVector<Key> PositionKeys;
 	FixedVector<Key> RotationKeys;
 	FixedVector<Key> ScalingKeys;

@@ -15,8 +15,8 @@ struct AnimationSet
 		if( File.Exists() )
 		{
 			File.Load();
-			const auto& Set = JSON::Tree( File );
-			return Generate( JSON::Find( Set.Tree, "animations" ) );
+			const auto& Data = JSON::Tree( File );
+			return Generate( JSON::Find( Data.Tree, "animations" ) );
 		}
 
 		return AnimationSet();

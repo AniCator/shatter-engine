@@ -22,24 +22,74 @@
 
 ConfigurationVariable<bool> LogAssetCreation( "debug.Assets.LogCreation", false );
 
+void LoadAnimationMetaData( AnimationSet& Set, const JSON::Container& SetData )
+{
+	const auto* MetaData = JSON::Find( SetData.Tree, "meta" );
+	if( !MetaData )
+		return; // This set doesn't contain additional metadata.
+
+	for( const auto* Entry : MetaData->Objects )
+	{
+		const auto& Name = JSON::Find( Entry->Objects, "name" );
+		if( !Name )
+			continue; // Invalid entry, a name is required.
+
+		// Lookup the actual name of the animation.
+		const auto& RealName = Set.Lookup( Name->Value );
+		const auto Iterator = Set.Skeleton.Animations.find( RealName );
+		if( Iterator == Set.Skeleton.Animations.end() )
+			continue; // The animation could not be found.
+
+		auto& Animation = Iterator->second;
+
+		// Check for root motion requests.
+		if( const auto* RootMotion = JSON::Find( Entry->Objects, "rootmotion" ) )
+		{
+			if( RootMotion->Value == "xy" )
+			{
+				Animation.RootMotion = Animation::XY;
+			}
+			else if( RootMotion->Value == "xyz" )
+			{
+				Animation.RootMotion = Animation::XYZ;
+			}
+		}
+	}
+}
+
+void LoadAnimationSet( AnimationSet& Set, CFile& File, JSON::Container& SetData )
+{
+	File.Load();
+	SetData = JSON::Tree( File );
+	const auto& MeshLocation = JSON::Find( SetData.Tree, "path" );
+	if( MeshLocation && CFile::Exists( MeshLocation->Value ) )
+	{
+		// Update the accessed file so that ASSIMP can load it.
+		File = CFile( MeshLocation->Value );
+
+		// Load the animation set lookup table.
+		Set = AnimationSet::Generate( JSON::Find( SetData.Tree, "animations" ) );
+	}
+}
+
 void LoadASSIMPMesh( PrimitivePayload* Payload, AnimationSet& Set, CFile& File )
 {
-	if( File.Extension() == "ses" ) // Animation set
-	{
-		File.Load();
-		const auto SetData = JSON::Tree( File );
-		const auto& MeshLocation = JSON::Find( SetData.Tree, "path" );
-		if( MeshLocation && CFile::Exists( MeshLocation->Value ) )
-		{
-			// Update the accessed file so that ASSIMP can load it.
-			File = CFile( MeshLocation->Value );
+	// Animation set data, if loaded.
+	JSON::Container SetData;
 
-			// Load the animation set lookup table.
-			Set = AnimationSet::Generate( JSON::Find( SetData.Tree, "animations" ) );
-		}
+	const auto IsAnimationSet = File.Extension() == "ses";
+	if( IsAnimationSet ) // Animation set
+	{
+		LoadAnimationSet( Set, File, SetData );
 	}
 	
 	MeshBuilder::ASSIMP( Payload->Primitive, Set, File );
+
+	if( IsAnimationSet )
+	{
+		// Additional post-processing (root motion extraction).
+		LoadAnimationMetaData( Set, SetData );
+	}
 }
 
 struct CompoundPayload
@@ -379,6 +429,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 		if( ShouldLoad )
 		{
 			bool LoadASSIMP = true;
+			JSON::Container SetData;
 			
 			if( Extension == "lm" )
 			{
@@ -388,22 +439,17 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			}
 			else if ( Extension == "ses" ) // Animation set
 			{
-				File.Load();
-				const auto SetData = JSON::Tree( File );
-				const auto& MeshLocation = JSON::Find( SetData.Tree, "path" );
-				if( MeshLocation && CFile::Exists( MeshLocation->Value ) )
-				{
-					// Update the accessed file so that ASSIMP can load it.
-					File = CFile( MeshLocation->Value );
-
-					// Load the animation set lookup table.
-					Set = AnimationSet::Generate( JSON::Find( SetData.Tree, "animations" ) );
-				}				
+				LoadAnimationSet( Set, File, SetData );
 			}
 
 			if( LoadASSIMP )
 			{
 				MeshBuilder::ASSIMP( Primitive, Set, File );
+
+				if( Extension == "ses" )
+				{
+					LoadAnimationMetaData( Set, SetData );
+				}
 
 				if( Primitive.VertexCount == 0 )
 				{
