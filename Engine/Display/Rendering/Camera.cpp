@@ -307,7 +307,9 @@ void CCamera::SetCameraOrientation( const Vector3D& Orientation )
 	this->CameraOrientation = Orientation;
 	this->CameraQuaternion = glm::quat( Math::ToGLM( Orientation ) );
 
-	CameraSetup.CameraDirection = Math::EulerToDirection( Orientation );
+	CameraSetup.CameraDirection[1] = cos( glm::radians( Orientation[0] ) ) * cos( glm::radians( Orientation[1] ) );
+	CameraSetup.CameraDirection[2] = sin( glm::radians( Orientation[0] ) );
+	CameraSetup.CameraDirection[0] = cos( glm::radians( Orientation[0] ) ) * sin( glm::radians( Orientation[1] ) );
 	CameraSetup.CameraDirection.Normalize();
 
 	Update();
