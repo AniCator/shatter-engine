@@ -259,65 +259,63 @@ void CCamera::SetFieldOfView( const float& FieldOfView )
 	Update();
 }
 
-void CCamera::SetOrthographicScale( const float& OrthographicScale )
+void CCamera::SetOrthographicScale( const float& Scale )
 {
 	CameraSetup.Orthographic = true;
-	CameraSetup.OrthographicScale = OrthographicScale;
+	CameraSetup.OrthographicScale = Scale;
 
 	Update();
 }
 
-void CCamera::SetAspectRatio( const float& AspectRatio )
+void CCamera::SetAspectRatio( const float& Ratio )
 {
-	CameraSetup.AspectRatio = AspectRatio;
+	CameraSetup.AspectRatio = Ratio;
 
 	Update();
 }
 
-void CCamera::SetNearPlaneDistance( const float& NearPlaneDistance )
+void CCamera::SetNearPlaneDistance( const float& Distance )
 {
-	CameraSetup.NearPlaneDistance = NearPlaneDistance;
+	CameraSetup.NearPlaneDistance = Distance;
 
 	Update();
 }
 
-void CCamera::SetFarPlaneDistance( const float& FarPlaneDistance )
+void CCamera::SetFarPlaneDistance( const float& Distance )
 {
-	CameraSetup.FarPlaneDistance = FarPlaneDistance;
+	CameraSetup.FarPlaneDistance = Distance;
 
 	Update();
 }
 
-void CCamera::SetCameraPosition( const Vector3D& CameraPosition )
+void CCamera::SetCameraPosition( const Vector3D& Position )
 {
-	CameraSetup.CameraPosition = CameraPosition;
+	CameraSetup.CameraPosition = Position;
 
 	Update();
 }
 
-void CCamera::SetCameraDirection( const Vector3D& CameraDirection )
+void CCamera::SetCameraDirection( const Vector3D& Direction )
 {
-	CameraSetup.CameraDirection = CameraDirection;
+	CameraSetup.CameraDirection = Direction;
 
 	Update();
 }
 
-void CCamera::SetCameraOrientation( const Vector3D& CameraOrientation )
+void CCamera::SetCameraOrientation( const Vector3D& Orientation )
 {
-	this->CameraOrientation = CameraOrientation;
-	this->CameraQuaternion = glm::quat( Math::ToGLM( CameraOrientation ) );
+	this->CameraOrientation = Orientation;
+	this->CameraQuaternion = glm::quat( Math::ToGLM( Orientation ) );
 
-	CameraSetup.CameraDirection[1] = cos( glm::radians( CameraOrientation[0] ) ) * cos( glm::radians( CameraOrientation[1] ) );
-	CameraSetup.CameraDirection[2] = sin( glm::radians( CameraOrientation[0] ) );
-	CameraSetup.CameraDirection[0] = cos( glm::radians( CameraOrientation[0] ) ) * sin( glm::radians( CameraOrientation[1] ) );
+	CameraSetup.CameraDirection = Math::EulerToDirection( Orientation );
 	CameraSetup.CameraDirection.Normalize();
 
 	Update();
 }
 
-void CCamera::SetCameraUpVector( const Vector3D& CameraUpVector )
+void CCamera::SetCameraUpVector( const Vector3D& Vector )
 {
-	CameraSetup.CameraUpVector = CameraUpVector;
+	CameraSetup.CameraUpVector = Vector;
 
 	Update();
 }
