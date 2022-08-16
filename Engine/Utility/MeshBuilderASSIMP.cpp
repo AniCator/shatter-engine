@@ -21,26 +21,23 @@
 struct NamedBone
 {
 	std::string Name;
-	Bone* Bone;
+	Bone* Bone = nullptr;
 };
 
-struct FMeshData
+struct ImportedMeshData
 {
-	FMeshData()
+	ImportedMeshData()
 	{
 		Vertices.reserve( 10000 );
 		Indices.reserve( 10000 );
-
-		Skeleton = nullptr;
-		Parent = nullptr;
 	}
 
 	std::vector<FVertex> Vertices;
 	std::vector<uint32_t> Indices;
 
-	Skeleton* Skeleton;
+	Skeleton* Skeleton = nullptr;
 	aiMatrix4x4 InverseTransform;
-	aiNode* Parent;
+	aiNode* Parent = nullptr;
 
 	std::unordered_map<std::string, const aiNode*> Nodes;
 	std::unordered_map<std::string, const aiNode*> BoneToNode;
@@ -162,7 +159,7 @@ void Print( const std::string& Name, const aiMatrix4x4& Matrix )
 	Print( Matrix.d1, Matrix.d2, Matrix.d3, Matrix.d4 );
 }
 
-void AssignNodeBone( FMeshData& MeshData, const char* BoneName, const unsigned BoneIndex, const aiBone* Bone )
+void AssignNodeBone( ImportedMeshData& MeshData, const char* BoneName, const unsigned BoneIndex, const aiBone* Bone )
 {
 	MeshData.Skeleton->MatrixNames[BoneIndex] = Bone->mName.C_Str();
 	MeshData.BoneToNode.insert_or_assign( Bone->mName.C_Str(), nullptr );
@@ -175,12 +172,11 @@ void AssignNodeBone( FMeshData& MeshData, const char* BoneName, const unsigned B
 }
 
 // This function is run in AddMesh and takes in an IndexOffset that is used to determine where the sub-mesh indices are located.
-void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* Mesh, const aiNode* Node, FMeshData& MeshData )
+void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* Mesh, const aiNode* Node, ImportedMeshData& MeshData )
 {
 	if( !Scene->HasAnimations() || !Mesh->HasBones() || !MeshData.Skeleton )
 		return;
-
-	// Log::Event( "Calculating bone weights.\n" );
+	
 	Skeleton& Skeleton = *MeshData.Skeleton;
 	if( Skeleton.Weights.size() != Mesh->mNumVertices )
 	{
@@ -265,7 +261,7 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 	}
 }
 
-void UpdateBoneNode( const aiNode* Node, FMeshData& MeshData )
+void UpdateBoneNode( const aiNode* Node, ImportedMeshData& MeshData )
 {
 	if( MeshData.BoneToNode.find( Node->mName.C_Str() ) != MeshData.BoneToNode.end() )
 	{
@@ -273,7 +269,7 @@ void UpdateBoneNode( const aiNode* Node, FMeshData& MeshData )
 	}
 }
 
-void UpdateBoneHierarchy( const aiNode* Node, FMeshData& MeshData )
+void UpdateBoneHierarchy( const aiNode* Node, ImportedMeshData& MeshData )
 {
 	const bool ValidBone = MeshData.NodeToBone.find( Node->mName.C_Str() ) != MeshData.NodeToBone.end();
 	
@@ -324,7 +320,7 @@ void UpdateBoneHierarchy( const aiNode* Node, FMeshData& MeshData )
 	}
 }
 
-void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* Mesh, const aiNode* Node, FMeshData& MeshData )
+void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* Mesh, const aiNode* Node, ImportedMeshData& MeshData )
 {
 	const bool HasInvalidPrimitive = ( Mesh->mPrimitiveTypes & ( aiPrimitiveType_POINT | aiPrimitiveType_LINE | aiPrimitiveType_POLYGON ) ) != 0;
 	if( HasInvalidPrimitive )
@@ -390,7 +386,7 @@ void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* 
 	}
 }
 
-void ParseNodes( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNode* Node, FMeshData& MeshData )
+void ParseNodes( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNode* Node, ImportedMeshData& MeshData )
 {
 	MeshData.Nodes.insert_or_assign( Node->mName.C_Str(), Node );
 
@@ -424,7 +420,7 @@ bool CompareAnimationKeys( const Key& A, const Key& B )
 	return A.Time < B.Time;
 }
 
-void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshData& MeshData )
+void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, ImportedMeshData& MeshData )
 {
 	if( !Scene->HasAnimations() || !MeshData.Skeleton )
 		return;
@@ -572,7 +568,6 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 			}
 
 			MeshData.Animations.insert_or_assign( NewAnimation.Name, NewAnimation );
-			// Log::Event( "Imported animation \"%s\" (%i keys)\n", NewAnimation.Name.c_str(), NewAnimation.PositionKeys.size() + NewAnimation.RotationKeys.size() + NewAnimation.ScalingKeys.size() );
 		}
 	}
 
@@ -591,7 +586,7 @@ void ParseAnimations( const aiMatrix4x4& Transform, const aiScene* Scene, FMeshD
 	}
 }
 
-void FinishSkeleton( FMeshData& MeshData )
+void FinishSkeleton( ImportedMeshData& MeshData )
 {
 	if( !MeshData.Skeleton )
 		return;
@@ -640,8 +635,6 @@ void SetImportFlag( MeshBuilder::ImportOptions& Options, const MeshBuilder::Impo
 
 void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile& File, const ImportOptions& Options )
 {
-	// Log::Event( "Running ASSIMP to import \"%s\"\n", File.Location().c_str() );
-
 	ImportOptions Configuration = Options;
 
 	Assimp::Importer Importer;
@@ -670,8 +663,6 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	if( !Scene )
 		return;
 
-	// Log::Event( "Meshes found: %i\n", Scene->mNumMeshes );
-
 	const bool HasMeshes = Scene->mNumMeshes > 0;
 	if( !HasMeshes )
 	{
@@ -679,15 +670,9 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	}
 
 	const aiMatrix4x4 RotationMatrix = GetWorldRotationMatrix();
-	// auto Transform = Scene->mRootNode->mTransformation;
 	auto Transform = Scene->mRootNode->mTransformation * RotationMatrix;
 
-	/*if( Scene->mNumAnimations > 0 )
-	{
-		Transform = Scene->mRootNode->mTransformation;
-	}*/
-
-	FMeshData MeshData;
+	ImportedMeshData MeshData;
 	MeshData.Skeleton = &Set.Skeleton;
 
 	if( HasImportFlag( Configuration, AppendAnimation ) )
@@ -723,26 +708,6 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	if( !HasMeshes )
 		return;
 
-	// Note: For debugging.
-	if( Scene->mMetaData && false )
-	{
-		Log::Event( "MetaData\n" );
-
-		int UpAxis;
-		Scene->mMetaData->Get( "UpAxis", UpAxis );
-		Log::Event( "UpAxis: %i\n", UpAxis );
-
-		Scene->mMetaData->Get( "UpAxisSign", UpAxis );
-		Log::Event( "UpAxisSign: %i\n", UpAxis );
-
-		for( int MetaIndex = 0; MetaIndex < Scene->mMetaData->mNumProperties; MetaIndex++ )
-		{
-			Log::Event( "%s\n",
-				Scene->mMetaData->mKeys[MetaIndex].C_Str()
-			);
-		}
-	}
-
 	std::vector<FVertex> FatVertices;
 	std::vector<uint32_t> FatIndices;
 	std::map<FVertex, uint32_t> IndexMap;
@@ -766,13 +731,13 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 		}
 	}
 
-	FVertex* VertexArray = new FVertex[FatVertices.size()];
+	auto* VertexArray = new FVertex[FatVertices.size()];
 	for( size_t Index = 0; Index < FatVertices.size(); Index++ )
 	{
 		VertexArray[Index] = FatVertices[Index];
 	}
 
-	glm::uint* IndexArray = new glm::uint[FatIndices.size()];
+	auto* IndexArray = new glm::uint[FatIndices.size()];
 	for( size_t Index = 0; Index < FatIndices.size(); Index++ )
 	{
 		IndexArray[Index] = FatIndices[Index];
@@ -783,22 +748,4 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	Primitive.Indices = IndexArray;
 	Primitive.IndexCount = static_cast<uint32_t>( FatIndices.size() );
 	Primitive.HasNormals = true;
-	
-	/*FVertex* VertexArray = new FVertex[MeshData.Vertices.size()];
-	for( size_t Index = 0; Index < MeshData.Vertices.size(); Index++ )
-	{
-		VertexArray[Index] = MeshData.Vertices[Index];
-	}
-
-	glm::uint* IndexArray = new glm::uint[MeshData.Indices.size()];
-	for( size_t Index = 0; Index < MeshData.Indices.size(); Index++ )
-	{
-		IndexArray[Index] = MeshData.Indices[Index];
-	}
-
-	Primitive.Vertices = VertexArray;
-	Primitive.VertexCount = static_cast<uint32_t>( MeshData.Vertices.size() );
-	Primitive.Indices = IndexArray;
-	Primitive.IndexCount = static_cast<uint32_t>( MeshData.Indices.size() );
-	Primitive.HasNormals = true;*/
 }
