@@ -74,6 +74,7 @@ public:
 
 private:
 	void PollJoystick( int Joystick );
+	void ClearJoystick( int Joystick );
 	void AddActionBinding( const FActionBinding& Binding );
 	std::map<NameSymbol, std::vector<FActionBinding>> ActionBindings;
 

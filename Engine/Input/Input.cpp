@@ -182,19 +182,26 @@ void CInput::RegisterScrollInput( int OffsetX, int OffsetY )
 
 void CInput::RegisterJoystickStatus( int Joystick, int Event )
 {
-	if( Event == GLFW_CONNECTED )
-	{
-		Log::Event( "Joystick %i connected.\n", Joystick );
-	}
-	else if( Event == GLFW_DISCONNECTED )
-	{
-		Log::Event( "Joystick %i disconnected.\n", Joystick );
-	}
-
 	EJoystickStatus Status = EJoystickStatus::Disconnected;
 	if( Event == GLFW_CONNECTED )
 	{
 		Status = EJoystickStatus::Connected;
+	}
+
+	const auto IsGamepad = glfwJoystickIsGamepad( Joystick );
+	if( Status == EJoystickStatus::Connected )
+	{
+		Log::Event( "%s %i connected.\n", IsGamepad ? "Gamepad" : "Joystick", Joystick );
+	}
+	else if( Status == EJoystickStatus::Disconnected )
+	{
+		Log::Event( "%s %i disconnected.\n", IsGamepad ? "Gamepad" : "Joystick", Joystick );
+	}
+
+	if( JoystickStatus[Joystick] == EJoystickStatus::Connected && Status == EJoystickStatus::Disconnected )
+	{
+		// A connected joystick or gamepad has been disconnected, make sure to clear its inputs.
+		ClearJoystick( Joystick );
 	}
 
 	JoystickStatus[Joystick] = Status;
@@ -205,6 +212,8 @@ void CInput::PollJoystick( int Joystick )
 	if( !glfwJoystickIsGamepad( Joystick ) )
 	{
 		JoystickStatus[Joystick] = EJoystickStatus::Disconnected;
+		ClearJoystick( Joystick );
+		return;
 	}
 
 	GLFWgamepadstate GamepadState;
@@ -270,6 +279,16 @@ void CInput::PollJoystick( int Joystick )
 
 		Input.Modifiers = 0;
 		Input.Scale = State;
+	}
+}
+
+void CInput::ClearJoystick( int Joystick )
+{
+	for( int i = 1; i < static_cast<int>( EGamepad::Maximum ); i++ )
+	{
+		// Reset all actions.
+		FGamepadInput& Input = GamepadInput[i];
+		Input.Action = EAction::Unknown;
 	}
 }
 
@@ -426,7 +445,6 @@ void CInput::PollJoysticks()
 		if( JoystickStatus[Index] == EJoystickStatus::Connected )
 		{
 			PollJoystick( Index );
-			break;
 		}
 	}
 }
