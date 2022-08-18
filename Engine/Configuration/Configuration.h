@@ -151,8 +151,40 @@ protected:
 	T Value;
 };
 
+// Similar to ConfigurationVariable, but only valid for the current session.
 template<typename T>
-using ConsoleVariable = ConfigurationVariable<T>;
+struct ConsoleVariable
+{
+	ConsoleVariable() = delete;
+	ConsoleVariable( const std::string& Name, const T& Default )
+	{
+		Value = Default;
+		Callback = { Name, Value, Default };
 
+		// Overwrite whatever entry is in the configuration file from the previous sessions.
+		CConfiguration::Get().Store( Callback.Key, Value );
+	}
+
+	T Get() const
+	{
+		return Value;
+	}
+
+	void Set( const T& Value )
+	{
+		CConfiguration::Get().Store( Callback.Key, Value );
+	}
+
+	explicit operator bool() const
+	{
+		return Value;
+	}
+
+protected:
+	CConfiguration::CallbackTracker<T> Callback;
+	T Value;
+};
+
+// Similar to ConfigurationVariable, but only valid for the current session.
 template<typename T>
 using ConVar = ConsoleVariable<T>;
