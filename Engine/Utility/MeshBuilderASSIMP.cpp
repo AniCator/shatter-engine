@@ -171,6 +171,17 @@ void AssignNodeBone( ImportedMeshData& MeshData, const char* BoneName, const uns
 	MeshData.NodeToBone.insert_or_assign( Bone->mName.C_Str(), NodeBone );
 }
 
+void ConfigureBoneMatrices( Bone* BoneToConfigure, aiMatrix4x4 InverseOffsetMatrix )
+{
+	// Set the inverse bind pose matrix.
+	ConvertMatrix( BoneToConfigure->ModelToBone, InverseOffsetMatrix );
+
+	InverseOffsetMatrix.Inverse();
+
+	// Set the bind pose matrix.
+	ConvertMatrix( BoneToConfigure->BoneToModel, InverseOffsetMatrix );
+}
+
 // This function is run in AddMesh and takes in an IndexOffset that is used to determine where the sub-mesh indices are located.
 void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* Mesh, const aiNode* Node, ImportedMeshData& MeshData )
 {
@@ -247,16 +258,17 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 	for( size_t BoneIndex = 0; BoneIndex < Mesh->mNumBones; BoneIndex++ )
 	{
 		const auto* Bone = Mesh->mBones[BoneIndex];
-		auto InverseOffsetMatrix = Bone->mOffsetMatrix;
 
-		// Set the inverse bind pose matrix.
-		ConvertMatrix( Skeleton.Bones[BoneIndex].ModelToBone, InverseOffsetMatrix );
-		
-		InverseOffsetMatrix.Inverse();
+		aiMatrix4x4 NodeMatrix;
+		const auto Iterator = MeshData.Nodes.find( Bone->mName.C_Str() );
+		if( Iterator != MeshData.Nodes.end() && Iterator->second )
+		{
+			NodeMatrix = Iterator->second->mTransformation;
+		}
 
-		// Set the bind pose matrix.
-		ConvertMatrix( Skeleton.Bones[BoneIndex].BoneToModel, InverseOffsetMatrix );
+		const auto InverseOffsetMatrix = NodeMatrix * Bone->mOffsetMatrix;
 
+		ConfigureBoneMatrices( &Skeleton.Bones[BoneIndex], InverseOffsetMatrix );
 		AssignNodeBone( MeshData, Bone->mName.C_Str(), BoneIndex, Bone );
 	}
 }
@@ -285,11 +297,8 @@ void UpdateBoneHierarchy( const aiNode* Node, ImportedMeshData& MeshData )
 			const aiMatrix4x4& NodeTransformation = MeshData.BoneToNode[NamedBone.Name]->mTransformation;
 			aiMatrix4x4 NodeTransformationInverse = NodeTransformation;
 			NodeTransformationInverse.Inverse();
-			Matrix4D Transformation;
 			ConvertMatrix( Bone.ModelMatrix, NodeTransformation );
 			ConvertMatrix( Bone.InverseModelMatrix, NodeTransformationInverse );
-			// Bone.Matrix = Bone.ModelMatrix * Bone.InverseModelMatrix * Bone.Matrix;
-			// Bone.Index = BoneIndex;
 		}
 	}
 
@@ -386,7 +395,7 @@ void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* 
 	}
 }
 
-void ParseNodes( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNode* Node, ImportedMeshData& MeshData )
+void TraverseNodeTree( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNode* Node, ImportedMeshData& MeshData )
 {
 	MeshData.Nodes.insert_or_assign( Node->mName.C_Str(), Node );
 
@@ -410,9 +419,26 @@ void ParseNodes( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNod
 
 	for( size_t ChildIndex = 0; ChildIndex < Node->mNumChildren; ChildIndex++ )
 	{
-		const auto Child = Node->mChildren[ChildIndex];
-		ParseNodes( Transform, Scene, Child, MeshData );
+		const auto* Child = Node->mChildren[ChildIndex];
+		TraverseNodeTree( Transform, Scene, Child, MeshData );
 	}
+}
+
+void CacheBoneNodes( const aiNode* Node, ImportedMeshData& MeshData )
+{
+	UpdateBoneNode( Node, MeshData );
+
+	for( size_t ChildIndex = 0; ChildIndex < Node->mNumChildren; ChildIndex++ )
+	{
+		const auto* Child = Node->mChildren[ChildIndex];
+		UpdateBoneNode( Child, MeshData );
+	}
+}
+
+void ParseNodes( const aiMatrix4x4& Transform, const aiScene* Scene, const aiNode* Node, ImportedMeshData& MeshData )
+{
+	CacheBoneNodes( Node, MeshData );
+	TraverseNodeTree( Transform, Scene, Node, MeshData );
 }
 
 bool CompareAnimationKeys( const Key& A, const Key& B )
