@@ -347,6 +347,7 @@
     <ClInclude Include="Engine\Utility\DataString.h" />
     <ClInclude Include="Engine\Utility\Definitions.h" />
     <ClInclude Include="Engine\Utility\File.h" />
+    <ClInclude Include="Engine\Utility\Flag.h" />
     <ClInclude Include="Engine\Utility\Gizmo.h" />
     <ClInclude Include="Engine\Utility\HandlePool.h" />
     <ClInclude Include="Engine\Utility\Iterate.h" />

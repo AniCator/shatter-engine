@@ -934,6 +934,9 @@
     <ClInclude Include="Engine\Utility\ThreadPool.h">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Utility\Flag.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">
