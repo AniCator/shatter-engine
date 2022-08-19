@@ -2,7 +2,6 @@
 #include "Assets.h"
 
 #include <algorithm>
-#include <future>
 #include <string>
 
 #include <Engine/Audio/Sound.h>
@@ -19,6 +18,7 @@
 
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
+#include <Engine/Utility/ThreadPool.h>
 
 ConfigurationVariable<bool> LogAssetCreation( "debug.Assets.LogCreation", false );
 
@@ -98,7 +98,7 @@ struct CompoundPayload
 	AnimationSet Set;
 };
 
-void ParsePayload( CompoundPayload* CompoundPayload )
+void LoadPrimitive( CompoundPayload* CompoundPayload )
 {
 	OptickEvent();
 
@@ -208,7 +208,11 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 
 	for( auto& Payload : Payloads )
 	{
-		Futures.emplace_back( std::async( std::launch::async, ParsePayload, &Payload ) );
+		Futures.emplace_back( ThreadPool::Add( [&] ()
+			{
+				LoadPrimitive( &Payload );
+			}
+		) );
 	}
 
 	for( auto& Payload : GenericAssets )

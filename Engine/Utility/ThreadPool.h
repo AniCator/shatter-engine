@@ -2,6 +2,7 @@
 #pragma once
 
 #include <functional>
+#include <future>
 #include <memory>
 
 struct Task;
@@ -23,16 +24,16 @@ namespace ThreadPool
 	void Shutdown();
 
 	// Adds a task to the given thread.
-	void Add( const Thread::Type& Thread, const std::shared_ptr<Task>& ToExecute );
+	std::future<void> Add( const Thread::Type& Thread, const std::shared_ptr<Task>& ToExecute );
 
 	// Creates a task for the given thread using the provided function.
-	void Add( const Thread::Type& Thread, const std::function<void()>& ToExecute );
+	std::future<void> Add( const Thread::Type& Thread, const std::function<void()>& ToExecute );
 
 	// Adds a task to one of the worker threads.
-	void Add( const std::shared_ptr<Task>& ToExecute );
+	std::future<void> Add( const std::shared_ptr<Task>& ToExecute );
 
 	// Creates a task for one of the worker threads using the provided function.
-	void Add( const std::function<void()>& ToExecute );
+	std::future<void> Add( const std::function<void()>& ToExecute );
 
 	// Finish all work that has been assigned to the worker threads.
 	void Flush();

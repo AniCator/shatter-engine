@@ -25,12 +25,12 @@ void ThreadPool::Shutdown()
 	}
 }
 
-void ThreadPool::Add( const Thread::Type& Thread, const std::shared_ptr<Task>& ToExecute )
+std::future<void> ThreadPool::Add( const Thread::Type& Thread, const std::shared_ptr<Task>& ToExecute )
 {
-	Pool[Thread]->Add( ToExecute );
+	return Pool[Thread]->Add( ToExecute );
 }
 
-void ThreadPool::Add( const Thread::Type& Thread, const std::function<void()>& ToExecute )
+std::future<void> ThreadPool::Add( const Thread::Type& Thread, const std::function<void()>& ToExecute )
 {
 	const auto Task = std::make_shared<LambdaTask>( [ToExecute]
 		{
@@ -38,20 +38,21 @@ void ThreadPool::Add( const Thread::Type& Thread, const std::function<void()>& T
 		} 
 	);
 
-	Pool[Thread]->Add( Task );
+	return Pool[Thread]->Add( Task );
 }
 
 // Determines which worker is used next for a generic task.
 std::atomic<bool> Selector;
 
-void ThreadPool::Add( const std::shared_ptr<Task>& ToExecute )
+std::future<void> ThreadPool::Add( const std::shared_ptr<Task>& ToExecute )
 {
 	const auto Worker = Selector ? Thread::WorkerA : Thread::WorkerB;
 	Selector = !Selector;
-	Pool[Worker]->Add( ToExecute );
+
+	return Pool[Worker]->Add( ToExecute );
 }
 
-void ThreadPool::Add( const std::function<void()>& ToExecute )
+std::future<void> ThreadPool::Add( const std::function<void()>& ToExecute )
 {
 	const auto Task = std::make_shared<LambdaTask>( [ToExecute]
 		{
@@ -61,7 +62,8 @@ void ThreadPool::Add( const std::function<void()>& ToExecute )
 
 	const auto Worker = Selector ? Thread::WorkerA : Thread::WorkerB;
 	Selector = !Selector;
-	Pool[Worker]->Add( Task );
+
+	return Pool[Worker]->Add( Task );
 }
 
 void ThreadPool::Flush()

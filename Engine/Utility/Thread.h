@@ -3,6 +3,7 @@
 #pragma once
 
 #include <functional>
+#include <future>
 #include <thread>
 #include <mutex>
 #include <condition_variable>
@@ -26,6 +27,8 @@ void SetThreadPriority( std::thread& Thread, const ThreadPriority& Priority );
 struct Task
 {
 	virtual void Execute() = 0;
+
+	std::promise<void> Promise;
 };
 
 struct LambdaTask : Task
@@ -67,7 +70,7 @@ struct Worker
 		return Running;
 	}
 
-	bool Add( const std::shared_ptr<Task>& ToExecute )
+	std::future<void> Add( const std::shared_ptr<Task>& ToExecute )
 	{
 		// A lock is required because we're accessing and manipulating the queue's memory.
 		std::unique_lock<std::mutex> Lock( Mutex );
@@ -79,7 +82,11 @@ struct Worker
 		// Notify the worker thread that there is new work.
 		Notify.notify_one();
 
-		return true;
+		// Refresh the promise, in case this task is being re-used.
+		Tasks.back()->Promise = std::promise<void>();
+
+		// Return the associated future.
+		return Tasks.back()->Promise.get_future();
 	}
 
 	void SetName( const std::string& Name );

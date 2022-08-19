@@ -124,6 +124,9 @@ void Worker::RunNextTask()
 	{
 		OptickEvent( "Task" );
 		Task->Execute();
+
+		// Notify future.
+		Task->Promise.set_value();
 	}
 
 	// If there's no more work to perform, we can declare the we're no longer actively running.
