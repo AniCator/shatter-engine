@@ -45,9 +45,8 @@ bool Animator::Instance::HasAnimation( const std::string& Name ) const
 	if( !Mesh )
 		return false;
 
-	static auto Dummy = Animation();
 	const auto& Set = Mesh->GetAnimationSet();
-	if( Set.Lookup( Name, Dummy ) )
+	if( Set.Has( Name ) )
 		return true;
 
 	return false;

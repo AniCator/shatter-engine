@@ -61,6 +61,18 @@ struct AnimationSet
 
 		return false;
 	}
+
+	bool Has( const std::string& Key ) const
+	{
+		const auto& Result = Lookup( Key );
+		const auto& Iterator = Skeleton.Animations.find( Result );
+		if( Iterator != Skeleton.Animations.end() )
+		{
+			return true;
+		}
+
+		return false;
+	}
 	
 	std::unordered_map<std::string, std::string> Set;
 	Skeleton Skeleton = ::Skeleton();
