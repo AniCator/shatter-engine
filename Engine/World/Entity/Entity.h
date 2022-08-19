@@ -148,6 +148,8 @@ public:
 	///	<remarks>Should only be called by the level that owns it, unless you know what you're doing.</remarks>
 	virtual void Tick() {};
 
+	virtual void PostTick() {};
+
 	/// <summary>
 	/// Runs the entity's underlying frame function.
 	/// </summary>

@@ -20,6 +20,7 @@ public:
 	void Construct();
 	void Frame();
 	void Tick();
+	void PostTick();
 	void Destroy();
 
 	void Reload();

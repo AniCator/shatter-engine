@@ -108,6 +108,17 @@ void CLevel::Tick()
 	}
 }
 
+void CLevel::PostTick()
+{
+	for( auto* Entity : Entities )
+	{
+		if( !Entity )
+			continue;
+
+		Entity->PostTick();
+	}
+}
+
 void CLevel::Destroy()
 {
 	for( auto* Entity : Entities )

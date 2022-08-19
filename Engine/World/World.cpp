@@ -11,6 +11,7 @@
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/LightEntity/LightEntity.h>
 #include <Engine/Utility/Chunk.h>
+#include <Engine/Utility/ThreadPool.h>
 
 #include <Game/Game.h>
 
@@ -89,9 +90,14 @@ void CWorld::Tick()
 
 	EventQueue.Poll();
 
-	for( auto Level : Levels )
+	for( auto& Level : Levels )
 	{
 		Level.Tick();
+	}
+
+	for( auto& Level : Levels )
+	{
+		Level.PostTick();
 	}
 
 	LightEntity::UploadToGPU();
