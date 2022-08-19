@@ -702,40 +702,30 @@ void SoLoudSound::Volume( const float GlobalVolumeIn )
 void SoLoudSound::Tick()
 {
 	Profile( "Sound" );
-
-	CProfiler& Profiler = CProfiler::Get();
-	const auto CurrentTime = static_cast<float>( GameLayersInstance->GetCurrentTime() );
-
 	size_t ActiveStreams = 0;
+	size_t StreamIndex = 0;
+	for( auto& Stream : Streams )
 	{
-		OptickEvent( "Stream Update" );
+		StreamIndex++;
 
-		size_t StreamIndex = 0;
-		for( auto& Stream : Streams )
+		if( Stream.Stream && Stream.Playing )
 		{
-			StreamIndex++;
+			ActiveStreams++;
 
-			if( Stream.Stream && Stream.Playing )
-			{
-				ActiveStreams++;
-
-				StreamHandle Handle;
-				Handle.Handle = StreamIndex - 1;
-				Stream.Playing = Playing( Handle );
-			}
+			StreamHandle Handle;
+			Handle.Handle = StreamIndex - 1;
+			Stream.Playing = Playing( Handle );
 		}
 	}
 
-	{
-		OptickEvent( "3D Audio Update" );
-		Engine.update3dAudio();
-	}
-
+	CProfiler& Profiler = CProfiler::Get();
 	const auto StreamEntry = ProfileTimeEntry( "Active Streams", ActiveStreams );
 	Profiler.AddCounterEntry( StreamEntry, false, true );
 
 	const auto VoiceEntry = ProfileTimeEntry( "Active Voices", Engine.getActiveVoiceCount() );
 	Profiler.AddCounterEntry( VoiceEntry, false, true );
+
+	Engine.update3dAudio();
 }
 
 void SoLoudSound::Initialize()
