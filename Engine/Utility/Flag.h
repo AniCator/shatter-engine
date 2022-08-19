@@ -9,6 +9,8 @@ struct Flag
 	using Type = std::underlying_type_t<T>;
 	Type State;
 
+	Flag() = default;
+
 	Flag( T State )
 	{
 		this->State = static_cast<Type>( State );
