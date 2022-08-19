@@ -42,6 +42,8 @@ public:
 	void SetFile( const StorageCategory::Type& Location, const std::wstring& FilePath );
 	void Reload();
 
+	void ReloadIfModified();
+
 	template<typename T>
 	void Store( const std::string& KeyName, const T& Value )
 	{

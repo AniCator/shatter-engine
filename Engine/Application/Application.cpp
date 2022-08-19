@@ -612,6 +612,8 @@ void CApplication::Run()
 		}
 #endif
 
+		CConfiguration::Get().ReloadIfModified();
+
 		if( RestartLayers )
 			InputRestartGameLayers( this );
 

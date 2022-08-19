@@ -21,13 +21,6 @@ time_t GetModificationTime( const std::wstring& FilePath )
 
 bool CConfiguration::IsValidKey( const std::string& KeyName )
 {
-	// Reload the configuration file if it was modified.
-	const auto NewModificationTime = GetModificationTime( GetFile() );
-	if( Initialized && NewModificationTime > ModificationTime )
-	{
-		Reload();
-	}
-
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
 	{
 		return false;
@@ -229,6 +222,16 @@ void CConfiguration::Reload()
 	if( !Initialized )
 	{
 		Initialized = true;
+	}
+}
+
+void CConfiguration::ReloadIfModified()
+{
+	// Reload the configuration file if it was modified.
+	const auto NewModificationTime = GetModificationTime( GetFile() );
+	if( Initialized && NewModificationTime > ModificationTime )
+	{
+		Reload();
 	}
 }
 
