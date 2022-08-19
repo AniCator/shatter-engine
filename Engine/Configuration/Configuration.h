@@ -165,6 +165,7 @@ struct ConsoleVariable
 
 		// Overwrite whatever entry is in the configuration file from the previous sessions.
 		CConfiguration::Get().Store( Callback.Key, Value );
+		CConfiguration::Get().Save();
 	}
 
 	T Get() const
