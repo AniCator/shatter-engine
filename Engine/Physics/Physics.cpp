@@ -124,22 +124,22 @@ public:
 	}
 
 	// Runs until the workers have completed their task.
-	void WaitForQueryWorkers()
+	void WaitForQueryWorkers() const
 	{
 		if( StaticQueryWork.valid() )
-			StaticQueryWork.get();
+			StaticQueryWork.wait();
 
 		if( DynamicQueryWork.valid() )
-			DynamicQueryWork.get();
+			DynamicQueryWork.wait();
 	}
 
-	void WaitForBodyWorker()
+	void WaitForBodyWorker() const
 	{
 		if( BodyWork.valid() )
-			BodyWork.get();
+			BodyWork.wait();
 	}
 
-	void Guard()
+	void Guard() const
 	{
 		WaitForBodyWorker();
 		WaitForQueryWorkers();
@@ -399,7 +399,7 @@ public:
 		}
 	}
 
-	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>(), const PollType& Type = PollType::All )
+	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>(), const PollType& Type = PollType::All ) const
 	{
 		Guard();
 
@@ -527,7 +527,7 @@ public:
 		}
 	}
 
-	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All )
+	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const
 	{
 		Guard();
 
