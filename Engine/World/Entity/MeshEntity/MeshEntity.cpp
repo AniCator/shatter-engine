@@ -4,6 +4,7 @@
 #include <Game/Game.h>
 
 #include <Engine/Animation/Animator.h>
+#include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Physics/Physics.h>
@@ -19,6 +20,9 @@
 #include <Engine/World/Entity/LightEntity/LightEntity.h>
 
 static CEntityFactory<CMeshEntity> Factory( "mesh" );
+
+ConfigurationVariable<bool> DisplaySkeleton( "debug.MeshEntity.DisplaySkeleton", false );
+ConfigurationVariable<bool> DisplayLightInfluences( "debug.MeshEntity.DisplayLightInfluences", false );
 
 CMeshEntity::CMeshEntity()
 {
@@ -186,9 +190,8 @@ void CMeshEntity::TickAnimation()
 		Vector3D PointTarget = WorldTransform.Transform( Current );
 		NewBoundVertices.emplace_back( PointTarget );
 		
-		if( IsDebugEnabled() && Mesh )
+		if( DisplaySkeleton && IsDebugEnabled() )
 		{
-			Vector3D RandomJitter = Vector3D( Math::Random(), Math::Random(), Math::Random() ) * 0.001f;
 			const auto Parent = ParentMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
 			Vector3D PointSource = WorldTransform.Transform( Parent );
 
@@ -210,7 +213,11 @@ void CMeshEntity::TickAnimation()
 			UI::AddLine( PointSource, PointCenter, ::Color( 0, 0, 255 ) );
 			UI::AddLine( PointCenter, PointTarget, ::Color( 255, 0, 0 ) );
 			UI::AddCircle( PointTarget, 3.0f, ::Color( 255, 0, 0 ) );
-			UI::AddText( PointTarget, Mesh->GetSkeleton().MatrixNames[MatrixIndex].c_str() );
+
+			if( Mesh )
+			{
+				UI::AddText( PointTarget, Mesh->GetSkeleton().MatrixNames[MatrixIndex].c_str() );
+			}
 
 			UI::AddCircle( PointParentBind, 3.0f, ::Color( 0, 255, 255 ) );
 			UI::AddLine( PointParentBind, PointBind, ::Color( 255, 255, 0 ) );
@@ -296,23 +303,6 @@ void CMeshEntity::Debug()
 {
 	CPointEntity::Debug();
 
-	auto Camera = GetWorld()->GetActiveCamera();
-	if( Camera )
-	{
-		auto Frustum = Camera->GetFrustum();
-		auto Position = Transform.GetPosition();
-
-		const bool Contains = Frustum.Contains( Position );
-		if( Contains )
-		{
-			// UI::AddText( Position + Vector3D( 1.0f, 0.0f, 0.0f ), "Visible" );
-		}
-		else
-		{
-			// UI::AddText( Position + Vector3D( 1.0f, 0.0f, 0.0f ), "Invisible" );
-		}
-	}
-
 	const auto Position = Transform.GetPosition();
 	const auto ForwardVector = Transform.Rotate( Vector3D( 0.0f, 1.0f, 0.0f ) ).Normalized();
 	const auto RightVector = ForwardVector.Cross( WorldUp );
@@ -332,7 +322,7 @@ void CMeshEntity::Debug()
 		}
 	}
 
-	if( Renderable && false )
+	if( DisplayLightInfluences && Renderable )
 	{
 		const auto& RenderData = Renderable->GetRenderData();
 		DebugLight( Position, RenderData.LightIndex.Index[0] );
