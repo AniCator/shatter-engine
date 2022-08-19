@@ -252,7 +252,7 @@ LightIndices LightEntity::Fetch( const Vector3D& Position )
 			Direction.Z = Lights[Index].Direction.z;
 
 			auto Unit = ( Position - LightPosition );
-			const auto Length = Unit.Normalize();
+			// const auto Length = Unit.Normalize();
 
 			const auto Angle = cosf( Lights[Index].Properties.y );
 			const auto Visibility = Unit.Dot( Direction );// -Angle;
