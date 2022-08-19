@@ -95,9 +95,12 @@ void CWorld::Tick()
 		Level.Tick();
 	}
 
-	for( auto& Level : Levels )
 	{
-		Level.PostTick();
+		OptickEvent( "PostTick" );
+		for( auto& Level : Levels )
+		{
+			Level.PostTick();
+		}
 	}
 
 	LightEntity::UploadToGPU();
