@@ -312,6 +312,7 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 		auto& Configuration = CConfiguration::Get();
 		Configuration.Store( "width", CurrentDimensions.Width );
 		Configuration.Store( "height", CurrentDimensions.Height );
+		Configuration.Save();
 
 		Renderer.DestroyBuffers();
 
