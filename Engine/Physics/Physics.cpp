@@ -10,6 +10,7 @@
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Thread.h>
+#include <Engine/Utility/ThreadPool.h>
 #include <Engine/Utility/Structures/BoundingVolumeHierarchy.h>
 #include <Engine/Utility/Structures/SpatialHash.h>
 
@@ -123,23 +124,22 @@ public:
 	}
 
 	// Runs until the workers have completed their task.
-	void WaitForQueryWorkers() const
+	void WaitForQueryWorkers()
 	{
-		while( StaticQueryWorker.IsRunning() || DynamicQueryWorker.IsRunning() )
-		{
-			// Lock and loop.
-		}
+		if( StaticQueryWork.valid() )
+			StaticQueryWork.get();
+
+		if( DynamicQueryWork.valid() )
+			DynamicQueryWork.get();
 	}
 
-	void WaitForBodyWorker() const
+	void WaitForBodyWorker()
 	{
-		while( BodyWorker.IsRunning() )
-		{
-			// Lock and loop.
-		}
+		if( BodyWork.valid() )
+			BodyWork.get();
 	}
 
-	void Guard() const
+	void Guard()
 	{
 		WaitForBodyWorker();
 		WaitForQueryWorkers();
@@ -340,7 +340,7 @@ public:
 		}
 		else
 		{
-			BodyWorker.Add( BodyUpdate );
+			BodyWork = ThreadPool::Add( BodyUpdate );
 		}
 	}
 
@@ -388,8 +388,8 @@ public:
 		}
 		else
 		{
-			StaticQueryWorker.Add( StaticQuery );
-			DynamicQueryWorker.Add( DynamicQuery );
+			StaticQueryWork = ThreadPool::Add( StaticQuery );
+			DynamicQueryWork = ThreadPool::Add( DynamicQuery );
 		}
 
 		if( !SynchronousQuery )
@@ -399,7 +399,7 @@ public:
 		}
 	}
 
-	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>(), const PollType& Type = PollType::All ) const
+	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore = std::vector<CBody*>(), const PollType& Type = PollType::All )
 	{
 		Guard();
 
@@ -527,7 +527,7 @@ public:
 		}
 	}
 
-	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const
+	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All )
 	{
 		Guard();
 
@@ -627,9 +627,9 @@ private:
 	std::shared_ptr<Testable> StaticScene;
 	std::shared_ptr<Testable> DynamicScene;
 
-	Worker StaticQueryWorker;
-	Worker DynamicQueryWorker;
-	Worker BodyWorker;
+	std::future<void> StaticQueryWork;
+	std::future<void> DynamicQueryWork;
+	std::future<void> BodyWork;
 	bool IsSimulating = false;
 };
 
