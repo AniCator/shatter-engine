@@ -73,6 +73,9 @@ struct Animator
 
 		BoundingBox CalculateBounds( const struct FTransform& Transform ) const;
 
+		Vector3D GetBonePosition( const std::string& Name ) const;
+		int32_t GetBoneIndex( const std::string& Name ) const;
+
 	protected:
 		uint32_t Ticks = 0;
 

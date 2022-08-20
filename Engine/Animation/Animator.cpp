@@ -96,6 +96,33 @@ BoundingBox Animator::Instance::CalculateBounds( const FTransform& Transform ) c
 	return Math::AABB( NewBoundVertices.data(), NewBoundVertices.size() );
 }
 
+Vector3D Animator::Instance::GetBonePosition( const std::string& Name ) const
+{
+	const auto Index = GetBoneIndex( Name );
+	if( Index < 0 )
+		return Vector3D::Zero;
+
+	return Bones[Index].GlobalTransform.Transform( Vector3D::Zero );
+}
+
+int32_t Animator::Instance::GetBoneIndex( const std::string& Name ) const
+{
+	if( !Mesh )
+		return -1;
+
+	const auto& Skeleton = Mesh->GetSkeleton();
+	const auto Iterator = std::find_if( Skeleton.MatrixNames.begin(), Skeleton.MatrixNames.end(), [&Name] ( const std::string& Value )
+		{
+			return Value == Name;
+		}
+	);
+
+	if( Iterator == Skeleton.MatrixNames.end() )
+		return -1;
+
+	return static_cast<int32_t>( std::distance(Skeleton.MatrixNames.begin(), Iterator ) );
+}
+
 void Animator::Update( Instance& Data, const double& DeltaTime, const bool& ForceUpdate )
 {
 	if( !Data.Mesh )
@@ -188,6 +215,7 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 		if( Bone.ParentIndex < 0 )
 		{
 			RootBones.emplace_back( &Bone );
+			break;
 		}
 	}
 
