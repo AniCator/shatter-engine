@@ -3,12 +3,15 @@
 
 #include <Game/Game.h>
 
+#include <Engine/Configuration/Configuration.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/World/Level/Level.h>
 #include <Engine/World/World.h>
 
 #include <random>
 #include <iomanip>
+
+ConVar<bool> DebugEntityIO( "debug.Entity.IO", false );
 
 void CEntityMap::Add( const std::string& Type, EntityFunction Factory )
 {
@@ -296,7 +299,9 @@ void CEntity::Send( const char* Output, CEntity* Origin )
 	{
 		if( Outputs.find( Output ) != Outputs.end() )
 		{
-			Log::Event( "Broadcasting output \"%s\".\n", Output );
+			if( DebugEntityIO )
+				Log::Event( "Broadcasting output \"%s\".\n", Output );
+
 			for( auto& Message : Outputs[Output] )
 			{
 				const auto Entity = Level->GetWorld()->Find( Message.TargetID );
@@ -316,13 +321,16 @@ bool CEntity::Receive( const char* Input, CEntity* Origin )
 {
 	if( Inputs.find( Input ) != Inputs.end() )
 	{
-		if( Origin )
+		if( DebugEntityIO )
 		{
-			Log::Event( "Receiving input \"%s\" on entity \"%s\" from \"%s\".\n", Input, Name.String().c_str(), Origin->Name.String().c_str() );
-		}
-		else
-		{
-			Log::Event( "Receiving input \"%s\" on entity \"%s\".\n", Input, Name.String().c_str() );
+			if( Origin )
+			{
+				Log::Event( "Receiving input \"%s\" on entity \"%s\" from \"%s\".\n", Input, Name.String().c_str(), Origin->Name.String().c_str() );
+			}
+			else
+			{
+				Log::Event( "Receiving input \"%s\" on entity \"%s\" from unknown source.\n", Input, Name.String().c_str() );
+			}
 		}
 
 		return Inputs[Input]( Origin );
