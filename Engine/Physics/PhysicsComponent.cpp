@@ -505,13 +505,11 @@ void CBody::PreCollision()
 	// Apply linear velocity before testing collisions.
 	auto Transform = GetTransform();
 	auto Position = Transform.GetPosition();
-
-	DrawDebugVectorRed( Position, LinearVelocity );
-
 	Position += LinearVelocity * Physics->TimeStep;
 	Transform.SetPosition( Position );
 	SetTransform( Transform );
 
+	// Make sure we recalculate the bounds because the position has been changed.
 	CalculateBounds();
 }
 
