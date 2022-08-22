@@ -40,6 +40,13 @@ namespace UI
 
 	void AddText( const std::string& Name, const Vector3D& Vector, const Color& Color = Color::White );
 	void AddText( const std::string& Name, const float& Float, const Color& Color = Color::White );
+
+	template<typename T>
+	void DebugVariable( const std::string& Name, const T& Variable, const Color& Color = Color::White )
+	{
+		const std::string Combined = Name + ": " + std::to_string( Variable );
+		AddText( Combined, Color );
+	}
 	
 	void AddImage( const Vector3D& Position, const Vector2D& Size, const ::CTexture* Texture, const Color& Color = Color::White );
 	// void AddText( const ImFont* font, float font_size, const Vector2D& pos, uint32_t col, const char* text_begin, const char* text_end = NULL, float wrap_width = 0.0f, const Vector4D * cpu_fine_clip_rect = NULL );
@@ -65,3 +72,9 @@ namespace UI
 	unsigned int GetHeight();
 	Vector2D RelativeToAbsolute( const Vector2D& Position );
 }
+
+#define DrawDebugVariable(Variable) UI::DebugVariable(#Variable,Variable)
+#define DrawDebugText(Text) UI::AddText(Text, nullptr)
+#define DrawDebugVectorRed(Origin, Vector) UI::AddLine(Origin, Origin + Vector, Color::Red, 0.5f)
+#define DrawDebugVectorGreen(Origin, Vector) UI::AddLine(Origin, Origin + Vector, Color::Green, 0.5f)
+#define DrawDebugVectorBlue(Origin, Vector) UI::AddLine(Origin, Origin + Vector, Color::Blue, 0.5f)
