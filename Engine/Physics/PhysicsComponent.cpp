@@ -488,6 +488,31 @@ void CBody::PreCollision()
 	Normal = Vector3D::Zero;
 	Contact = false;
 	Contacts = 0;
+
+	if( Owner )
+	{
+		// Reset contact information, otherwise it's too late apparently.
+		Owner->Contact = false;
+	}
+
+	if( Static )
+		return;
+
+	const auto NoLinearVelocity = Math::Equal( LinearVelocity, Vector3D::Zero );
+	if( NoLinearVelocity )
+		return;
+
+	// Apply linear velocity before testing collisions.
+	auto Transform = GetTransform();
+	auto Position = Transform.GetPosition();
+
+	DrawDebugVectorRed( Position, LinearVelocity );
+
+	Position += LinearVelocity * Physics->TimeStep;
+	Transform.SetPosition( Position );
+	SetTransform( Transform );
+
+	CalculateBounds();
 }
 
 void CBody::Simulate()
@@ -618,8 +643,6 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 
 	const float ImpulseScale = DeltaVelocity / InverseMassTotal;
 	const Vector3D Impulse = Response.Normal * ImpulseScale;
-
-	A->Normal += Response.Normal;
 
 	Interpenetration( A, B, Response );
 
@@ -1005,8 +1028,10 @@ void CBody::Tick()
 		Depenetration = { 0.0f, 0.0f, 0.0f };
 
 		Velocity += Acceleration * DeltaTime;
-		Velocity += LinearVelocity;
 		NewPosition += Velocity * DeltaTime;
+
+		// Add the linear velocity afterwards.
+		Velocity += LinearVelocity;
 
 		// Damping is used to simulate drag.
 		Velocity *= powf( Damping, DeltaTime );
