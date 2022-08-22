@@ -36,4 +36,5 @@ protected:
 	BoundingBox Bounds = DefaultBounds;
 
 	CTriggerBody<Interactable*>* Volume = nullptr;
+	std::unordered_set<Interactable*> LatchedEntities;
 };

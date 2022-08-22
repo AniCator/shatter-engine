@@ -34,21 +34,56 @@ void CTriggerBoxEntity::Construct()
 
 void CTriggerBoxEntity::Tick()
 {
-	if( CanTrigger() )
+	if( !CanTrigger() )
 	{
-		if( !Latched && ( Frequency < 0 || Count < Frequency ) )
-		{
-			Send( "OnTrigger" );
-			Latched = true;
+		if( !Latched )
+			return;
 
-			Count++;
+		// Check if any of the entities just left.
+		for( auto* Entity : LatchedEntities )
+		{
+			const auto* MeshEntity = Cast<CMeshEntity>( Entity );
+			if( MeshEntity && !Volume->WorldBounds.Intersects( MeshEntity->GetWorldBounds() ) )
+			{
+				Send( "OnLeave" );
+				break;
+			}
+		}
+		
+		Latched = false;
+		LatchedEntities.clear();
+		return;
+	}
+
+	const auto ShouldTrigger = !Latched && ( Frequency < 0 || Count < Frequency );
+	if( !ShouldTrigger )
+		return;
+
+	Send( "OnTrigger" );
+	Latched = true;
+
+	Count++;
+
+	// Check if any of the entities just entered.
+	for( auto* Entity : Volume->Entities )
+	{
+		if( LatchedEntities.find( Entity ) == LatchedEntities.end() )
+		{
+			Send( "OnEnter" );
+			break;
 		}
 	}
-	else
+
+	// Copy the volume's entity set.
+	for( auto* Entity : Volume->Entities )
 	{
-		if( Latched )
+		if( Filter && Entity )
 		{
-			Latched = false;
+			const auto* MeshEntity = Cast<CMeshEntity>( Entity );
+			if( MeshEntity && MeshEntity == Filter && Volume->WorldBounds.Intersects( MeshEntity->GetWorldBounds() ) )
+			{
+				LatchedEntities.insert( Entity );
+			}
 		}
 	}
 }
