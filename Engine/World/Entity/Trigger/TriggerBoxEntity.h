@@ -20,8 +20,13 @@ public:
 	void Export( CData& Data ) override;
 	void Import( CData& Data ) override;
 
+	void OnEnter( Interactable* Interactable );
+	void OnLeave( Interactable* Interactable );
+
 protected:
+	bool ShouldTrigger() const;
 	bool CanTrigger() const;
+	bool IsValidEntity( Interactable* Interactable ) const;
 	
 	bool Latched = false;
 	int32_t Frequency = -1;

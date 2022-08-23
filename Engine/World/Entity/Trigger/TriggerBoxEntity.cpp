@@ -22,6 +22,24 @@ void CTriggerBoxEntity::Construct()
 		Volume = new CTriggerBody<Interactable*>( this );
 		Volume->Construct();
 		Volume->SetBounds( { Vector3D( -1.0f ), Vector3D( 1.0f ) } );
+
+		Volume->OnEnter = [this] ( Interactable* Interactable )
+		{
+			OnEnter( Interactable );
+		};
+
+		Volume->OnLeave = [this] ( Interactable* Interactable )
+		{
+			OnLeave( Interactable );
+		};
+
+		Volume->Condition = [this] ( Interactable* Interactable )
+		{
+			if( !IsValidEntity( Interactable ) )
+				return false;
+
+			return true;
+		};
 	}
 
 	if( const auto* World = GetWorld() )
@@ -45,7 +63,7 @@ void CTriggerBoxEntity::Tick()
 			const auto* MeshEntity = Cast<CMeshEntity>( Entity );
 			if( MeshEntity && !Volume->WorldBounds.Intersects( MeshEntity->GetWorldBounds() ) )
 			{
-				Send( "OnLeave" );
+				// Send( "OnLeave" );
 				break;
 			}
 		}
@@ -55,8 +73,7 @@ void CTriggerBoxEntity::Tick()
 		return;
 	}
 
-	const auto ShouldTrigger = !Latched && ( Frequency < 0 || Count < Frequency );
-	if( !ShouldTrigger )
+	if( !ShouldTrigger() )
 		return;
 
 	Send( "OnTrigger" );
@@ -69,7 +86,7 @@ void CTriggerBoxEntity::Tick()
 	{
 		if( LatchedEntities.find( Entity ) == LatchedEntities.end() )
 		{
-			Send( "OnEnter" );
+			// Send( "OnEnter" );
 			break;
 		}
 	}
@@ -183,6 +200,24 @@ void CTriggerBoxEntity::Import( CData& Data )
 	DataString::Decode( Data, FilterName );
 }
 
+void CTriggerBoxEntity::OnEnter( Interactable* Interactable )
+{
+	if( !ShouldTrigger() )
+		return;
+
+	Send( "OnEnter", this );
+}
+
+void CTriggerBoxEntity::OnLeave( Interactable* Interactable )
+{
+	Send( "OnLeave", this );
+}
+
+bool CTriggerBoxEntity::ShouldTrigger() const
+{
+	return !Latched && ( Frequency < 0 || Count < Frequency );
+}
+
 bool CTriggerBoxEntity::CanTrigger() const
 {
 	// Check if any interactables are within the volume.
@@ -196,8 +231,7 @@ bool CTriggerBoxEntity::CanTrigger() const
 		// Check if the filtered entity is among the interactables.
 		for( auto* Interactable : Volume->Entities )
 		{
-			const auto* MeshEntity = Cast<CMeshEntity>( Interactable );
-			if( MeshEntity && MeshEntity == Filter && Volume->WorldBounds.Intersects( MeshEntity->GetWorldBounds() ) )
+			if( IsValidEntity( Interactable ) )
 			{
 				// We've found a match.
 				return true;
@@ -209,5 +243,16 @@ bool CTriggerBoxEntity::CanTrigger() const
 	}
 
 	// No filter was specified and any interactable will cause this trigger to fire.
+	return FilterName.empty();
+}
+
+bool CTriggerBoxEntity::IsValidEntity( Interactable* Interactable ) const
+{
+	const auto* Entity = Cast<CEntity>( Interactable );
+	if( Entity && Entity == Filter )
+	{
+		return true;
+	}
+
 	return FilterName.empty();
 }

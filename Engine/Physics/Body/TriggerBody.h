@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <vector>
+#include <functional>
 #include <unordered_set>
 
 #include <Engine/Display/UserInterface.h>
@@ -39,7 +39,7 @@ public:
 		CalculateBounds();
 	}
 
-	virtual void PreCollision() override
+	void PreCollision() override
 	{
 		Block = false;
 		Static = false;
@@ -51,7 +51,7 @@ public:
 		CBody::PreCollision();
 	}
 
-	virtual bool Collision( CBody* Body ) override
+	bool Collision( CBody* Body ) override
 	{
 		const auto& BoundsB = GetBounds();
 		const auto& BoundsA = Body->GetBounds();
@@ -68,19 +68,70 @@ public:
 		return false;
 	}
 
-	virtual void Simulate() override
+	void Simulate() override
 	{
 		// Override the base implementation to prevent it from interfering with the light nature of the trigger bodies.
 	}
 
-	virtual void Tick() override
+	void ProcessEnter()
 	{
-		// The tick doesn't need to do anything for trigger bodies.
+		// Check if a callback has been set.
+		if( !OnEnter )
+			return;
+
+		for( auto& Entity : Entities )
+		{
+			if( Latched.find( Entity ) == Latched.end() )
+			{
+				if( Condition && !Condition( Entity ) )
+					continue;
+
+				OnEnter( Entity );
+				ProcessTrigger( Entity );
+			}
+		}
 	}
 
-	std::unordered_set<TriggerType> Entities;
+	void ProcessLeave()
+	{
+		// Check if a callback has been set.
+		if( !OnLeave )
+			return;
 
-	virtual const FTransform& GetTransform() const override
+		for( auto& Entity : Latched )
+		{
+			if( Entities.find( Entity ) == Entities.end() )
+			{
+				if( Condition && !Condition( Entity ) )
+					continue;
+
+				OnLeave( Entity );
+				ProcessTrigger( Entity );
+			}
+		}
+	}
+
+	void ProcessTrigger( TriggerType Object )
+	{
+		// Check if a callback has been set.
+		if( !OnTrigger )
+			return;
+
+		if( Condition && !Condition( Object ) )
+			return;
+
+		OnTrigger( Object );
+	}
+
+	void Tick() override
+	{
+		ProcessEnter();
+		ProcessLeave();
+
+		Latched = Entities;
+	}
+
+	const FTransform& GetTransform() const override
 	{
 		return TriggerTransform;
 	}
@@ -93,4 +144,14 @@ public:
 	}
 
 	FTransform TriggerTransform;
+	std::unordered_set<TriggerType> Entities;
+
+	std::function<void(TriggerType)> OnTrigger;
+	std::function<void(TriggerType)> OnEnter;
+	std::function<void(TriggerType)> OnLeave;
+
+	std::function<bool(TriggerType)> Condition;
+
+protected:
+	std::unordered_set<TriggerType> Latched;
 };
