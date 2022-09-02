@@ -218,7 +218,7 @@ bool CreateFramebuffer( ScreenRequest& Request )
 	return true;
 }
 
-void ResolveMultisampleBuffer( const GLuint Width, const GLuint Height, const ScreenBuffer MultisampleBuffer, const ScreenBuffer FrameBuffer )
+void ResolveMultisampleBuffer( const GLuint Width, const GLuint Height, const ScreenBuffer MultisampleBuffer, const ScreenBuffer FrameBuffer, const bool HasColor, const bool HasDepth )
 {
 	if( MultisampleBuffer.Buffer < 1 || FrameBuffer.Buffer < 1 )
 	{
@@ -228,7 +228,17 @@ void ResolveMultisampleBuffer( const GLuint Width, const GLuint Height, const Sc
 
 	glBindFramebuffer( GL_READ_FRAMEBUFFER, MultisampleBuffer.Buffer );
 	glBindFramebuffer( GL_DRAW_FRAMEBUFFER, FrameBuffer.Buffer );
-	glBlitFramebuffer( 0, 0, Width, Height, 0, 0, Width, Height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+
+	if( HasColor )
+	{
+		glBlitFramebuffer( 0, 0, Width, Height, 0, 0, Width, Height, GL_COLOR_BUFFER_BIT, GL_NEAREST );
+	}
+
+	if( HasDepth )
+	{
+		glBlitFramebuffer( 0, 0, Width, Height, 0, 0, Width, Height, GL_DEPTH_BUFFER_BIT, GL_NEAREST );
+	}
+
 	glBindFramebuffer( GL_FRAMEBUFFER, 0 );
 }
 
@@ -400,7 +410,7 @@ void CRenderTexture::Resolve()
 {
 	if( Multisampled )
 	{
-		ResolveMultisampleBuffer( Width, Height, MultisampledBuffer, FrameBuffer );
+		ResolveMultisampleBuffer( Width, Height, MultisampledBuffer, FrameBuffer, Configuration.EnableColor, Configuration.EnableDepth );
 	}
 
 	HasBeenResolved = true;
