@@ -32,9 +32,7 @@
 #include "Renderable.h"
 #include "Camera.h"
 
-static std::stringstream stream;
-
-static const size_t RenderableCapacity = 4096;
+constexpr size_t RenderableCapacity = 1 << 12;
 
 static CShader* DefaultShader = nullptr;
 GLuint ProgramHandle = -1;
@@ -53,8 +51,44 @@ static CShader* CopyShader = nullptr;
 
 static bool SkipRenderPasses = false;
 static float SuperSamplingFactor = 2.0f;
-static bool SuperSampling = true;
-static int Samples = 0;
+
+static bool PreviousSuperSampling = false;
+ConfigurationVariable<bool> SuperSampling( "render.SuperSampling", false );
+
+ConfigurationVariable<int> AntiAliasing( "render.AntiAliasing", 2 );
+
+int MaximumSamples = -1;
+int GetSampleCount()
+{
+	int Samples;
+	switch( AntiAliasing.Get() )
+	{
+	case 1:
+		Samples = 2; // MSAA 2x
+		break;
+	case 2:
+		Samples = 4; // MSAA 4x
+		break;
+	case 3:
+		Samples = 8; // MSAA 8x
+		break;
+	case 4:
+		Samples = 16; // MSAA 16x
+		break;
+	case 5:
+		Samples = 32; // MSAA 32x
+		break;
+	default:
+		Samples = 0;
+	}
+
+	if( MaximumSamples < 0 )
+	{
+		glGetIntegerv( GL_MAX_SAMPLES, &MaximumSamples );
+	}
+
+	return Math::Min( MaximumSamples, Samples );
+}
 
 CRenderer::CRenderer()
 {
@@ -174,9 +208,8 @@ void CRenderer::Initialize()
 	GlobalUniformBuffers.clear();
 
 	SkipRenderPasses = CConfiguration::Get().GetInteger( "skiprenderpasses", 0 ) > 0;
-	SuperSampling = CConfiguration::Get().GetInteger( "supersampling", 1 ) > 0;
+	PreviousSuperSampling = SuperSampling.Get();
 	SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "supersamplingfactor", 2.0f ) );
-	Samples = CConfiguration::Get().GetInteger( "msaa", 0 );
 }
 
 void CRenderer::DestroyBuffers()
@@ -232,9 +265,8 @@ void CRenderer::DrawQueuedRenderables()
 
 	const bool RenderOnlyMainPass = SkipRenderPasses || ForceWireFrame;
 
-	const bool PreviousSuperSampling = SuperSampling;
-	SuperSampling = CConfiguration::Get().GetInteger( "supersampling", 1 ) > 0;
-	const bool SuperSamplingChanged = SuperSampling != PreviousSuperSampling;
+	const bool SuperSamplingChanged = SuperSampling.Get() != PreviousSuperSampling;
+	PreviousSuperSampling = SuperSampling.Get();
 
 	if( !RenderOnlyMainPass && SuperSampling )
 	{
@@ -242,6 +274,7 @@ void CRenderer::DrawQueuedRenderables()
 		FramebufferHeight *= SuperSamplingFactor;
 	}
 
+	const auto Samples = GetSampleCount();
 	const bool CorrectSampleCount = SuperSampling ? Framebuffer.GetSampleCount() == 0 : Framebuffer.GetSampleCount() == Samples;
 	const bool FramebufferReady = Framebuffer.Ready() && 
 		FramebufferWidth == Framebuffer.GetWidth() && 
@@ -254,9 +287,7 @@ void CRenderer::DrawQueuedRenderables()
 		if( ViewportWidth > -1 && ViewportHeight > -1 )
 		{
 			// Update the super sampling values.
-			SuperSampling = CConfiguration::Get().GetInteger( "supersampling", 1 ) > 0;
 			SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "supersamplingfactor", 2.0f ) );
-			Samples = CConfiguration::Get().GetInteger( "msaa", 0 );
 			
 			FramebufferWidth = ViewportWidth;
 			FramebufferHeight = ViewportHeight;
@@ -271,7 +302,8 @@ void CRenderer::DrawQueuedRenderables()
 			Configuration.Width = FramebufferWidth;
 			Configuration.Height = FramebufferHeight;
 			Configuration.Samples = SuperSampling ? 0 : Samples;
-			
+
+			Framebuffer.Delete();
 			Framebuffer = CRenderTexture( "Framebuffer", Configuration );
 			Framebuffer.Initialize();
 		}
@@ -347,8 +379,9 @@ void CRenderer::DrawQueuedRenderables()
 	std::sort( RenderQueueOpaque.begin(), RenderQueueOpaque.end(), SortRenderables );
 	std::sort( RenderQueueTranslucent.begin(), RenderQueueTranslucent.end(), SortRenderables );
 
-	MainPass.ClearTarget();
+	Framebuffer.Prepare();
 
+	MainPass.ClearTarget();
 	DrawCalls = 0;
 
 	{
@@ -360,6 +393,10 @@ void CRenderer::DrawQueuedRenderables()
 		Profile( "Main Pass (Opaque)" );
 		DrawCalls += MainPass.Render( RenderQueueOpaque, GlobalUniformBuffers );
 	}
+
+	// Resolve the opaque stage.
+	Framebuffer.Resolve();
+	Framebuffer.Prepare();
 
 	{
 		Profile( "ERenderPassLocation::Scene" );
@@ -376,6 +413,7 @@ void CRenderer::DrawQueuedRenderables()
 		DrawPasses( ERenderPassLocation::Translucent );
 	}
 
+	// Resolve the translucent stage.
 	Framebuffer.Resolve();
 
 	if( !RenderOnlyMainPass )

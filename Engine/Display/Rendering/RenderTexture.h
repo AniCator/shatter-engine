@@ -10,6 +10,20 @@
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/Structures/Name.h>
 
+struct ScreenBuffer
+{
+	// Framebuffer.
+	GLuint Buffer = 0;
+
+	// Color texture.
+	GLuint Color = 0;
+
+	// Depth texture.
+	GLuint Depth = 0;
+
+	bool Multisampled = false;
+};
+
 struct RenderTextureConfiguration
 {
 	bool EnableColor = true;
@@ -36,6 +50,8 @@ public:
 	void Push();
 	void Pop();
 
+	// Required for multi-sampling.
+	void Prepare();
 	// Copies multi-sampled buffers to the render texture framebuffer.
 	void Resolve();
 	void Delete();
@@ -49,11 +65,14 @@ public:
 	RenderTextureConfiguration GetConfiguration() const;
 
 	NameSymbol Name = NameSymbol::Invalid;
-private:
-	GLuint FramebufferHandle;
-	GLuint DepthHandle;
+protected:
+	GLuint GetFramebuffer() const;
 
-	GLuint MultiSampleHandle;
+	ScreenBuffer FrameBuffer;
+	bool Multisampled = false;
+
+	ScreenBuffer MultisampledBuffer;
+	bool HasBeenResolved = false;
 
 	bool Initialized = false;
 	RenderTextureConfiguration Configuration;
