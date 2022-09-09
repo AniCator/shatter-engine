@@ -21,16 +21,13 @@ CRenderPassShadow::CRenderPassShadow( int Width, int Height, const CCamera& Came
 
 CRenderPassShadow::~CRenderPassShadow()
 {
-	auto& DestroyRenderTexture = [&] ( CRenderTexture*& Texture )
+	if( ShadowMap )
 	{
-		if( Texture )
-		{
-			delete Texture;
-			Texture = nullptr;
-		}
-	};
+		ShadowMap->Delete();
+	}
 
-	DestroyRenderTexture( ShadowMap );
+	delete ShadowMap;
+	ShadowMap = nullptr;
 }
 
 void CRenderPassShadow::Clear()
@@ -186,7 +183,8 @@ void CRenderPassShadow::ConfigureShader( CShader* Shader )
 	ConfigureDepthMask( Shader );
 	ConfigureDepthTest( Shader );
 
-	if( ProjectionViewMatrixLocation < 0 || LastProgram != Shader->GetHandles().Program )
+	// BUG: For some reason this value isn't updated correctly.
+	if( true || ProjectionViewMatrixLocation < 1 || LastProgram != Shader->GetHandles().Program )
 	{
 		ProjectionViewMatrixLocation = glGetUniformLocation( Shader->GetHandles().Program, "ProjectionView" );
 	}
@@ -219,6 +217,8 @@ void CRenderPassShadow::DrawShadowMeshes( const std::vector<CRenderable*>& Rende
 
 		if( CurrentShader != PreviousShader )
 		{
+			LastProgram = PreviousShader->GetHandles().Program;
+
 			CurrentShader->Activate();
 			ConfigureShader( CurrentShader );
 			PreviousShader = CurrentShader;
