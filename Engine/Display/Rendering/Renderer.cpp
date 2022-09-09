@@ -57,6 +57,9 @@ ConfigurationVariable<bool> SuperSampling( "render.SuperSampling", false );
 
 ConfigurationVariable<int> AntiAliasing( "render.AntiAliasing", 2 );
 
+// Flips the view horizontally after rendering, for testing purposes.
+ConfigurationVariable<bool> FlipHorizontal( "render.FlipHorizontal", false );
+
 int MaximumSamples = -1;
 int GetSampleCount()
 {
@@ -516,7 +519,24 @@ void CRenderer::DrawQueuedRenderables()
 				DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 
 				ResolveToViewport.Target = nullptr;
+
+				// Flip the UVs on the X-axis.
+				if ( FlipHorizontal )
+				{
+					FramebufferRenderable.SetUniform( "FlipU", Uniform( 1 ) );
+				}
+				else
+				{
+					FramebufferRenderable.SetUniform( "FlipU", Uniform( 0 ) );
+				}
+
 				DrawCalls += ResolveToViewport.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
+
+				// Disable further flipping.
+				if ( FlipHorizontal )
+				{
+					FramebufferRenderable.SetUniform( "FlipU", Uniform( 0 ) );
+				}
 			}
 		}
 	}
@@ -603,7 +623,13 @@ Vector3D CRenderer::ScreenPositionToWorld( const Vector2D& ScreenPosition ) cons
 
 	const glm::mat4 ProjectionInverse = glm::inverse( ProjectionMatrix );
 	const glm::mat4 ViewInverse = glm::inverse( ViewMatrix );
-	const float NormalizedScreenPositionX = ( 2.0f * ScreenPosition[0] ) / ViewportWidth - 1.0f;
+	float NormalizedScreenPositionX = ( 2.0f * ScreenPosition[0] ) / ViewportWidth - 1.0f;
+
+	if ( FlipHorizontal )
+	{
+		NormalizedScreenPositionX = 1.0f - NormalizedScreenPositionX;
+	}
+
 	const float NormalizedScreenPositionY = 1.0f - ( 2.0f * ScreenPosition[1] ) / ViewportHeight;
 	const glm::vec4 ScreenPositionClipSpace = glm::vec4( NormalizedScreenPositionX, NormalizedScreenPositionY, -1.0f, 1.0f );
 	glm::vec4 ScreenPositionViewSpace = ProjectionInverse * ScreenPositionClipSpace;
@@ -624,6 +650,11 @@ Vector2D CRenderer::WorldToScreenPosition( const Vector3D& WorldPosition ) const
 	glm::vec4 WorldPositionHomogenoeus = glm::vec4( Math::ToGLM( WorldPosition ), 1.0f );
 	glm::vec4 ClipSpacePosition = ProjectionMatrix * ViewMatrix * WorldPositionHomogenoeus;
 	glm::vec3 NormalizedPosition = glm::clamp( glm::vec3( ClipSpacePosition.x, ClipSpacePosition.y, ClipSpacePosition.z ) / ClipSpacePosition.w, -1.0f, 1.0f );
+
+	if ( FlipHorizontal )
+	{
+		NormalizedPosition.x = 1.0f - NormalizedPosition.x;
+	}
 
 	Vector2D ScreenPosition;
 	ScreenPosition.X = ( NormalizedPosition.x * 0.5f + 0.5f ) * ViewportWidth;

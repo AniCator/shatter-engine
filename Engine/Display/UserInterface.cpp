@@ -27,6 +27,8 @@ Color Color::Black = Color( 0, 0, 0 );
 Color Color::Yellow = Color( 255, 255, 0 );
 Color Color::Purple = Color( 255, 0, 255 );
 
+extern ConfigurationVariable<bool> FlipHorizontal;
+
 namespace UI
 {
 	bool Ready = false;
@@ -209,7 +211,17 @@ namespace UI
 
 		glm::mat4& ProjectionInverse = glm::inverse( ProjectionMatrix );
 		glm::mat4& ViewInverse = glm::inverse( ViewMatrix );
-		const float NormalizedScreenPositionX = ( 2.0f * ScreenPosition[0] ) / Width - 1.0f;
+
+		float NormalizedScreenPositionX;
+		if ( FlipHorizontal )
+		{
+			NormalizedScreenPositionX = ( 2.0f * ScreenPosition[0] ) / Width - 1.0f;
+		}
+		else
+		{
+			NormalizedScreenPositionX = ( 2.0f * (1.0f - ScreenPosition[0]) ) / Width - 1.0f;
+		}
+
 		const float NormalizedScreenPositionY = 1.0f - ( 2.0f * ScreenPosition[1] ) / Height;
 		glm::vec4 ScreenPositionClipSpace = glm::vec4( NormalizedScreenPositionX, NormalizedScreenPositionY, -1.0f, 1.0f );
 		glm::vec4 ScreenPositionViewSpace = ProjectionInverse * ScreenPositionClipSpace;
@@ -235,7 +247,15 @@ namespace UI
 		const float Bias = Front ? 1.0f : -1.0f;
 
 		Vector2D ScreenPosition;
-		ScreenPosition.X = ( NormalizedPosition.x * 0.5f + 0.5f ) * Width;
+
+		ScreenPosition.X = ( NormalizedPosition.x * 0.5f + 0.5f );
+
+		if ( FlipHorizontal )
+		{
+			ScreenPosition.X = 1.0f - ScreenPosition.X;
+		}
+
+		ScreenPosition.X *= Width;
 		ScreenPosition.Y = ( NormalizedPosition.y * 0.5f + 0.5f ) * Height;
 
 		ScreenPosition *= Bias;
@@ -956,12 +976,7 @@ namespace UI
 			DrawData.CmdListsCount = 0;
 		}
 
-		/*for( const auto& Line : Lines )
-		{
-			AddLineInternal( Line.Start, Line.End, Line.Color );
-		}*/
-
-		auto World = CWorld::GetPrimaryWorld();
+		auto* World = CWorld::GetPrimaryWorld();
 		if( World && World->GetActiveCamera() )
 		{
 			auto ActiveCamera = World->GetActiveCamera();
