@@ -733,7 +733,7 @@ void SoLoudSound::Initialize()
 	constexpr unsigned int Flags = 0;
 	constexpr unsigned int Backend = 0;
 	constexpr unsigned int SampleRate = 44100;
-	constexpr unsigned int BufferSize = 1 << 11;
+	constexpr unsigned int BufferSize = 1 << 9;
 	constexpr unsigned int Channels = 2;
 
 	Engine.init( Flags, Backend, SampleRate, BufferSize, Channels );
