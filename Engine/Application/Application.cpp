@@ -724,7 +724,8 @@ void CApplication::Run()
 
 		PollInput();
 
-		if( IsPowerSaving() || MainWindow.IsMinimized() )
+		// BUG: FPS doesn't get restored after minimizing/power-saving.
+		if( IsPowerSaving() ) // || MainWindow.IsMinimized() )
 		{
 			const auto& Input = CInputLocator::Get();
 			const auto MousePosition = Input.GetMousePosition();
