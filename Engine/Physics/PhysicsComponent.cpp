@@ -511,6 +511,9 @@ void CBody::PreCollision()
 
 	// Make sure we recalculate the bounds because the position has been changed.
 	CalculateBounds();
+
+	// We have applied linear velocity so we've got to activate.
+	LastActivity = Physics->CurrentTime;
 }
 
 void CBody::Simulate()
@@ -1016,6 +1019,8 @@ void CBody::Tick()
 	CalculateBounds();
 	auto NewPosition = Transform.GetPosition();
 
+	bool TriedToMove = false;
+
 	if( !Static && !Stationary )
 	{
 		const auto DeltaTime = static_cast<float>( Physics->TimeStep );
@@ -1033,6 +1038,8 @@ void CBody::Tick()
 
 		// Damping is used to simulate drag.
 		Velocity *= powf( Damping, DeltaTime );
+
+		TriedToMove = !Math::Equal( Acceleration, Vector3D::Zero );
 
 		// Clear the acceleration and linear velocity.
 		Acceleration = { 0.0f, 0.0f, 0.0f };
@@ -1064,7 +1071,7 @@ void CBody::Tick()
 
 	const auto Difference = NewPosition - PreviousTransform.GetPosition();
 	const auto DifferenceLengthSquared = Difference.LengthSquared();
-	if( DifferenceLengthSquared > 0.001f || LastActivity < 0.0 )
+	if( DifferenceLengthSquared > 0.001f || LastActivity < 0.0 || TriedToMove )
 	{
 		LastActivity = Physics->CurrentTime;
 	}
