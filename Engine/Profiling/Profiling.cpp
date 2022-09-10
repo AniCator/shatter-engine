@@ -798,7 +798,6 @@ ProfileMemory::~ProfileMemory()
 
 Timer::Timer( bool UpdateOnGetElapsed )
 {
-	IsRunning = false;
 	this->UpdatedOnGetElapsed = UpdateOnGetElapsed;
 }
 

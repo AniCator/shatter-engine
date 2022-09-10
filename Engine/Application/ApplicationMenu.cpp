@@ -7,6 +7,7 @@
 #include <Engine/Audio/Sound.h>
 #include <Engine/Audio/SoundInstance.h>
 #include <Engine/Audio/SoLoud/EffectStack.h>
+#include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Camera.h>
 #include <Engine/Display/Rendering/Renderable.h>
@@ -1726,7 +1727,16 @@ void TagListUI()
 	ImGui::End();
 }
 
-void RenderMenuItems()
+extern ConfigurationVariable<bool> FlipHorizontal;
+void RenderCommandItems()
+{
+	if( ImGui::MenuItem( "Flip Horizontal", nullptr, FlipHorizontal.Get() ) )
+	{
+		FlipHorizontal.Set( !FlipHorizontal.Get() );
+	}
+}
+
+void RenderWindowItems()
 {
 	if( MenuItem( "Assets", DisplayAssets() ) )
 	{
@@ -1740,7 +1750,7 @@ void RenderMenuItems()
 	MenuItem( "Tag List", DisplayTagList() );
 }
 
-void RenderMenuPanels()
+void RenderWindowPanels()
 {
 	AssetUI();
 	StringUI();

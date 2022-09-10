@@ -14,8 +14,10 @@ void SetMouseWheel( const float& Wheel );
 bool* DisplayMixer();
 bool* DisplayShaderToy();
 
-void RenderMenuItems();
-void RenderMenuPanels();
+void RenderCommandItems();
+
+void RenderWindowItems();
+void RenderWindowPanels();
 
 namespace ImGui
 {

@@ -5,6 +5,7 @@
 #include <map>
 #include <vector>
 #include <Engine/Utility/Service/ServiceRegistry.h>
+#include <Engine/Utility/Timer.h>
 
 typedef std::function<void(bool)> DebugUIFunction;
 
@@ -100,8 +101,20 @@ private:
 	bool DefaultExit;
 	bool WaitForInput;
 
-	int FPSLimit = 0;
-
 	std::vector<DebugUIFunction> DebugUIFunctions;
 	std::map<std::string, std::string> CommandLine;
+
+	// Update related variables.
+	int FPSLimit = 0;
+	double MaximumGameTime = 1 / 60.0;
+	double GameAccumulator = 0.0;
+
+	Timer InputTimer = { false };
+	Timer GameTimer = { true };
+	Timer RenderTimer = { false };
+	Timer RealTime = { false };
+
+	// The main update method that executes game ticks and renders frames.
+	void Update();
+	void UpdateFrame();
 };

@@ -6,7 +6,8 @@
 class Timer
 {
 public:
-	Timer( bool UpdateOnGetElapsed = false );
+	Timer() = default;
+	Timer( bool UpdateOnGetElapsed );
 	~Timer();
 
 	void Start();
@@ -28,6 +29,6 @@ private:
 	std::chrono::steady_clock::time_point StartTime;
 	std::chrono::steady_clock::time_point StopTime;
 
-	bool IsRunning;
-	bool UpdatedOnGetElapsed;
+	bool IsRunning = false;
+	bool UpdatedOnGetElapsed = false;
 };

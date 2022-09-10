@@ -220,8 +220,8 @@ void CWindow::Create( const char* Title )
 	}
 #endif
 
-	const auto EnableSync = config.GetInteger( "vsync", 1 ) > 0;
-	SetVSYNC( EnableSync );
+	const auto EnableSync = config.GetInteger( "vsync", 0 ) > 0;
+	SetVSync( EnableSync );
 
 	Log::Event( "Initializing ImGui.\n" );
 #if defined( IMGUI_ENABLED )
@@ -465,17 +465,18 @@ void CWindow::RenderFrame()
 	ImGui_ImplOpenGL3_RenderDrawData( ImGui::GetDrawData() );
 #endif
 
-	{
-		OptickEvent( "Swap Buffers" );
-		glfwSwapBuffers( WindowHandle );
-	}
-
 	RenderingFrame = false;
 
 	if( ShouldRecreate )
 	{
 		Recreate();
 	}
+}
+
+void CWindow::SwapFrame()
+{
+	OptickEvent( "Swap Buffers" );
+	glfwSwapBuffers( WindowHandle );
 }
 
 void CWindow::FlushFrame()
@@ -585,11 +586,32 @@ bool CWindow::IsFullscreenBorderless() const
 	return IsBorderless() && Match;
 }
 
-void CWindow::SetVSYNC( const bool& Enable )
+bool CWindow::HasVSync() const
 {
-	const auto Interval = Enable ? 1 : 0;
-	glfwSwapInterval( Interval );
+	return CConfiguration::Get().IsEnabled( "vsync" );
+}
+
+void CWindow::SetVSync( const bool& Enable )
+{
+	const int Interval = Enable ? 1 : 0;
 	CConfiguration::Get().Store( "vsync", Interval );
+	SetSwapInterval( Interval );
+}
+
+void CWindow::SetSwapInterval( const int Interval )
+{
+	if( Interval != 0 )
+	{
+		if( glfwExtensionSupported( "WGL_EXT_swap_control_tear" ) || 
+			glfwExtensionSupported( "GLX_EXT_swap_control_tear" ) )
+		{
+			// Ensure the interval is negative to enable adaptive sync.
+			glfwSwapInterval( abs( Interval ) * -1 );
+			return;
+		}
+	}
+
+	glfwSwapInterval( Interval );
 }
 
 bool CWindow::IsFocused() const

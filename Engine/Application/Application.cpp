@@ -58,11 +58,20 @@ bool CApplication::Tools = false;
 
 CCamera DefaultCamera = CCamera();
 FCameraSetup& Setup = DefaultCamera.GetCameraSetup();
+
+// Determines if the game should be paused or not.
 static bool PauseGame = false;
+
+// Used to request the game to step forward by one tick. (mainly useful while the game is paused)
 bool FrameStep = false;
+
+// Lowers the time scale to 1/10th of the current value.
 bool ScaleTime = false;
+
+// Simulates an inconsistent framerate.
 bool SimulateJitter = false;
-bool CursorVisible = true;
+
+// Restarts all game layers.
 bool RestartLayers = false;
 
 // Mode that reduces framerate based on input frequency.
@@ -71,6 +80,8 @@ double LastInputTime = -1.0;
 FFixedPosition2D LastMousePosition;
 
 std::atomic<bool> Sleeping( false );
+
+ConfigurationVariable<bool> UseAccumulator( "tick.UseAccumulator", true );
 
 #ifdef OptickBuild
 bool CaptureFrame = false;
@@ -188,13 +199,6 @@ void InputMoveCameraHigher( const float& Scale = 1.0f )
 	const float Speed = CameraSpeed * DistanceToZero;
 
 	Setup.CameraPosition[2] += Speed;
-}
-
-void InputToggleMouse( const float& Scale = 1.0f )
-{
-	CursorVisible = !CursorVisible;
-
-	MainWindow.EnableCursor( CursorVisible );
 }
 
 std::map<std::string, std::function<void()>> Themes;
@@ -319,15 +323,10 @@ void DebugMenu( CApplication* Application )
 				}
 			}
 
+			// Render any remaining items from ApplicationMenu.cpp.
+			RenderCommandItems();
+
 			ImGui::Separator();
-
-			//if( ImGui::MenuItem( "Re-initialize Application", "" ) )
-			//{
-			//	Application->Initialize();
-
-			//	// Has to return when executed because imgui will be reset.
-			//	return;
-			//}
 
 			if( ImGui::MenuItem( "800x600" ) )
 			{
@@ -413,7 +412,7 @@ void DebugMenu( CApplication* Application )
 
 			ImGui::Separator();
 
-			RenderMenuItems();
+			RenderWindowItems();
 
 			MenuItem( "ImGui Test Window", &ShowTestWindow );
 			MenuItem( "ImGui Metrics Window", &ShowMetricsWindow );
@@ -485,7 +484,7 @@ void DebugMenu( CApplication* Application )
 		ImGui::PopStyleColor();
 	}
 
-	RenderMenuPanels();
+	RenderWindowPanels();
 
 	if( ShowTestWindow )
 	{
@@ -498,6 +497,18 @@ void DebugMenu( CApplication* Application )
 	}
 
 	Application->RenderDebugUI( false );
+}
+
+void RenderToolUI( CApplication* Application )
+{
+#if defined( IMGUI_ENABLED )
+	if( !MainWindow.IsWindowless() )
+	{
+		CProfiler::Get().Display();
+		CProfiler::Get().ClearFrame();
+		DebugMenu( Application );
+	}
+#endif
 }
 
 CApplication::CApplication()
@@ -572,265 +583,27 @@ void PollInput()
 
 void CApplication::Run()
 {
-	CRenderer& Renderer = MainWindow.GetRenderer();
+	auto& Renderer = MainWindow.GetRenderer();
 	Initialize();
 
 	Setup.AspectRatio = static_cast<float>( MainWindow.GetWidth() ) / static_cast<float>( MainWindow.GetHeight() );
 	Renderer.SetCamera( DefaultCamera );
 
-	Timer InputTimer( false );
-	Timer GameTimer( true );
-	Timer RenderTimer( false );
-
 	InputTimer.Start();
 	GameTimer.Start();
 	RenderTimer.Start();
-
-	Timer RealTime( false );
 	RealTime.Start();
 
 	SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 0 ) );
 
-	const double MaximumGameTime = 1.0 / CConfiguration::Get().GetInteger( "tickrate", 60 );
-	// const double MaximumInputTime = 1.0 / CConfiguration::Get().GetInteger( "pollingrate", 120 );
+	MaximumGameTime = 1.0 / CConfiguration::Get().GetInteger( "tickrate", 60 );
 
 	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
 	SoLoudSound::Volume( GlobalVolume );
 
-	double GameAccumulator = 0.0;
-
 	while( !MainWindow.ShouldClose() )
 	{
-		ProfileFrame( "Main Thread" );
-
-#ifdef OptickBuild
-		if( CaptureFrame )
-		{
-			Capturing = true;
-			CaptureFrame = false;
-			OptickStart();
-		}
-#endif
-
-		CConfiguration::Get().ReloadIfModified();
-
-		if( RestartLayers )
-			InputRestartGameLayers( this );
-
-		if( SimulateJitter )
-		{
-			Timer JitterTimer;
-			JitterTimer.Start();
-			const int64_t JitterTime = Math::RandomRangeInteger( 0, 33 );
-			while( JitterTimer.GetElapsedTimeMilliseconds() < JitterTime )
-			{
-				// Wait a little bit to induce jitter.
-			}
-		}
-
-		GameLayersInstance->RealTime( RealTime.GetElapsedTimeSeconds() );
-
-		const double GameDeltaTime = GameTimer.GetElapsedTimeSeconds();
-		GameAccumulator += GameDeltaTime;
-
-		const auto Frozen = ( PauseGame && !FrameStep );
-		const auto ExecuteTicks = GameAccumulator > MaximumGameTime;
-		if( !Frozen && ExecuteTicks )
-		{
-			for( const auto& PreTick : Ticks.Functions[AdditionalTick::PreTick] )
-			{
-				PreTick();
-			}
-		}
-
-		if( GameAccumulator > ( MaximumGameTime * 4 ) )
-		{
-			GameAccumulator = MaximumGameTime;
-		}
-
-		while( GameAccumulator > MaximumGameTime )
-		{
-			GameAccumulator -= MaximumGameTime;
-
-			if( GameAccumulator < 0 )
-			{
-				GameAccumulator = 0;
-			}
-			
-			if( Tools )
-			{
-				MainWindow.EnableCursor( true );
-			}
-
-			if( !Frozen )
-			{
-				if( !Tools )
-				{
-					MainWindow.EnableCursor( false );
-				}
-
-				CProfiler::Get().Clear();
-				Renderer.RefreshFrame();
-
-				const auto GameTimeScale = GameLayersInstance->GetTimeScale();
-				const auto TimeScale = ScaleTime ? GameTimeScale * 0.1 : GameTimeScale;
-
-				ScaledGameTime += MaximumGameTime * TimeScale;
-
-				// Update game time.
-				GameLayersInstance->Time( ScaledGameTime );
-
-				// Update the renderable stage for tick functions.
-				Renderer.UpdateRenderableStage( RenderableStage::Tick );
-
-				CInputLocator::Get().Tick();
-
-				// Tick all game layers
-				GameLayersInstance->Tick();
-
-				for( const auto& Tick : Ticks.Functions[AdditionalTick::Tick] )
-				{
-					Tick();
-				}
-
-#ifdef OptickBuild
-				if( Capturing )
-				{
-					Capturing = false;
-					OptickSave("OptickCapture.opt");
-				}
-#endif
-
-				if( FrameStep )
-				{
-					FrameStep = false;
-				}
-			}
-		}
-
-		if( !Frozen && ExecuteTicks )
-		{
-			for( const auto& PostTick : Ticks.Functions[AdditionalTick::PostTick] )
-			{
-				PostTick();
-			}
-		}
-
-		if( Frozen )
-		{
-			GameTimer.Start();
-			CInputLocator::Get().Tick();
-		}
-
-		PollInput();
-
-		// BUG: FPS doesn't get restored after minimizing/power-saving.
-		if( IsPowerSaving() ) // || MainWindow.IsMinimized() )
-		{
-			const auto& Input = CInputLocator::Get();
-			const auto MousePosition = Input.GetMousePosition();
-			auto DeltaPosition = LastMousePosition;
-			DeltaPosition.X -= MousePosition.X;
-			DeltaPosition.Y -= MousePosition.Y;
-
-			DeltaPosition.X = abs( DeltaPosition.X );
-			DeltaPosition.Y = abs( DeltaPosition.Y );
-
-			const auto MouseMoved = DeltaPosition.X > 0 || DeltaPosition.Y > 0;
-			const auto CurrentTime = RealTime.GetElapsedTimeSeconds();
-
-			if( Input.IsAnyKeyDown() || MouseMoved || LastInputTime < 0.0 )
-			{
-				LastInputTime = CurrentTime;
-				LastMousePosition = MousePosition;
-
-				FPSLimit = 0;
-			}
-
-			int FPSTarget = 0;
-			const double TimeSinceInput = CurrentTime - LastInputTime;
-			if( TimeSinceInput > 30.0 )
-			{
-				FPSTarget = 5;
-			}
-			else if( TimeSinceInput > 20.0 )
-			{
-				FPSTarget = 15;
-			}
-			else if( TimeSinceInput > 10.0 )
-			{
-				FPSTarget = 30;
-			}
-			else if( TimeSinceInput > 4.0 )
-			{
-				FPSTarget = 60;
-			}
-
-			if( TimeSinceInput > 4.0 && FPSLimit < 1 )
-			{
-				FPSLimit = 300;
-			}
-
-			FPSLimit = FPSLimit * 0.99999 + FPSTarget * 0.00001;
-
-			const auto ConfiguredFPS = CConfiguration::Get().GetInteger( "fps", 0 );
-			if( ConfiguredFPS > 0 )
-			{
-				FPSLimit = Math::Min( FPSLimit, ConfiguredFPS );
-			}
-
-			if ( ( !MainWindow.IsFocused() && TimeSinceInput > 1.0 ) || TimeSinceInput > 6.0 )
-			{
-				Sleeping = true;
-				// std::this_thread::yield();
-				std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
-			}
-			else
-			{
-				Sleeping = false;
-			}
-		}
-		else
-		{
-			Sleeping = false;
-		}
-
-		const auto UnboundedFramerate = FPSLimit < 1;
-		const double RenderDeltaTime = RenderTimer.GetElapsedTimeSeconds();
-		const double MaximumFrameTime = UnboundedFramerate ? RenderDeltaTime : 1.0 / FPSLimit;
-		if( !MainWindow.IsMinimized() && ( RenderDeltaTime > MaximumFrameTime || UnboundedFramerate ) )
-		{
-			TimerScope::Submit( "Frametime", RenderTimer.GetStartTime(), RenderTimer.GetElapsedTimeMilliseconds() );
-			GameLayersInstance->FrameTime( RenderDeltaTime );
-			RenderTimer.Start( 0 );
-
-			MainWindow.BeginFrame();
-
-			{
-				Renderer.UpdateRenderableStage( RenderableStage::Frame );
-				GameLayersInstance->Frame();
-
-				// TODO: Sequence update should happen elsewhere but this is better than having it run via DebugMenu().
-				for( auto* Sequence : CAssets::Get().Sequences.GetAssets() )
-				{
-					Sequence->Frame();
-				}
-
-#if defined( IMGUI_ENABLED )
-				if( !MainWindow.IsWindowless() )
-				{
-					CProfiler::Get().Display();
-					CProfiler::Get().ClearFrame();
-					DebugMenu( this );
-				}
-#endif
-
-				MainWindow.RenderFrame();
-			}
-		}
-
-		// Update the cursor after ticking the game layers so that state changes aren't lost.
-		MainWindow.UpdateCursor();
+		Update();
 	}
 
 	ScriptEngine::Shutdown();
@@ -1524,7 +1297,8 @@ void CApplication::Initialize()
 
 	InitializeDefaultInputs();
 
-	MainWindow.EnableCursor( CursorVisible );
+	// TODO: Does this still have any use here?
+	MainWindow.EnableCursor( true );
 
 	if( !GameLayersInstance )
 	{
@@ -1557,4 +1331,256 @@ void CApplication::Initialize()
 
 	SoLoudSound::Initialize();
 	GameLayersInstance->Initialize();
+}
+
+void CApplication::Update()
+{
+	ProfileFrame( "Main Thread" );
+
+#ifdef OptickBuild
+	if( CaptureFrame )
+	{
+		Capturing = true;
+		CaptureFrame = false;
+		OptickStart();
+	}
+#endif
+
+	CConfiguration::Get().ReloadIfModified();
+
+	if( RestartLayers )
+		InputRestartGameLayers( this );
+
+	if( SimulateJitter )
+	{
+		Timer JitterTimer;
+		JitterTimer.Start();
+		const int64_t JitterTime = Math::RandomRangeInteger( 0, 33 );
+		while( JitterTimer.GetElapsedTimeMilliseconds() < JitterTime )
+		{
+			// Wait a little bit to induce jitter.
+		}
+	}
+
+	GameLayersInstance->RealTime( RealTime.GetElapsedTimeSeconds() );
+
+	const double GameDeltaTime = GameTimer.GetElapsedTimeSeconds();
+	GameAccumulator += GameDeltaTime;
+
+	const auto Frozen = ( PauseGame && !FrameStep );
+	const auto ExecuteTicks = GameAccumulator > MaximumGameTime;
+	if( !Frozen && ExecuteTicks )
+	{
+		for( const auto& PreTick : Ticks.Functions[AdditionalTick::PreTick] )
+		{
+			PreTick();
+		}
+	}
+
+	if( GameAccumulator > ( MaximumGameTime * 4 ) )
+	{
+		GameAccumulator = MaximumGameTime;
+	}
+
+	while( GameAccumulator > MaximumGameTime )
+	{
+		GameAccumulator -= MaximumGameTime;
+
+		if( GameAccumulator < 0 )
+		{
+			GameAccumulator = 0;
+		}
+
+		if( Tools )
+		{
+			MainWindow.EnableCursor( true );
+		}
+
+		if( !Frozen )
+		{
+			if( !Tools )
+			{
+				MainWindow.EnableCursor( false );
+			}
+
+			CProfiler::Get().Clear();
+
+			auto& Renderer = MainWindow.GetRenderer();
+			Renderer.RefreshFrame();
+
+			const auto GameTimeScale = GameLayersInstance->GetTimeScale();
+			const auto TimeScale = ScaleTime ? GameTimeScale * 0.1 : GameTimeScale;
+
+			if( UseAccumulator )
+			{
+				ScaledGameTime += MaximumGameTime * TimeScale;
+			}
+			else
+			{
+				ScaledGameTime += GameDeltaTime * TimeScale;
+			}
+
+			// Update game time.
+			GameLayersInstance->Time( ScaledGameTime );
+
+			// Update the renderable stage for tick functions.
+			Renderer.UpdateRenderableStage( RenderableStage::Tick );
+
+			CInputLocator::Get().Tick();
+
+			// Tick all game layers
+			GameLayersInstance->Tick();
+
+			for( const auto& Tick : Ticks.Functions[AdditionalTick::Tick] )
+			{
+				Tick();
+			}
+
+#ifdef OptickBuild
+			if( Capturing )
+			{
+				Capturing = false;
+				OptickSave( "OptickCapture.opt" );
+			}
+#endif
+
+			if( FrameStep )
+			{
+				FrameStep = false;
+			}
+		}
+
+		// Only tick once if we don't want to use the accumulator.
+		if( !UseAccumulator )
+		{
+			break;
+		}
+	}
+
+	if( !Frozen && ExecuteTicks )
+	{
+		for( const auto& PostTick : Ticks.Functions[AdditionalTick::PostTick] )
+		{
+			PostTick();
+		}
+	}
+
+	if( Frozen )
+	{
+		GameTimer.Start();
+		CInputLocator::Get().Tick();
+	}
+
+	PollInput();
+
+	// BUG: FPS doesn't get restored after minimizing/power-saving.
+	if( IsPowerSaving() ) // || MainWindow.IsMinimized() )
+	{
+		const auto& Input = CInputLocator::Get();
+		const auto MousePosition = Input.GetMousePosition();
+		auto DeltaPosition = LastMousePosition;
+		DeltaPosition.X -= MousePosition.X;
+		DeltaPosition.Y -= MousePosition.Y;
+
+		DeltaPosition.X = abs( DeltaPosition.X );
+		DeltaPosition.Y = abs( DeltaPosition.Y );
+
+		const auto MouseMoved = DeltaPosition.X > 0 || DeltaPosition.Y > 0;
+		const auto CurrentTime = RealTime.GetElapsedTimeSeconds();
+
+		if( Input.IsAnyKeyDown() || MouseMoved || LastInputTime < 0.0 )
+		{
+			LastInputTime = CurrentTime;
+			LastMousePosition = MousePosition;
+
+			FPSLimit = 0;
+		}
+
+		int FPSTarget = 0;
+		const double TimeSinceInput = CurrentTime - LastInputTime;
+		if( TimeSinceInput > 30.0 )
+		{
+			FPSTarget = 5;
+		}
+		else if( TimeSinceInput > 20.0 )
+		{
+			FPSTarget = 15;
+		}
+		else if( TimeSinceInput > 10.0 )
+		{
+			FPSTarget = 30;
+		}
+		else if( TimeSinceInput > 4.0 )
+		{
+			FPSTarget = 60;
+		}
+
+		if( TimeSinceInput > 4.0 && FPSLimit < 1 )
+		{
+			FPSLimit = 300;
+		}
+
+		FPSLimit = FPSLimit * 0.99999 + FPSTarget * 0.00001;
+
+		const auto ConfiguredFPS = CConfiguration::Get().GetInteger( "fps", 0 );
+		if( ConfiguredFPS > 0 )
+		{
+			FPSLimit = Math::Min( FPSLimit, ConfiguredFPS );
+		}
+
+		if( ( !MainWindow.IsFocused() && TimeSinceInput > 1.0 ) || TimeSinceInput > 6.0 )
+		{
+			Sleeping = true;
+			std::this_thread::sleep_for( std::chrono::milliseconds( 100 ) );
+		}
+		else
+		{
+			Sleeping = false;
+		}
+	}
+	else
+	{
+		Sleeping = false;
+	}
+
+	UpdateFrame();
+
+	// Update the cursor after ticking the game layers so that state changes aren't lost.
+	MainWindow.UpdateCursor();
+}
+
+void CApplication::UpdateFrame()
+{
+	const auto UnboundedFramerate = FPSLimit < 1;
+	const double RenderDeltaTime = RenderTimer.GetElapsedTimeSeconds();
+	const double MaximumFrameTime = UnboundedFramerate ? RenderDeltaTime : 1.0 / FPSLimit;
+	const auto ShouldRender = !MainWindow.IsMinimized() && ( RenderDeltaTime > MaximumFrameTime || UnboundedFramerate );
+	if( !ShouldRender )
+		return;
+
+	TimerScope::Submit( "Frametime", RenderTimer.GetStartTime(), RenderTimer.GetElapsedTimeMilliseconds() );
+	GameLayersInstance->FrameTime( RenderDeltaTime );
+	RenderTimer.Start( 0 );
+
+	// Prepare to render a new frame.
+	MainWindow.BeginFrame();
+	MainWindow.GetRenderer().UpdateRenderableStage( RenderableStage::Frame );
+
+	// Gather everything for rendering.
+	GameLayersInstance->Frame();
+
+	// TODO: Sequence update should happen elsewhere but this is better than having it run via DebugMenu().
+	for( auto* Sequence : CAssets::Get().Sequences.GetAssets() )
+	{
+		Sequence->Frame();
+	}
+
+	// Prepare the UI of the profiler and other debug menus.
+	RenderToolUI( this );
+
+	// It's rendering time.
+	MainWindow.RenderFrame();
+
+	// Execute all commands and swap the front and back buffer.
+	MainWindow.SwapFrame();
 }

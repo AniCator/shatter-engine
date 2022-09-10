@@ -49,6 +49,7 @@ public:
 
 	void BeginFrame();
 	void RenderFrame();
+	void SwapFrame();
 
 	// Forces the current frame to render.
 	void FlushFrame();
@@ -82,7 +83,10 @@ public:
 	bool IsFullscreen() const;
 	bool IsBorderless() const;
 	bool IsFullscreenBorderless() const;
-	void SetVSYNC( const bool& Enable );
+
+	bool HasVSync() const;
+	void SetVSync( const bool& Enable );
+	void SetSwapInterval( const int Interval );
 
 	bool IsFocused() const;
 	bool IsMinimized() const;
