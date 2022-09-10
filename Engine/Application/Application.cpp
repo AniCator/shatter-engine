@@ -85,7 +85,7 @@ ConfigurationVariable<bool> UseAccumulator( "tick.UseAccumulator", true );
 
 #ifdef OptickBuild
 bool CaptureFrame = false;
-bool Capturing = false;
+size_t Capturing = 0;
 #endif
 
 double ScaledGameTime = 0.0;
@@ -370,7 +370,7 @@ void DebugMenu( CApplication* Application )
 			}
 
 #ifdef OptickBuild
-			if( ImGui::MenuItem( "Capture Optick Frame" ) )
+			if( ImGui::MenuItem( "Profile 20 Frames (Optick)" ) )
 			{
 				CaptureFrame = true;
 			}
@@ -603,6 +603,7 @@ void CApplication::Run()
 
 	while( !MainWindow.ShouldClose() )
 	{
+		ProfileFrame( "Main Thread" );
 		Update();
 	}
 
@@ -1335,12 +1336,15 @@ void CApplication::Initialize()
 
 void CApplication::Update()
 {
-	ProfileFrame( "Main Thread" );
-
 #ifdef OptickBuild
+	if( Capturing > 0 )
+	{
+		Capturing++;
+	}
+
 	if( CaptureFrame )
 	{
-		Capturing = true;
+		Capturing++;
 		CaptureFrame = false;
 		OptickStart();
 	}
@@ -1437,9 +1441,10 @@ void CApplication::Update()
 			}
 
 #ifdef OptickBuild
-			if( Capturing )
+			if( Capturing >= 20 )
 			{
-				Capturing = false;
+				Capturing = 0;
+				OptickStop();
 				OptickSave( "OptickCapture.opt" );
 			}
 #endif
