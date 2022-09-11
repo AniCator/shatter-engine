@@ -109,8 +109,8 @@ void CWorld::Tick()
 	{
 		auto& Configuration = CConfiguration::Get();
 		auto& Setup = Camera->GetCameraSetup();
-		auto Width = Configuration.GetInteger( "width" );
-		auto Height = Configuration.GetInteger( "height" );
+		auto Width = Configuration.GetInteger( "window.Width" );
+		auto Height = Configuration.GetInteger( "window.Height" );
 		Setup.AspectRatio = static_cast<float>( Width ) / static_cast<float>( Height );
 
 		Vector3D Velocity = Vector3D::Zero;

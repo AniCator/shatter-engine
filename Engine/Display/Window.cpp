@@ -83,10 +83,10 @@ void CWindow::Create( const char* Title )
 	// Load configuration data
 	CConfiguration& config = CConfiguration::Get();
 
-	const bool EnableBorder = !config.IsEnabled( "noborder", true );
+	const bool EnableBorder = !config.IsEnabled( "window.Borderless", true );
 
-	CurrentDimensions.Width = config.GetInteger( "width", -1 );
-	CurrentDimensions.Height = config.GetInteger( "height", -1 );
+	CurrentDimensions.Width = config.GetInteger( "window.Width", -1 );
+	CurrentDimensions.Height = config.GetInteger( "window.Height", -1 );
 
 	// Ignore tiny window dimensions.
 	if( CurrentDimensions.Width < 32 || CurrentDimensions.Height < 32 )
@@ -116,22 +116,22 @@ void CWindow::Create( const char* Title )
 	glfwWindowHint( GLFW_DECORATED, EnableBorder );
 
 	glfwWindowHint( GLFW_SAMPLES, 0 );
-	const bool DebugContext = config.IsEnabled( "opengldebugcontext", false );
+	const bool DebugContext = config.IsEnabled( "OpenGL.DebugContext", false );
 	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, DebugContext ? 1 : 0 );
 
-	const int MajorVersion = 4; // config.GetInteger( "openglversionmajor", 4 );
-	const int MinorVersion = 3; // config.GetInteger( "openglversionminor", 3 );
+	const int MajorVersion = 4;
+	const int MinorVersion = 3;
 
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, MajorVersion );
 	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, MinorVersion );
 
-	if( config.IsEnabled( "openglcore", true ) )
+	if( config.IsEnabled( "OpenGL.Compatibility", false ) )
 	{
 		glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
 		glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	}
 
-	const bool FullScreen = EnableBorder && config.IsEnabled( "fullscreen", false );
+	const bool FullScreen = EnableBorder && config.IsEnabled( "window.Fullscreen", false );
 
 	if( FullScreen )
 	{
@@ -220,7 +220,7 @@ void CWindow::Create( const char* Title )
 	}
 #endif
 
-	const auto EnableSync = config.GetInteger( "vsync", 0 ) > 0;
+	const auto EnableSync = config.GetInteger( "window.VSync", 0 ) > 0;
 	SetVSync( EnableSync );
 
 	Log::Event( "Initializing ImGui.\n" );
@@ -249,18 +249,15 @@ void CWindow::Recreate()
 
 	glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
 
-	// auto* Context = glfwCreateWindow( 1, 1, "RecreateContext", NULL, NULL );
 	auto* Context = ThreadContext( true );
-	// glfwMakeContextCurrent( Context );
 
 	glfwDestroyWindow( WindowHandle );
 
-	const bool EnableBorder = !CConfiguration::Get().IsEnabled( "noborder", true );
-	const bool FullScreen = EnableBorder && CConfiguration::Get().IsEnabled( "fullscreen", false );
+	const bool EnableBorder = !CConfiguration::Get().IsEnabled( "window.Borderless", true );
+	const bool FullScreen = EnableBorder && CConfiguration::Get().IsEnabled( "window.Fullscreen", false );
 
 	glfwWindowHint( GLFW_RESIZABLE, false );
 	glfwWindowHint( GLFW_DECORATED, EnableBorder );
-	// glfwWindowHint( GLFW_FLOATING, FullScreen );
 
 	auto* Monitor = GetTargetMonitor();
 	WindowHandle = glfwCreateWindow( 
@@ -310,8 +307,8 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 		glfwSetWindowSize( WindowHandle, CurrentDimensions.Width, CurrentDimensions.Height );
 
 		auto& Configuration = CConfiguration::Get();
-		Configuration.Store( "width", CurrentDimensions.Width );
-		Configuration.Store( "height", CurrentDimensions.Height );
+		Configuration.Store( "window.Width", CurrentDimensions.Width );
+		Configuration.Store( "window.Height", CurrentDimensions.Height );
 		Configuration.Save();
 
 		Renderer.DestroyBuffers();
@@ -327,8 +324,8 @@ void CWindow::Fullscreen( const bool Enable )
 
 	const int AsInteger = Enable ? 1 : 0;
 
-	CConfiguration::Get().Store( "fullscreen", AsInteger );
-	CConfiguration::Get().Store( "noborder", 0 );
+	CConfiguration::Get().Store( "window.Fullscreen", AsInteger );
+	CConfiguration::Get().Store( "window.Borderless", 0 );
 	CConfiguration::Get().Save();
 
 	GLFWmonitor* Monitor = GetTargetMonitor();
@@ -360,14 +357,14 @@ void CWindow::Borderless( const bool Enable )
 	const int AsInteger = Enable ? 1 : 0;
 
 	auto& Configuration = CConfiguration::Get();
-	Configuration.Store( "fullscreen", 0 );
-	Configuration.Store( "noborder", AsInteger );
+	Configuration.Store( "window.Fullscreen", 0 );
+	Configuration.Store( "window.Borderless", AsInteger );
 	Configuration.Save();
 
 	if( Enable )
 	{
-		Configuration.Store( "width", -1 );
-		Configuration.Store( "height", -1 );
+		Configuration.Store( "window.Width", -1 );
+		Configuration.Store( "window.Height", -1 );
 	}
 
 	GLFWmonitor* Monitor = GetTargetMonitor();
@@ -588,13 +585,13 @@ bool CWindow::IsFullscreenBorderless() const
 
 bool CWindow::HasVSync() const
 {
-	return CConfiguration::Get().IsEnabled( "vsync" );
+	return CConfiguration::Get().IsEnabled( "window.VSync" );
 }
 
 void CWindow::SetVSync( const bool& Enable )
 {
 	const int Interval = Enable ? 1 : 0;
-	CConfiguration::Get().Store( "vsync", Interval );
+	CConfiguration::Get().Store( "window.VSync", Interval );
 	SetSwapInterval( Interval );
 }
 
@@ -626,7 +623,7 @@ bool CWindow::IsMinimized() const
 
 GLFWmonitor* CWindow::GetTargetMonitor() const
 {
-	const int TargetMonitor = CConfiguration::Get().GetInteger( "monitor", -1 );
+	const int TargetMonitor = CConfiguration::Get().GetInteger( "window.Monitor", -1 );
 
 	GLFWmonitor* Monitor = glfwGetPrimaryMonitor();
 	if( TargetMonitor > -1 )
@@ -648,8 +645,8 @@ ViewDimensions CWindow::GetMonitorDimensions( GLFWmonitor* Monitor ) const
 	auto& Configuration = CConfiguration::Get();
 
 	ViewDimensions Dimensions;
-	Dimensions.Width = Configuration.GetInteger( "width", -1 );
-	Dimensions.Height = Configuration.GetInteger( "height", -1 );
+	Dimensions.Width = Configuration.GetInteger( "window.Width", -1 );
+	Dimensions.Height = Configuration.GetInteger( "window.Height", -1 );
 
 	if( Dimensions.Width < 32 || Dimensions.Height < 32 )
 	{
@@ -659,8 +656,8 @@ ViewDimensions CWindow::GetMonitorDimensions( GLFWmonitor* Monitor ) const
 			Dimensions.Width = VideoMode->width;
 			Dimensions.Height = VideoMode->height;
 
-			Configuration.Store( "width", Dimensions.Width );
-			Configuration.Store( "height", Dimensions.Height );
+			Configuration.Store( "window.Width", Dimensions.Width );
+			Configuration.Store( "window.Height", Dimensions.Height );
 		}
 	}
 

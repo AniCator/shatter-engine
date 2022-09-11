@@ -717,8 +717,8 @@ namespace UI
 	void Reset()
 	{
 		CConfiguration& Configuration = CConfiguration::Get();
-		Width = Configuration.GetFloat( "width" );
-		Height = Configuration.GetFloat( "height" );
+		Width = Configuration.GetFloat( "window.Width" );
+		Height = Configuration.GetFloat( "window.Height" );
 
 		if( DrawList )
 		{
@@ -789,8 +789,8 @@ namespace UI
 		FixedTextOutput.clear();
 
 		CConfiguration& Configuration = CConfiguration::Get();
-		Width = Configuration.GetFloat( "width" );
-		Height = Configuration.GetFloat( "height" );
+		Width = Configuration.GetFloat( "window.Width" );
+		Height = Configuration.GetFloat( "window.Height" );
 
 		DrawData.DisplaySize.x = Width;
 		DrawData.DisplaySize.y = Height;
