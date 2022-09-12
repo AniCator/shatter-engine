@@ -164,7 +164,7 @@ void CMeshEntity::TickAnimation()
 
 	AnimationInstance.TickOffset = GetEntityID().ID;
 
-	Animator::Update( AnimationInstance, DeltaTime, ForceAnimationTick );
+	Animator::Update( AnimationInstance, GameLayersInstance->GetFrameTime(), ForceAnimationTick );
 
 	if( ForceAnimationTick )
 	{
