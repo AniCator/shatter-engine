@@ -84,13 +84,6 @@ void CMesh::Prepare( EDrawMode DrawModeOverride )
 		if( DrawMode != EDrawMode::None )
 		{
 			glBindVertexArray( VertexArrayObject );
-
-			glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
-
-			if( HasIndexBuffer )
-			{
-				glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
-			}
 		}
 	}
 }
