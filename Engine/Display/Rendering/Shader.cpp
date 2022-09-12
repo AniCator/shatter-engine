@@ -189,7 +189,6 @@ bool CShader::Load( GLuint& HandleIn, const EShaderType& Type, const std::string
 
 bool CShader::Reload()
 {
-	Log::Event( "Recompiling \"%s\"...\n", Location.c_str() );
 	return Load();
 }
 
@@ -485,7 +484,7 @@ GLuint CShader::Link()
 	{
 		if( Attempts > 0 && !Debugger )
 		{
-			Log::Event( Log::Error, "Failed to compile shader \"%s\".\n", FragmentLocation.c_str() );
+			Log::Event( Log::Error, "Failed to compile shader \"%s\".\n", Location.c_str() );
 			Attempts = 0;
 			return 0;
 		}
