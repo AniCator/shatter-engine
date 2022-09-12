@@ -75,36 +75,34 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 
 void CMesh::Prepare( EDrawMode DrawModeOverride )
 {
-	if( IsValid() )
-	{
-		CreateVertexArrayObject();
+	if( !IsValid() )
+		return;
+	
+	CreateVertexArrayObject();
 
-		const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
-
-		if( DrawMode != EDrawMode::None )
-		{
-			glBindVertexArray( VertexArrayObject );
-		}
-	}
+	const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
+	if( DrawMode == EDrawMode::None )
+		return;
+	
+	glBindVertexArray( VertexArrayObject );
 }
 
 void CMesh::Draw( EDrawMode DrawModeOverride )
 {
-	if( IsValid() )
+	if( !IsValid() )
+		return;
+	
+	const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
+	if( DrawMode == EDrawMode::None )
+		return;
+	
+	if( HasIndexBuffer )
 	{
-		const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
-
-		if( DrawMode != EDrawMode::None )
-		{
-			if( HasIndexBuffer )
-			{
-				glDrawElements( DrawMode, VertexBufferData.IndexCount, GL_UNSIGNED_INT, 0 );
-			}
-			else
-			{
-				glDrawArrays( DrawMode, 0, VertexBufferData.VertexCount );
-			}
-		}
+		glDrawElements( DrawMode, VertexBufferData.IndexCount, GL_UNSIGNED_INT, 0 );
+	}
+	else
+	{
+		glDrawArrays( DrawMode, 0, VertexBufferData.VertexCount );
 	}
 }
 
@@ -137,7 +135,7 @@ void CMesh::SetLocation( const std::string& FileLocation )
 {
 	Location = FileLocation;
 
-#ifdef _DEBUG
+#ifndef ReleaseBuild
 	const std::string VertexLabel = "VB" + Location;
 	glObjectLabel( GL_BUFFER, VertexBufferData.VertexBufferObject, -1, VertexLabel.c_str() );
 
@@ -168,115 +166,90 @@ void CMesh::SetAnimationSet( const AnimationSet& Set )
 
 bool CMesh::CreateVertexArrayObject()
 {
-	if( VertexArrayObject == 0 )
-	{
-		glGenVertexArrays( 1, &VertexArrayObject );
-		glBindVertexArray( VertexArrayObject );
+	if( VertexArrayObject != 0 )
+		return false;
+	
+	glGenVertexArrays( 1, &VertexArrayObject );
+	glBindVertexArray( VertexArrayObject );
 
-		glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
+	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
 
-		glEnableVertexAttribArray( EVertexAttribute::Position );
-		const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
-		glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
+	glEnableVertexAttribArray( EVertexAttribute::Position );
+	const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
+	glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
 
-		glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-		const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
-		glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
+	glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
+	const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
+	glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
 
-		glEnableVertexAttribArray( EVertexAttribute::Normal );
-		const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
-		glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
+	glEnableVertexAttribArray( EVertexAttribute::Normal );
+	const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
+	glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
 
-		glEnableVertexAttribArray( EVertexAttribute::Color );
-		const void* ColorPointer = reinterpret_cast<void*>( offsetof( FVertex, Color ) );
-		glVertexAttribPointer( EVertexAttribute::Color, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), ColorPointer );
+	glEnableVertexAttribArray( EVertexAttribute::Color );
+	const void* ColorPointer = reinterpret_cast<void*>( offsetof( FVertex, Color ) );
+	glVertexAttribPointer( EVertexAttribute::Color, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), ColorPointer );
 
-		glEnableVertexAttribArray( EVertexAttribute::Bone );
-		const void* BonePointer = reinterpret_cast<void*>( offsetof( FVertex, Bone ) );
-		glVertexAttribPointer( EVertexAttribute::Bone, 4, GL_FLOAT, GL_FALSE, sizeof( FVertex ), BonePointer );
+	glEnableVertexAttribArray( EVertexAttribute::Bone );
+	const void* BonePointer = reinterpret_cast<void*>( offsetof( FVertex, Bone ) );
+	glVertexAttribPointer( EVertexAttribute::Bone, 4, GL_FLOAT, GL_FALSE, sizeof( FVertex ), BonePointer );
 
-		glEnableVertexAttribArray( EVertexAttribute::Weight );
-		const void* WeightPointer = reinterpret_cast<void*>( offsetof( FVertex, Weight ) );
-		glVertexAttribPointer( EVertexAttribute::Weight, 4, GL_FLOAT, GL_FALSE, sizeof( FVertex ), WeightPointer );
+	glEnableVertexAttribArray( EVertexAttribute::Weight );
+	const void* WeightPointer = reinterpret_cast<void*>( offsetof( FVertex, Weight ) );
+	glVertexAttribPointer( EVertexAttribute::Weight, 4, GL_FLOAT, GL_FALSE, sizeof( FVertex ), WeightPointer );
 
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
 
-		return true;
-	}
-
-	return false;
+	return true;
 }
 
 bool CMesh::CreateVertexBuffer()
 {
-	if( VertexBufferData.VertexBufferObject == 0 )
-	{
-		if( Primitive.VertexCount == 0 )
-		{
-			Log::Event( Log::Error, "Mesh vertex buffer has no vertices.\n" );
-			return false;
-		}
-
-		GenerateAABB();
-
-		const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
-
-		glGenBuffers( 1, &VertexBufferData.VertexBufferObject );
-		glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
-		glBufferData( GL_ARRAY_BUFFER, Size, 0, MeshType );
-
-		// Make sure we allocate space for our vertices first.
-		VertexData.Vertices = new FVertex[Primitive.VertexCount];
-
-		// Transfer the vertex locations to the interleaved vertices.
-		for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
-		{
-			VertexData.Vertices[Index].Position = Primitive.Vertices[Index].Position;
-			VertexData.Vertices[Index].TextureCoordinate = Primitive.Vertices[Index].TextureCoordinate;
-			VertexData.Vertices[Index].Color = Primitive.Vertices[Index].Color;
-			VertexData.Vertices[Index].Bone = Primitive.Vertices[Index].Bone;
-			VertexData.Vertices[Index].Weight = Primitive.Vertices[Index].Weight;
-		}
-
-		VertexBufferData.VertexCount = Primitive.VertexCount;
-
-		glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
-
-		return true;
-	}
-	else
+	if( VertexBufferData.VertexBufferObject != 0 )
 	{
 		Log::Event( Log::Error, "Mesh vertex buffer has already been created.\n" );
 
 		return false;
 	}
+	
+	if( Primitive.VertexCount == 0 )
+	{
+		Log::Event( Log::Error, "Mesh vertex buffer has no vertices.\n" );
+		return false;
+	}
+
+	GenerateAABB();
+
+	const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
+
+	glGenBuffers( 1, &VertexBufferData.VertexBufferObject );
+	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
+	glBufferData( GL_ARRAY_BUFFER, Size, 0, MeshType );
+
+	// Make sure we allocate space for our vertices first.
+	VertexData.Vertices = new FVertex[Primitive.VertexCount];
+
+	// Transfer the vertex locations to the interleaved vertices.
+	for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
+	{
+		VertexData.Vertices[Index].Position = Primitive.Vertices[Index].Position;
+		VertexData.Vertices[Index].TextureCoordinate = Primitive.Vertices[Index].TextureCoordinate;
+		VertexData.Vertices[Index].Color = Primitive.Vertices[Index].Color;
+		VertexData.Vertices[Index].Bone = Primitive.Vertices[Index].Bone;
+		VertexData.Vertices[Index].Weight = Primitive.Vertices[Index].Weight;
+	}
+
+	VertexBufferData.VertexCount = Primitive.VertexCount;
+
+	glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
+
+	return true;
 }
 
 bool CMesh::CreateIndexBuffer()
 {
-	if( VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject == 0 && Primitive.IndexCount > 0 )
-	{
-		const uint32_t Size = sizeof( glm::uint ) * Primitive.IndexCount;
-
-		glGenBuffers( 1, &VertexBufferData.IndexBufferObject );
-		glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
-		glBufferData( GL_ELEMENT_ARRAY_BUFFER, Size, 0, MeshType );
-
-		IndexData.Indices = new glm::uint[Primitive.IndexCount];
-		for( size_t Index = 0; Index < Primitive.IndexCount; Index++ )
-		{
-			IndexData.Indices[Index] = Primitive.Indices[Index];
-		}
-
-		VertexBufferData.IndexCount = Primitive.IndexCount;
-
-		glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, Size, IndexData.Indices );
-
-		HasIndexBuffer = true;
-
-		return true;
-	}
-	else
+	const auto CanCreateIndexBuffer = VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject == 0 && Primitive.IndexCount > 0;
+	if( !CanCreateIndexBuffer )
 	{
 		if( VertexBufferData.VertexBufferObject != 0 )
 		{
@@ -289,6 +262,26 @@ bool CMesh::CreateIndexBuffer()
 
 		return false;
 	}
+	
+	const uint32_t Size = sizeof( glm::uint ) * Primitive.IndexCount;
+
+	glGenBuffers( 1, &VertexBufferData.IndexBufferObject );
+	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
+	glBufferData( GL_ELEMENT_ARRAY_BUFFER, Size, 0, MeshType );
+
+	IndexData.Indices = new glm::uint[Primitive.IndexCount];
+	for( size_t Index = 0; Index < Primitive.IndexCount; Index++ )
+	{
+		IndexData.Indices[Index] = Primitive.Indices[Index];
+	}
+
+	VertexBufferData.IndexCount = Primitive.IndexCount;
+
+	glBufferSubData( GL_ELEMENT_ARRAY_BUFFER, 0, Size, IndexData.Indices );
+
+	HasIndexBuffer = true;
+
+	return true;
 }
 
 void CMesh::GenerateAABB()
