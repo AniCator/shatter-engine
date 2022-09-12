@@ -1727,12 +1727,43 @@ void TagListUI()
 	ImGui::End();
 }
 
+bool PerpetualRecompile = false;
+double LastRecompile = -1.0;
+void PerformPerpetualRecompile()
+{
+	if( !PerpetualRecompile )
+		return;
+
+	const auto Time = GameLayersInstance->GetRealTime();
+	if( LastRecompile < 0.0 )
+		LastRecompile = Time;
+
+	const auto DeltaTime = Time - LastRecompile;
+	if( DeltaTime > 2.0 )
+	{
+		LastRecompile = Time;
+		CAssets::Get().ReloadShaders();
+	}
+}
+
 extern ConfigurationVariable<bool> FlipHorizontal;
 void RenderCommandItems()
 {
 	if( ImGui::MenuItem( "Flip Horizontal", nullptr, FlipHorizontal.Get() ) )
 	{
 		FlipHorizontal.Set( !FlipHorizontal.Get() );
+	}
+
+	if( ImGui::MenuItem( "Perpetual Shader Compilation", nullptr, PerpetualRecompile ) )
+	{
+		PerpetualRecompile = !PerpetualRecompile;
+	}
+
+	if( ImGui::IsItemHovered() )
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text( "Recompile shaders every 2 seconds." );
+		ImGui::EndTooltip();
 	}
 }
 
@@ -1758,6 +1789,8 @@ void RenderWindowPanels()
 	AudioPlayerUI();
 	ShaderToyUI();
 	TagListUI();
+
+	PerformPerpetualRecompile();
 }
 
 #if defined(_WIN32)
