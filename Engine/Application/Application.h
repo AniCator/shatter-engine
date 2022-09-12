@@ -116,5 +116,5 @@ private:
 
 	// The main update method that executes game ticks and renders frames.
 	void Update();
-	void UpdateFrame();
+	bool UpdateFrame();
 };

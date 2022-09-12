@@ -1549,20 +1549,21 @@ void CApplication::Update()
 		Sleeping = false;
 	}
 
-	UpdateFrame();
-
-	// Update the cursor after ticking the game layers so that state changes aren't lost.
-	MainWindow.UpdateCursor();
+	if( UpdateFrame() )
+	{
+		// Update the cursor after ticking the game layers so that state changes aren't lost.
+		MainWindow.UpdateCursor();
+	}
 }
 
-void CApplication::UpdateFrame()
+bool CApplication::UpdateFrame()
 {
 	const auto UnboundedFramerate = FPSLimit < 1;
 	const double RenderDeltaTime = RenderTimer.GetElapsedTimeSeconds();
 	const double MaximumFrameTime = UnboundedFramerate ? RenderDeltaTime : 1.0 / FPSLimit;
 	const auto ShouldRender = !MainWindow.IsMinimized() && ( RenderDeltaTime > MaximumFrameTime || UnboundedFramerate );
 	if( !ShouldRender )
-		return;
+		return false;
 
 	TimerScope::Submit( "Frametime", RenderTimer.GetStartTime(), RenderTimer.GetElapsedTimeMilliseconds() );
 	GameLayersInstance->FrameTime( RenderDeltaTime );
@@ -1589,4 +1590,6 @@ void CApplication::UpdateFrame()
 
 	// Execute all commands and swap the front and back buffer.
 	MainWindow.SwapFrame();
+
+	return true;
 }
