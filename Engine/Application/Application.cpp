@@ -212,7 +212,7 @@ void GenerateThemes()
 	Themes.insert_or_assign( "Gruvbox (Dark)", ThemeGruvboxDark );
 	Themes.insert_or_assign( "Gruvbox (Light)", ThemeGruvboxLight );
 
-	const auto& Theme = CConfiguration::Get().GetString( "theme", "Gruvbox (Dark)" );
+	const auto& Theme = CConfiguration::Get().GetString( "UI.Tool.Theme", "Gruvbox (Dark)" );
 	if ( Theme == "Gruvbox (Light)" )
 	{
 		ThemeGruvboxLight();
@@ -243,7 +243,7 @@ void SetTheme( const std::string& Theme )
 	{
 		Iterator->second();
 
-		CConfiguration::Get().Store( "theme", Theme );
+		CConfiguration::Get().Store( "UI.Tool.Theme", Theme );
 		CConfiguration::Get().Save();
 	}
 }
@@ -319,7 +319,7 @@ void DebugMenu( CApplication* Application )
 				if( !PowerSaving )
 				{
 					// Default to configured amount when disabling power saving.
-					Application->SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 0 ) );
+					Application->SetFPSLimit( CConfiguration::Get().GetInteger( "render.FPS", 0 ) );
 				}
 			}
 
@@ -594,11 +594,11 @@ void CApplication::Run()
 	RenderTimer.Start();
 	RealTime.Start();
 
-	SetFPSLimit( CConfiguration::Get().GetInteger( "fps", 0 ) );
+	SetFPSLimit( CConfiguration::Get().GetInteger( "render.FPS", 0 ) );
 
-	MaximumGameTime = 1.0 / CConfiguration::Get().GetInteger( "tickrate", 60 );
+	MaximumGameTime = 1.0 / CConfiguration::Get().GetInteger( "tick.Rate", 60 );
 
-	const float GlobalVolume = CConfiguration::Get().GetFloat( "volume", 100.0f );
+	const float GlobalVolume = CConfiguration::Get().GetFloat( "audio.MasterVolume", 100.0f );
 	SoLoudSound::Volume( GlobalVolume );
 
 	while( !MainWindow.ShouldClose() )
@@ -694,7 +694,7 @@ void CApplication::ResetImGui()
 		ImFontConfig DefaultFontConfig;
 		DefaultFontConfig.OversampleH = 4;
 		DefaultFontConfig.OversampleV = 2;
-		DefaultFontConfig.SizePixels = CConfiguration::Get().GetFloat( "font_size", 15.0f );
+		DefaultFontConfig.SizePixels = CConfiguration::Get().GetFloat( "UI.FontSize", 15.0f );
 
 		RobotoFont = IO.Fonts->AddFontFromFileTTF( FontLocation, DefaultFontConfig.SizePixels, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
 		IO.FontDefault = RobotoFont;
@@ -1308,7 +1308,7 @@ void CApplication::Initialize()
 
 	if( CameraSpeed < 0.0f )
 	{
-		CameraSpeed = CConfiguration::Get().GetFloat( "cameraspeed", 1.0f );
+		CameraSpeed = 0.1f;
 	}
 
 	UnregisterDebugUI();
@@ -1392,7 +1392,8 @@ void CApplication::Update()
 
 		if( GameAccumulator < 0 )
 		{
-			GameAccumulator = 0;
+			// We're going to miss our ride, leave it for the next round.
+			break;
 		}
 
 		if( Tools )
@@ -1527,7 +1528,7 @@ void CApplication::Update()
 
 		FPSLimit = FPSLimit * 0.99999 + FPSTarget * 0.00001;
 
-		const auto ConfiguredFPS = CConfiguration::Get().GetInteger( "fps", 0 );
+		const auto ConfiguredFPS = CConfiguration::Get().GetInteger( "render.FPS", 0 );
 		if( ConfiguredFPS > 0 )
 		{
 			FPSLimit = Math::Min( FPSLimit, ConfiguredFPS );

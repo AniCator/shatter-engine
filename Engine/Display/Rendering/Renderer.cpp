@@ -210,9 +210,9 @@ void CRenderer::Initialize()
 
 	GlobalUniformBuffers.clear();
 
-	SkipRenderPasses = CConfiguration::Get().GetInteger( "skiprenderpasses", 0 ) > 0;
+	SkipRenderPasses = CConfiguration::Get().GetInteger( "render.SkipPasses", 0 ) > 0;
 	PreviousSuperSampling = SuperSampling.Get();
-	SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "supersamplingfactor", 2.0f ) );
+	SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "render.SuperSampling.Factor", 2.0f ) );
 }
 
 void CRenderer::DestroyBuffers()
@@ -290,7 +290,7 @@ void CRenderer::DrawQueuedRenderables()
 		if( ViewportWidth > -1 && ViewportHeight > -1 )
 		{
 			// Update the super sampling values.
-			SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "supersamplingfactor", 2.0f ) );
+			SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "render.SuperSampling.Factor", 2.0f ) );
 			
 			FramebufferWidth = ViewportWidth;
 			FramebufferHeight = ViewportHeight;

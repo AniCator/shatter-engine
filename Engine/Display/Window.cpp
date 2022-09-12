@@ -159,8 +159,8 @@ void CWindow::Create( const char* Title )
 	int WindowX = -1;
 	int WindowY = -1;
 
-	WindowX = config.GetInteger( "windowx", -1 );
-	WindowY = config.GetInteger( "windowy", -1 );
+	WindowX = config.GetInteger( "window.PositionX", -1 );
+	WindowY = config.GetInteger( "window.PositionY", -1 );
 
 	bool ShouldOverrideWindowPosition = false;
 
