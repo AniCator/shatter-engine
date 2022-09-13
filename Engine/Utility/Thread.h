@@ -79,11 +79,11 @@ struct Worker
 		Tasks.emplace_back( ToExecute );
 		Running = true;
 
-		// Notify the worker thread that there is new work.
-		Notify.notify_one();
-
 		// Refresh the promise, in case this task is being re-used.
 		Tasks.back()->Promise = std::promise<void>();
+
+		// Notify the worker thread that there is new work.
+		Notify.notify_one();
 
 		// Return the associated future.
 		return Tasks.back()->Promise.get_future();
