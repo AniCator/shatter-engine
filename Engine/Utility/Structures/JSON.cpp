@@ -7,6 +7,107 @@
 
 namespace JSON
 {
+	void Object::SetValue( const std::string& Key, const std::string& NewValue )
+	{
+		if( this->Key == Key )
+		{
+			Value = NewValue;
+			return;
+		}
+
+		if( Object* Object = Find( Key ) )
+		{
+			Object->Value = NewValue;
+		}
+	}
+
+	const std::string& Object::GetValue( const std::string& Key ) const
+	{
+		if( this->Key == Key )
+		{
+			return Value;
+		}
+
+		if( const auto* Object = Find( Key ) )
+		{
+			return Object->Value;
+		}
+
+		const static std::string EmptyString;
+		return EmptyString;
+	}
+
+	Object& Object::Add()
+	{
+		auto* Object = Owner->Allocate();
+		Owner->Add( this, Object );
+		return *Object;
+	}
+
+	Object* Object::operator[]( const std::string& Key ) const
+	{
+		return Find( Key );
+	}
+
+	Object& Object::operator[]( const std::string& Key )
+	{
+		const auto Result = Find( Key );
+
+		// Entry doesn't exist, create it.
+		if( !Result )
+		{
+			return *Owner->Add( this, Key );
+		}
+
+		return *Result;
+	}
+
+	Object& Object::operator[]( const Object& Object )
+	{
+		// Copy the object into this one.
+		auto& New = Add();
+		New = Object;
+		return New;
+	}
+
+	Object& Object::operator=( const char* Value )
+	{
+		this->Value = Value;
+		return *this;
+	}
+
+	Object& Object::operator=( const std::string& Value )
+	{
+		this->Value = Value;
+		return *this;
+	}
+
+	void CopyTree( Object* Source, Object* Target );
+	Object& Object::operator=( const Container& Container )
+	{
+		for( auto& Branch : Container.Tree )
+		{
+			CopyTree( Branch, this );
+		}
+
+		return *this;
+	}
+
+	Object* Object::Find( const std::string& Key ) const
+	{
+		const auto Result = std::find_if( Objects.begin(), Objects.end(), [&Key]( Object* Item ) -> bool
+		{
+			return Item->Key == Key;
+		} );
+
+		if( Result != Objects.end() )
+		{
+			return *Result;
+		}
+
+		return nullptr;
+	}
+
 	void PopString( const char*& Token, const char*& Start, const char*& End, size_t& Length )
 	{
 		Token++;
@@ -83,6 +184,7 @@ namespace JSON
 					{
 						Object* StackParent = Current;
 						Object Object;
+						Object.Owner = &Container;
 						Container.Objects.emplace_back( Object );
 
 						// Create a new node for the object.
@@ -147,6 +249,7 @@ namespace JSON
 				if( LookingForKeyEntry && Start && End )
 				{
 					Object Object;
+					Object.Owner = &Container;
 					Container.Objects.emplace_back( Object );
 
 					Current = &Container.Objects.back();
@@ -360,6 +463,7 @@ namespace JSON
 			for( auto& Twig : Branch->Objects )
 			{
 				Object NewObject = *Twig;
+				NewObject.Owner = &Container;
 				NewObject.Parent = nullptr;
 				NewObject.Objects.clear();
 				Container.Objects.emplace_back( NewObject );
@@ -370,6 +474,7 @@ namespace JSON
 		else
 		{
 			Object NewObject = *Branch;
+			NewObject.Owner = &Container;
 			NewObject.Parent = nullptr;
 			Container.Objects.emplace_back( NewObject );
 		}
@@ -381,6 +486,28 @@ namespace JSON
 		Stringify( Stream, Object, 1, true );
 
 		return Stream.str();
+	}
+
+	Object& Container::operator[]( const std::string& Key )
+	{
+		const auto Result = std::find_if( Tree.begin(), Tree.end(), [&Key]( Object* Item ) -> bool
+		{
+			return Item->Key == Key;
+		}
+		);
+
+		if( Result == Tree.end() )
+		{
+			Object Object;
+			Object.Owner = this;
+			Object.Key = Key;
+			Objects.emplace_back( Object );
+
+			Regenerate();
+			return Objects.back();
+		}
+
+		return **Result;
 	}
 
 	Container& Container::operator+=( const Container& Container )
@@ -398,6 +525,7 @@ namespace JSON
 	Object* Container::Allocate()
 	{
 		Object Object;
+		Object.Owner = this;
 		Objects.emplace_back( Object );
 
 		return &Objects.back();
@@ -502,15 +630,5 @@ namespace JSON
 				// TODO: Container isn't known and the container stores all the objects.
 			}
 		}
-	}
-
-	Object& Object::operator=( const Container& Container )
-	{
-		for( auto& Branch : Container.Tree )
-		{
-			CopyTree( Branch, this );
-		}
-
-		return *this;
 	}
 }

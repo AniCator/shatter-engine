@@ -29,81 +29,34 @@ namespace JSON
 		std::string Key;
 		std::string Value;
 		Object* Parent = nullptr;
+		Container* Owner = nullptr; // Pointer to the owning container.
 		Vector Objects;
 
-		void SetValue( const std::string& Key, const std::string& NewValue )
-		{
-			if( this->Key == Key )
-			{
-				Value = NewValue;
-				return;
-			}
-			
-			if( const auto & Object = this->operator[]( Key ) )
-			{
-				Object->Value = NewValue;
-			}
-		}
+		void SetValue( const std::string& Key, const std::string& NewValue );
+		const std::string& GetValue( const std::string& Key ) const;
 
-		const std::string& GetValue( const std::string& Key ) const
-		{
-			if( this->Key == Key )
-			{
-				return Value;
-			}
+		// Adds an object.
+		Object& Add();
 
-			if( const auto* Object = this->operator[]( Key ) )
-			{
-				return Object->Value;
-			}
+		Object* operator[]( const std::string& Key ) const;
+		Object& operator[]( const std::string& Key );
+		Object& operator[]( const Object& Object );
 
-			const static std::string EmptyString;
-			return EmptyString;
-		}
+		Object& operator=( const char* Value );
+		Object& operator=( const std::string& Value );
+		Object& operator=( const JSON::Container& Container );
 
-		Object* operator[]( const std::string& Search ) const
-		{
-			if( !Objects.empty() )
-			{
-				const auto Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
-					{
-						return Item->Key == Search;
-					}
-				);
-
-				if( Result == Objects.end() )
-				{
-					return nullptr;
-				}
-
-				return *Result;
-			}
-
-			return nullptr;
-		}
-
-		Object& operator=( const char* Value )
-		{
-			this->Value = std::string( Value );
-			return *this;
-		}
-
-		Object& operator=( const std::string& Value )
-		{
-			this->Value = Value;
-			return *this;
-		}
-
-		Object& operator=( const Container& Container );
+	protected:
+		Object* Find( const std::string& Key ) const;
 	};
 
-	inline Object* Find( const Vector& Objects, const std::string& Search )
+	inline Object* Find( const Vector& Objects, const std::string& Key )
 	{
 		if( !Objects.empty() )
 		{
-			const auto Result = std::find_if( Objects.begin(), Objects.end(), [Search] ( Object* Item ) -> bool
+			const auto Result = std::find_if( Objects.begin(), Objects.end(), [&Key] ( Object* Item ) -> bool
 				{
-					return Item->Key == Search;
+					return Item->Key == Key;
 				}
 			);
 
@@ -294,27 +247,10 @@ namespace JSON
 		std::list<Object> Objects;
 		Vector Tree;
 
-		Object& operator[]( const std::string& Search )
-		{
-			const auto Result = std::find_if( Tree.begin(), Tree.end(), [Search] ( Object* Item ) -> bool
-				{
-					return Item->Key == Search;
-				}
-			);
+		// Searches for an existing entry, creates a new one if it doesn't exist.
+		Object& operator[]( const std::string& Key );
 
-			if( Result == Tree.end() )
-			{
-				Object Object;
-				Object.Key = Search;
-				Objects.emplace_back( Object );
-
-				Regenerate();
-				return Objects.back();
-			}
-
-			return **Result;
-		}
-
+		// Appends together two containers.
 		Container& operator+=( const Container& Container );
 
 		Object* Allocate();
