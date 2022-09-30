@@ -445,7 +445,7 @@ void CProfiler::Display()
 
 		if( TimeEntries.size() > 0 )
 		{
-			if( Enabled )
+			if( Enabled && !Minimal )
 			{
 				ImGui::Text( "Time Entries" );
 				ImGui::Separator();
@@ -490,16 +490,23 @@ void CProfiler::Display()
 				{
 					if( Enabled )
 					{
-						ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Stutter/Low): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
-						ImGui::PushItemWidth( -1 );
+						if( Minimal )
+						{
+							ImGui::Text( "%i (%ims)", static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( Average ) );
+						}
+						else
+						{
+							ImGui::Text( "%s: %ims\nPeak: %ims\nFPS:%i\nFPS (Stutter/Low): %i", TimeEntryName, static_cast<int64_t>( Average ), Peak, static_cast<int64_t>( 1000.0f / Average ), static_cast<int64_t>( 1000.0f / static_cast<float>( Peak ) ) );
+							ImGui::PushItemWidth( -1 );
 
-						unsigned int ColorAverage = std::min( 255, std::max( 0, int( 2300.0f / Peak ) ) );
-						unsigned int Red = 255 - ColorAverage;
-						unsigned int Green = ColorAverage;
+							unsigned int ColorAverage = std::min( 255, std::max( 0, int( 2300.0f / Peak ) ) );
+							unsigned int Red = 255 - ColorAverage;
+							unsigned int Green = ColorAverage;
 
-						ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( Red, Green, 32, 255 ) );
-						ImGui::PlotHistogram( "", TimeValues, static_cast<int>( TimeWindow ), static_cast<int>( Buffer.Offset() ), "Frametime", 0.0f, 33.3f, ImVec2( 500.0f, 100.0f ) );
-						ImGui::PopStyleColor();
+							ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( Red, Green, 32, 255 ) );
+							ImGui::PlotHistogram( "", TimeValues, static_cast<int>( TimeWindow ), static_cast<int>( Buffer.Offset() ), "Frametime", 0.0f, 33.3f, ImVec2( 500.0f, 100.0f ) );
+							ImGui::PopStyleColor();
+						}
 					}
 					else
 					{
@@ -508,167 +515,188 @@ void CProfiler::Display()
 				}
 			}
 
-			
-			ImGui::Text( "Memory Usage: %s (%s MB)", GetMemoryUsageAsString().c_str(), std::to_string( GetMemoryUsageInMegaBytes() ).c_str() );
-			ImGui::Text( "Largest Allocation: %s", BytesToString( LargestAllocation ).c_str() );
-			constexpr size_t MemoryWindow = 4096;
-			static RingBuffer<size_t, MemoryWindow> MemoryBuffer;
-
-			MemoryBuffer.Insert( GetMemoryUsageInMegaBytes() );
-
-			static std::vector<float> MemoryValues;
-			MemoryValues.clear();
-			MemoryValues.resize( MemoryWindow );
-
-			size_t MemoryCeiling = 0;
-			for( size_t MemoryIndex = 0; MemoryIndex < MemoryWindow; MemoryIndex++ )
+			if( !Minimal )
 			{
-				const auto& BufferValue = MemoryBuffer.Get( MemoryIndex );
-				MemoryValues[MemoryIndex] = static_cast<float>( BufferValue );
+				ImGui::Text( "Memory Usage: %s (%s MB)", GetMemoryUsageAsString().c_str(), std::to_string( GetMemoryUsageInMegaBytes() ).c_str() );
+				ImGui::Text( "Largest Allocation: %s", BytesToString( LargestAllocation ).c_str() );
+				constexpr size_t MemoryWindow = 4096;
+				static RingBuffer<size_t, MemoryWindow> MemoryBuffer;
 
-				MemoryCeiling = std::max( MemoryCeiling, BufferValue );
-			}
+				MemoryBuffer.Insert( GetMemoryUsageInMegaBytes() );
+
+				static std::vector<float> MemoryValues;
+				MemoryValues.clear();
+				MemoryValues.resize( MemoryWindow );
+
+				size_t MemoryCeiling = 0;
+				for( size_t MemoryIndex = 0; MemoryIndex < MemoryWindow; MemoryIndex++ )
+				{
+					const auto& BufferValue = MemoryBuffer.Get( MemoryIndex );
+					MemoryValues[MemoryIndex] = static_cast<float>( BufferValue );
+
+					MemoryCeiling = std::max( MemoryCeiling, BufferValue );
+				}
 
 #ifdef _WIN32
-			// Use the working set peak on Windows.
-			MemoryCeiling = BytesToMegaBytes( GetMemoryCounters().PeakWorkingSetSize );
+				// Use the working set peak on Windows.
+				MemoryCeiling = BytesToMegaBytes( GetMemoryCounters().PeakWorkingSetSize );
 #endif
 
-			ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( 64, 128, 200, 255 ) );
-			ImGui::PlotHistogram( "", MemoryValues.data(), static_cast<int>( MemoryWindow ), static_cast<int>( MemoryBuffer.Offset() ), "Memory Usage (MB)", 0.0f, static_cast<float>( MemoryCeiling ), ImVec2( 500.0f, 100.0f ) );
-			ImGui::PopStyleColor();
+				ImGui::PushStyleColor( ImGuiCol_PlotHistogram, IM_COL32( 64, 128, 200, 255 ) );
+				ImGui::PlotHistogram( "", MemoryValues.data(), static_cast<int>( MemoryWindow ), static_cast<int>( MemoryBuffer.Offset() ), "Memory Usage (MB)", 0.0f, static_cast<float>( MemoryCeiling ), ImVec2( 500.0f, 100.0f ) );
+				ImGui::PopStyleColor();
 
-			ImGui::Text( "" );
-			
-			PlotPerformance();
+				ImGui::Text( "" );
+
+				PlotPerformance();
+			}
 		}
 
 		if( Enabled )
 		{
-			if( !MemoryCounters.empty() )
+			if( Minimal )
 			{
-				ImGui::Text( "\nMemory" );
-				ImGui::Separator();
-
-				// First pass, check how much memory we've accounted for.
-				size_t AccountedBytes = MemoryStartBytes;
-				for( const auto& Counter : MemoryCounters )
-				{
-					AccountedBytes += Counter.second;
-				}
-
-				const auto& Unaccounted = BytesToString( CurrentMemoryUsageBytes - AccountedBytes );
-				ImGui::Text( "Unaccounted: %s", Unaccounted.c_str() );
-
-				const auto& Accounted = BytesToString( AccountedBytes );
-				ImGui::Text( "Accounted: %s", Accounted.c_str() );
-
-				for( const auto& Counter : MemoryCounters )
-				{
-					const char* CounterName = Counter.first.String().c_str();
-					const auto& CounterValue = BytesToString( Counter.second );
-					ImGui::Text( "%s: %s", CounterName, CounterValue.c_str() );
-				}
-
-				if( MemoryCounters.size() > MemoryCounterGap )
-				{
-					MemoryCounterGap = MemoryCounters.size();
-				}
-
-				const size_t CounterDelta = MemoryCounterGap - MemoryCounters.size();
-				for( size_t CounterIndex = 0; CounterIndex < CounterDelta; CounterIndex++ )
-				{
-					ImGui::Text( "" );
-				}
-			}
-
-			if( TimeCounters.size() > 0 || TimeCountersFrame.size() > 0 )
-			{
-				ImGui::Text( "\nCounters" );
-				ImGui::Separator();
-
-				for( auto& TimeCounter : TimeCounters )
-				{
-					const char* TimeCounterName = TimeCounter.first.String().c_str();
-					const uint64_t& TimeCounterValue = TimeCounter.second;
-					ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
-				}
-
-				if( TimeCounters.size() > CounterGap )
-				{
-					CounterGap = TimeCounters.size();
-				}
-
-				size_t CounterDelta = CounterGap - TimeCounters.size();
-				for( size_t CounterIndex = 0; CounterIndex < CounterDelta; CounterIndex++ )
-				{
-					ImGui::Text( "" );
-				}
-
+				// Display just the draw calls.
+				static NameSymbol DrawCallName = "Draw Calls";
 				for( auto& TimeCounter : TimeCountersFrame )
 				{
+					if( TimeCounter.first != DrawCallName )
+						continue;
+
 					const char* TimeCounterName = TimeCounter.first.String().c_str();
 					const uint64_t& TimeCounterValue = TimeCounter.second;
 					ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
-				}
 
-				if( TimeCountersFrame.size() > CounterGapFrame )
-				{
-					CounterGapFrame = TimeCountersFrame.size();
-				}
-
-				size_t CounterFrameDelta = CounterGapFrame - TimeCountersFrame.size();
-				for( size_t CounterIndex = 0; CounterIndex < CounterFrameDelta; CounterIndex++ )
-				{
-					ImGui::Text( "" );
+					break;
 				}
 			}
-
-			if( DebugMessages.size() > 0 )
+			else
 			{
-				ImGui::Text( "\nMessages" );
-				ImGui::Separator();
-
-				for( auto& DebugMessage : DebugMessages )
+				if( !MemoryCounters.empty() )
 				{
-					const char* DebugMessageName = DebugMessage.first.c_str();
-					const char* DebugMessageBody = DebugMessage.second.c_str();
-					ImGui::Text( "%s: %s", DebugMessageName, DebugMessageBody );
-				}
-			}
+					ImGui::Text( "\nMemory" );
+					ImGui::Separator();
 
-			auto& InputInterface = CInputLocator::Get();
-			if( auto* Input = dynamic_cast<CInput*>( &InputInterface ) )
-			{
-				ImGui::Separator();
-
-				auto* GamepadButtons = Input->GetGamepad();
-				for( EGamepadType Index = 0; Index < MaximumGamepadButtons; Index++ )
-				{
-					const auto& Button = GamepadButtons[Index];
-					if( Button.Action == EAction::Press )
+					// First pass, check how much memory we've accounted for.
+					size_t AccountedBytes = MemoryStartBytes;
+					for( const auto& Counter : MemoryCounters )
 					{
-						ImGui::Text( "%s", GamepadLabels[Index] );
+						AccountedBytes += Counter.second;
+					}
+
+					const auto& Unaccounted = BytesToString( CurrentMemoryUsageBytes - AccountedBytes );
+					ImGui::Text( "Unaccounted: %s", Unaccounted.c_str() );
+
+					const auto& Accounted = BytesToString( AccountedBytes );
+					ImGui::Text( "Accounted: %s", Accounted.c_str() );
+
+					for( const auto& Counter : MemoryCounters )
+					{
+						const char* CounterName = Counter.first.String().c_str();
+						const auto& CounterValue = BytesToString( Counter.second );
+						ImGui::Text( "%s: %s", CounterName, CounterValue.c_str() );
+					}
+
+					if( MemoryCounters.size() > MemoryCounterGap )
+					{
+						MemoryCounterGap = MemoryCounters.size();
+					}
+
+					const size_t CounterDelta = MemoryCounterGap - MemoryCounters.size();
+					for( size_t CounterIndex = 0; CounterIndex < CounterDelta; CounterIndex++ )
+					{
+						ImGui::Text( "" );
 					}
 				}
 
-				auto* Keys = Input->GetKeys();
-				for( EKeyType Index = 0; Index < MaximumKeyboardInputs; Index++ )
+				if( TimeCounters.size() > 0 || TimeCountersFrame.size() > 0 )
 				{
-					const auto& Key = Keys[Index];
-					if( Key.Action == EAction::Press )
+					ImGui::Text( "\nCounters" );
+					ImGui::Separator();
+
+					for( auto& TimeCounter : TimeCounters )
 					{
-						ImGui::Text( "Key %i", Index );
+						const char* TimeCounterName = TimeCounter.first.String().c_str();
+						const uint64_t& TimeCounterValue = TimeCounter.second;
+						ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+					}
+
+					if( TimeCounters.size() > CounterGap )
+					{
+						CounterGap = TimeCounters.size();
+					}
+
+					size_t CounterDelta = CounterGap - TimeCounters.size();
+					for( size_t CounterIndex = 0; CounterIndex < CounterDelta; CounterIndex++ )
+					{
+						ImGui::Text( "" );
+					}
+
+					for( auto& TimeCounter : TimeCountersFrame )
+					{
+						const char* TimeCounterName = TimeCounter.first.String().c_str();
+						const uint64_t& TimeCounterValue = TimeCounter.second;
+						ImGui::Text( "%s: %i", TimeCounterName, TimeCounterValue );
+					}
+
+					if( TimeCountersFrame.size() > CounterGapFrame )
+					{
+						CounterGapFrame = TimeCountersFrame.size();
+					}
+
+					size_t CounterFrameDelta = CounterGapFrame - TimeCountersFrame.size();
+					for( size_t CounterIndex = 0; CounterIndex < CounterFrameDelta; CounterIndex++ )
+					{
+						ImGui::Text( "" );
 					}
 				}
 
-				auto* Mouse = Input->GetMouse();
-				for( EMouseType Index = 0; Index < MaximumMouseButtons; Index++ )
+				if( DebugMessages.size() > 0 )
 				{
-					const auto& Button = Mouse[Index];
-					if( Button.Action == EAction::Press )
+					ImGui::Text( "\nMessages" );
+					ImGui::Separator();
+
+					for( auto& DebugMessage : DebugMessages )
 					{
-						ImGui::Text( "%s", MouseLabels[Index] );
+						const char* DebugMessageName = DebugMessage.first.c_str();
+						const char* DebugMessageBody = DebugMessage.second.c_str();
+						ImGui::Text( "%s: %s", DebugMessageName, DebugMessageBody );
+					}
+				}
+
+				auto& InputInterface = CInputLocator::Get();
+				if( auto* Input = dynamic_cast<CInput*>( &InputInterface ) )
+				{
+					ImGui::Separator();
+
+					auto* GamepadButtons = Input->GetGamepad();
+					for( EGamepadType Index = 0; Index < MaximumGamepadButtons; Index++ )
+					{
+						const auto& Button = GamepadButtons[Index];
+						if( Button.Action == EAction::Press )
+						{
+							ImGui::Text( "%s", GamepadLabels[Index] );
+						}
+					}
+
+					auto* Keys = Input->GetKeys();
+					for( EKeyType Index = 0; Index < MaximumKeyboardInputs; Index++ )
+					{
+						const auto& Key = Keys[Index];
+						if( Key.Action == EAction::Press )
+						{
+							ImGui::Text( "Key %i", Index );
+						}
+					}
+
+					auto* Mouse = Input->GetMouse();
+					for( EMouseType Index = 0; Index < MaximumMouseButtons; Index++ )
+					{
+						const auto& Button = Mouse[Index];
+						if( Button.Action == EAction::Press )
+						{
+							ImGui::Text( "%s", MouseLabels[Index] );
+						}
 					}
 				}
 			}

@@ -75,6 +75,9 @@ public:
 	static size_t GetMemoryUsageInGigaBytes();
 	static std::string GetMemoryUsageAsString();
 
+	// Reduces the amount of profiling information shown on screen.
+	bool Minimal = false;
+
 private:
 	std::map<NameSymbol, RingBuffer<ProfileTimeEntry, TimeWindow>> TimeEntries;
 
