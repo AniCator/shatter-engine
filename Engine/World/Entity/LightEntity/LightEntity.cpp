@@ -1,7 +1,9 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "LightEntity.h"
 
+#include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/UserInterface.h>
+#include <Engine/Display/Window.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/World/Level/Level.h>
 
@@ -20,11 +22,45 @@ void LightEntity::Construct()
 		return;
 
 	Lights[LightIndex] = Information;
+
+	// Check if the radius is large enough.
+	if( Information.Direction.w <= 0.1f )
+		return;
+
+	// The light isn't bright enough.
+	if( Information.Color.w < 400.0f )
+		return;
+
+	CMesh* Mesh = CAssets::Get().Meshes.Find( "primitive_cube" );
+	if( !Mesh )
+		return;
+
+	CShader* Shader = CAssets::Get().Shaders.Find( "light_object" );
+	if( !Shader )
+		return;
+
+	Renderable = new CRenderable();
+	Renderable->SetMesh( Mesh );
+	Renderable->SetShader( Shader );
+	auto& RenderData = Renderable->GetRenderData();
+	RenderData.Color = Math::FromGLM( Information.Color );
+	RenderData.Transform.SetPosition( { Information.Position.x, Information.Position.y, Information.Position.z } );
+	RenderData.Transform.SetSize( Information.Direction.w * 0.1f );
+	RenderData.WorldBounds = {
+		RenderData.Transform.GetPosition() - RenderData.Transform.GetSize() * 0.5f, // Minimum
+		RenderData.Transform.GetPosition() + RenderData.Transform.GetSize() * 0.5f // Maximum
+	};
 }
 
 void LightEntity::Tick()
 {
 	CPointEntity::Tick();
+
+	if( !Renderable )
+		return;
+
+	CRenderer& Renderer = CWindow::Get().GetRenderer();
+	Renderer.QueueRenderable( Renderable );
 
 	/*if( Information.Position.w == 1.0f )
 	{
@@ -58,6 +94,8 @@ void LightEntity::Frame()
 void LightEntity::Destroy()
 {
 	CPointEntity::Destroy();
+
+	delete Renderable;
 }
 
 void LightEntity::Reload()
@@ -66,6 +104,9 @@ void LightEntity::Reload()
 
 	const auto Position = Vector3D( Information.Position.x, Information.Position.y, Information.Position.z );
 	Transform.SetPosition( Position );
+	
+	// Load the light object shader that is used to visualize lights.
+	CAssets::Get().CreateNamedShader( "light_object", "Shaders/default", "Shaders/LightObject" );
 }
 
 void LightEntity::Load( const JSON::Vector& Objects )

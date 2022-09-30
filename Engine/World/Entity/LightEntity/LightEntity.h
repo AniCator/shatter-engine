@@ -5,6 +5,8 @@
 #include <Engine/Display/Rendering/Light/Light.h>
 #include <Engine/Display/Rendering/StorageBuffer.h>
 
+class CRenderable;
+
 class LightEntity : public CPointEntity
 {
 public:
@@ -43,6 +45,8 @@ public:
 protected:
 	Light Information;
 	int32_t LightIndex = -1;
+
+	CRenderable* Renderable = nullptr;
 
 	static constexpr int32_t LightMaximum = 64;
 	static Light Lights[LightMaximum];
