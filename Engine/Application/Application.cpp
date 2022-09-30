@@ -858,7 +858,11 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 			}
 		}
 
-		if( strcmp( argv[Index], "-tools" ) == 0 )
+		if( strcmp( argv[Index], "-profiler" ) == 0 )
+		{
+			CProfiler::Get().SetEnabled( true );
+		}
+		else if( strcmp( argv[Index], "-tools" ) == 0 )
 		{
 			EnableTools( true );
 		}
@@ -1381,13 +1385,17 @@ void CApplication::Update()
 		}
 	}
 
+	// Reset the accumulator to one tick if we're running particularily slow.
 	if( GameAccumulator > ( MaximumGameTime * 4 ) )
 	{
 		GameAccumulator = MaximumGameTime;
 	}
 
+	int64_t TickCounter = 0; // Used for tick profiling.
 	while( GameAccumulator > MaximumGameTime )
 	{
+		TickCounter++;
+
 		GameAccumulator -= MaximumGameTime;
 
 		if( GameAccumulator < 0 )
@@ -1463,12 +1471,21 @@ void CApplication::Update()
 		}
 	}
 
+	if( ExecuteTicks )
+	{
+		CProfiler& Profiler = CProfiler::Get();
+		const auto TickEntry = ProfileTimeEntry( "Ticks Performed", TickCounter );
+		Profiler.AddCounterEntry( TickEntry, false, true );
+	}
+
 	if( !Frozen && ExecuteTicks )
 	{
 		for( const auto& PostTick : Ticks.Functions[AdditionalTick::PostTick] )
 		{
 			PostTick();
 		}
+
+		GameTimer.Start();
 	}
 
 	if( Frozen )
@@ -1590,6 +1607,12 @@ bool CApplication::UpdateFrame()
 
 	// Execute all commands and swap the front and back buffer.
 	MainWindow.SwapFrame();
+
+	if( !UnboundedFramerate )
+	{
+		// We're using the frame limiter, time for additional power saving.
+		std::this_thread::sleep_for( std::chrono::milliseconds( 1 ) );
+	}
 
 	return true;
 }
