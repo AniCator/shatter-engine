@@ -28,6 +28,7 @@ struct FRenderData
 
 	bool ShouldRender = false;
 	bool DisableRender = false;
+	bool DoubleSided = false;
 };
 
 struct FRenderDataInstanced : public FRenderData
@@ -50,6 +51,8 @@ public:
 
 	CTexture* GetTexture( ETextureSlot Slot );
 	void SetTexture( CTexture* Texture, ETextureSlot Slot );
+
+	void ApplyMaterial();
 
 	UniformMap GetUniforms() const
 	{

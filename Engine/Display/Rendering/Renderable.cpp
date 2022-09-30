@@ -146,6 +146,14 @@ void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRend
 			Mesh->Prepare( DrawMode );
 		}
 
+		if( RenderData.DoubleSided )
+		{
+			// Render the mesh twice with different winding directions.
+			glCullFace( GL_FRONT );
+			Mesh->Draw( DrawMode );
+			glCullFace( GL_BACK );
+		}
+
 		Mesh->Draw( DrawMode );
 	}
 }

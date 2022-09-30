@@ -1345,7 +1345,7 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 			else if ( Type == Generic )
 			{
 				FGenericAssetPayload Payload;
-				Payload.Type = EAsset::Sequence;
+				Payload.Type = EAsset::Generic;
 				Payload.Name = Name;
 
 				// Add the sub-type.

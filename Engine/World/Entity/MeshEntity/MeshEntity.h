@@ -13,6 +13,7 @@ class CShader;
 class CTexture;
 class CRenderable;
 class CBody;
+class MaterialAsset;
 
 class CMeshEntity : public CPointEntity
 {
@@ -71,6 +72,7 @@ public:
 	CMesh* CollisionMesh;
 	CShader* Shader;
 	std::vector<CTexture*> Textures;
+	MaterialAsset* Material = nullptr;
 	CRenderable* Renderable;
 
 	Vector4D Color = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
@@ -81,6 +83,7 @@ public:
 	bool ShouldProject = false;
 	std::string ShaderName;
 	std::vector<std::string> TextureNames;
+	std::string MaterialName;
 
 	bool Contact;
 	bool Visible;

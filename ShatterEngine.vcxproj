@@ -183,7 +183,9 @@
     <ClCompile Include="Engine\Display\Rendering\Camera.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Culling.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Framebuffer.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\FramebufferTexture.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Light\Light.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Material.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Mesh.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Particle\Particle.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Particle\ParticleEmitter.cpp" />
@@ -295,7 +297,9 @@
     <ClInclude Include="Engine\Display\Rendering\Camera.h" />
     <ClInclude Include="Engine\Display\Rendering\Culling.h" />
     <ClInclude Include="Engine\Display\Rendering\Framebuffer.h" />
+    <ClInclude Include="Engine\Display\Rendering\FramebufferTexture.h" />
     <ClInclude Include="Engine\Display\Rendering\Light\Light.h" />
+    <ClInclude Include="Engine\Display\Rendering\Material.h" />
     <ClInclude Include="Engine\Display\Rendering\Mesh.h" />
     <ClInclude Include="Engine\Display\Rendering\Particle\Particle.h" />
     <ClInclude Include="Engine\Display\Rendering\Particle\ParticleEmitter.h" />
@@ -350,6 +354,7 @@
     <ClInclude Include="Engine\Utility\Flag.h" />
     <ClInclude Include="Engine\Utility\Gizmo.h" />
     <ClInclude Include="Engine\Utility\HandlePool.h" />
+    <ClInclude Include="Engine\Utility\Identifier.h" />
     <ClInclude Include="Engine\Utility\Iterate.h" />
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />

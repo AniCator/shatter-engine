@@ -5,6 +5,7 @@
 
 #include <Engine/Animation/Animator.h>
 #include <Engine/Configuration/Configuration.h>
+#include <Engine/Display/Rendering/Material.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Physics/Physics.h>
@@ -40,20 +41,35 @@ CMeshEntity::CMeshEntity()
 
 	Color = Vector4D( 1.0f, 1.0f, 1.0f, 1.0f );
 
-	Inputs["PlayAnimation"] = [&] ( CEntity* Origin )
+	Inputs["PlayAnimation"] = [this] ( CEntity* Origin )
 	{
 		SetAnimation( AnimationInstance.CurrentAnimation );
 
 		return true;
 	};
 
-	Inputs["LoopAnimation"] = [&] ( CEntity* Origin )
+	Inputs["LoopAnimation"] = [this] ( CEntity* Origin )
 	{
 		SetAnimation( AnimationInstance.CurrentAnimation, true );
 
 		return true;
 	};
 
+	Inputs["Enable"] = [this]( CEntity* Origin )
+	{
+		SetVisible( true );
+
+		Send( "OnEnable" );
+		return true;
+	};
+
+	Inputs["Disable"] = [this]( CEntity* Origin )
+	{
+		SetVisible( false );
+
+		Send( "OnDisable" );
+		return true;
+	};
 }
 
 CMeshEntity::CMeshEntity( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTransform& Transform ) : CPointEntity()
@@ -270,6 +286,8 @@ void CMeshEntity::Destroy()
 		PhysicsBody = nullptr;
 	}
 
+	delete Renderable;
+
 	CPointEntity::Destroy();
 }
 
@@ -450,6 +468,10 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		{
 			Extract( Property->Value, MaximumRenderDistance );
 		}
+		else if( Property->Key == "material" && Property->Value.length() > 0 )
+		{
+			MaterialName = Property->Value;
+		}
 	}
 
 	if( TextureNames.empty() )
@@ -485,6 +507,8 @@ void CMeshEntity::Reload()
 	{
 		Textures.emplace_back( Assets.FindTexture( TextureName ) );
 	}
+
+	Material = Assets.FindAsset<MaterialAsset>( MaterialName );
 }
 
 void CMeshEntity::Import( CData& Data )
@@ -494,6 +518,7 @@ void CMeshEntity::Import( CData& Data )
 	DataString::Decode( Data, MeshName );
 	DataString::Decode( Data, CollisionMeshName );
 	DataString::Decode( Data, ShaderName );
+	DataString::Decode( Data, MaterialName );
 
 	size_t Size = 0;
 	Data >> Size;
@@ -523,6 +548,7 @@ void CMeshEntity::Export( CData& Data )
 	DataString::Encode( Data, MeshName );
 	DataString::Encode( Data, CollisionMeshName );
 	DataString::Encode( Data, ShaderName );
+	DataString::Encode( Data, MaterialName );
 	
 	size_t Size = TextureNames.size();
 	Data << Size;
@@ -678,7 +704,34 @@ void CMeshEntity::ConstructRenderable()
 		return;
 
 	Renderable = new CRenderable();
+
+	// Configure the render data.
+	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+	RenderData.Transform = Transform;
+	RenderData.Color = Color;
+	RenderData.WorldBounds = WorldBounds;
+
+	// Set up animation data.
+	const auto& Set = Mesh->GetAnimationSet();
+	const auto& Skeleton = Set.Skeleton;
+	if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
+	{
+		const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
+		SetAnimation( FirstAnimation, AnimationInstance.LoopAnimation );
+	}
+
+	AnimationInstance.Mesh = Mesh;
 	Renderable->SetMesh( Mesh );
+
+	// Check if we have a material asset set.
+	if( Material )
+	{
+		// Apply the material.
+		Material->Material.Apply( Renderable );
+
+		// Ignore further shading and texturing configuration steps.
+		return;
+	}
 
 	if( Shader )
 	{
@@ -703,21 +756,6 @@ void CMeshEntity::ConstructRenderable()
 			}
 		}
 	}
-
-	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
-	RenderData.Transform = Transform;
-	RenderData.Color = Color;
-	RenderData.WorldBounds = WorldBounds;
-
-	const auto& Set = Mesh->GetAnimationSet();
-	const auto& Skeleton = Set.Skeleton;
-	if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
-	{
-		const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
-		SetAnimation( FirstAnimation, AnimationInstance.LoopAnimation );
-	}
-
-	AnimationInstance.Mesh = Mesh;
 }
 
 void CMeshEntity::ConstructPhysics()
