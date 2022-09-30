@@ -80,7 +80,12 @@ uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables )
 	if( Renderables.size() < 1 )
 		return 0;
 
+#ifdef OptickBuild
+	// Optick can't use the run-time string, at least not in whatever way it is being provided here.
+	OptickEvent();
+#else
 	Profile( PassName.c_str() );
+#endif
 
 	FrustumCull( Camera, Renderables );
 
@@ -101,7 +106,12 @@ uint32_t CRenderPass::Render( const std::vector<CRenderable*>& Renderables, std:
 	if( Renderables.size() < 1 )
 		return 0;
 
+#ifdef OptickBuild
+	// Optick can't use the run-time string, at least not in whatever way it is being provided here.
+	OptickEvent();
+#else
 	Profile( PassName.c_str() );
+#endif
 
 	FrustumCull( Camera, Renderables );
 
@@ -250,6 +260,12 @@ void CRenderPass::Setup( CRenderable* Renderable, std::unordered_map<std::string
 			if( PreviousCameraDirectionLocation > -1 )
 			{
 				glUniform3fv( PreviousCameraDirectionLocation, 1, PreviousCameraSetup.CameraDirection.Base() );
+			}
+
+			const GLint CameraNearLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraNear" );
+			if( CameraNearLocation > -1 )
+			{
+				glUniform1fv( CameraNearLocation, 1, &CameraSetup.NearPlaneDistance );
 			}
 
 			const GLint CameraFarLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraFar" );
