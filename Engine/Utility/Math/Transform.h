@@ -57,6 +57,11 @@ public:
 
 	void Update();
 
+	bool IsDirty() const
+	{
+		return ShouldUpdate;
+	}
+
 private:
 	void Dirty();
 
