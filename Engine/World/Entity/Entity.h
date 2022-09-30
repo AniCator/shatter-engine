@@ -6,6 +6,7 @@
 #include <functional>
 
 #include <Engine/Utility/DataString.h>
+#include <Engine/Utility/Identifier.h>
 #include <Engine/Utility/Serialize.h>
 #include <Engine/Utility/Structures/JSON.h>
 #include <Engine/Utility/Structures/Name.h>
@@ -45,19 +46,6 @@ struct EntityUID
 
 	static EntityUID Create();
 	static EntityUID None();
-};
-
-/// Struct that can store a unique identifier.
-struct UniqueIdentifier
-{
-	char ID[37] = "00000000-0000-0000-0000-000000000000";
-
-	void Random();
-	void Set( const char* Identifier );
-	bool Valid() const;
-
-	friend CData& operator<<( CData& Data, const UniqueIdentifier& Identifier );
-	friend CData& operator>>( CData& Data, UniqueIdentifier& Identifier );
 };
 
 struct FMessage

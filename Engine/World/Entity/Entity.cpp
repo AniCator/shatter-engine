@@ -295,49 +295,48 @@ void CEntity::Relink()
 
 void CEntity::Send( const char* Output, CEntity* Origin )
 {
-	if( Level )
-	{
-		if( Outputs.find( Output ) != Outputs.end() )
-		{
-			if( DebugEntityIO )
-				Log::Event( "Broadcasting output \"%s\".\n", Output );
+	if( !Level )
+		return;
 
-			for( auto& Message : Outputs[Output] )
-			{
-				const auto Entity = Level->GetWorld()->Find( Message.TargetID );
-				if( Entity )
-				{
-					for( const auto& Input : Message.Inputs )
-					{
-						Entity->Receive( Input.c_str(), Origin );
-					}
-				}
-			}
+	const auto Iterator = Outputs.find( Output );
+	if( Iterator == Outputs.end() )
+		return;
+
+	if( DebugEntityIO )
+		Log::Event( "Broadcasting output \"%s\".\n", Output );
+
+	for( auto& Message : Outputs[Output] )
+	{
+		const auto Entity = Level->GetWorld()->Find( Message.TargetID );
+		if( !Entity )
+			continue;
+
+		for( const auto& Input : Message.Inputs )
+		{
+			Entity->Receive( Input.c_str(), Origin );
 		}
 	}
 }
 
 bool CEntity::Receive( const char* Input, CEntity* Origin )
 {
-	if( Inputs.find( Input ) != Inputs.end() )
-	{
-		if( DebugEntityIO )
-		{
-			if( Origin )
-			{
-				Log::Event( "Receiving input \"%s\" on entity \"%s\" from \"%s\".\n", Input, Name.String().c_str(), Origin->Name.String().c_str() );
-			}
-			else
-			{
-				Log::Event( "Receiving input \"%s\" on entity \"%s\" from unknown source.\n", Input, Name.String().c_str() );
-			}
-		}
+	const auto Iterator = Inputs.find( Input );
+	if( Iterator == Inputs.end() )
+		return true; // By default we pretend we were succesful, even if the input wasn't found.
 
-		return Inputs[Input]( Origin );
+	if( DebugEntityIO )
+	{
+		if( Origin )
+		{
+			Log::Event( "Receiving input \"%s\" on entity \"%s\" from \"%s\".\n", Input, Name.String().c_str(), Origin->Name.String().c_str() );
+		}
+		else
+		{
+			Log::Event( "Receiving input \"%s\" on entity \"%s\" from unknown source.\n", Input, Name.String().c_str() );
+		}
 	}
 
-	// By default we assume we were succesful.
-	return true;
+	return ( *Iterator ).second( Origin );
 }
 
 void CEntity::Track( const CEntity* Entity )
@@ -574,6 +573,14 @@ bool UniqueIdentifier::Valid() const
 	}
 
 	return true;
+}
+
+bool UniqueIdentifier::operator==( const UniqueIdentifier& B )
+{
+	if( std::strcmp( ID, B.ID ) == 0 )
+		return true;
+
+	return false;
 }
 
 CData& operator<<( CData& Data, const UniqueIdentifier& Identifier )
