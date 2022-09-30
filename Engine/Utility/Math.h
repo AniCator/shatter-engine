@@ -70,6 +70,33 @@ inline bool ExclusiveComparison( const Vector4D& A, const Vector4D& B )
 	&& ExclusiveComparison( A.W, B.W );
 }
 
+template<typename T>
+bool ExclusiveComparisonFlipped( const T& A, const T& B )
+{
+	return A > B && !( A < B );
+}
+
+inline bool ExclusiveComparisonFlipped( const Vector2D& A, const Vector2D& B )
+{
+	return ExclusiveComparisonFlipped( A.X, B.X )
+		&& ExclusiveComparisonFlipped( A.Y, B.Y );
+}
+
+inline bool ExclusiveComparisonFlipped( const Vector3D& A, const Vector3D& B )
+{
+	return ExclusiveComparisonFlipped( A.X, B.X )
+		&& ExclusiveComparisonFlipped( A.Y, B.Y )
+		&& ExclusiveComparisonFlipped( A.Z, B.Z );
+}
+
+inline bool ExclusiveComparisonFlipped( const Vector4D& A, const Vector4D& B )
+{
+	return ExclusiveComparisonFlipped( A.X, B.X )
+		&& ExclusiveComparisonFlipped( A.Y, B.Y )
+		&& ExclusiveComparisonFlipped( A.Z, B.Z )
+		&& ExclusiveComparisonFlipped( A.W, B.W );
+}
+
 namespace Math
 {
 	inline float Pi()

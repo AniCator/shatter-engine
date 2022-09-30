@@ -348,7 +348,7 @@ void CRenderer::DrawQueuedRenderables()
 		glEnable( GL_CULL_FACE );
 	}
 
-	auto SortRenderables = [&] ( CRenderable* A, CRenderable* B ) {
+	auto SortRenderables = [] ( CRenderable* A, CRenderable* B ) {
 		const auto& RenderDataA = A->GetRenderData();
 		const auto& RenderDataB = B->GetRenderData();
 
@@ -359,11 +359,30 @@ void CRenderer::DrawQueuedRenderables()
 		return false;
 	};
 
+	auto SortRenderablesTranslucent = [this]( CRenderable* A, CRenderable* B ) {
+		const auto& RenderDataA = A->GetRenderData();
+		const auto& RenderDataB = B->GetRenderData();
+
+		SORT( RenderDataA, RenderDataB, ShaderProgram );
+		SORT( RenderDataA, RenderDataB, IndexBufferObject );
+		SORT( RenderDataA, RenderDataB, VertexBufferObject );
+
+		// Distance sorting.
+		const auto DistanceA = Camera.GetCameraPosition().DistanceSquared( RenderDataA.Transform.GetPosition() );
+		const auto DistanceB = Camera.GetCameraPosition().DistanceSquared( RenderDataB.Transform.GetPosition() );
+		if( DistanceA != DistanceB )
+		{
+			return ExclusiveComparisonFlipped( DistanceA, DistanceB );
+		}
+
+		return false;
+	};
+
 	// Create the render queue for this frame.
 	UpdateQueue();
 
 	std::sort( RenderQueueOpaque.begin(), RenderQueueOpaque.end(), SortRenderables );
-	std::sort( RenderQueueTranslucent.begin(), RenderQueueTranslucent.end(), SortRenderables );
+	std::sort( RenderQueueTranslucent.begin(), RenderQueueTranslucent.end(), SortRenderablesTranslucent );
 
 	Framebuffer.Prepare();
 
