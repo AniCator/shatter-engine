@@ -58,7 +58,7 @@ struct QueryTask : public Task
 			Mutex.lock();
 		}
 
-		OptickEvent("Asynchronous Physics Queries");
+		OptickCategory( "Asynchronous Physics Queries", Optick::Category::Physics );
 
 		auto* Testable = Scene.get();
 		for( auto& Request : *Requests )
@@ -190,8 +190,6 @@ public:
 
 	void Tick()
 	{
-		OptickCategory( "Physics Tick", Optick::Category::Physics );
-
 		Guard();
 		IsSimulating = false;
 
@@ -315,7 +313,7 @@ public:
 	{
 		const auto BodyUpdate = std::make_shared<LambdaTask>( [this, StaticBodiesToQuery, DynamicBodiesToQuery] ()
 			{
-				OptickEvent( "Physics Body Update" );
+				OptickCategory( "Physics Body Update", Optick::Category::Physics );
 
 				WaitForQueryWorkers();
 
