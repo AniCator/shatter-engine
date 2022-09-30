@@ -222,52 +222,52 @@ void CEntity::Traverse()
 
 void CEntity::Link( const JSON::Vector& Objects )
 {
-	if( Level )
+	if( !Level )
+		return;
+
+	for( auto Property : Objects )
 	{
-		for( auto Property : Objects )
+		if( Property->Key != "outputs" )
+			continue;
+		
+		for( auto Output : Property->Objects )
 		{
-			if( Property->Key == "outputs" )
+			std::string OutputName;
+			std::string TargetName;
+			std::string InputName;
+
+			for( auto OutputProperty : Output->Objects )
 			{
-				for( auto Output : Property->Objects )
+				if( OutputProperty->Key == "name" )
 				{
-					std::string OutputName;
-					std::string TargetName;
-					std::string InputName;
+					OutputName = OutputProperty->Value;
+				}
+				else if( OutputProperty->Key == "target" )
+				{
+					TargetName = OutputProperty->Value;
+				}
+				else if( OutputProperty->Key == "input" )
+				{
+					InputName = OutputProperty->Value;
+				}
+			}
 
-					for( auto OutputProperty : Output->Objects )
-					{
-						if( OutputProperty->Key == "name" )
-						{
-							OutputName = OutputProperty->Value;
-						}
-						else if( OutputProperty->Key == "target" )
-						{
-							TargetName = OutputProperty->Value;
-						}
-						else if( OutputProperty->Key == "input" )
-						{
-							InputName = OutputProperty->Value;
-						}
-					}
+			if( OutputName.length() > 0 && TargetName.length() > 0 && InputName.length() > 0 )
+			{
+				auto Entity = Level->GetWorld()->Find( TargetName );
+				if( Entity )
+				{
+					FMessage Message;
+					Message.TargetID = Entity->GetEntityID();
+					Message.TargetName = TargetName;
+					Message.Inputs.emplace_back( InputName );
 
-					if( OutputName.length() > 0 && TargetName.length() > 0 && InputName.length() > 0 )
-					{
-						auto Entity = Level->GetWorld()->Find( TargetName );
-						if( Entity )
-						{
-							FMessage Message;
-							Message.TargetID = Entity->GetEntityID();
-							Message.TargetName = TargetName;
-							Message.Inputs.emplace_back( InputName );
-
-							auto& Messsages = Outputs[OutputName];
-							Messsages.emplace_back( Message );
-						}
-						else
-						{
-							Log::Event( Log::Warning, "Target entity \"%s\" not found for entity \"%s\".\n", TargetName.c_str(), Name.String().c_str() );
-						}
-					}
+					auto& Messsages = Outputs[OutputName];
+					Messsages.emplace_back( Message );
+				}
+				else
+				{
+					Log::Event( Log::Warning, "Target entity \"%s\" not found for entity \"%s\".\n", TargetName.c_str(), Name.String().c_str() );
 				}
 			}
 		}
