@@ -9,11 +9,7 @@
 
 struct ViewDimensions
 {
-	ViewDimensions()
-	{
-		
-	}
-
+	ViewDimensions() = default;
 	ViewDimensions( int Width, int Height )
 	{
 		this->Width = Width;
@@ -91,11 +87,13 @@ public:
 	bool IsFocused() const;
 	bool IsMinimized() const;
 
-private:
-	void Recreate();
-
 	struct GLFWmonitor* GetTargetMonitor() const;
 	ViewDimensions GetMonitorDimensions( struct GLFWmonitor* Monitor ) const;
+	ViewDimensions GetMonitorDimensionsRaw( struct GLFWmonitor* Monitor ) const;
+	std::vector<ViewDimensions> GetMonitorDimensionsAll( struct GLFWmonitor* Monitor ) const;
+
+private:
+	void Recreate();
 
 	struct GLFWwindow* WindowHandle = nullptr;
 	CRenderer Renderer;

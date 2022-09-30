@@ -146,15 +146,16 @@ void CWindow::Create( const char* Title )
 
 	GLFWmonitor* Monitor = GetTargetMonitor();
 	CurrentDimensions = GetMonitorDimensions( Monitor );
+	ViewDimensions ActualDimensions = CurrentDimensions;
 
 	// Increase the height by 1 pixel to avoid the exclusive no border behavior.
 	if( !EnableBorder )
 	{
-		CurrentDimensions.Height += 1;
+		ActualDimensions.Height += 1;
 	}
 
 	glfwWindowHint( GLFW_VISIBLE, GL_TRUE );
-	WindowHandle = glfwCreateWindow( CurrentDimensions.Width, CurrentDimensions.Height, Title, FullScreen ? Monitor : nullptr, Context );
+	WindowHandle = glfwCreateWindow( ActualDimensions.Width, ActualDimensions.Height, Title, FullScreen ? Monitor : nullptr, Context );
 
 	int WindowX = -1;
 	int WindowY = -1;
@@ -259,9 +260,17 @@ void CWindow::Recreate()
 	glfwWindowHint( GLFW_RESIZABLE, false );
 	glfwWindowHint( GLFW_DECORATED, EnableBorder );
 
+	ViewDimensions ActualDimensions = CurrentDimensions;
+
+	// Increase the height by 1 pixel to avoid the exclusive no border behavior.
+	if( !EnableBorder )
+	{
+		ActualDimensions.Height += 1;
+	}
+
 	auto* Monitor = GetTargetMonitor();
 	WindowHandle = glfwCreateWindow( 
-		CurrentDimensions.Width, CurrentDimensions.Height, 
+		ActualDimensions.Width, ActualDimensions.Height,
 		WindowTitle.c_str(), 
 		FullScreen ? Monitor : nullptr, 
 		Context 
@@ -295,16 +304,17 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 		NewDimensions = GetMonitorDimensions( Monitor );
 	}
 
-	// Nudge the height so that the borderless window isn't made exclusive by the OS/graphics driver.
-	if( IsBorderless() )
-	{
-		NewDimensions.Height += 1;
-	}
-
 	if( CurrentDimensions.Width != NewDimensions.Width && CurrentDimensions.Height != NewDimensions.Height )
 	{
 		CurrentDimensions = NewDimensions;
-		glfwSetWindowSize( WindowHandle, CurrentDimensions.Width, CurrentDimensions.Height );
+
+		// Nudge the height so that the borderless window isn't made exclusive by the OS/graphics driver.
+		if( IsBorderless() )
+		{
+			NewDimensions.Height += 1;
+		}
+
+		glfwSetWindowSize( WindowHandle, NewDimensions.Width, NewDimensions.Height );
 
 		auto& Configuration = CConfiguration::Get();
 		Configuration.Store( "window.Width", CurrentDimensions.Width );
@@ -315,6 +325,44 @@ void CWindow::Resize( const ViewDimensions& Dimensions )
 
 		glfwFocusWindow( WindowHandle );
 	}
+}
+
+ViewDimensions GetMaximumResolution( GLFWmonitor* Monitor )
+{
+	ViewDimensions Dimensions;
+
+	// Gather video modes.
+	int Count;
+	const auto* VideoModes = glfwGetVideoModes( Monitor, &Count );
+	if( !VideoModes )
+		return Dimensions;
+
+	// The highest resolution and color depth should be at the front of the array.
+	const auto& VideoMode = VideoModes[Count - 1];
+	Dimensions.Width = VideoMode.width;
+	Dimensions.Height = VideoMode.height;
+
+	return Dimensions;
+}
+
+bool IsSupportedResolution( GLFWmonitor* Monitor, const ViewDimensions& Dimensions )
+{
+	// Gather video modes.
+	int Count;
+	const auto* VideoModes = glfwGetVideoModes( Monitor, &Count );
+	if( !VideoModes )
+		return false;
+
+	for( int Index = 0; Index < Count; Index++ )
+	{
+		const auto& VideoMode = VideoModes[Index];
+		if( VideoMode.width == Dimensions.Width && VideoMode.height == Dimensions.Height )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void CWindow::Fullscreen( const bool Enable )
@@ -445,7 +493,15 @@ void CWindow::RenderFrame()
 	}
 #endif
 
-	Renderer.SetViewport( CurrentDimensions.Width, CurrentDimensions.Height );
+	ViewDimensions ActualDimensions = CurrentDimensions;
+
+	// Increase the height by 1 pixel to avoid the exclusive no border behavior.
+	if( IsBorderless() )
+	{
+		ActualDimensions.Height += 1;
+	}
+
+	Renderer.SetViewport( ActualDimensions.Width, ActualDimensions.Height );
 	Renderer.DrawQueuedRenderables();
 
 #if defined( IMGUI_ENABLED )
@@ -579,7 +635,16 @@ bool CWindow::IsFullscreenBorderless() const
 {
 	auto* Monitor = GetTargetMonitor();
 	const auto Dimensions = GetMonitorDimensions( Monitor );
-	const bool Match = Dimensions.Width == CurrentDimensions.Width && Dimensions.Height == CurrentDimensions.Height;
+
+	ViewDimensions ActualDimensions = CurrentDimensions;
+
+	// Increase the height by 1 pixel to avoid the exclusive no border behavior.
+	if( IsBorderless() )
+	{
+		ActualDimensions.Height += 1;
+	}
+
+	const bool Match = Dimensions.Width == ActualDimensions.Width && Dimensions.Height == ActualDimensions.Height;
 	return IsBorderless() && Match;
 }
 
@@ -662,6 +727,42 @@ ViewDimensions CWindow::GetMonitorDimensions( GLFWmonitor* Monitor ) const
 	}
 
 	return Dimensions;
+}
+
+ViewDimensions CWindow::GetMonitorDimensionsRaw( GLFWmonitor* Monitor ) const
+{
+	return GetMaximumResolution( Monitor );
+}
+
+std::vector<ViewDimensions> CWindow::GetMonitorDimensionsAll( GLFWmonitor* Monitor ) const
+{
+	std::vector<ViewDimensions> Vector;
+
+	// Gather video modes.
+	int Count;
+	const auto* VideoModes = glfwGetVideoModes( Monitor, &Count );
+	if( !VideoModes )
+		return Vector;
+
+	Vector.resize( Count );
+
+	// Store the dimensions in reverse order.
+	for( int Index = 0; Index < Count; Index++ )
+	{
+		const auto& VideoMode = VideoModes[Index];
+		auto& Dimensions = Vector[Index];
+		Dimensions.Width = VideoMode.width;
+		Dimensions.Height = VideoMode.height;
+	}
+
+	std::reverse( Vector.begin(), Vector.end() );
+	const auto Iterator = std::unique( Vector.begin(), Vector.end(), 
+		[]( const ViewDimensions& A, const ViewDimensions& B ) {
+		return A.Width == B.Width && A.Height == B.Height;
+	});
+	Vector.erase( Iterator, Vector.end() );
+
+	return Vector;
 }
 
 GLFWwindow* CWindow::ThreadContext( const bool MakeCurrent )
