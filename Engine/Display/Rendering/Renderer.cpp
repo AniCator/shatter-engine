@@ -14,6 +14,7 @@
 #include <Engine/Display/Rendering/Mesh.h>
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Texture.h>
+#include <Engine/Display/Rendering/FramebufferTexture.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
 #include <Engine/Display/Rendering/RenderPass.h>
 #include <Engine/Display/UserInterface.h>
@@ -31,6 +32,8 @@
 
 #include "Renderable.h"
 #include "Camera.h"
+
+#define SORT(A, B, Member) if( A.Member != B.Member ) return ExclusiveComparison(A.Member, B.Member)
 
 constexpr size_t RenderableCapacity = 1 << 12;
 
@@ -187,10 +190,13 @@ void CRenderer::Initialize()
 
 	CMesh* SquareMesh = Assets.CreateNamedMesh( "square", Square );
 
-	// FPrimitive Cube;
-	// MeshBuilder::Cube( Cube, 1.0f );
+	FPrimitive Cube;
+	MeshBuilder::Cube( Cube, 1.0f );
+	Assets.CreateNamedMesh( "primitive_cube", Cube );
 
-	// Assets.CreateNamedMesh( "cube", Cube );
+	// FPrimitive Sphere;
+	// MeshBuilder::Sphere( Sphere, 1.0f, 4, 4 );
+	// Assets.CreateNamedMesh( "primitive_sphere", Sphere );
 
 	FPrimitive Pyramid;
 	MeshBuilder::Cone( Pyramid, 1.0f, 4 );
@@ -213,6 +219,14 @@ void CRenderer::Initialize()
 	SkipRenderPasses = CConfiguration::Get().GetInteger( "render.SkipPasses", 0 ) > 0;
 	PreviousSuperSampling = SuperSampling.Get();
 	SuperSamplingFactor = Math::Max( 0.1f, CConfiguration::Get().GetFloat( "render.SuperSampling.Factor", 2.0f ) );
+
+	// Default framebuffer lookups.
+	static FramebufferTexture FramebufferLookup;
+	CAssets::Get().CreateNamedTexture( "rt_framebuffer", &FramebufferLookup );
+
+	static FramebufferTexture FramebufferDepth;
+	FramebufferDepth.Depth = true;
+	CAssets::Get().CreateNamedTexture( "rt_depth", &FramebufferDepth );
 }
 
 void CRenderer::DestroyBuffers()
@@ -338,42 +352,11 @@ void CRenderer::DrawQueuedRenderables()
 		const auto& RenderDataA = A->GetRenderData();
 		const auto& RenderDataB = B->GetRenderData();
 
-		const bool ShaderProgram = ExclusiveComparison( RenderDataA.ShaderProgram, RenderDataB.ShaderProgram );
-		const bool VertexBufferObject = ExclusiveComparison( RenderDataA.VertexBufferObject, RenderDataB.VertexBufferObject );
-		const bool IndexBufferObject = ExclusiveComparison( RenderDataA.IndexBufferObject, RenderDataB.IndexBufferObject );
-		
-		auto ShaderA = A->GetShader();
-		auto ShaderB = B->GetShader();
-		bool Distance = false;
-		bool BlendMode = false;
-		if( ShaderA && ShaderB )
-		{
-			int BlendModeA = 0;
-			int BlendModeB = 0;
-			if( ShaderA->GetBlendMode() == EBlendMode::Alpha )
-			{
-				BlendModeA = 1;
-			}
+		SORT( RenderDataA, RenderDataB, ShaderProgram );
+		SORT( RenderDataA, RenderDataB, IndexBufferObject );
+		SORT( RenderDataA, RenderDataB, VertexBufferObject );
 
-			if( ShaderB->GetBlendMode() == EBlendMode::Alpha )
-			{
-				BlendModeB = 1;
-			}
-
-			if( ShaderA->GetBlendMode() == EBlendMode::Additive )
-			{
-				BlendModeA = 2;
-			}
-
-			if( ShaderB->GetBlendMode() == EBlendMode::Additive )
-			{
-				BlendModeB = 2;
-			}
-
-			BlendMode = ExclusiveComparison( BlendModeA, BlendModeB );
-		}
-
-		return VertexBufferObject && IndexBufferObject;
+		return false;
 	};
 
 	// Create the render queue for this frame.
