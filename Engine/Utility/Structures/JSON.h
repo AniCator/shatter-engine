@@ -247,6 +247,8 @@ namespace JSON
 		std::list<Object> Objects;
 		Vector Tree;
 
+		Container() = default;
+
 		// Searches for an existing entry, creates a new one if it doesn't exist.
 		Object& operator[]( const std::string& Key );
 
@@ -261,5 +263,11 @@ namespace JSON
 
 		// Returns true if the object is a part of this container.
 		bool Valid( Object* Object ) const;
+
+		// Copy constructor.
+		Container( Container const& Source );
+
+		// Copy operator.
+		Container& operator=( Container const& Source );
 	};
 }

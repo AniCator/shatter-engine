@@ -114,6 +114,11 @@ namespace JSON
 		Start = Token;
 		while( Token[0] != '"' )
 		{
+			if( Token[0] == '\\' )
+			{
+				Token++; // Escape.
+			}
+
 			Token++;
 		}
 		End = Token;
@@ -352,7 +357,7 @@ namespace JSON
 
 			if( HasKey )
 			{
-				Stream << OffsetString << "\"" << Object->Key << "\" : ";
+				Stream << OffsetString << "\"" << String::Escape( Object->Key ) << "\" : ";
 				Stream << "[\n";
 			}
 			else
@@ -395,11 +400,11 @@ namespace JSON
 			{
 				// std::string Value = Object->Value;
 				// Value.replace( "\"", "\\\"" );
-				Stream << OffsetString << "\"" << Object->Key << "\" : \"" << Object->Value;
+				Stream << OffsetString << "\"" << String::Escape( Object->Key ) << "\" : \"" << String::Escape( Object->Value );
 			}
 			else
 			{
-				Stream << OffsetString << "\"" << Object->Key;
+				Stream << OffsetString << "\"" << String::Escape( Object->Key );
 			}
 
 			if( Last )
@@ -618,17 +623,76 @@ namespace JSON
 		Target->IsObject = Source->IsObject;
 		Target->Objects.clear();
 
-		if( Source->Objects.size() > 0 )
-		{
-			for( auto& SourceObject : Source->Objects )
-			{
-				Object TargetObject;
-				CopyTree( SourceObject, &TargetObject );
+		if( Source->Objects.empty() )
+			return;
 
-				TargetObject.Parent = Target;
-				// Target->Objects.emplace_back( TargetObject );
-				// TODO: Container isn't known and the container stores all the objects.
-			}
+		for( auto* SourceObject : Source->Objects )
+		{
+			Object TargetObject;
+			CopyTree( SourceObject, &TargetObject );
+
+			TargetObject.Parent = Target;
+			// Target->Objects.emplace_back( TargetObject );
+			// TODO: Container isn't known and the container stores all the objects.
 		}
+	}
+
+	void CopyObject( Container& Target, Object* Source, Object* Parent = nullptr )
+	{
+		auto* Child = Target.Allocate();
+
+		// Copy the information from the source object to the new child.
+		Child->Parent = Parent;
+		Child->Key = Source->Key;
+		Child->Value = Source->Value;
+		Child->IsObject = Source->IsObject;
+		Child->Objects.clear();
+
+		// Check if we have a parent.
+		if( Parent )
+		{
+			// Add the child to the parent.
+			Parent->Objects.emplace_back( Child );
+		}
+
+		// Recursively copy any children.
+		for( auto* SourceObject : Source->Objects )
+		{
+			CopyObject( Target, SourceObject, Child );
+		}
+	}
+
+	Container::Container( Container const& Source )
+	{
+		if( this == &Source )
+			return;
+
+		Objects.clear();
+		Tree.clear();
+
+		for( auto& Branch : Source.Tree )
+		{
+			CopyObject( *this, Branch );
+		}
+
+		Regenerate();
+	}
+
+	Container& Container::operator=( Container const& Source )
+	{
+		if( this == &Source )
+			return *this;
+
+		Objects.clear();
+		Tree.clear();
+
+		for( auto& Branch : Source.Tree )
+		{
+			CopyObject( *this, Branch );
+		}
+
+		Regenerate();
+
+		return *this;
 	}
 }

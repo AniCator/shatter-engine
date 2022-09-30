@@ -25,6 +25,7 @@ struct String
         size_t Start = 0;
         size_t End = Input.find( Find, Start );
         std::string Output;
+        Output.reserve( Input.size() );
 
         // Find all instances of the search string.
         while( End != std::string::npos ) 
@@ -41,6 +42,26 @@ struct String
 
         // Append the remaining string data.
         Output += Input.substr( Start, Input.length() - Start );
+        return Output;
+    }
+
+    static std::string Escape(
+        const std::string& Input
+    )
+    {
+        std::string Output;
+        Output.reserve( Input.size() );
+
+        // Handles backslashes first.
+        Output = Replace( Input, "\\", "\\\\" );
+
+        // Replace all other escape cases.
+        Output = Replace( Output, "\'", "\\\'" );
+        Output = Replace( Output, "\"", "\\\"" );
+        Output = Replace( Output, "\t", "\\\t" );
+        Output = Replace( Output, "\r", "\\\r" );
+        Output = Replace( Output, "\n", "\\\n" );
+
         return Output;
     }
 
@@ -63,5 +84,59 @@ struct String
         std::string Left = Input.substr( 0, Index );
         std::string Right = Input.substr( Index + 1, Length - Index );
         return std::make_pair( Left, Right );
+    }
+
+    static std::string TrimL(
+        const std::string& Input,
+        const char Trim
+    )
+    {
+        bool Active = true;
+        std::string Output;
+
+        auto Iterator = Input.begin();
+        while( Iterator != Input.end() )
+        {
+            const char Character = *Iterator;
+            Iterator++;
+
+            if( Character != Trim )
+                Active = false; // We've hit a character we don't want to trim, deactivate the trimmer.
+
+            // Skip over characters we'd like to trim.
+            if( Active && Character == Trim )
+                continue;
+
+            Output += Character;
+        }
+
+        return Output;
+    }
+
+    static std::string TrimR(
+        const std::string& Input,
+        const char Trim
+    )
+    {
+        bool Active = true;
+        std::string Output;
+
+        auto Iterator = Input.rbegin();
+        while( Iterator != Input.rend() )
+        {
+            const char Character = *Iterator;
+            Iterator--;
+
+            if( Character != Trim )
+                Active = false; // We've hit a character we don't want to trim, deactivate the trimmer.
+
+            // Skip over characters we'd like to trim.
+            if( Active && Character == Trim )
+                continue;
+
+            Output += Character;
+        }
+
+        return Output;
     }
 };
