@@ -46,48 +46,13 @@ private:
 
 struct Worker
 {
-	Worker()
-	{
-		Running = false;
-		Alive = true;
-		Thread = std::thread( &Worker::Work, this );
-	}
+	Worker();
+	~Worker();
 
-	~Worker()
-	{
-		Alive = false;
-		Notify.notify_one();
-		Thread.join();
-	}
+	bool Completed() const;
+	bool IsRunning() const;
 
-	bool Completed() const
-	{
-		return !Running;
-	}
-
-	bool IsRunning() const
-	{
-		return Running;
-	}
-
-	std::future<void> Add( const std::shared_ptr<Task>& ToExecute )
-	{
-		// A lock is required because we're accessing and manipulating the queue's memory.
-		std::unique_lock<std::mutex> Lock( Mutex );
-
-		// Add the tasks to the queue.
-		Tasks.emplace_back( ToExecute );
-		Running = true;
-
-		// Refresh the promise, in case this task is being re-used.
-		Tasks.back()->Promise = std::promise<void>();
-
-		// Notify the worker thread that there is new work.
-		Notify.notify_one();
-
-		// Return the associated future.
-		return Tasks.back()->Promise.get_future();
-	}
+	std::future<void> Add( const std::shared_ptr<Task>& ToExecute );
 
 	void SetName( const std::string& Name );
 	void SetPriority( const ThreadPriority& Priority );

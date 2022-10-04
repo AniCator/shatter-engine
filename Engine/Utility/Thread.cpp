@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Thread.h"
 
+#include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
 #if defined(_WIN32)
@@ -68,6 +69,60 @@ void LambdaTask::Execute()
 	Function();
 }
 
+Worker::Worker()
+{
+	Running = false;
+
+	// Make sure alive is set to true before starting the thread, otherwise it will exit instantly.
+	Alive = true;
+
+	// Create the worker thread.
+	Thread = std::thread( &Worker::Work, this );
+}
+
+Worker::~Worker()
+{
+	// Signal to the worker that it is going to be shut down.
+	Alive = false;
+	Notify.notify_one();
+
+	// Check if this worker has created a thread.
+	if( Thread.joinable() )
+	{
+		// Join the thread.		
+		Thread.join();
+	}
+}
+
+bool Worker::Completed() const
+{
+	return !Running;
+}
+
+bool Worker::IsRunning() const
+{
+	return Running;
+}
+
+std::future<void> Worker::Add( const std::shared_ptr<Task>& ToExecute )
+{
+	// A lock is required because we're accessing and manipulating the queue's memory.
+	std::unique_lock<std::mutex> Lock( Mutex );
+
+	// Add the tasks to the queue.
+	Tasks.emplace_back( ToExecute );
+	Running = true;
+
+	// Refresh the promise, in case this task is being re-used.
+	Tasks.back()->Promise = std::promise<void>();
+
+	// Notify the worker thread that there is new work.
+	Notify.notify_one();
+
+	// Return the associated future.
+	return Tasks.back()->Promise.get_future();
+}
+
 void Worker::SetName( const std::string& Name )
 {
 	SetThreadName( Thread, Name );
@@ -89,10 +144,15 @@ void Worker::Flush()
 void Worker::Work()
 {
 	ProfileThread( "Shatter Engine Worker");
+
+	Log::Event( "Thread started.\n" );
+
 	while( Alive )
 	{
 		RunNextTask();
 	}
+
+	Log::Event( "Thread finished.\n" );
 }
 
 std::shared_ptr<Task> Worker::Fetch()
