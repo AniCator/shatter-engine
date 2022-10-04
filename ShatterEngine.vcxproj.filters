@@ -449,9 +449,6 @@
     <ClCompile Include="Engine\Utility\RunLengthEncoding.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\World\EventQueue.cpp">
-      <Filter>Source Files\Engine\World</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Application\AssetHelper.cpp">
       <Filter>Source Files\Engine\Application</Filter>
     </ClCompile>

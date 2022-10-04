@@ -259,7 +259,6 @@
     <ClCompile Include="Engine\World\Entity\SoundEntity\SoundEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Trigger\TriggerBoxEntity.cpp" />
     <ClCompile Include="Engine\World\Entity\Trigger\TriggerProximityEntity.cpp" />
-    <ClCompile Include="Engine\World\EventQueue.cpp" />
     <ClCompile Include="Engine\World\Level\Level.cpp" />
     <ClCompile Include="Engine\World\World.cpp" />
     <ClCompile Include="Game\CauseEffect\CauseEffect.cpp" />
