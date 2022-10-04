@@ -114,11 +114,6 @@ namespace JSON
 		Start = Token;
 		while( Token[0] != '"' )
 		{
-			if( Token[0] == '\\' )
-			{
-				Token++; // Escape.
-			}
-
 			Token++;
 		}
 		End = Token;
@@ -158,12 +153,12 @@ namespace JSON
 
 		// const char* Data = File.Fetch<char>();
 		size_t Count = 0;
-		// const size_t Length = File.Size();
 
 		char LastSpecialToken = ' ';
 		size_t Line = 0;
 
 		const char* Token = Data;
+		const char* End = Data + Length;
 		bool Finished = false;
 		size_t Depth = 0;
 		size_t ArrayDepth = 0;
@@ -171,7 +166,7 @@ namespace JSON
 		bool LookingForKeyEntry = true;
 		Object* Current = nullptr;
 		Object* Parent = nullptr;
-		while( !Finished && ( Token < ( Data + Length ) ) )
+		while( !Finished && ( Token < End ) )
 		{
 			if( Token[0] == '{' )
 			{
@@ -263,6 +258,7 @@ namespace JSON
 						Current->IsField = true;
 
 						Current->Key = std::string( Start, End );
+						Current->Key = String::Unescape( Current->Key );
 
 						if( Parent )
 						{
@@ -278,6 +274,7 @@ namespace JSON
 						if( Current->IsField )
 						{
 							Current->Value = std::string( Start, End );
+							Current->Value = String::Unescape( Current->Value );
 							LookingForKeyEntry = true;
 						}
 					}

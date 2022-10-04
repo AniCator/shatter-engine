@@ -65,6 +65,26 @@ struct String
         return Output;
     }
 
+    static std::string Unescape(
+        const std::string& Input
+    )
+    {
+        std::string Output;
+        Output.reserve( Input.size() );
+
+        // Replace all other escape cases, reverse order of String::Escape.
+        Output = Replace(  Input, "\\\n", "\n" );
+        Output = Replace( Output, "\\\r", "\r" );
+        Output = Replace( Output, "\\\t", "\t" );
+        Output = Replace( Output, "\\\"", "\"" );
+        Output = Replace( Output, "\\\'", "\'" );
+
+        // Handles backslashes last.
+        Output = Replace( Output, "\\\\", "\\" );
+
+        return Output;
+    }
+
     static std::pair<std::string, std::string> Split(
         const std::string& Input,
         const char Delimiter
