@@ -186,7 +186,12 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 				if( Pass == 0 )
 				{
-					if( Object->Key == "assets" )
+					if( Object->Key == "uuid" )
+					{
+						// Found a unique identifier for this level.
+						Identifier.Set( Object->Value.c_str() );
+					}
+					else if( Object->Key == "assets" )
 					{
 						AssetsFound = !Object->Objects.empty();
 						CAssets::Load( *Object );
@@ -227,7 +232,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 							bool FoundName = false;
 							std::string ClassName = "";
 							std::string EntityName = "";
-							UniqueIdentifier Identifier;
+							UniqueIdentifier EntityID;
 
 							std::string LevelPath = "";
 							std::string LevelPositionString = "";
@@ -251,7 +256,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 								}
 								else if( Property->Key == "uuid" )
 								{
-									Identifier.Set( Property->Value.c_str() );
+									EntityID.Set( Property->Value.c_str() );
 								}
 								else if( Property->Key == "path" )
 								{
@@ -273,10 +278,10 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 							const bool IsLevel = ClassName == "level";
 
-							if( !IsLevel && !Identifier.Valid() )
+							if( !IsLevel && !EntityID.Valid() )
 							{
 								// Generate a random UUID.
-								Identifier.Random();
+								EntityID.Random();
 
 								// Make sure it is added to the JSON tree afterwards.
 								EntityIdentifier NewIdentifier;
@@ -303,7 +308,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 									if( Link.Entity )
 									{
-										Link.Entity->Identifier = Identifier;
+										Link.Entity->Identifier = EntityID;
 										Link.Entity->SetLevel( this );
 										EntityObjectLinks.emplace_back( Link );
 									}
@@ -384,6 +389,11 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 		}
 	}
 
+	if( !Identifier.Valid() )
+	{
+		Identifier.Random();
+	}
+
 	if( !Identifiers.empty() )
 	{
 		for( const auto& Identifier : Identifiers )
@@ -416,6 +426,9 @@ void CLevel::Remove( CEntity* MarkEntity )
 	
 	if( !Entities[ID] )
 		return;
+
+	// Disable serialization.
+	MarkEntity->Serialize = false;
 	
 	// Move the entity pointer to the back of the vector if it isn't there already.
 	if( ( ID + 1 ) != Entities.size() )
@@ -547,12 +560,20 @@ void CLevel::SetName( const std::string& NameIn )
 	Name = NameIn;
 }
 
+bool IsSerializable( const CEntity* Entity )
+{
+	return Entity && Entity->Serialize;
+}
+
 CData& operator<<( CData& Data, CLevel& Level )
 {
 	Chunk Chunk( "LEVEL" );
 	Chunk.Data << LevelVersion;
 
 	Chunk.Data << Level.Transform;
+
+	const auto Identifier = std::string( Level.Identifier.ID );
+	Serialize::Export( Chunk.Data, "uuid", Identifier );
 
 	DataString::Encode( Chunk.Data, Level.Name );
 
@@ -573,7 +594,26 @@ CData& operator<<( CData& Data, CLevel& Level )
 		Chunk.Data << Temporary;
 	}
 
-	DataVector::Encode( Chunk.Data, Level.Entities );
+	// Count how many entities will be serialized.
+	uint32_t Count = 0;
+	for( const auto* Entity : Level.Entities )
+	{
+		if( !IsSerializable( Entity ) )
+			continue;
+
+		Count++;
+	}
+
+	Chunk.Data << Count;
+
+	// Serialize the entities that have been accounted for.
+	for( auto* Entity : Level.Entities )
+	{
+		if( !IsSerializable( Entity ) )
+			continue;
+
+		Chunk.Data << Entity;
+	}
 
 	Data << Chunk;
 
@@ -593,6 +633,12 @@ CData& operator>> ( CData& Data, CLevel& Level )
 	if( Version >= LevelVersion )
 	{
 		Chunk.Data >> Level.Transform;
+
+		std::string Identifier;
+		if( Serialize::Import( Chunk.Data, "uuid", Identifier ) )
+		{
+			Level.Identifier.Set( Identifier.c_str() );
+		}
 
 		DataString::Decode( Chunk.Data, Level.Name );
 

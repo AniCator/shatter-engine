@@ -22,12 +22,14 @@ struct Serialize
 
 	// Checks if the given marker is found and extracts the associated data.
 	template<typename T>
-	static void Import( CData& Data, const char* Identifier, T& Snippet )
+	static bool Import( CData& Data, const char* Identifier, T& Snippet )
 	{
 		if( !DataMarker::Check( Data, Identifier ) )
-			return;
+			return false;
 		
 		Data >> Snippet;
+
+		return true;
 	}
 
 	static void Export( CData& Data, const char* Identifier, const std::set<std::string>& Set )
@@ -43,10 +45,10 @@ struct Serialize
 		}
 	}
 
-	static void Import( CData& Data, const char* Identifier, std::set<std::string>& Set )
+	static bool Import( CData& Data, const char* Identifier, std::set<std::string>& Set )
 	{
 		if( !DataMarker::Check( Data, Identifier ) )
-			return;
+			return false;
 
 		Set.clear();
 		
@@ -58,6 +60,8 @@ struct Serialize
 			DataString::Decode( Data, Item );
 			Set.insert( Item );
 		}
+
+		return true;
 	}
 
 	static void Export( CData& Data, const char* Identifier, const std::vector<std::string>& Vector )
@@ -73,10 +77,10 @@ struct Serialize
 		}
 	}
 
-	static void Import( CData& Data, const char* Identifier, std::vector<std::string>& Vector )
+	static bool Import( CData& Data, const char* Identifier, std::vector<std::string>& Vector )
 	{
 		if( !DataMarker::Check( Data, Identifier ) )
-			return;
+			return false;
 
 		Vector.clear();
 
@@ -88,6 +92,8 @@ struct Serialize
 			DataString::Decode( Data, Item );
 			Vector.emplace_back( Item );
 		}
+
+		return true;
 	}
 
 	static void Export( CData& Data, const char* Identifier, const std::string& Snippet )
@@ -96,12 +102,14 @@ struct Serialize
 		DataString::Encode( Data, Snippet );
 	}
 
-	static void Import( CData& Data, const char* Identifier, std::string& Snippet )
+	static bool Import( CData& Data, const char* Identifier, std::string& Snippet )
 	{
 		if( !DataMarker::Check( Data, Identifier ) )
-			return;
+			return false;
 
 		DataString::Decode( Data, Snippet );
+
+		return true;
 	}
 
 	// Copies string data to a character array.

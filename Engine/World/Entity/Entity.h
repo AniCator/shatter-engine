@@ -232,6 +232,9 @@ protected:
 	std::set<std::string> Tags;
 
 public:
+	/// Determines if an entity should be serialized or not.
+	bool Serialize = true;
+
 	/// Called to export an entire entity.
 	virtual void Export( CData& Data ) = 0;
 	friend CData& operator<<( CData& Data, CEntity* Entity );

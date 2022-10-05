@@ -406,9 +406,6 @@ double CEntity::GetCurrentTime()
 
 CData& operator<<( CData& Data, CEntity* Entity )
 {
-	if( !Entity )
-		return Data;
-
 	DataString::Encode( Data, Entity->ClassName );
 	DataString::Encode( Data, Entity->Name.String() );
 
@@ -557,6 +554,10 @@ void UniqueIdentifier::Set( const char* Identifier )
 	if( Size == 36 )
 	{
 		strcpy_s( ID, Identifier );
+	}
+	else
+	{
+		Log::Event( Log::Warning, "Invalid unique identifier value.\n" );
 	}
 }
 

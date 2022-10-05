@@ -133,6 +133,9 @@ public:
 	// The bounding box of the level's static geometry.
 	BoundingBox Bounds;
 
+	// Identifier of the level itself.
+	UniqueIdentifier Identifier;
+
 private:
 	std::vector<CEntity*> Entities;
 	CWorld* World;
