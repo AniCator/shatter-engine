@@ -102,6 +102,9 @@ Vector3D Animator::Instance::GetBonePosition( const std::string& Name ) const
 	if( Index < 0 )
 		return Vector3D::Zero;
 
+	if( Index >= Bones.size() )
+		return Vector3D::Zero;
+
 	return Bones[Index].GlobalTransform.Transform( Vector3D::Zero );
 }
 
@@ -238,12 +241,6 @@ void Animator::Submit( const Instance& Data, CRenderable* Target )
 	if( !Target )
 		return;
 
-	for( size_t MatrixIndex = 0; MatrixIndex < Data.Bones.size(); MatrixIndex++ )
-	{
-		const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
-		Target->SetUniform( BoneLocationName, Data.Bones[MatrixIndex].BoneTransform );
-	}
-
 	if( !Data.Bones.empty() )
 	{
 		Target->HasSkeleton = true;
@@ -251,6 +248,13 @@ void Animator::Submit( const Instance& Data, CRenderable* Target )
 	else
 	{
 		Target->HasSkeleton = false;
+		return;
+	}
+
+	for( size_t MatrixIndex = 0; MatrixIndex < Data.Bones.size(); MatrixIndex++ )
+	{
+		const std::string BoneLocationName = BoneLocationNamePrefix + std::to_string( MatrixIndex ) + "]";
+		Target->SetUniform( BoneLocationName, Data.Bones[MatrixIndex].BoneTransform );
 	}
 }
 
