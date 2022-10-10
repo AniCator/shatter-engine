@@ -185,7 +185,7 @@ void ConfigureBoneMatrices( Bone* BoneToConfigure, aiMatrix4x4 InverseOffsetMatr
 // This function is run in AddMesh and takes in an IndexOffset that is used to determine where the sub-mesh indices are located.
 void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* Mesh, const aiNode* Node, ImportedMeshData& MeshData )
 {
-	if( !Scene->HasAnimations() || !Mesh->HasBones() || !MeshData.Skeleton )
+	if( !Mesh->HasBones() || !MeshData.Skeleton )
 		return;
 	
 	Skeleton& Skeleton = *MeshData.Skeleton;
