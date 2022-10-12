@@ -297,7 +297,7 @@ LightIndices LightEntity::Fetch( const Vector3D& Position )
 
 			const auto Angle = cosf( Lights[Index].Properties.y );
 			const auto Visibility = Unit.Dot( Direction );// -Angle;
-			if( Visibility < 0.75f )
+			if( Visibility < 0.5f )
 				continue;
 		}
 
