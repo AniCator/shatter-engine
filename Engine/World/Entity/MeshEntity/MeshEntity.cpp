@@ -485,7 +485,23 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 void CMeshEntity::Reload()
 {
 	CAssets& Assets = CAssets::Get();
+
+	CMesh* TargetCollisionMesh = Assets.Meshes.Find( CollisionMeshName );
+	if( TargetCollisionMesh )
+	{
+		CollisionMesh = TargetCollisionMesh;
+	}
+
 	CMesh* TargetMesh = Assets.Meshes.Find( MeshName );
+
+	// Check if we have a material.
+	Material = Assets.FindAsset<MaterialAsset>( MaterialName );
+	if( Material )
+	{
+		Spawn( TargetMesh, nullptr, nullptr, Transform );
+		return;
+	}
+
 	CShader* TargetShader = Assets.Shaders.Find( ShaderName );
 
 	if( !TargetShader )
@@ -496,19 +512,11 @@ void CMeshEntity::Reload()
 
 	Spawn( TargetMesh, TargetShader, nullptr, Transform );
 
-	CMesh* TargetCollisionMesh = Assets.Meshes.Find( CollisionMeshName );
-	if( TargetCollisionMesh )
-	{
-		CollisionMesh = TargetCollisionMesh;
-	}
-
 	Textures.clear();
 	for( auto TextureName : TextureNames )
 	{
 		Textures.emplace_back( Assets.FindTexture( TextureName ) );
 	}
-
-	Material = Assets.FindAsset<MaterialAsset>( MaterialName );
 }
 
 void CMeshEntity::Import( CData& Data )
