@@ -146,6 +146,7 @@ void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRend
 			Mesh->Prepare( DrawMode );
 		}
 
+		const bool IsFlipped = RenderData.Transform.GetSize().X < 0.0f || RenderData.Transform.GetSize().Y < 0.0f || RenderData.Transform.GetSize().Z < 0.0f;
 		if( RenderData.DoubleSided )
 		{
 			// Render the mesh twice with different winding directions.
@@ -153,8 +154,18 @@ void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRend
 			Mesh->Draw( DrawMode );
 			glCullFace( GL_BACK );
 		}
+		else if ( IsFlipped )
+		{
+			// Flip the winding order.
+			glCullFace( GL_FRONT );
+		}
 
 		Mesh->Draw( DrawMode );
+
+		if( IsFlipped )
+		{
+			glCullFace( GL_BACK );
+		}
 	}
 }
 
