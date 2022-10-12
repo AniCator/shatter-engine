@@ -97,10 +97,39 @@ void Extract( const char* Start, int32_t& Out );
 void Extract( const std::string& String, int32_t& Out );
 void Extract( const char* Start, uint32_t& Out );
 void Extract( const std::string& String, uint32_t& Out );
-void Extract( const char* Start, class Vector3D& Out );
-void Extract( const std::string& String, class Vector3D& Out );
-void Extract( const char* Start, class Vector4D& Out );
-void Extract( const std::string& String, class Vector4D& Out );
+
+/// <summary>
+/// Parses the given character array and assigns the extracted tokens to the vector.
+/// </summary>
+/// <param name="Start">Character array pointer</param>
+/// <param name="Out">Vector that the tokens will be assigned to</param>
+/// <returns>The amount of tokens that were actually found.</returns>
+size_t Extract( const char* Start, class Vector3D& Out );
+
+/// <summary>
+/// Parses the given string and assigns the extracted tokens to the vector.
+/// </summary>
+/// <param name="String">Input string containing the tokens</param>
+/// <param name="Out">Vector that the tokens will be assigned to</param>
+/// <returns>The amount of tokens that were actually found.</returns>
+size_t Extract( const std::string& String, class Vector3D& Out );
+
+/// <summary>
+/// Parses the given character array and assigns the extracted tokens to the vector.
+/// </summary>
+/// <param name="Start">Character array pointer</param>
+/// <param name="Out">Vector that the tokens will be assigned to</param>
+/// <returns>The amount of tokens that were actually found.</returns>
+size_t Extract( const char* Start, class Vector4D& Out );
+
+/// <summary>
+/// Parses the given string and assigns the extracted tokens to the vector.
+/// </summary>
+/// <param name="String">Input string containing the tokens</param>
+/// <param name="Out">Vector that the tokens will be assigned to</param>
+/// <returns>The amount of tokens that were actually found.</returns>
+size_t Extract( const std::string& String, class Vector4D& Out );
+
 void Extract( const char* Start, struct BoundingBox& Out );
 void Extract( const std::string& String, struct BoundingBox& Out );
 

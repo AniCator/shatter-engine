@@ -373,14 +373,14 @@ void Extract( const std::string& String, uint32_t& Out )
 	Extract( String.c_str(), Out );
 }
 
-void Extract( const std::string& String, Vector3D& Out )
+size_t Extract( const std::string& String, Vector3D& Out )
 {
-	Extract( String.c_str(), Out );
+	return Extract( String.c_str(), Out );
 }
 
-void Extract( const std::string& String, Vector4D& Out )
+size_t Extract( const std::string& String, Vector4D& Out )
 {
-	Extract( String.c_str(), Out );
+	return Extract( String.c_str(), Out );
 }
 
 void Extract( const std::string& String, BoundingBox& Out )
@@ -419,7 +419,7 @@ void Extract( const char* Start, int32_t& Out )
 {
 	size_t OutTokenCount = 0;
 	const auto* TokenDistance = ExtractTokensInteger( Start, ' ', OutTokenCount, 1 );
-	if( OutTokenCount == 1 )
+	if( OutTokenCount > 0 )
 	{
 		Out = TokenDistance[0];
 	}
@@ -429,30 +429,54 @@ void Extract( const char* Start, uint32_t& Out )
 {
 	size_t OutTokenCount = 0;
 	const auto* TokenDistance = ExtractTokensInteger( Start, ' ', OutTokenCount, 1 );
-	if( OutTokenCount == 1 )
+	if( OutTokenCount > 0 )
 	{
 		Out = StaticCast<uint32_t>( TokenDistance[0] );
 	}
 }
 
-void Extract( const char* Start, Vector3D& Out )
+size_t Extract( const char* Start, Vector3D& Out )
 {
 	size_t OutTokenCount = 0;
 	const auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 3 );
-	if (OutTokenCount == 3)
+	if( OutTokenCount >= 1 )
 	{
-		Out = Vector3D( TokenDistance[0], TokenDistance[1], TokenDistance[2] );
+		Out.X = TokenDistance[0];
 	}
+	if( OutTokenCount >= 2 )
+	{
+		Out.Y = TokenDistance[1];
+	}
+	if( OutTokenCount >= 3 )
+	{
+		Out.Z = TokenDistance[2];
+	}
+
+	return OutTokenCount;
 }
 
-void Extract( const char* Start, Vector4D& Out )
+size_t Extract( const char* Start, Vector4D& Out )
 {
 	size_t OutTokenCount = 0;
 	const auto* TokenDistance = ExtractTokensFloat( Start, ' ', OutTokenCount, 4 );
-	if (OutTokenCount == 4)
+	if( OutTokenCount >= 1 )
 	{
-		Out = Vector4D( TokenDistance[0], TokenDistance[1], TokenDistance[2], TokenDistance[3] );
+		Out.X = TokenDistance[0];
 	}
+	if( OutTokenCount >= 2 )
+	{
+		Out.Y = TokenDistance[1];
+	}
+	if( OutTokenCount >= 3 )
+	{
+		Out.Z = TokenDistance[2];
+	}
+	if( OutTokenCount >= 4 )
+	{
+		Out.W = TokenDistance[3];
+	}
+
+	return OutTokenCount;
 }
 
 void Extract( const char* Start, BoundingBox& Out )
