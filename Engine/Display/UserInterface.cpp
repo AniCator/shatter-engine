@@ -992,7 +992,7 @@ namespace UI
 			}
 			else
 			{
-				Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Scene );
+				Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Standard );
 			}
 		}
 
