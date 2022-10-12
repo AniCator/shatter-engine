@@ -949,6 +949,9 @@
     <ClInclude Include="Engine\Display\Rendering\FramebufferTexture.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="ThirdParty\glad\include\glad\glad.h">
+      <Filter>Source Files\ThirdParty\glad</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">

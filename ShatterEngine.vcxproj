@@ -415,6 +415,7 @@
     <ClInclude Include="Game\Game.h" />
     <ClInclude Include="Game\ShatterLapse\ShatterLapse.h" />
     <ClInclude Include="ThirdParty\angelscript\include\angelscript.h" />
+    <ClInclude Include="ThirdParty\glad\include\glad\glad.h" />
     <ClInclude Include="ThirdParty\imgui-1.70\imconfig.h" />
     <ClInclude Include="ThirdParty\imgui-1.70\imgui.h" />
     <ClInclude Include="ThirdParty\imgui-1.70\imgui_internal.h" />
