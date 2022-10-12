@@ -121,6 +121,7 @@ public:
 	float Mass = 1.0f;
 	float InverseMass = -1.0f;
 	size_t Contacts = 0;
+	CMeshEntity* ContactEntity = nullptr;
 
 	TriangleTree* Tree = nullptr;
 

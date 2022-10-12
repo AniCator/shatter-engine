@@ -650,6 +650,9 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	A->Velocity += A->InverseMass * Impulse;
 	B->Velocity -= B->InverseMass * Impulse;
 
+	A->ContactEntity = B->Owner;
+	B->ContactEntity = A->Owner;
+
 	Friction( A, B, Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
 
 	return true;
