@@ -6,6 +6,7 @@
 #define STB_IMAGE_WRITE_IMPLEMENTATION
 #define STBI_MSC_SECURE_CRT
 #include <ThirdParty/stb/stb_image_write.h>
+#include <glad/glad.h>
 
 #include <Engine/Display/Rendering/TextureEnumeratorsGL.h>
 #include <Engine/Profiling/Logging.h>
@@ -145,6 +146,13 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	const auto MinFilter = GenerateMipMaps ? GetFilteringMipMapMode( Mode ) : GetFilteringMode( Mode );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinFilter );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
+
+#ifdef GL_ARB_texture_filter_anisotropic
+	if( !!GLAD_GL_ARB_texture_filter_anisotropic && FilteringMode == EFilteringMode::Anisotropic )
+	{
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 8 );
+	}
+#endif
 
 	const auto ImageFormat = static_cast<EImageFormatType>( PreferredFormatIn );
 	// auto Format = ImageFormatToFormat[ImageFormat];

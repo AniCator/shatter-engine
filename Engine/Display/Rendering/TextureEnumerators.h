@@ -84,6 +84,7 @@ enum class EFilteringMode : uint32_t
 {
 	Nearest = 0,
 	Linear,
+	Anisotropic,
 
 	Maximum
 };

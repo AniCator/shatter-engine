@@ -275,7 +275,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 				Log::Event( "Loading texture \"%s\".\n", Payload.Name.c_str() );
 			}
 
-			EFilteringMode Mode = EFilteringMode::Linear;
+			EFilteringMode Mode = EFilteringMode::Anisotropic;
 			EImageFormat ImageFormat = EImageFormat::RGB8;
 
 			if( Payload.Data.size() > 1 )

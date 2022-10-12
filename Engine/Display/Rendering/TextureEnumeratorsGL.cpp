@@ -40,12 +40,14 @@ static const GLenum SlotToEnum[static_cast<ETextureSlotType>( ETextureSlot::Maxi
 static const GLenum FilteringModeToEnum[static_cast<EFilteringModeType>( EFilteringMode::Maximum )]
 {
 	GL_NEAREST,
+	GL_LINEAR,
 	GL_LINEAR
 };
 
 static const GLenum FilteringModeToMipMapEnum[static_cast<EFilteringModeType>( EFilteringMode::Maximum )]
 {
 	GL_NEAREST_MIPMAP_LINEAR,
+	GL_LINEAR_MIPMAP_LINEAR,
 	GL_LINEAR_MIPMAP_LINEAR
 };
 
