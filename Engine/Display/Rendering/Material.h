@@ -7,14 +7,40 @@
 #include <Engine/Display/Rendering/Uniform.h>
 #include <Engine/Resource/Asset.h>
 
+enum class PhysicalSurface : uint8_t
+{
+	None,
+
+	Stone,
+	Metal,
+	Wood,
+	Concrete,
+	Brick,
+	Sand,
+	Dirt,
+	Gravel,
+	Grass,
+	Forest,
+	Rock,
+
+	User12,
+	User13,
+	User14,
+	User15,
+	User16,
+
+	Maximum
+};
+
 struct Material
 {
 	std::string Name;
 	std::string Shader;
 	std::vector<std::string> Textures;
-	std::vector<Uniform> Uniforms;
+	std::vector<std::pair<std::string, Uniform>> Uniforms;
 
 	bool DoubleSided = false;
+	PhysicalSurface Surface = PhysicalSurface::None;
 
 	/// <summary>
 	/// Applies this material's settings to the given renderable.
