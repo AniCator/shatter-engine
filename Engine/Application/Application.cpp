@@ -1392,7 +1392,7 @@ void CApplication::Update()
 	}
 
 	int64_t TickCounter = 0; // Used for tick profiling.
-	while( GameAccumulator > MaximumGameTime )
+	while( GameAccumulator >= MaximumGameTime )
 	{
 		TickCounter++;
 
