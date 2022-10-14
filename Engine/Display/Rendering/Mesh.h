@@ -39,6 +39,17 @@ enum EDrawMode
 	LineLoop = GL_LINE_LOOP
 };
 
+struct CompactVertex
+{
+	Vector3D Position = Vector3D::Zero;
+	Vector2D TextureCoordinate = Vector2D( 0.0f, 0.0f );
+	GLbyte Normal[3] = {0,0,127};
+	Vector3D Color = Vector3D::One;
+
+	Vector4D Bone = Vector4D( -1.0f, -1.0f, -1.0f, -1.0f );
+	Vector4D Weight = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
+};
+
 struct FVertexData
 {
 	~FVertexData()
@@ -46,7 +57,7 @@ struct FVertexData
 		delete[] Vertices;
 	}
 
-	FVertex* Vertices = nullptr;
+	CompactVertex* Vertices = nullptr;
 };
 
 struct FIndexData

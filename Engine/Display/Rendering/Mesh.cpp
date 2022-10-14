@@ -7,6 +7,23 @@
 
 static std::string GeneratedMesh = "gen";
 
+// Vertex structure used for rendered vertices.
+using VertexFormat = CompactVertex;
+
+void VectorToByte( const Vector3D& Input, GLbyte* Output )
+{
+	Output[0] = Input.X * 127.0f;
+	Output[1] = Input.Y * 127.0f;
+	Output[2] = Input.Z * 127.0f;
+}
+
+void ByteToVector( const GLbyte* Input, Vector3D& Output )
+{
+	Output.X = static_cast<float>( Input[0] ) / 127.0f;
+	Output.Y = static_cast<float>( Input[1] ) / 127.0f;
+	Output.Z = static_cast<float>( Input[2] ) / 127.0f;
+}
+
 CMesh::CMesh( EMeshType InMeshType )
 {
 	MeshType = InMeshType;
@@ -62,9 +79,8 @@ bool CMesh::Populate( const FPrimitive& Primitive )
 	if( CreatedVertexBuffer )
 	{
 		CreateIndexBuffer();
+		GenerateNormals();
 	}
-
-	GenerateNormals();
 
 	// TODO: Little bit ugly.
 	// Destroy the primitive, it's in the vertex data now.
@@ -175,28 +191,28 @@ bool CMesh::CreateVertexArrayObject()
 	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
 
 	glEnableVertexAttribArray( EVertexAttribute::Position );
-	const void* PositionPointer = reinterpret_cast<void*>( offsetof( FVertex, Position ) );
-	glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), PositionPointer );
+	const void* PositionPointer = reinterpret_cast<void*>( offsetof( VertexFormat, Position ) );
+	glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), PositionPointer );
 
 	glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-	const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( FVertex, TextureCoordinate ) );
-	glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( FVertex ), CoordinatePointer );
+	const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( VertexFormat, TextureCoordinate ) );
+	glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), CoordinatePointer );
 
 	glEnableVertexAttribArray( EVertexAttribute::Normal );
-	const void* NormalPointer = reinterpret_cast<void*>( offsetof( FVertex, Normal ) );
-	glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), NormalPointer );
+	const void* NormalPointer = reinterpret_cast<void*>( offsetof( VertexFormat, Normal ) );
+	glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_BYTE, GL_TRUE, sizeof( VertexFormat ), NormalPointer );
 
 	glEnableVertexAttribArray( EVertexAttribute::Color );
-	const void* ColorPointer = reinterpret_cast<void*>( offsetof( FVertex, Color ) );
-	glVertexAttribPointer( EVertexAttribute::Color, 3, GL_FLOAT, GL_FALSE, sizeof( FVertex ), ColorPointer );
+	const void* ColorPointer = reinterpret_cast<void*>( offsetof( VertexFormat, Color ) );
+	glVertexAttribPointer( EVertexAttribute::Color, 3, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), ColorPointer );
 
 	glEnableVertexAttribArray( EVertexAttribute::Bone );
-	const void* BonePointer = reinterpret_cast<void*>( offsetof( FVertex, Bone ) );
-	glVertexAttribPointer( EVertexAttribute::Bone, 4, GL_FLOAT, GL_FALSE, sizeof( FVertex ), BonePointer );
+	const void* BonePointer = reinterpret_cast<void*>( offsetof( VertexFormat, Bone ) );
+	glVertexAttribPointer( EVertexAttribute::Bone, 4, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), BonePointer );
 
 	glEnableVertexAttribArray( EVertexAttribute::Weight );
-	const void* WeightPointer = reinterpret_cast<void*>( offsetof( FVertex, Weight ) );
-	glVertexAttribPointer( EVertexAttribute::Weight, 4, GL_FLOAT, GL_FALSE, sizeof( FVertex ), WeightPointer );
+	const void* WeightPointer = reinterpret_cast<void*>( offsetof( VertexFormat, Weight ) );
+	glVertexAttribPointer( EVertexAttribute::Weight, 4, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), WeightPointer );
 
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
 
@@ -220,14 +236,14 @@ bool CMesh::CreateVertexBuffer()
 
 	GenerateAABB();
 
-	const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
+	const uint32_t Size = sizeof( VertexFormat ) * Primitive.VertexCount;
 
 	glGenBuffers( 1, &VertexBufferData.VertexBufferObject );
 	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
 	glBufferData( GL_ARRAY_BUFFER, Size, 0, MeshType );
 
 	// Make sure we allocate space for our vertices first.
-	VertexData.Vertices = new FVertex[Primitive.VertexCount];
+	VertexData.Vertices = new CompactVertex[Primitive.VertexCount];
 
 	// Transfer the vertex locations to the interleaved vertices.
 	for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
@@ -330,7 +346,7 @@ void CMesh::GenerateAABB()
 
 void CMesh::GenerateNormals()
 {
-	const uint32_t Size = sizeof( FVertex ) * Primitive.VertexCount;
+	const uint32_t Size = sizeof( VertexFormat ) * Primitive.VertexCount;
 
 	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
 
@@ -338,7 +354,7 @@ void CMesh::GenerateNormals()
 	{
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 		{
-			VertexData.Vertices[VertexIndex].Normal = Vector3D( 0.0f, 0.0f, 1.0f );
+			 VectorToByte( Vector3D( 0.0f, 0.0f, 1.0f ), VertexData.Vertices[VertexIndex].Normal );
 		}
 
 		if( !Primitive.HasNormals )
@@ -352,7 +368,10 @@ void CMesh::GenerateNormals()
 					const Vector3D U = Primitive.Vertices[VertexIndexA].Position - Primitive.Vertices[VertexIndex].Position;
 					const Vector3D V = Primitive.Vertices[VertexIndexB].Position - Primitive.Vertices[VertexIndex].Position;
 					const Vector3D Normal = U.Cross( V ).Normalized();
-					VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndexA].Normal = VertexData.Vertices[VertexIndexB].Normal = Normal;
+
+					VectorToByte( Normal, VertexData.Vertices[VertexIndex].Normal );
+					VectorToByte( Normal, VertexData.Vertices[VertexIndexA].Normal );
+					VectorToByte( Normal, VertexData.Vertices[VertexIndexB].Normal );
 				}
 			}
 		}
@@ -361,11 +380,14 @@ void CMesh::GenerateNormals()
 		{
 			if( Primitive.HasNormals )
 			{
-				VertexData.Vertices[VertexIndex].Normal = Primitive.Vertices[VertexIndex].Normal.Normalized();
+				VectorToByte( Primitive.Vertices[VertexIndex].Normal.Normalized(), VertexData.Vertices[VertexIndex].Normal );
 			}
 			else
 			{
-				VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex].Normal.Normalized();
+				Vector3D Normal;
+				ByteToVector( VertexData.Vertices[VertexIndex].Normal, Normal );
+				Normal.Normalize();
+				VectorToByte( Normal, VertexData.Vertices[VertexIndex].Normal );
 			}
 		}
 	}
@@ -373,7 +395,7 @@ void CMesh::GenerateNormals()
 	{
 		for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 		{
-			VertexData.Vertices[VertexIndex].Normal = Vector3D( 0.0f, 0.0f, 1.0f );
+			VectorToByte( Vector3D( 0.0f, 0.0f, 1.0f ), VertexData.Vertices[VertexIndex].Normal );
 		}
 
 		if( !Primitive.HasNormals )
@@ -398,9 +420,17 @@ void CMesh::GenerateNormals()
 					const Vector3D V = Vertex2 - Vertex0;
 					const Vector3D Normal = U.Cross( V ).Normalized();
 
-					VertexData.Vertices[VertexIndexA].Normal += Normal;
-					VertexData.Vertices[VertexIndexB].Normal += Normal;
-					VertexData.Vertices[VertexIndexC].Normal += Normal;
+					VertexData.Vertices[VertexIndexA].Normal[0] = 0;
+					VertexData.Vertices[VertexIndexA].Normal[1] = 0;
+					VertexData.Vertices[VertexIndexA].Normal[2] = 127;
+
+					VertexData.Vertices[VertexIndexB].Normal[0] = 0;
+					VertexData.Vertices[VertexIndexB].Normal[1] = 0;
+					VertexData.Vertices[VertexIndexB].Normal[2] = 127;
+
+					VertexData.Vertices[VertexIndexC].Normal[0] = 0;
+					VertexData.Vertices[VertexIndexC].Normal[1] = 0;
+					VertexData.Vertices[VertexIndexC].Normal[2] = 127;
 				}
 			}
 		}
@@ -409,12 +439,24 @@ void CMesh::GenerateNormals()
 		{
 			if( Primitive.HasNormals )
 			{
-				VertexData.Vertices[VertexIndex].Normal = Primitive.Vertices[VertexIndex].Normal.Normalized();
+				VectorToByte( Primitive.Vertices[VertexIndex].Normal.Normalized(), VertexData.Vertices[VertexIndex].Normal );
 			}
 			else
 			{
-				VertexData.Vertices[VertexIndex].Normal = VertexData.Vertices[VertexIndex].Normal.Normalized();
+				Vector3D Normal;
+				ByteToVector( VertexData.Vertices[VertexIndex].Normal, Normal );
+				Normal.Normalize();
+				VectorToByte( Normal, VertexData.Vertices[VertexIndex].Normal );
 			}
+		}
+	}
+
+	for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
+	{
+		const auto& Normal = VertexData.Vertices[VertexIndex].Normal;
+		if( Normal[0] == 0 && Normal[1] == 0 && Normal[2] == 0 )
+		{
+			Log::Event( Log::Error, "Invalid normal data.\n" );
 		}
 	}
 

@@ -475,7 +475,7 @@ void CBody::Construct( CPhysics* Physics )
 		auto* Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
 
 		// TODO: Fix triangle tree and triangle collisions.
-		CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
+		// CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
 	}
 }
 
@@ -1000,9 +1000,9 @@ void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBoun
 
 		for( unsigned int Index = 0; Index < VertexBufferData.IndexCount; )
 		{
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index]] );
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 1] );
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 2] );
+			// Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index]] );
+			// Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 1] );
+			// Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 2] );
 
 			Index += 3;
 		}
