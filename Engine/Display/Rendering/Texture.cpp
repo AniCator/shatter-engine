@@ -12,6 +12,7 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
+#include <Engine/Utility/Math.h>
 
 CTexture::CTexture()
 {
@@ -29,7 +30,7 @@ CTexture::CTexture()
 	ImageData32 = nullptr;
 	ImageData32F = nullptr;
 
-	FilteringMode = EFilteringMode::Linear;
+	FilteringMode = EFilteringMode::Trilinear;
 }
 
 CTexture::CTexture( const char* FileLocation ) : CTexture()
@@ -148,9 +149,9 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
 
 #ifdef GL_ARB_texture_filter_anisotropic
-	if( !!GLAD_GL_ARB_texture_filter_anisotropic && FilteringMode == EFilteringMode::Anisotropic )
+	if( !!GLAD_GL_ARB_texture_filter_anisotropic )
 	{
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, 8 );
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
 	}
 #endif
 
@@ -256,4 +257,31 @@ void* CTexture::GetImageData() const
 		return ImageData32F;
 
 	return nullptr;
+}
+
+uint8_t CTexture::GetAnisotropicSamples() const
+{
+	return AnisotropicSamples;
+}
+
+void CTexture::SetAnisotropicSamples( const uint8_t Samples )
+{
+	constexpr uint8_t Minimum = 1;
+	constexpr uint8_t Maximum = 16;
+
+	AnisotropicSamples = Math::Clamp( Samples, Minimum, Maximum );
+
+#ifdef GL_ARB_texture_filter_anisotropic
+	if( !Handle )
+		return;
+
+	glBindTexture( GL_TEXTURE_2D, Handle );
+
+	if( !!GLAD_GL_ARB_texture_filter_anisotropic )
+	{
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
+	}
+
+	glBindTexture( GL_TEXTURE_2D, 0 );
+#endif
 }

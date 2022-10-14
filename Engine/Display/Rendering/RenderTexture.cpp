@@ -105,9 +105,9 @@ GLuint GenerateColorBufferMultisample( const GLuint Width, const GLuint Height, 
 GLuint GenerateColorBuffer( const RenderTextureConfiguration& Configuration )
 {
 	if( Configuration.Samples > 1 )
-		return GenerateColorBufferMultisample( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Linear, Configuration.Samples );
+		return GenerateColorBufferMultisample( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Trilinear, Configuration.Samples );
 
-	return GenerateColorBuffer( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Linear );
+	return GenerateColorBuffer( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Trilinear );
 }
 
 GLuint GenerateDepthBuffer( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter, const bool DepthOnly )
@@ -161,9 +161,9 @@ GLuint GenerateDepthBuffer( const RenderTextureConfiguration& Configuration )
 {
 	const auto DepthOnly = !Configuration.EnableColor && Configuration.EnableDepth;
 	if( Configuration.Samples > 1 )
-		return GenerateDepthBufferMultisample( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Linear, Configuration.Samples, DepthOnly );
+		return GenerateDepthBufferMultisample( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Trilinear, Configuration.Samples, DepthOnly );
 
-	return GenerateDepthBuffer( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Linear, DepthOnly );
+	return GenerateDepthBuffer( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Trilinear, DepthOnly );
 }
 
 bool CreateFramebuffer( ScreenRequest& Request )

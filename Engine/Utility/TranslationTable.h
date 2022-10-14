@@ -38,6 +38,18 @@ struct Translate
 		return Value();
 	}
 
+	bool ValidKey( const Key& Key ) const
+	{
+		auto Iterator = FromKey.find( Key );
+		return Iterator != FromKey.end();
+	}
+
+	bool ValidValue( const Value& Value ) const
+	{
+		auto Iterator = ToKey.find( Value );
+		return Iterator != ToKey.end();
+	}
+
 	size_t Size() const
 	{
 		return FromKey.size();

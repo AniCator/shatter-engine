@@ -44,11 +44,15 @@ static const GLenum FilteringModeToEnum[static_cast<EFilteringModeType>( EFilter
 	GL_LINEAR
 };
 
+constexpr GLenum Nearest = GL_NEAREST_MIPMAP_LINEAR;
+constexpr GLenum Bilinear = GL_LINEAR_MIPMAP_NEAREST;
+constexpr GLenum Trilinear = GL_LINEAR_MIPMAP_LINEAR;
+
 static const GLenum FilteringModeToMipMapEnum[static_cast<EFilteringModeType>( EFilteringMode::Maximum )]
 {
-	GL_NEAREST_MIPMAP_LINEAR,
-	GL_LINEAR_MIPMAP_LINEAR,
-	GL_LINEAR_MIPMAP_LINEAR
+	Nearest,
+	Bilinear,
+	Trilinear
 };
 
 static const GLenum ImageFormatToType[static_cast<EImageFormatType>( EImageFormat::Maximum )]

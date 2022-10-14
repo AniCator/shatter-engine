@@ -16,8 +16,8 @@ public:
 	CTexture( const char* FileLocation );
 	virtual ~CTexture();
 
-	virtual bool Load( const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
-	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
+	virtual bool Load( const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
+	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
 	void Save( const char* FileLocation = nullptr );
 	virtual void Bind( ETextureSlot Slot ) const;
 
@@ -29,10 +29,17 @@ public:
 
 	void* GetImageData() const;
 
+	uint8_t GetAnisotropicSamples() const;
+	void SetAnisotropicSamples( const uint8_t Samples );
+
 	EFilteringMode FilteringMode;
 	GLuint Handle;
 protected:
 	EImageFormat Format;
+
+	// Used to determine how many samples should be used for anisotropic filtering.
+	uint8_t AnisotropicSamples = 1;
+
 	std::string Location;
 
 	int Width;

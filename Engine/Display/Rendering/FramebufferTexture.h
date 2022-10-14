@@ -10,7 +10,7 @@ public:
 	FramebufferTexture() = default;
 
 	// Always returns true for main framebuffer texture lookups.
-	bool Load( const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true ) override
+	bool Load( const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true ) override
 	{
 		return true; 
 	};

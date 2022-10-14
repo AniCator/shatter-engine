@@ -102,7 +102,7 @@ bool CreateTexture( const AssetNewData& Data, const AssetTexture& Texture )
 	if( Assets.FindTexture( Data.Name ) != Assets.FindTexture( "error" ) )
 		return false;
 
-	if( Assets.CreateNamedTexture( Data.Name.c_str(), Texture.Location, EFilteringMode::Linear, Format, Texture.MipMaps ) )
+	if( Assets.CreateNamedTexture( Data.Name.c_str(), Texture.Location, EFilteringMode::Trilinear, Format, Texture.MipMaps ) )
 		return true;
 
 	return false;

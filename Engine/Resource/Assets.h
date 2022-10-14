@@ -61,8 +61,8 @@ public:
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation, const EShaderType& Type = EShaderType::Fragment );
 	CShader* CreateNamedShader( const char* Name, const char* VertexLocation, const char* FragmentLocation );
-	CTexture* CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
-	CTexture* CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Linear, const EImageFormat Format = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
+	CTexture* CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat Format = EImageFormat::RGB8, const bool& GenerateMipMaps = true, const uint8_t AnisotropicSamples = 0 );
+	CTexture* CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat Format = EImageFormat::RGB8, const bool& GenerateMipMaps = true, const uint8_t AnisotropicSamples = 0 );
 	CTexture* CreateNamedTexture( const char* Name, CTexture* Texture );
 	CSound* CreateNamedSound( const char* Name, const char* FileLocation );
 	CSound* CreateNamedSound( const char* Name );

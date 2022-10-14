@@ -83,8 +83,8 @@ static const char* TextureSlotName[TextureSlots] = {
 enum class EFilteringMode : uint32_t
 {
 	Nearest = 0,
-	Linear,
-	Anisotropic,
+	Bilinear,
+	Trilinear,
 
 	Maximum
 };

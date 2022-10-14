@@ -19,6 +19,7 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/Utility/ThreadPool.h>
+#include <Engine/Utility/TranslationTable.h>
 
 ConfigurationVariable<bool> LogAssetCreation( "debug.Assets.LogCreation", false );
 
@@ -181,6 +182,12 @@ static const std::map<EImageFormat, std::string> StringToImageFormat = {
 	std::make_pair( EImageFormat::RGBA32F, "rgba32f" ),
 };
 
+static const auto StringToFilteringMode = Translate<std::string, EFilteringMode>( {
+	{"nearest", EFilteringMode::Nearest},
+	{"bilinear", EFilteringMode::Bilinear},
+	{"trilinear", EFilteringMode::Trilinear},
+} );
+
 void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, std::vector<FGenericAssetPayload>& GenericAssets )
 {
 	OptickEvent();
@@ -275,8 +282,9 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 				Log::Event( "Loading texture \"%s\".\n", Payload.Name.c_str() );
 			}
 
-			EFilteringMode Mode = EFilteringMode::Anisotropic;
+			EFilteringMode FilteringMode = EFilteringMode::Trilinear;
 			EImageFormat ImageFormat = EImageFormat::RGB8;
+			uint8_t AnisotropicSamples = 0;
 
 			if( Payload.Data.size() > 1 )
 			{
@@ -290,7 +298,25 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 				}
 			}
 
-			CreateNamedTexture( Payload.Name.c_str(), Payload.Data[0].c_str(), Mode, ImageFormat );
+			if( Payload.Data.size() > 2 )
+			{
+				// Transform given format into lower case string
+				std::transform( Payload.Data[2].begin(), Payload.Data[2].end(), Payload.Data[2].begin(), ::tolower );
+
+				if( StringToFilteringMode.ValidKey( Payload.Data[2] ) )
+				{
+					FilteringMode = StringToFilteringMode.To( Payload.Data[2] );
+				}
+			}
+
+			if( Payload.Data.size() > 3 )
+			{
+				int Samples = 0;
+				Extract( Payload.Data[3], Samples );
+				AnisotropicSamples = Math::Clamp( Samples, 1, 16 );
+			}
+
+			CreateNamedTexture( Payload.Name.c_str(), Payload.Data[0].c_str(), FilteringMode, ImageFormat, true, AnisotropicSamples );
 		}
 		else if( Payload.Type == EAsset::Sound )
 		{
@@ -629,7 +655,7 @@ CShader* CAssets::CreateNamedShader( const char* Name, const char* VertexLocatio
 	return nullptr;
 }
 
-CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode, const EImageFormat Format, const bool& GenerateMipMaps )
+CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode, const EImageFormat Format, const bool& GenerateMipMaps, const uint8_t AnisotropicSamples )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
@@ -647,6 +673,8 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 	ProfileMemory( "Textures" );
 
 	CTexture* NewTexture = new CTexture( FileLocation );
+	NewTexture->SetAnisotropicSamples( AnisotropicSamples );
+
 	const bool bSuccessfulCreation = NewTexture->Load( Mode, Format, GenerateMipMaps );
 
 	if( bSuccessfulCreation )
@@ -670,7 +698,7 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, const char* FileLocatio
 	return nullptr;
 }
 
-CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode, const EImageFormat Format, const bool& GenerateMipMaps )
+CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode, const EImageFormat Format, const bool& GenerateMipMaps, const uint8_t AnisotropicSamples )
 {
 	if( CWindow::Get().IsWindowless() )
 		return nullptr;
@@ -688,6 +716,8 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, unsigned char* Data, co
 	ProfileMemory( "Textures" );
 
 	CTexture* NewTexture = new CTexture();
+	NewTexture->SetAnisotropicSamples( AnisotropicSamples );
+
 	const bool bSuccessfulCreation = NewTexture->Load( Data, Width, Height, Channels, Mode, Format, GenerateMipMaps );
 
 	if( bSuccessfulCreation )
@@ -1151,8 +1181,14 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 		std::string VertexPath;
 		std::string FragmentPath;
 
-		// Texture format storage
+		// Texture format storage.
 		std::string ImageFormat;
+
+		// Texture filtering mode.
+		std::string FilteringMode;
+
+		// Texture anisotropic sample count.
+		std::string AnisotropicSamples;
 
 		// TODO: Give this a better name.
 		std::string UserData;
@@ -1229,6 +1265,14 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 			else if( Property->Key == "format" )
 			{
 				ImageFormat = Property->Value;
+			}
+			else if( Property->Key == "filter" )
+			{
+				FilteringMode = Property->Value;
+			}
+			else if( Property->Key == "samples" )
+			{
+				AnisotropicSamples = Property->Value;
 			}
 			else if( Property->Key == "set" )
 			{
@@ -1307,6 +1351,8 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 					Payload.Name = Name;
 					Payload.Data.emplace_back( Path );
 					Payload.Data.emplace_back( ImageFormat );
+					Payload.Data.emplace_back( FilteringMode );
+					Payload.Data.emplace_back( AnisotropicSamples );
 					GenericAssets.emplace_back( Payload );
 				}
 			}

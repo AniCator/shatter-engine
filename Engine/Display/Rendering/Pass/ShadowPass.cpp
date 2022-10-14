@@ -16,7 +16,7 @@ CRenderPassShadow::CRenderPassShadow( int Width, int Height, const CCamera& Came
 	SendQueuedRenderables = true;
 
 	Assets.CreateNamedTexture( "noise256near", "Textures/noise256.png", EFilteringMode::Nearest, EImageFormat::RGB8, false );
-	Assets.CreateNamedTexture( "noise256", "Textures/noise256.png", EFilteringMode::Linear );
+	Assets.CreateNamedTexture( "noise256", "Textures/noise256.png", EFilteringMode::Trilinear );
 }
 
 CRenderPassShadow::~CRenderPassShadow()

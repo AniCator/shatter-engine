@@ -274,7 +274,7 @@ CTexture* UIFileGeneric = nullptr; // Textures/UI/twotone_radio_button_unchecked
 
 CTexture* CreateUIIcon( const char* Name, const char* Location )
 {
-	return CAssets::Get().CreateNamedTexture( Name, Location, EFilteringMode::Linear, EImageFormat::RGBA8 );
+	return CAssets::Get().CreateNamedTexture( Name, Location, EFilteringMode::Trilinear, EImageFormat::RGBA8 );
 }
 
 bool IconsCreated = false;
@@ -1746,6 +1746,17 @@ void PerformPerpetualRecompile()
 	}
 }
 
+void ForceAnisotropicSamples( const uint8_t Samples )
+{
+	for( auto* Texture : CAssets::Get().Textures.GetAssets() )
+	{
+		if( !Texture )
+			continue;
+
+		Texture->SetAnisotropicSamples( Samples );
+	}
+}
+
 extern ConfigurationVariable<bool> FlipHorizontal;
 void RenderCommandItems()
 {
@@ -1764,6 +1775,31 @@ void RenderCommandItems()
 		ImGui::BeginTooltip();
 		ImGui::Text( "Recompile shaders every 2 seconds." );
 		ImGui::EndTooltip();
+	}
+
+	if( ImGui::MenuItem( "Force Anisotropic Filtering Off" ) )
+	{
+		ForceAnisotropicSamples( 1 );
+	}
+
+	if( ImGui::MenuItem( "Force Anisotropic Filtering x2" ) )
+	{
+		ForceAnisotropicSamples( 2 );
+	}
+
+	if( ImGui::MenuItem( "Force Anisotropic Filtering x4" ) )
+	{
+		ForceAnisotropicSamples( 4 );
+	}
+
+	if( ImGui::MenuItem( "Force Anisotropic Filtering x8" ) )
+	{
+		ForceAnisotropicSamples( 8 );
+	}
+
+	if( ImGui::MenuItem( "Force Anisotropic Filtering x16" ) )
+	{
+		ForceAnisotropicSamples( 16 );
 	}
 }
 
