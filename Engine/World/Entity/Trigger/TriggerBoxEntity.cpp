@@ -213,6 +213,11 @@ void CTriggerBoxEntity::OnLeave( Interactable* Interactable )
 	Send( "OnLeave", this );
 }
 
+const std::unordered_set<Interactable*>& CTriggerBoxEntity::Fetch() const
+{
+	return Volume->Entities;
+}
+
 bool CTriggerBoxEntity::ShouldTrigger() const
 {
 	return !Latched && ( Frequency < 0 || Count < Frequency );

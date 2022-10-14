@@ -23,6 +23,9 @@ public:
 	void OnEnter( Interactable* Interactable );
 	void OnLeave( Interactable* Interactable );
 
+	// Fetches entities from the trigger volume.
+	const std::unordered_set<Interactable*>& Fetch() const;
+
 protected:
 	bool ShouldTrigger() const;
 	bool CanTrigger() const;
