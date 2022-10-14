@@ -58,7 +58,7 @@ static float SuperSamplingFactor = 2.0f;
 static bool PreviousSuperSampling = false;
 ConfigurationVariable<bool> SuperSampling( "render.SuperSampling", false );
 
-ConfigurationVariable<int> AntiAliasing( "render.AntiAliasing", 2 );
+ConfigurationVariable<int> AntiAliasing( "render.AntiAliasing", 4 );
 
 // Flips the view horizontally after rendering, for testing purposes.
 ConfigurationVariable<bool> FlipHorizontal( "render.FlipHorizontal", false );
@@ -348,41 +348,8 @@ void CRenderer::DrawQueuedRenderables()
 		glEnable( GL_CULL_FACE );
 	}
 
-	auto SortRenderables = [] ( CRenderable* A, CRenderable* B ) {
-		const auto& RenderDataA = A->GetRenderData();
-		const auto& RenderDataB = B->GetRenderData();
-
-		SORT( RenderDataA, RenderDataB, ShaderProgram );
-		SORT( RenderDataA, RenderDataB, IndexBufferObject );
-		SORT( RenderDataA, RenderDataB, VertexBufferObject );
-
-		return false;
-	};
-
-	auto SortRenderablesTranslucent = [this]( CRenderable* A, CRenderable* B ) {
-		const auto& RenderDataA = A->GetRenderData();
-		const auto& RenderDataB = B->GetRenderData();
-
-		SORT( RenderDataA, RenderDataB, ShaderProgram );
-		SORT( RenderDataA, RenderDataB, IndexBufferObject );
-		SORT( RenderDataA, RenderDataB, VertexBufferObject );
-
-		// Distance sorting.
-		const auto DistanceA = Camera.GetCameraPosition().DistanceSquared( RenderDataA.Transform.GetPosition() );
-		const auto DistanceB = Camera.GetCameraPosition().DistanceSquared( RenderDataB.Transform.GetPosition() );
-		if( DistanceA != DistanceB )
-		{
-			return ExclusiveComparisonFlipped( DistanceA, DistanceB );
-		}
-
-		return false;
-	};
-
 	// Create the render queue for this frame.
 	UpdateQueue();
-
-	std::sort( RenderQueueOpaque.begin(), RenderQueueOpaque.end(), SortRenderables );
-	std::sort( RenderQueueTranslucent.begin(), RenderQueueTranslucent.end(), SortRenderablesTranslucent );
 
 	Framebuffer.Prepare();
 
@@ -775,4 +742,44 @@ void CRenderer::UpdateQueue()
 	AddTranslucent( RenderQueueTranslucent, Renderables );
 	AddTranslucent( RenderQueueTranslucent, RenderablesPerFrame );
 	AddTranslucent( RenderQueueTranslucent, DynamicRenderables );
+
+	SortQueue();
+}
+
+void CRenderer::SortQueue()
+{
+	OptickEvent();
+
+	auto SortRenderables = []( CRenderable* A, CRenderable* B ) {
+		const auto& RenderDataA = A->GetRenderData();
+		const auto& RenderDataB = B->GetRenderData();
+
+		SORT( RenderDataA, RenderDataB, ShaderProgram );
+		SORT( RenderDataA, RenderDataB, IndexBufferObject );
+		SORT( RenderDataA, RenderDataB, VertexBufferObject );
+
+		return false;
+	};
+
+	auto SortRenderablesTranslucent = [this]( CRenderable* A, CRenderable* B ) {
+		const auto& RenderDataA = A->GetRenderData();
+		const auto& RenderDataB = B->GetRenderData();
+
+		SORT( RenderDataA, RenderDataB, ShaderProgram );
+		SORT( RenderDataA, RenderDataB, IndexBufferObject );
+		SORT( RenderDataA, RenderDataB, VertexBufferObject );
+
+		// Distance sorting.
+		const auto DistanceA = Camera.GetCameraPosition().DistanceSquared( RenderDataA.Transform.GetPosition() );
+		const auto DistanceB = Camera.GetCameraPosition().DistanceSquared( RenderDataB.Transform.GetPosition() );
+		if( DistanceA != DistanceB )
+		{
+			return ExclusiveComparisonFlipped( DistanceA, DistanceB );
+		}
+
+		return false;
+	};
+
+	std::sort( RenderQueueOpaque.begin(), RenderQueueOpaque.end(), SortRenderables );
+	std::sort( RenderQueueTranslucent.begin(), RenderQueueTranslucent.end(), SortRenderablesTranslucent );
 }

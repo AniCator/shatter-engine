@@ -78,7 +78,12 @@ protected:
 
 private:
 	void DrawPasses( const ERenderPassLocation::Type& Location, CRenderTexture* Target = nullptr );
+
+	// Combines all the render queues.
 	void UpdateQueue();
+
+	// Sorts the render queues.
+	void SortQueue();
 
 	int64_t DrawCalls = 0;
 	
