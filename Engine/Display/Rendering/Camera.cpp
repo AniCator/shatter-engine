@@ -61,10 +61,10 @@ bool HalfSpaceTest( const Plane& Plane, const Vector3D& Point, const float& Radi
 {
 	if( HalfSpace( Plane, Point ) >= Radius )
 	{
-		return false;
+		return true;
 	}
 
-	return true;
+	return false;
 }
 
 float DistanceToPlane( const Plane& Plane, const Vector3D& Point )
@@ -72,10 +72,10 @@ float DistanceToPlane( const Plane& Plane, const Vector3D& Point )
 	return Plane.Point.Dot( Point );
 }
 
-bool PlaneTest( const Plane& Plane, const Vector3D& Point )
+bool PlaneTest( const Plane& Plane, const Vector3D& Point, const float& Radius )
 {
 	const auto Difference = ( Point - Plane.Point );
-	return Difference.Dot( Plane.Normal ) > 0.0f;
+	return Difference.Dot( Plane.Normal ) >= Radius;
 }
 
 bool SphereTest( const Plane& Plane, const Vector3D& Point, const float& Radius )
@@ -87,25 +87,11 @@ bool SphereTest( const Plane& Plane, const Vector3D& Point, const float& Radius 
 
 bool Frustum::Contains( const Vector3D& Point, const float Radius ) const
 {
-	// return HalfSpaceTest( Plane[Near], Point, Radius );
-	
-	if( !SphereTest( Plane[Near], Point, Radius ) )
-		return false;
-
-	if( !SphereTest( Plane[Far], Point, Radius ) )
-		return false;
-	
-	if( !SphereTest( Plane[Top], Point, Radius ) )
-		return false;
-
-	if( !SphereTest( Plane[Bottom], Point, Radius ) )
-		return false;
-
-	if( !SphereTest( Plane[Left], Point, Radius ) )
-		return false;
-
-	if( !SphereTest( Plane[Right], Point, Radius ) )
-		return false;
+	for( int Side = 0; Side < Frustum::Maximum; Side++ )
+	{
+		if( PlaneTest( Plane[Side], Point, Radius ) )
+			return false;
+	}
 
 	return true;
 }
