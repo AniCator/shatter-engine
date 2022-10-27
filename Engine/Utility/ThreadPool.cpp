@@ -7,6 +7,8 @@ Worker* Pool[Thread::Maximum];
 
 void ThreadPool::Initialize()
 {
+	Shutdown();
+
 	for( size_t Index = 0; Index < Thread::Maximum; Index++ )
 	{
 		Pool[Index] = new Worker();
