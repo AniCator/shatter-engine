@@ -136,6 +136,7 @@ void CMeshEntity::Tick()
 		}
 
 		WantsAnimationUpdate = true;
+		AnimationTimeAccumulator += DeltaTime;
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 		RenderData.Transform = Transform;
@@ -180,7 +181,8 @@ void CMeshEntity::TickAnimation()
 
 	AnimationInstance.TickOffset = GetEntityID().ID;
 
-	Animator::Update( AnimationInstance, GameLayersInstance->GetFrameTime(), ForceAnimationTick );
+	Animator::Update( AnimationInstance, AnimationTimeAccumulator, ForceAnimationTick );
+	AnimationTimeAccumulator = 0.0; // Reset the accumulator.
 
 	if( ForceAnimationTick )
 	{
@@ -190,58 +192,9 @@ void CMeshEntity::TickAnimation()
 	if( AnimationInstance.Bones.empty() )
 		return;
 
-	const auto WorldTransform = GetTransform();
-	static auto NewBoundVertices = std::vector<Vector3D>();
-	NewBoundVertices.clear();
-	for( size_t MatrixIndex = 0; MatrixIndex < AnimationInstance.Bones.size(); MatrixIndex++ )
-	{
-		auto Matrix = AnimationInstance.Bones[MatrixIndex].GlobalTransform;
-		auto ParentMatrix = Matrix;
-		if( AnimationInstance.Bones[MatrixIndex].ParentIndex > -1 )
-		{
-			ParentMatrix = AnimationInstance.Bones[AnimationInstance.Bones[MatrixIndex].ParentIndex].GlobalTransform;
-		}
+	// Update the world bounds based on the bone locations.
+	WorldBounds = AnimationInstance.CalculateBounds( GetTransform() );
 
-		const auto Current = Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
-		Vector3D PointTarget = WorldTransform.Transform( Current );
-		NewBoundVertices.emplace_back( PointTarget );
-		
-		if( DisplaySkeleton && IsDebugEnabled() )
-		{
-			const auto Parent = ParentMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
-			Vector3D PointSource = WorldTransform.Transform( Parent );
-
-			Vector3D PointCenter = PointSource + ( PointTarget - PointSource ) * 0.5f;
-
-			const auto Bind = AnimationInstance.Bones[MatrixIndex].BoneToModel.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
-			Vector3D PointBind = WorldTransform.Transform( Bind );
-
-			auto ParentBindMatrix = AnimationInstance.Bones[MatrixIndex].BoneToModel;
-			if( AnimationInstance.Bones[MatrixIndex].ParentIndex > -1 )
-			{
-				ParentBindMatrix = AnimationInstance.Bones[AnimationInstance.Bones[MatrixIndex].ParentIndex].BoneToModel;
-			}
-
-			const auto ParentBind = ParentBindMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
-			Vector3D PointParentBind = WorldTransform.Transform( ParentBind );
-			
-			UI::AddCircle( PointSource, 3.0f, ::Color( 0, 0, 255 ) );
-			UI::AddLine( PointSource, PointCenter, ::Color( 0, 0, 255 ) );
-			UI::AddLine( PointCenter, PointTarget, ::Color( 255, 0, 0 ) );
-			UI::AddCircle( PointTarget, 3.0f, ::Color( 255, 0, 0 ) );
-
-			if( Mesh )
-			{
-				UI::AddText( PointTarget, Mesh->GetSkeleton().MatrixNames[MatrixIndex].c_str() );
-			}
-
-			UI::AddCircle( PointParentBind, 3.0f, ::Color( 0, 255, 255 ) );
-			UI::AddLine( PointParentBind, PointBind, ::Color( 255, 255, 0 ) );
-			UI::AddCircle( PointBind, 3.0f, ::Color( 0, 255, 255 ) );
-		}
-	}
-
-	WorldBounds = Math::AABB( NewBoundVertices.data(), NewBoundVertices.size() );
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 	RenderData.WorldBounds = WorldBounds;
 
@@ -337,6 +290,11 @@ void CMeshEntity::Debug()
 		if( PhysicsBody )
 		{
 			PhysicsBody->Debug();
+		}
+
+		if( DisplaySkeleton )
+		{
+			AnimationInstance.Debug( GetTransform() );
 		}
 	}
 

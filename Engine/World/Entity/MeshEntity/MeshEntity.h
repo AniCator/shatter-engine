@@ -119,4 +119,5 @@ protected:
 
 	// Should TickAnimation be called during the next game frame?
 	bool WantsAnimationUpdate = false;
+	double AnimationTimeAccumulator = 0.0;
 };
