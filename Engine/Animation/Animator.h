@@ -74,7 +74,12 @@ struct Animator
 		BoundingBox CalculateBounds( const struct FTransform& Transform ) const;
 
 		Vector3D GetBonePosition( const std::string& Name ) const;
+		Vector3D GetBonePosition( const int32_t Handle ) const;
 		int32_t GetBoneIndex( const std::string& Name ) const;
+		Matrix4D GetBoneTransform( const int32_t Handle ) const;
+		void SetBoneTransform( const int32_t Handle, const Matrix4D& Matrix );
+
+		void Debug( const struct FTransform& Transform ) const;
 
 	protected:
 		uint32_t Ticks = 0;
@@ -169,6 +174,12 @@ protected:
 		Instance& Data,
 		const Skeleton& Skeleton,
 		const Bone* Parent, 
+		const Bone* Bone
+	);
+
+	static void EvaluateChildren(
+		Instance& Data,
+		const Skeleton& Skeleton,
 		const Bone* Bone
 	);
 };

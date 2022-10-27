@@ -2,6 +2,7 @@
 #include "Animator.h"
 
 #include <Engine/Display/Rendering/Renderable.h>
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Utility/Math.h>
 
 void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop )
@@ -99,13 +100,18 @@ BoundingBox Animator::Instance::CalculateBounds( const FTransform& Transform ) c
 Vector3D Animator::Instance::GetBonePosition( const std::string& Name ) const
 {
 	const auto Index = GetBoneIndex( Name );
-	if( Index < 0 )
+	return GetBonePosition( Index );
+}
+
+Vector3D Animator::Instance::GetBonePosition( const int32_t Handle ) const
+{
+	if( Handle < 0 )
 		return Vector3D::Zero;
 
-	if( Index >= Bones.size() )
+	if( Handle >= Bones.size() )
 		return Vector3D::Zero;
 
-	return Bones[Index].GlobalTransform.Transform( Vector3D::Zero );
+	return Bones[Handle].GlobalTransform.Transform( Vector3D::Zero );
 }
 
 int32_t Animator::Instance::GetBoneIndex( const std::string& Name ) const
@@ -124,6 +130,75 @@ int32_t Animator::Instance::GetBoneIndex( const std::string& Name ) const
 		return -1;
 
 	return static_cast<int32_t>( std::distance(Skeleton.MatrixNames.begin(), Iterator ) );
+}
+
+Matrix4D Animator::Instance::GetBoneTransform( const int32_t Handle ) const
+{
+	if( Handle < 0 || Handle >= Bones.size() )
+		return Matrix4D(); // Bone vector has either not been populated or the handle is invalid.
+
+	return Bones[Handle].BoneTransform;
+}
+
+void Animator::Instance::SetBoneTransform( const int32_t Handle, const Matrix4D& Matrix )
+{
+	if( !Mesh )
+		return;
+
+	const auto& Skeleton = Mesh->GetSkeleton();
+	if( Handle < 0 || Handle >= Bones.size() )
+		return; // Bone vector has either not been populated or the handle is invalid.
+
+	Bones[Handle].GlobalTransform = Skeleton.Bones[Handle].BoneToModel * Matrix;
+	Bones[Handle].BoneTransform = Bones[Handle].GlobalTransform * Skeleton.Bones[Handle].ModelToBone;
+	Bones[Handle].Evaluated = true; // Indicate that the bone has already been evaluated.
+}
+
+void Animator::Instance::Debug( const FTransform& WorldTransform ) const
+{
+	for( size_t MatrixIndex = 0; MatrixIndex < Bones.size(); MatrixIndex++ )
+	{
+		auto Matrix = Bones[MatrixIndex].GlobalTransform;
+		auto ParentMatrix = Matrix;
+		if( Bones[MatrixIndex].ParentIndex > -1 )
+		{
+			ParentMatrix = Bones[Bones[MatrixIndex].ParentIndex].GlobalTransform;
+		}
+
+		const auto Current = Matrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+		Vector3D PointTarget = WorldTransform.Transform( Current );
+
+		const auto Parent = ParentMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+		Vector3D PointSource = WorldTransform.Transform( Parent );
+
+		Vector3D PointCenter = PointSource + ( PointTarget - PointSource ) * 0.5f;
+
+		const auto Bind = Bones[MatrixIndex].BoneToModel.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+		Vector3D PointBind = WorldTransform.Transform( Bind );
+
+		auto ParentBindMatrix = Bones[MatrixIndex].BoneToModel;
+		if( Bones[MatrixIndex].ParentIndex > -1 )
+		{
+			ParentBindMatrix = Bones[Bones[MatrixIndex].ParentIndex].BoneToModel;
+		}
+
+		const auto ParentBind = ParentBindMatrix.Transform( Vector3D( 0.0f, 0.0f, 0.0f ) );
+		Vector3D PointParentBind = WorldTransform.Transform( ParentBind );
+
+		UI::AddCircle( PointSource, 3.0f, ::Color( 0, 0, 255 ) );
+		UI::AddLine( PointSource, PointCenter, ::Color( 0, 0, 255 ) );
+		UI::AddLine( PointCenter, PointTarget, ::Color( 255, 0, 0 ) );
+		UI::AddCircle( PointTarget, 3.0f, ::Color( 255, 0, 0 ) );
+
+		if( Mesh )
+		{
+			UI::AddText( PointTarget, Mesh->GetSkeleton().MatrixNames[MatrixIndex].c_str() );
+		}
+
+		UI::AddCircle( PointParentBind, 3.0f, ::Color( 0, 255, 255 ) );
+		UI::AddLine( PointParentBind, PointBind, ::Color( 255, 255, 0 ) );
+		UI::AddCircle( PointBind, 3.0f, ::Color( 0, 255, 255 ) );
+	}
 }
 
 void Animator::Update( Instance& Data, const double& DeltaTime, const bool& ForceUpdate )
@@ -201,12 +276,20 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 	}
 
 	// Clear the transformed bones vector.
-	Data.Bones.clear();
-	Data.Bones.resize( Skeleton.Bones.size() );
+	if( ForceUpdate )
+	{
+		Data.Bones.clear();
+	}
+
+	if( Data.Bones.size() != Skeleton.Bones.size() )
+		Data.Bones.resize( Skeleton.Bones.size() );
 
 	// Initialize the bone matrices.
 	for( auto& Bone : Data.Bones )
 	{
+		if( Bone.Evaluated )
+			continue;
+
 		Bone.BoneTransform = Matrix4D();
 		Bone.GlobalTransform = Matrix4D();
 	}
@@ -232,6 +315,12 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 	for( const auto* Bone : RootBones )
 	{
 		Traverse( Data, Skeleton, nullptr, Bone );
+	}
+
+	// Reset evaluation for all bones.
+	for( auto& Bone : Data.Bones )
+	{
+		Bone.Evaluated = false;
 	}
 }
 
@@ -583,10 +672,28 @@ float Animator::GetRelativeTime( const Key& A, const Key& B, const float& Time )
 	return 0.0f;
 }
 
+void Animator::EvaluateChildren( Instance& Data, const Skeleton& Skeleton, const Bone* Bone )
+{
+	for( const int& ChildIndex : Bone->Children )
+	{
+		if( ChildIndex > -1 && ChildIndex < Data.Bones.size() )
+		{
+			Traverse( Data, Skeleton, &Data.Bones[Bone->Index], &Skeleton.Bones[ChildIndex] );
+		}
+	}
+}
+
 void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* Parent, const Bone* Bone )
 {
 	if( !Bone )
 	{
+		return;
+	}
+
+	if( Data.Bones[Bone->Index].Evaluated )
+	{
+		// This bone has already been evaluated, just update its children.
+		EvaluateChildren( Data, Skeleton, Bone );
 		return;
 	}
 
@@ -668,12 +775,6 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 	}
 
 	Data.Bones[Bone->Index].BoneTransform = Data.Bones[Bone->Index].GlobalTransform * ModelToBone;
-
-	for( const int& ChildIndex : Bone->Children )
-	{
-		if( ChildIndex > -1 && ChildIndex < Data.Bones.size() )
-		{
-			Traverse( Data, Skeleton, &Data.Bones[Bone->Index], &Skeleton.Bones[ChildIndex] );
-		}
-	}
+	Data.Bones[Bone->Index].Evaluated = true;
+	EvaluateChildren( Data, Skeleton, Bone );
 }
