@@ -184,6 +184,9 @@ struct Bone
 
 	Matrix4D LocalTransform;
 	Matrix4D GlobalTransform;
+
+	// Used to check if this bone has been evaluated yet in the current tick.
+	bool Evaluated = false;
 };
 
 class Skeleton
