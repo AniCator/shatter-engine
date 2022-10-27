@@ -93,9 +93,8 @@ void LightEntity::Frame()
 
 void LightEntity::Destroy()
 {
-	CPointEntity::Destroy();
-
 	delete Renderable;
+	CPointEntity::Destroy();
 }
 
 void LightEntity::Reload()
