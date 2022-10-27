@@ -770,6 +770,13 @@ struct FEventRenderable : TrackEvent
 		ImGui::DragFloat( "Play Rate", &PlayRate, 0.01f );
 	}
 
+	void Visualize() override
+	{
+		auto& RenderData = Renderable.GetRenderData();
+		UI::AddAABB( RenderData.WorldBounds.Minimum, RenderData.WorldBounds.Maximum );
+		Animation.Debug( RenderData.Transform );
+	}
+
 	const char* GetName() override
 	{
 		return MeshName.c_str();
