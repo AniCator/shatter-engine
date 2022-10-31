@@ -58,7 +58,7 @@ static float SuperSamplingFactor = 2.0f;
 static bool PreviousSuperSampling = false;
 ConfigurationVariable<bool> SuperSampling( "render.SuperSampling", false );
 
-ConfigurationVariable<int> AntiAliasing( "render.AntiAliasing", 4 );
+ConfigurationVariable<int> AntiAliasing( "render.AntiAliasing", 2 );
 
 // Flips the view horizontally after rendering, for testing purposes.
 ConfigurationVariable<bool> FlipHorizontal( "render.FlipHorizontal", false );
@@ -78,12 +78,12 @@ int GetSampleCount()
 	case 3:
 		Samples = 8; // MSAA 8x
 		break;
-	case 4:
+	/*case 4:
 		Samples = 16; // MSAA 16x
 		break;
 	case 5:
 		Samples = 32; // MSAA 32x
-		break;
+		break;*/
 	default:
 		Samples = 0;
 	}
