@@ -952,6 +952,9 @@
     <ClInclude Include="ThirdParty\glad\include\glad\glad.h">
       <Filter>Source Files\ThirdParty\glad</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Physics\PhysicalSurface.h">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">

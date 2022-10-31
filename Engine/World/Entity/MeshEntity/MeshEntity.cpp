@@ -769,6 +769,12 @@ void CMeshEntity::ConstructPhysics()
 	PhysicsBody->Block = true;
 	PhysicsBody->LocalBounds = Mesh->GetBounds();
 	PhysicsBody->Construct( Physics );
+
+	if( Material )
+	{
+		// Assign the material's physical surface by default.
+		PhysicsBody->Surface = Material->Material.Surface;
+	}
 }
 
 void CMeshEntity::QueueRenderable( CRenderable* Renderable )

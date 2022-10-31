@@ -5,6 +5,7 @@
 
 #include <Engine/Physics/Body/Shared.h>
 #include <Engine/Physics/GeometryResult.h>
+#include <Engine/Physics/PhysicalSurface.h>
 #include <Engine/Utility/Structures/Testable.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
@@ -122,6 +123,9 @@ public:
 	float InverseMass = -1.0f;
 	size_t Contacts = 0;
 	CMeshEntity* ContactEntity = nullptr;
+
+	// The surface material of this body.
+	PhysicalSurface Surface = PhysicalSurface::None;
 
 	TriangleTree* Tree = nullptr;
 

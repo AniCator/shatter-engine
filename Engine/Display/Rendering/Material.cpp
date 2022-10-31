@@ -76,6 +76,16 @@ static auto ConvertSurfaceString = Translate<std::string, PhysicalSurface>( {
 	}
 );
 
+PhysicalSurface StringToPhysicalSurface( const std::string& From )
+{
+	return ConvertSurfaceString.To( From );
+}
+
+std::string PhysicalSurfaceToString( const PhysicalSurface From )
+{
+	return ConvertSurfaceString.From( From );
+}
+
 Material ConfigureMaterial( const JSON::Container& Container )
 {
 	Material Material;
@@ -89,7 +99,7 @@ Material ConfigureMaterial( const JSON::Container& Container )
 
 	if( auto* Object = JSON::Find( Container.Tree, "surface" ) )
 	{
-		Material.Surface = ConvertSurfaceString.To( Object->Value );
+		Material.Surface = StringToPhysicalSurface( Object->Value );
 	}
 
 	if( auto* Object = JSON::Find( Container.Tree, "textures" ) )

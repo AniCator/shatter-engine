@@ -5,32 +5,8 @@
 #include <vector>
 
 #include <Engine/Display/Rendering/Uniform.h>
+#include <Engine/Physics/PhysicalSurface.h>
 #include <Engine/Resource/Asset.h>
-
-enum class PhysicalSurface : uint8_t
-{
-	None,
-
-	Stone,
-	Metal,
-	Wood,
-	Concrete,
-	Brick,
-	Sand,
-	Dirt,
-	Gravel,
-	Grass,
-	Forest,
-	Rock,
-
-	User12,
-	User13,
-	User14,
-	User15,
-	User16,
-
-	Maximum
-};
 
 struct Material
 {
