@@ -21,7 +21,7 @@ struct FRenderData
 
 	FTransform Transform{};
 	BoundingBox WorldBounds{};
-	Vector4D Color = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
+	Vector4D Color = Vector4D( 1.0f, 1.0f, 1.0f, 1.0f );
 	LightIndices LightIndex;
 
 	EDrawMode DrawMode = None;
