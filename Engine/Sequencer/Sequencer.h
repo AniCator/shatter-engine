@@ -113,6 +113,7 @@ public:
 	// TODO: Move this elsewhere.
 	void Frame();
 	void Draw();
+	void SetTransform( struct FTransform& Transform );
 
 	template<typename T>
 	static void AddType()

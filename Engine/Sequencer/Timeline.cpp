@@ -654,6 +654,8 @@ struct FEventRenderable : TrackEvent
 		}
 
 		auto& RenderData = Renderable.GetRenderData();
+		RenderData.Transform = Timeline->Transform.Transform( Transform );
+
 		if( IsAnimating )
 		{
 			RenderData.WorldBounds = Animation.CalculateBounds( RenderData.Transform );
@@ -724,8 +726,6 @@ struct FEventRenderable : TrackEvent
 			Renderable.SetTexture( AssignedTexture, ETextureSlot::Slot0 );
 		}
 
-		auto& RenderData = Renderable.GetRenderData();
-		auto& Transform = RenderData.Transform;
 		auto Position = Transform.GetPosition();
 		if( ImGui::DragFloat3( "##mp", &Position.X, 0.1f ) ) //
 		{
@@ -794,6 +794,7 @@ struct FEventRenderable : TrackEvent
 	}
 
 	CRenderable Renderable;
+	FTransform Transform;
 	Animator::Instance Animation;
 	bool LoopAnimation = false;
 	float PlayRate = 1.0f;
@@ -812,6 +813,7 @@ struct FEventRenderable : TrackEvent
 		Serialize::Export( Data, "lpa", LoopAnimation );
 		Serialize::Export( Data, "prt", PlayRate );
 		Serialize::Export( Data, "anm", Animation.CurrentAnimation );
+		Serialize::Export( Data, "tfm", Transform );
 	}
 
 	void Import( CData& Data ) override
@@ -824,6 +826,7 @@ struct FEventRenderable : TrackEvent
 		Serialize::Import( Data, "lpa", LoopAnimation );
 		Serialize::Import( Data, "prt", PlayRate );
 		Serialize::Import( Data, "anm", Animation.CurrentAnimation );
+		Serialize::Import( Data, "tfm", Transform );
 
 		const auto& Assets = CAssets::Get();
 		Renderable.SetMesh( Assets.Meshes.Find( MeshName ) );

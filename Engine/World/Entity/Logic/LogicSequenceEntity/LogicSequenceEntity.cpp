@@ -47,6 +47,11 @@ void CLogicSequenceEntity::Tick()
 	if( !Sequence )
 		return;
 
+	if( UseTransform )
+	{
+		Sequence->SetTransform( Transform );
+	}
+
 	const auto CurrentlyPlaying = Sequence->Playing();
 	const auto StartedPlaying = !IsPlaying && CurrentlyPlaying;
 	if( StartedPlaying )
@@ -68,11 +73,15 @@ void CLogicSequenceEntity::Destroy()
 {
 	if( Sequence && Sequence->Playing() )
 		Sequence->Stop();
+
+	CPointEntity::Destroy();
 }
 
 void CLogicSequenceEntity::Load( const JSON::Vector& Objects )
 {
+	CPointEntity::Load( Objects );
 	JSON::Assign( Objects, "sequence", SequenceAsset );
+	JSON::Assign( Objects, "use_transform_for_sequence", UseTransform );
 }
 
 void CLogicSequenceEntity::Reload()
@@ -82,10 +91,14 @@ void CLogicSequenceEntity::Reload()
 
 void CLogicSequenceEntity::Export( CData& Data )
 {
+	CPointEntity::Export( Data );
 	Serialize::Export( Data, "sq", SequenceAsset );
+	Serialize::Export( Data, "t", UseTransform );
 }
 
 void CLogicSequenceEntity::Import( CData& Data )
 {
+	CPointEntity::Import( Data );
 	Serialize::Import( Data, "sq", SequenceAsset );
+	Serialize::Import( Data, "t", UseTransform );
 }

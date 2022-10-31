@@ -64,6 +64,7 @@ public:
 	virtual void Draw( FRenderData& RenderData, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride = None );
 
 	FRenderDataInstanced& GetRenderData();
+	FRenderDataInstanced GetRenderData() const;
 
 	bool HasSkeleton = false;
 

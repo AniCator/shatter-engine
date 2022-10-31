@@ -94,6 +94,11 @@ void CSequence::Draw()
 	Timeline->Draw();
 }
 
+void CSequence::SetTransform( FTransform& Transform )
+{
+	Timeline->Transform = Transform;
+}
+
 CData& operator<<( CData& Data, const CSequence& Sequence )
 {
 	Data << *Sequence.Timeline;

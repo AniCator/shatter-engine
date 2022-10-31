@@ -174,6 +174,11 @@ FRenderDataInstanced& CRenderable::GetRenderData()
 	return RenderData;
 }
 
+FRenderDataInstanced CRenderable::GetRenderData() const
+{
+	return RenderData;
+}
+
 void CRenderable::FrustumCull( const CCamera& Camera, CRenderable* Renderable )
 {
 	Culling::Frustum( Camera, Renderable );

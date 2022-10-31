@@ -1,9 +1,9 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <Engine/World/Entity/Entity.h>
+#include <Engine/World/Entity/PointEntity/PointEntity.h>
 
-class CLogicSequenceEntity : public CEntity
+class CLogicSequenceEntity : public CPointEntity
 {
 public:
 	CLogicSequenceEntity();
@@ -22,4 +22,5 @@ protected:
 	class CSequence* Sequence = nullptr;
 
 	bool IsPlaying = false;
+	bool UseTransform = false;
 };

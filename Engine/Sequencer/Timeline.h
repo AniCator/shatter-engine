@@ -3,6 +3,7 @@
 
 #include <Game/Game.h>
 #include <Engine/Sequencer/Sequencer.h>
+#include <Engine/Utility/Math/Transform.h>
 
 #include <ThirdParty/imgui-1.70/imgui.h>
 
@@ -153,4 +154,6 @@ public:
 
 	Timecode LoopStart = InvalidTimecode;
 	Timecode LoopEnd = InvalidTimecode;
+
+	FTransform Transform;
 };
