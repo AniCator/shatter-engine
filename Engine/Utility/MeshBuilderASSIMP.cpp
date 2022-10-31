@@ -686,6 +686,12 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 		0
 	);
 
+	const char* ErrorString = Importer.GetErrorString();
+	if( ErrorString[0] != '\0' )
+	{
+		Log::Event( Log::Warning, "Model error\n\t\"%s\"\n\t%s\n", File.Location().c_str(), Importer.GetErrorString() );
+	}
+
 	if( !Scene )
 		return;
 
