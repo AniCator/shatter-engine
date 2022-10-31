@@ -8,6 +8,9 @@
 void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop )
 {
 	const auto SameAnimation = CurrentAnimation == Name;
+	if( SameAnimation )
+		return;
+
 	CurrentAnimation = Name;
 	LoopAnimation = Loop;
 	AnimationFinished = false;
@@ -15,7 +18,7 @@ void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop
 
 	// ForceAnimationTick = true;
 
-	if( !Mesh && !SameAnimation )
+	if( !Mesh )
 		return;
 
 	BlendEntry Entry;
@@ -32,6 +35,11 @@ void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop
 	}
 	else
 	{
+		for( auto& StackEntry : Stack )
+		{
+			StackEntry.Weight = 0.0f;
+		}
+
 		Stack[0] = Entry;
 	}
 }
