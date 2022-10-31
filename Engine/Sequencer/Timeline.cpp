@@ -633,6 +633,12 @@ struct FEventRenderable : TrackEvent
 			!Animation.Mesh->GetSkeleton().Animations.empty()
 			;
 
+		// If the stack is empty, it means the animation wasn't set.
+		if( Animation.Stack.empty() )
+		{
+			Animation.SetAnimation( Animation.CurrentAnimation, LoopAnimation );
+		}
+
 		if( IsAnimating )
 		{
 			// Calculate the animation time relative to the event.
@@ -665,7 +671,7 @@ struct FEventRenderable : TrackEvent
 
 	void Reset() override
 	{
-
+		
 	}
 
 	void Context() override

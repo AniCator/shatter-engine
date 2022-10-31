@@ -7,10 +7,6 @@
 
 void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop )
 {
-	const auto SameAnimation = CurrentAnimation == Name;
-	if( SameAnimation )
-		return;
-
 	CurrentAnimation = Name;
 	LoopAnimation = Loop;
 	AnimationFinished = false;
