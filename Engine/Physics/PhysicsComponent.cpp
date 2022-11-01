@@ -660,7 +660,7 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 
 bool CBody::Collision( CBody* Body )
 {
-	if( !Block )
+	if( !Block || !Body->Block )
 		return false;
 
 	if( !WorldSphere.Intersects( Body->WorldSphere ) )
