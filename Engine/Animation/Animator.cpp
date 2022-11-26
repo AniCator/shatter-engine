@@ -141,7 +141,8 @@ Matrix4D Animator::Instance::GetBoneTransform( const int32_t Handle ) const
 	if( Handle < 0 || Handle >= Bones.size() )
 		return Matrix4D(); // Bone vector has either not been populated or the handle is invalid.
 
-	return Bones[Handle].BoneTransform;
+	const auto& Skeleton = Mesh->GetSkeleton();
+	return Bones[Handle].BoneTransform * Skeleton.Bones[Handle].BoneToModel;
 }
 
 void Animator::Instance::SetBoneTransform( const int32_t Handle, const Matrix4D& Matrix )
