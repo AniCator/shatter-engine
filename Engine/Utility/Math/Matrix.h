@@ -18,25 +18,25 @@ public:
 	Vector2D Rotate( const Vector2D& Vector ) const
 	{
 		Vector2D Result;
-		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X;
-		Result.Y = Columns[X].Y * Vector.Y + Columns[Y].Y * Vector.Y;
+		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y;
+		Result.Y = Columns[X].Y * Vector.X + Columns[Y].Y * Vector.Y;
 		return Result;
 	}
 
 	Vector2D Transform( const Vector2D& Vector ) const
 	{
 		Vector2D Result;
-		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X;
-		Result.Y = Columns[X].Y * Vector.Y + Columns[Y].Y * Vector.Y + Columns[Z].Y;
+		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y + Columns[Z].X;
+		Result.Y = Columns[X].Y * Vector.X + Columns[Y].Y * Vector.Y + Columns[Z].Y;
 		return Result;
 	}
 
 	Vector3D Transform( const Vector3D& Vector ) const
 	{
 		Vector3D Result;
-		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.X + Columns[Z].X * Vector.X;
-		Result.Y = Columns[X].Y * Vector.Y + Columns[Y].Y * Vector.Y + Columns[Z].Y * Vector.Y;
-		Result.Z = Columns[X].Z * Vector.Z + Columns[Y].Z * Vector.Z + Columns[Z].Z * Vector.Z;
+		Result.X = Columns[X].X * Vector.X + Columns[Y].X * Vector.Y + Columns[Z].X * Vector.Z;
+		Result.Y = Columns[X].Y * Vector.X + Columns[Y].Y * Vector.Y + Columns[Z].Y * Vector.Z;
+		Result.Z = Columns[X].Z * Vector.X + Columns[Y].Z * Vector.Y + Columns[Z].Z * Vector.Z;
 		return Result;
 	}
 
@@ -337,9 +337,9 @@ public:
 		Rotation.Columns[Y].Y /= Scale.Y;
 		Rotation.Columns[Y].Z /= Scale.Y;
 
-		Rotation.Columns[Y].Z /= Scale.Z;
-		Rotation.Columns[Y].Z /= Scale.Z;
-		Rotation.Columns[Y].Z /= Scale.Z;
+		Rotation.Columns[Z].X /= Scale.Z;
+		Rotation.Columns[Z].Y /= Scale.Z;
+		Rotation.Columns[Z].Z /= Scale.Z;
 
 		return Rotation;
 	}

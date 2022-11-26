@@ -99,17 +99,17 @@ inline bool ExclusiveComparisonFlipped( const Vector4D& A, const Vector4D& B )
 
 namespace Math
 {
-	inline float Pi()
+	inline constexpr float Pi()
 	{
 		return 3.14159265358979323846264338327950288f;
 	}
 
-	inline float Pi2()
+	inline constexpr float Pi2()
 	{
 		return 6.28318530717958647692528676655900576f;
 	}
 
-	inline float Tau()
+	inline constexpr float Tau()
 	{
 		return 6.28318530717958647692528676655900576f;
 	}
@@ -165,7 +165,8 @@ namespace Math
 		const float Yaw = atan2f( Direction.Y, Direction.X );
 		const float Roll = 0.0f;
 
-		return Vector3D( Pitch, Roll, Yaw ) * ( 180.0f / Math::Pi() );
+		constexpr float ToDegrees = 180.0f / Math::Pi();
+		return Vector3D( Pitch, Roll, Yaw ) * ToDegrees;
 	}
 
 	inline Matrix4D EulerToMatrixRadians( const Vector3D& EulerRadians )

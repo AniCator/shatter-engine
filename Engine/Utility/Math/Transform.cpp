@@ -181,33 +181,25 @@ FTransform FTransform::Lerp( const FTransform& B, const float& Alpha ) const
 
 void FTransform::Update()
 {
-	if( ShouldUpdate )
-	{
-		static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
-		static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
-		static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
+	if( !ShouldUpdate )
+		return;
+	
+	static const glm::vec3 AxisX = glm::vec3( 1.0f, 0.0f, 0.0f );
+	static const glm::vec3 AxisY = glm::vec3( 0.0f, 1.0f, 0.0f );
+	static const glm::vec3 AxisZ = glm::vec3( 0.0f, 0.0f, 1.0f );
 
-		ScaleMatrix = Matrix4D::Scale( StoredSize );
+	ScaleMatrix = Matrix4D::Scale( StoredSize );
 
-		Vector3D Radians = StoredOrientation;
-		Radians.X = Math::ToRadians( Radians.X );
-		Radians.Y = Math::ToRadians( Radians.Y );
-		Radians.Z = Math::ToRadians( Radians.Z );
+	Vector3D Radians = StoredOrientation;
+	Radians.X = Math::ToRadians( Radians.X );
+	Radians.Y = Math::ToRadians( Radians.Y );
+	Radians.Z = Math::ToRadians( Radians.Z );
 
-		// glm::quat Pitch = glm::angleAxis( Radians.X, AxisX );
-		// glm::quat Yaw = glm::angleAxis( Radians.Y, AxisY );
-		// glm::quat Roll = glm::angleAxis( Radians.Z, AxisZ );
+	RotationMatrix = Math::EulerToMatrix( StoredOrientation );
 
-		// glm::quat Quaternion = Yaw * Pitch * Roll;
-		// RotationMatrix = Math::FromGLM( glm::toMat4( Quaternion ) );
-		RotationMatrix = Math::EulerToMatrix( StoredOrientation );
+	TranslationMatrix = Matrix4D::Translation( StoredPosition );
+	TransformationMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
+	TransformationMatrixInverse = Math::FromGLM( glm::inverse( Math::ToGLM( TransformationMatrix ) ) );
 
-		TranslationMatrix = Matrix4D::Translation( StoredPosition );
-		// TranslationMatrix.Translate( { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
-		// TranslationMatrix = Math::ToGLM( TranslateTest );
-		// TranslationMatrix = glm::translate( IdentityMatrix, { StoredPosition[0], StoredPosition[1], StoredPosition[2] } );
-
-		TransformationMatrix = TranslationMatrix * RotationMatrix * ScaleMatrix;
-		TransformationMatrixInverse = Math::FromGLM( glm::inverse( Math::ToGLM( TransformationMatrix ) ) );
-	}
+	ShouldUpdate = false;
 }
