@@ -304,11 +304,28 @@ void UpdateBoneHierarchy( const aiNode* Node, ImportedMeshData& MeshData )
 
 	if( Node->mParent )
 	{
-		const bool ValidParent = MeshData.NodeToBone.find( Node->mParent->mName.C_Str() ) != MeshData.NodeToBone.end();
-		if( ValidBone && ValidParent )
+		aiNode* ClosestParent = nullptr;
+		aiNode* CurrentParent = Node->mParent;
+		while( !ClosestParent )
+		{
+			if( MeshData.NodeToBone.find( CurrentParent->mName.C_Str() ) != MeshData.NodeToBone.end() )
+			{
+				ClosestParent = CurrentParent;
+			}
+			else
+			{
+				// Travel up the hierarchy.
+				CurrentParent = CurrentParent->mParent;
+			}
+
+			if( !CurrentParent )
+				break; // We've hit the top of the hierarchy and still haven't found a valid parent.
+		}
+
+		if( ValidBone && ClosestParent )
 		{
 			const auto& Bone = MeshData.NodeToBone[Node->mName.C_Str()];
-			const auto& Parent = MeshData.NodeToBone[Node->mParent->mName.C_Str()];
+			const auto& Parent = MeshData.NodeToBone[ClosestParent->mName.C_Str()];
 
 			if( Parent.Bone )
 			{
@@ -664,23 +681,27 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	ImportOptions Configuration = Options;
 
 	Assimp::Importer Importer;
+
+	// Don't remove empty bones.
+	Importer.SetPropertyBool( "AI_CONFIG_IMPORT_REMOVE_EMPTY_BONES", false );
+
     const aiScene* Scene = Importer.ReadFile( File.Location().c_str(), 
-		aiProcess_CalcTangentSpace			| // Calculate tangents and bitangents if possible.
+		// aiProcess_CalcTangentSpace			| // Calculate tangents and bitangents if possible.
 		aiProcess_JoinIdenticalVertices		| // Join identical vertices/ optimize indexing.
-		aiProcess_ValidateDataStructure		| // Perform a full validation of the loader's output.
+		// aiProcess_ValidateDataStructure		| // Perform a full validation of the loader's output.
 		aiProcess_ImproveCacheLocality		| // Improve the cache locality of the output vertices.
 		aiProcess_RemoveRedundantMaterials	| // Remove redundant materials.
 		aiProcess_FindDegenerates			| // Remove degenerated polygons from the import.
-		aiProcess_FindInvalidData			| // Detect invalid model data, such as invalid normal vectors.
+		// aiProcess_FindInvalidData			| // Detect invalid model data, such as invalid normal vectors.
 		aiProcess_GenUVCoords				| // Convert spherical, cylindrical, box and planar mapping to proper UVs.
 		aiProcess_TransformUVCoords			| // Preprocess UV transformations (scaling, translation ...).
-		aiProcess_FindInstances				| // Search for instanced meshes and remove them by references to one master.
+		// aiProcess_FindInstances				| // Search for instanced meshes and remove them by references to one master.
 		aiProcess_LimitBoneWeights			| // Limit bone weights to 4 per vertex.
 		aiProcess_OptimizeMeshes			| // Join small meshes, if possible.
-		aiProcess_SplitByBoneCount			| // Split meshes with too many bones.
+		// aiProcess_SplitByBoneCount			| // Split meshes with too many bones.
 
 		aiProcess_GenSmoothNormals			| // Generate smooth normal vectors if not existing.
-		aiProcess_SplitLargeMeshes			| // Split large, unrenderable meshes into submeshes.
+		// aiProcess_SplitLargeMeshes			| // Split large, unrenderable meshes into submeshes.
 		aiProcess_Triangulate				| // Triangulate polygons with more than 3 edges.
 		aiProcess_SortByPType				| // Make 'clean' meshes which consist of a single typ of primitives.
 		0
