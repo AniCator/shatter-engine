@@ -219,7 +219,7 @@ namespace Math
 		return EulerToMatrixRadians( Math::ToRadians( EulerDegrees ) );
 	}
 
-	inline Vector3D MatrixToEulerRadians( const Matrix4D& RotationMatrix )
+	inline Vector3D MatrixToEulerRadians( const Matrix3D& RotationMatrix )
 	{
 		const float Sy = sqrt( RotationMatrix[0][0] * RotationMatrix[0][0] + RotationMatrix[2][0] * RotationMatrix[2][0] );
 
@@ -242,9 +242,14 @@ namespace Math
 		return EulerRadians;
 	}
 
-	inline Vector3D MatrixToEuler( const Matrix4D& RotationMatrix )
+	inline Vector3D MatrixToEuler( const Matrix3D& RotationMatrix )
 	{
 		return Math::ToDegrees( MatrixToEulerRadians( RotationMatrix ) );
+	}
+
+	inline Vector3D MatrixToEuler( const Matrix4D& RotationMatrix )
+	{
+		return MatrixToEuler( RotationMatrix.To3D() );
 	}
 
 	inline float LengthSquared( const glm::vec2& Vector )
