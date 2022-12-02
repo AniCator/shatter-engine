@@ -16,25 +16,3 @@ enum class BodyType : uint8_t
 
 BodyType ToBodyType( const std::string& Type );
 std::string FromBodyType( const BodyType& Type );
-
-struct TriangleTree
-{
-	TriangleTree()
-	{
-		Upper = nullptr;
-		Lower = nullptr;
-	}
-
-	~TriangleTree()
-	{
-		delete Upper;
-		delete Lower;
-	}
-
-	BoundingBox Bounds;
-
-	TriangleTree* Upper = nullptr;
-	TriangleTree* Lower = nullptr;
-
-	std::vector<FVertex> Vertices;
-};

@@ -139,3 +139,6 @@ private:
 
 	std::string Location;
 };
+
+void VectorToByte( const Vector3D& Input, GLbyte* Output );
+void ByteToVector( const GLbyte* Input, Vector3D& Output );

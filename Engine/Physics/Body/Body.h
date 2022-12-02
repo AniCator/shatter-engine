@@ -127,7 +127,7 @@ public:
 	// The surface material of this body.
 	PhysicalSurface Surface = PhysicalSurface::None;
 
-	TriangleTree* Tree = nullptr;
+	struct TriangleTree* Tree = nullptr;
 
 	std::vector<CMeshEntity*> IgnoredBodies;
 	class CPhysics* Physics = nullptr;
