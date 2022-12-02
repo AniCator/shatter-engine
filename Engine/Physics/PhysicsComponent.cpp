@@ -4,6 +4,8 @@
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/Rendering/Mesh.h>
 
+#include <Engine/Profiling/Profiling.h>
+
 #include <Engine/Physics/Physics.h>
 #include <Engine/Physics/Body/Body.h>
 #include <Engine/Physics/Body/Plane.h>
@@ -18,10 +20,33 @@
 #include <Engine/World/World.h>
 
 #define DrawDebugLines 0
-#define DrawCollisionResponseAABBAABB 0
+#define DrawDebugTriangleCollisions 1
 #define DrawNormalAndDistance 0
 
 size_t TextPosition = 0;
+
+using VertexFormat = CompactVertex;
+struct TriangleTree
+{
+	TriangleTree()
+	{
+		Upper = nullptr;
+		Lower = nullptr;
+	}
+
+	~TriangleTree()
+	{
+		delete Upper;
+		delete Lower;
+	}
+
+	BoundingBox Bounds;
+
+	TriangleTree* Upper = nullptr;
+	TriangleTree* Lower = nullptr;
+
+	std::vector<CompactVertex> Vertices;
+};
 
 void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBounds, TriangleTree*& Tree, CBody* Body );
 
@@ -196,7 +221,7 @@ void AddText( const Vector3D& A, const Vector3D& B, const Vector3D& C, const Col
 	UI::AddText( C, "O", nullptr, Color );
 }
 
-CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex& B, const FVertex& C, const Vector3D& Center, const Vector3D& Extent )
+CollisionResponse CollisionResponseTriangleAABB( const VertexFormat& A, const VertexFormat& B, const VertexFormat& C, const Vector3D& Center, const Vector3D& Extent )
 {
 	CollisionResponse Response;
 
@@ -293,9 +318,9 @@ CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex
 		return Response;
 	}
 
-	Response.Normal = EdgeB.Cross( EdgeA );
-	// Response.Normal -= A.Normal + B.Normal + C.Normal;
+	Response.Normal = EdgeA.Cross( EdgeB );
 	Response.Distance = Math::Abs( Response.Normal.Dot( VertexA ) );
+	// ByteToVector( A.Normal, Response.Normal );
 
 	const float Radius = Extent.X * Math::Abs( Response.Normal.X ) + Extent.Y * Math::Abs( Response.Normal.Y ) + Extent.Z * Math::Abs( Response.Normal.Z );
 	const float DistanceFromCenter = Response.Normal.Dot( Extent ) - Response.Distance;
@@ -303,6 +328,25 @@ CollisionResponse CollisionResponseTriangleAABB( const FVertex& A, const FVertex
 
 	return Response;
 }
+
+void DrawVertex( FTransform& Transform, const VertexFormat& Vertex, const CollisionResponse& Response, const Color& Color )
+{
+	auto WorldSpacePosition = Transform.Transform( Vertex.Position );
+	auto WorldSpaceNormal = Transform.Rotate( Response.Normal );
+	UI::AddLine( 
+		WorldSpacePosition,
+		WorldSpacePosition + WorldSpaceNormal,
+		Color
+	);
+
+	Vector3D VertexNormal;
+	ByteToVector( Vertex.Normal, VertexNormal );
+	VertexNormal = Transform.Rotate( VertexNormal ).Normalized() * 0.1f;
+
+	UI::AddLine( WorldSpacePosition, WorldSpacePosition + VertexNormal, Color );
+}
+
+#pragma optimize("", off)
 
 CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingBox& WorldBounds, FTransform& Transform, FTransform& OtherTransform )
 {
@@ -351,44 +395,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 
 	if( ( Intersects > 1 ) || Math::BoundingBoxIntersection( LocalBounds.Minimum, LocalBounds.Maximum, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
 	{
-		Response.Distance = -1.0f;
-		if( !Tree->Upper || !Tree->Lower )
-		{
-#if DrawDebugLines == 1
-			// VisualizeBounds( Tree, &Transform, Color::Red );
-#endif
-
-			for( unsigned int Index = 0; Index < Tree->Vertices.size(); )
-			{
-				const FVertex& VertexA = Tree->Vertices[Index];
-				const FVertex& VertexB = Tree->Vertices[Index + 1];
-				const FVertex& VertexC = Tree->Vertices[Index + 2];
-
-				CollisionResponse TriangleResponse = CollisionResponseTriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
-				// if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
-				if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) )
-				{
-					Response.Normal = TriangleResponse.Normal;
-					Response.Distance = TriangleResponse.Distance;
-
-#if DrawDebugLines == 1
-					// UI::AddLine( Transform.Transform( VertexA.Position ), Transform.Transform( VertexA.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 255, 0, 0 ) );
-					// UI::AddLine( Transform.Transform( VertexB.Position ), Transform.Transform( VertexB.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 255, 0 ) );
-					// UI::AddLine( Transform.Transform( VertexC.Position ), Transform.Transform( VertexC.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 255 ) );
-#endif
-				}
-#if DrawDebugLines == 1
-				else
-				{
-					// UI::AddLine( Transform.Transform( VertexA.Position ), Transform.Transform( VertexA.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 0 ) );
-					// UI::AddLine( Transform.Transform( VertexB.Position ), Transform.Transform( VertexB.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 0 ) );
-					// UI::AddLine( Transform.Transform( VertexC.Position ), Transform.Transform( VertexC.Position + TriangleResponse.Normal * TriangleResponse.Distance ), Color( 0, 0, 0 ) );
-				}
-#endif
-
-				Index += 3;
-			}
-		}
+		Response.Distance = FLT_MAX;
 		
 		CollisionResponse ResponseA;
 		CollisionResponse ResponseB;
@@ -396,7 +403,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 		{
 			ResponseA = CollisionResponseTreeAABB( Tree->Upper, WorldBounds, Transform, OtherTransform );
 			// if( Math::Abs( ResponseA.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
-			if( Math::Abs( ResponseA.Distance ) < Math::Abs( Response.Distance ) )
+			if( ResponseA.Distance < Response.Distance )
 			{
 				Response.Normal = ResponseA.Normal;
 				Response.Distance = ResponseA.Distance;
@@ -407,17 +414,55 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 		{
 			ResponseB = CollisionResponseTreeAABB( Tree->Lower, WorldBounds, Transform, OtherTransform );
 			// if( Math::Abs( ResponseB.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
-			if( Math::Abs( ResponseB.Distance ) < Math::Abs( Response.Distance ) )
+			if( ResponseB.Distance < Response.Distance )
 			{
 				Response.Normal = ResponseB.Normal;
 				Response.Distance = ResponseB.Distance;
 			}
 		}
+
+		if( !Tree->Upper || !Tree->Lower )
+		{
+#if DrawDebugTriangleCollisions == 1
+			VisualizeBounds( Tree, &Transform, Color::Red );
+#endif
+
+			for( unsigned int Index = 0; Index < Tree->Vertices.size(); )
+			{
+				const VertexFormat& VertexA = Tree->Vertices[Index];
+				const VertexFormat& VertexB = Tree->Vertices[Index + 1];
+				const VertexFormat& VertexC = Tree->Vertices[Index + 2];
+
+				CollisionResponse TriangleResponse = CollisionResponseTriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
+				// if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
+				if( TriangleResponse.Distance < Response.Distance )
+				{
+					Response.Normal = TriangleResponse.Normal;
+					Response.Distance = TriangleResponse.Distance;
+
+#if DrawDebugTriangleCollisions == 1
+					DrawVertex( Transform, VertexA, TriangleResponse, Color( 255, 0, 0 ) );
+					DrawVertex( Transform, VertexB, TriangleResponse, Color( 0, 255, 0 ) );
+					DrawVertex( Transform, VertexC, TriangleResponse, Color( 0, 0, 255 ) );
+#endif
+				}
+#if DrawDebugTriangleCollisions == 1
+				else
+				{
+					DrawVertex( Transform, VertexA, TriangleResponse, Color( 127, 0, 0 ) );
+					DrawVertex( Transform, VertexB, TriangleResponse, Color( 0, 127, 0 ) );
+					DrawVertex( Transform, VertexC, TriangleResponse, Color( 0, 0, 127 ) );
+				}
+#endif
+
+				Index += 3;
+			}
+		}
 	}
 
-	// Response.Normal = Transform.Transform( Response.Normal );
+	Response.Normal = Transform.Rotate( Response.Normal ) * -1.0f;
 	
-	// UI::AddLine( WorldCenter, WorldCenter + Response.Normal );
+	UI::AddLine( WorldCenter, WorldCenter + Response.Normal.Normalized() * Response.Distance );
 
 	if( Response.Distance < 0.0f )
 	{
@@ -426,6 +471,8 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 
 	return Response;
 }
+
+#pragma optimize("", on)
 
 CBody::~CBody()
 {
@@ -475,7 +522,7 @@ void CBody::Construct( CPhysics* Physics )
 		auto* Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
 
 		// TODO: Fix triangle tree and triangle collisions.
-		// CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
+		CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
 	}
 }
 
@@ -576,12 +623,24 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 
 void Interpenetration( CBody* A, CBody* B, CollisionResponse& Response )
 {
-	if( A->TriangleMesh || Response.Distance <= 0.001f || B->Static || B->Stationary )
+	if( Response.Distance <= 0.001f )
 		return;
 
 	const auto Penetration = ( Response.Normal * Response.Distance );
-	B->Depenetration += Penetration;
-	B->Velocity -= Penetration;
+
+	bool Kinetic = !B->Static && !B->Stationary;
+	if( Kinetic )
+	{
+		B->Depenetration += Penetration;
+		B->Velocity -= Penetration;
+	}
+
+	Kinetic = !A->Static && !A->Stationary;
+	if( Kinetic )
+	{
+		A->Depenetration -= Penetration;
+		A->Velocity += Penetration;
+	}
 
 	Response.Distance *= -1.0f;
 }
@@ -622,6 +681,8 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 		return false;
 
 	CollisionResponse Response = CalculateResponse( A, B, SweptResult );
+	if( Math::Equal( Response.Normal, Vector3D::Zero ) )
+		return false;
 
 	const Vector3D RelativeVelocity = A->Velocity - B->Velocity;
 	// float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass; // Old calculation of the seperating velocity.
@@ -699,14 +760,14 @@ bool CBody::Collision( CBody* Body )
 	UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Body->Depenetration, Color( 255, 0, 255 ) );
 #endif
 
-#if DrawDebugLines == 1
-	auto Position = Transform.GetPosition();
-	const auto ImpulseEnd = Position + Impulse + ( InverseMass * Impulse * Mass );
-	UI::AddLine( Position, Position + Response.Normal.Normalized(), Color( 0, 255, 0 ) );
-	UI::AddLine( Position, ImpulseEnd, Color( 255, 0, 0 ) );
-	UI::AddCircle( ImpulseEnd, 5.0f, Color( 255, 0, 255 ) );
-	UI::AddText( ImpulseEnd, std::to_string( VelocityAlongNormal ).c_str() );
-#endif
+//#if DrawDebugLines == 1
+//	auto Position = Transform.GetPosition();
+//	const auto ImpulseEnd = Position + Impulse + ( InverseMass * Impulse * Mass );
+//	UI::AddLine( Position, Position + Response.Normal.Normalized(), Color( 0, 255, 0 ) );
+//	UI::AddLine( Position, ImpulseEnd, Color( 255, 0, 0 ) );
+//	UI::AddCircle( ImpulseEnd, 5.0f, Color( 255, 0, 255 ) );
+//	UI::AddText( ImpulseEnd, std::to_string( VelocityAlongNormal ).c_str() );
+//#endif
 
 #if DrawDebugLines == 1
 	Color BoundsColor = Color( 0, 255, 0 );
@@ -742,9 +803,9 @@ bool CBody::Collision( CBody* Body )
 	return Collided;
 }
 
-std::vector<FVertex> GatherVertices( std::vector<FVertex>& Vertices, const Vector3D& Median, const bool Direction, const size_t Axis )
+std::vector<VertexFormat> GatherVertices( std::vector<VertexFormat>& Vertices, const Vector3D& Median, const bool Direction, const size_t Axis )
 {
-	std::vector<FVertex> GatheredVertices;
+	std::vector<VertexFormat> GatheredVertices;
 	GatheredVertices.reserve( Vertices.size() );
 
 	for( unsigned int Index = 0; Index < Vertices.size(); )
@@ -756,7 +817,7 @@ std::vector<FVertex> GatherVertices( std::vector<FVertex>& Vertices, const Vecto
 
 		for( unsigned int TriangleIndex = 0; TriangleIndex < 3; TriangleIndex++ )
 		{
-			FVertex Vertex = Vertices[Index + TriangleIndex];
+			const VertexFormat& Vertex = Vertices[Index + TriangleIndex];
 			if( Direction )
 			{
 				if( Axis == 0 && Vertex.Position.X >= Median.X )
@@ -819,7 +880,7 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 		Tree = new TriangleTree();
 	}
 
-	std::vector<FVertex>& Vertices = Tree->Vertices;
+	std::vector<VertexFormat>& Vertices = Tree->Vertices;
 
 	Vector3D LocalMedian = Vector3D( 0.0f, 0.0f, 0.0f );
 	for( size_t Index = 0; Index < Vertices.size(); Index++ )
@@ -962,21 +1023,21 @@ void VisualizeBounds( TriangleTree* Tree, const FTransform* Transform, const Col
 				}
 				
 
-				for( size_t Index = 0; Index < Tree->Vertices.size(); )
-				{
-					FVertex VertexA = Tree->Vertices[Index];
-					FVertex VertexB = Tree->Vertices[Index + 1];
-					FVertex VertexC = Tree->Vertices[Index + 2];
+				//for( size_t Index = 0; Index < Tree->Vertices.size(); )
+				//{
+				//	VertexFormat VertexA = Tree->Vertices[Index];
+				//	VertexFormat VertexB = Tree->Vertices[Index + 1];
+				//	VertexFormat VertexC = Tree->Vertices[Index + 2];
 
-					if( Transform )
-					{
-						VertexA.Position = Transform->Transform( VertexA.Position );
-					}
+				//	if( Transform )
+				//	{
+				//		VertexA.Position = Transform->Transform( VertexA.Position );
+				//	}
 
-					// UI::AddText( VertexA, std::to_string( Index ).c_str() );
+				//	// UI::AddText( VertexA, std::to_string( Index ).c_str() );
 
-					Index += 3;
-				}
+				//	Index += 3;
+				//}
 			}
 		}
 
@@ -989,20 +1050,22 @@ void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBoun
 {
 	if( !Tree )
 	{
+		ProfileMemory( "Physics Triangle Trees" );
+
 		Tree = new TriangleTree();
 
 		const auto& VertexData = Mesh->GetVertexData();
 		const auto& IndexData = Mesh->GetIndexData();
 		const auto& VertexBufferData = Mesh->GetVertexBufferData();
 
-		std::vector<FVertex>& Vertices = Tree->Vertices;
+		std::vector<VertexFormat>& Vertices = Tree->Vertices;
 		Vertices.reserve( VertexBufferData.IndexCount );
 
 		for( unsigned int Index = 0; Index < VertexBufferData.IndexCount; )
 		{
-			// Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index]] );
-			// Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 1] );
-			// Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 2] );
+			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index]] );
+			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 1] );
+			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 2] );
 
 			Index += 3;
 		}
@@ -1323,7 +1386,7 @@ void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result )
 Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const
 {
 	Geometry::Result Empty;
-	if( !Block )
+	if( !Block || TriangleMesh ) // TODO: Triangle mesh support
 		return Empty;
 
 	for( auto* Ignored : Ignore )
