@@ -29,6 +29,8 @@ Color Color::Purple = Color( 255, 0, 255 );
 
 extern ConfigurationVariable<bool> FlipHorizontal;
 
+std::mutex LineMutex;
+
 namespace UI
 {
 	bool Ready = false;
@@ -413,6 +415,8 @@ namespace UI
 	{
 		if( CApplication::IsPaused() )
 			return;
+
+		std::unique_lock<std::mutex> Lock( LineMutex );
 		
 		DrawLine Line( Start, End, Color, Duration );
 		Lines.emplace_back( Line );
@@ -422,6 +426,8 @@ namespace UI
 	{
 		if( CApplication::IsPaused() )
 			return;
+
+		std::unique_lock<std::mutex> Lock( LineMutex );
 
 		DrawLine Line( Origin, Origin + Vector, Color, Duration );
 		Lines.emplace_back( Line );
@@ -746,6 +752,8 @@ namespace UI
 
 	void Refresh()
 	{
+		std::unique_lock<std::mutex> Lock( LineMutex );
+
 		// Lines can have durations so they have to be removed based whether they have expired.
 		const auto CurrentTime = GameLayersInstance->GetCurrentTime();
 		for( auto LineIterator = Lines.begin(); LineIterator != Lines.end(); )
@@ -873,6 +881,8 @@ namespace UI
 		{
 			if( !LineShader )
 				return Calls;
+
+			std::unique_lock<std::mutex> Lock( LineMutex );
 
 			const size_t LineCount = Lines.size();
 			const size_t Points = LineCount * 2;
