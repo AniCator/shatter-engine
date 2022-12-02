@@ -193,6 +193,8 @@ size_t MemoryCounterGap = 0;
 size_t CounterGap = 0;
 size_t CounterGapFrame = 0;
 
+std::mutex ProfilerMutex;
+
 CProfiler::~CProfiler()
 {
 	Clear();
@@ -200,6 +202,8 @@ CProfiler::~CProfiler()
 
 void CProfiler::AddTimeEntry( const ProfileTimeEntry& TimeEntry )
 {
+	std::unique_lock<std::mutex> Lock( ProfilerMutex );
+
 	auto Iterator = TimeEntries.find( TimeEntry.Name );
 	if( Iterator == TimeEntries.end() )
 	{
@@ -218,6 +222,8 @@ void CProfiler::AddCounterEntry( const char* NameIn, int TimeIn )
 	// if( !Enabled )
 	// 	return;
 
+	std::unique_lock<std::mutex> Lock( ProfilerMutex );
+
 	auto Iterator = TimeCounters.find( NameIn );
 	if( Iterator == TimeCounters.end() )
 	{
@@ -233,6 +239,8 @@ void CProfiler::AddCounterEntry( const ProfileTimeEntry& TimeEntry, const bool& 
 {
 	if( !Enabled && PerFrame )
 		return;
+
+	std::unique_lock<std::mutex> Lock( ProfilerMutex );
 
 	if( PerFrame )
 	{
@@ -279,6 +287,8 @@ void CProfiler::AddDebugMessage( const char* NameIn, const char* Body )
 	if( !Enabled )
 		return;
 
+	std::unique_lock<std::mutex> Lock( ProfilerMutex );
+
 	auto Iterator = DebugMessages.find( NameIn );
 	if( Iterator == DebugMessages.end() )
 	{
@@ -294,6 +304,8 @@ void CProfiler::AddMemoryEntry( const NameSymbol& Name, const size_t& Bytes )
 {
 	// if( !Enabled )
 	// 	return;
+
+	std::unique_lock<std::mutex> Lock( ProfilerMutex );
 
 	if( FirstMemoryEntry )
 	{
@@ -318,6 +330,8 @@ void CProfiler::ClearMemoryEntry(const NameSymbol& Name)
 {
 	// if( !Enabled )
 	// 	return;
+
+	std::unique_lock<std::mutex> Lock( ProfilerMutex );
 
 	const auto Iterator = MemoryCounters.find( Name );
 	if( Iterator == MemoryCounters.end() )
@@ -436,6 +450,8 @@ void CProfiler::Display()
 {
 	if( !Enabled )
 		return;
+
+	std::unique_lock<std::mutex> Lock( ProfilerMutex );
 
 	ImGui::SetNextWindowPos( ImVec2( 0.0f, 25.0f ), ImGuiCond_Always );
 	ImGui::PushStyleColor( ImGuiCol_WindowBg, ImVec4( 0.0f, 0.0f, 0.0f, 0.3f ) ); // Transparent background
