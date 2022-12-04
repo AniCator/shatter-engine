@@ -206,6 +206,69 @@ CollisionResponse CollisionResponseAABBAABBSwept( const BoundingBox& A, const Ve
 	return Response;
 }
 
+void DrawVertex( FTransform& Transform, const VertexFormat& Vertex, const CollisionResponse& Response, const Color& Color )
+{
+	auto WorldSpacePosition = Transform.Transform( Vertex.Position );
+	auto WorldSpaceNormal = Transform.Rotate( Response.Normal );
+	UI::AddLine(
+		WorldSpacePosition,
+		WorldSpacePosition + WorldSpaceNormal,
+		Color
+	);
+
+	Vector3D VertexNormal;
+	ByteToVector( Vertex.Normal, VertexNormal );
+	VertexNormal = Transform.Rotate( VertexNormal ).Normalized() * 0.1f;
+
+	UI::AddLine( WorldSpacePosition, WorldSpacePosition + VertexNormal, Color );
+}
+
+void DrawTriangle(
+	FTransform& Transform,
+	const VertexFormat& A,
+	const VertexFormat& B,
+	const VertexFormat& C,
+	const CollisionResponse& Response,
+	const Color& Color,
+	const float Duration = -1.0f
+)
+{
+	const auto PosA = Transform.Transform( A.Position );
+	const auto PosB = Transform.Transform( B.Position );
+	const auto PosC = Transform.Transform( C.Position );
+
+	UI::AddLine(
+		PosA,
+		PosB,
+		Color,
+		Duration
+	);
+
+	UI::AddLine(
+		PosB,
+		PosC,
+		Color,
+		Duration
+	);
+
+	UI::AddLine(
+		PosC,
+		PosA,
+		Color,
+		Duration
+	);
+
+	/*Vector3D VertexNormal;
+	ByteToVector( A.Normal, VertexNormal );
+	VertexNormal = Transform.Rotate( VertexNormal ).Normalized() * 0.1f;
+
+	const auto Center = ( PosA + PosB + PosC ) / 3.0f;
+	UI::AddLine( Center, Center + VertexNormal, Color::Purple );
+
+	const auto WorldSpaceNormal = Transform.Rotate( Response.Normal );
+	UI::AddLine( Center, Center + WorldSpaceNormal, Color::Yellow );*/
+}
+
 bool AxisTest( const Vector3D& Axis, const Vector3D& A, const Vector3D& B, const Vector3D& C, const float& Radius )
 {
 	const float PointA = A.Dot( Axis );
@@ -319,34 +382,89 @@ CollisionResponse CollisionResponseTriangleAABB( const VertexFormat& A, const Ve
 	}
 
 	Response.Normal = EdgeA.Cross( EdgeB );
-	Response.Distance = Math::Abs( Response.Normal.Dot( VertexA ) );
-	// ByteToVector( A.Normal, Response.Normal );
+	Response.Distance = Response.Normal.Dot( VertexA );
+	ByteToVector( A.Normal, Response.Normal );
 
 	const float Radius = Extent.X * Math::Abs( Response.Normal.X ) + Extent.Y * Math::Abs( Response.Normal.Y ) + Extent.Z * Math::Abs( Response.Normal.Z );
 	const float DistanceFromCenter = Response.Normal.Dot( Extent ) - Response.Distance;
-	Response.Distance = Radius * DistanceFromCenter;
+	// Response.Distance = Radius * DistanceFromCenter;
 
 	return Response;
 }
 
-void DrawVertex( FTransform& Transform, const VertexFormat& Vertex, const CollisionResponse& Response, const Color& Color )
+#pragma optimize("", off)
+
+CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingBox& WorldBounds, FTransform& Transform, FTransform& OtherTransform );
+
+void ProcessTreeLeaf( 
+	TriangleTree* Leaf, 
+	const BoundingBox& WorldBounds, 
+	FTransform& Transform, 
+	FTransform& OtherTransform, 
+	CollisionResponse& Response 
+)
 {
-	auto WorldSpacePosition = Transform.Transform( Vertex.Position );
-	auto WorldSpaceNormal = Transform.Rotate( Response.Normal );
-	UI::AddLine( 
-		WorldSpacePosition,
-		WorldSpacePosition + WorldSpaceNormal,
-		Color
-	);
+	if( !Leaf )
+		return;
 
-	Vector3D VertexNormal;
-	ByteToVector( Vertex.Normal, VertexNormal );
-	VertexNormal = Transform.Rotate( VertexNormal ).Normalized() * 0.1f;
+	CollisionResponse LeafResponse = CollisionResponseTreeAABB( Leaf, WorldBounds, Transform, OtherTransform );
+	if( LeafResponse.Distance < Response.Distance )
+	{
+		Response.Normal = LeafResponse.Normal;
+		Response.Distance = LeafResponse.Distance;
+	}
 
-	UI::AddLine( WorldSpacePosition, WorldSpacePosition + VertexNormal, Color );
+	// Old statement.
+	// if( Math::Abs( ResponseA.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
 }
 
-#pragma optimize("", off)
+void ProcessLeafTriangles(
+	TriangleTree* Leaf,
+	FTransform& Transform,
+	const Vector3D& Center,
+	const Vector3D& Extent,
+	CollisionResponse& Response
+)
+{
+	if( !Leaf )
+		return;
+
+#if DrawDebugTriangleCollisions == 1
+	VisualizeBounds( Leaf, &Transform, Color::Red );
+#endif
+
+	for( unsigned int Index = 0; Index < Leaf->Vertices.size(); )
+	{
+		const VertexFormat& VertexA = Leaf->Vertices[Index];
+		const VertexFormat& VertexB = Leaf->Vertices[Index + 1];
+		const VertexFormat& VertexC = Leaf->Vertices[Index + 2];
+
+		CollisionResponse TriangleResponse = CollisionResponseTriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
+		// if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
+		if( TriangleResponse.Distance < Response.Distance )
+		{
+			Response.Normal = TriangleResponse.Normal;
+			Response.Distance = TriangleResponse.Distance;
+
+#if DrawDebugTriangleCollisions == 1
+			// DrawVertex( Transform, VertexA, TriangleResponse, Color( 255, 0, 0 ) );
+			// DrawVertex( Transform, VertexB, TriangleResponse, Color( 0, 255, 0 ) );
+			// DrawVertex( Transform, VertexC, TriangleResponse, Color( 0, 0, 255 ) );
+			DrawTriangle( Transform, VertexA, VertexB, VertexC, TriangleResponse, Color::White );
+#endif
+		}
+#if DrawDebugTriangleCollisions == 1
+		else
+		{
+			DrawVertex( Transform, VertexA, TriangleResponse, Color( 127, 0, 0 ) );
+			DrawVertex( Transform, VertexB, TriangleResponse, Color( 0, 127, 0 ) );
+			DrawVertex( Transform, VertexC, TriangleResponse, Color( 0, 0, 127 ) );
+		}
+#endif
+
+		Index += 3;
+	}
+}
 
 CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingBox& WorldBounds, FTransform& Transform, FTransform& OtherTransform )
 {
@@ -371,102 +489,28 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 	FBounds TreeBounds = Math::AABB( Tree->Bounds, Transform );
 	UI::AddAABB( TreeBounds.Minimum, TreeBounds.Maximum, Color( 255, 255, 0 ) );*/
 
-	auto& MinimumA = LocalBounds.Minimum;
-	auto& MinimumB = Tree->Bounds.Minimum;
-
-	auto& MaximumA = LocalBounds.Maximum;
-	auto& MaximumB = Tree->Bounds.Maximum;
-
-	int Intersects = 0;
-	/*if( ( MinimumA.X < MaximumB.X && MaximumA.X > MinimumB.X ) )
-	{
-		Intersects++;
-	}
+	if( !Math::BoundingBoxIntersection( LocalBounds.Minimum, LocalBounds.Maximum, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
+		return Response;
 	
-	if( ( MinimumA.Y < MaximumB.Y && MaximumA.Y > MinimumB.Y ) )
+	// Prime the response's starting distance.
+	Response.Distance = FLT_MAX;
+
+	ProcessTreeLeaf( Tree->Upper, WorldBounds, Transform, OtherTransform, Response );
+	ProcessTreeLeaf( Tree->Lower, WorldBounds, Transform, OtherTransform, Response );
+
+	if( !Tree->Upper || !Tree->Lower )
 	{
-		Intersects++;
-	}
-	
-	if( ( MinimumA.Z < MaximumB.Z && MaximumA.Z > MinimumB.Z ) )
-	{
-		Intersects++;
-	}*/
-
-	if( ( Intersects > 1 ) || Math::BoundingBoxIntersection( LocalBounds.Minimum, LocalBounds.Maximum, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
-	{
-		Response.Distance = FLT_MAX;
-		
-		CollisionResponse ResponseA;
-		CollisionResponse ResponseB;
-		if( Tree->Upper )
-		{
-			ResponseA = CollisionResponseTreeAABB( Tree->Upper, WorldBounds, Transform, OtherTransform );
-			// if( Math::Abs( ResponseA.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
-			if( ResponseA.Distance < Response.Distance )
-			{
-				Response.Normal = ResponseA.Normal;
-				Response.Distance = ResponseA.Distance;
-			}
-		}
-
-		if( Tree->Lower )
-		{
-			ResponseB = CollisionResponseTreeAABB( Tree->Lower, WorldBounds, Transform, OtherTransform );
-			// if( Math::Abs( ResponseB.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
-			if( ResponseB.Distance < Response.Distance )
-			{
-				Response.Normal = ResponseB.Normal;
-				Response.Distance = ResponseB.Distance;
-			}
-		}
-
-		if( !Tree->Upper || !Tree->Lower )
-		{
-#if DrawDebugTriangleCollisions == 1
-			VisualizeBounds( Tree, &Transform, Color::Red );
-#endif
-
-			for( unsigned int Index = 0; Index < Tree->Vertices.size(); )
-			{
-				const VertexFormat& VertexA = Tree->Vertices[Index];
-				const VertexFormat& VertexB = Tree->Vertices[Index + 1];
-				const VertexFormat& VertexC = Tree->Vertices[Index + 2];
-
-				CollisionResponse TriangleResponse = CollisionResponseTriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
-				// if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
-				if( TriangleResponse.Distance < Response.Distance )
-				{
-					Response.Normal = TriangleResponse.Normal;
-					Response.Distance = TriangleResponse.Distance;
-
-#if DrawDebugTriangleCollisions == 1
-					DrawVertex( Transform, VertexA, TriangleResponse, Color( 255, 0, 0 ) );
-					DrawVertex( Transform, VertexB, TriangleResponse, Color( 0, 255, 0 ) );
-					DrawVertex( Transform, VertexC, TriangleResponse, Color( 0, 0, 255 ) );
-#endif
-				}
-#if DrawDebugTriangleCollisions == 1
-				else
-				{
-					DrawVertex( Transform, VertexA, TriangleResponse, Color( 127, 0, 0 ) );
-					DrawVertex( Transform, VertexB, TriangleResponse, Color( 0, 127, 0 ) );
-					DrawVertex( Transform, VertexC, TriangleResponse, Color( 0, 0, 127 ) );
-				}
-#endif
-
-				Index += 3;
-			}
-		}
+		ProcessLeafTriangles( Tree, Transform, Center, Extent, Response );
 	}
 
-	Response.Normal = Transform.Rotate( Response.Normal ) * -1.0f;
+	Response.Normal = Transform.GetTransformationMatrix().To3D().Transform( Response.Normal );
+	Response.Normal *= -1.0f;
+	Response.Normal = Response.Normal.Normalized();
 	
-	UI::AddLine( WorldCenter, WorldCenter + Response.Normal.Normalized() * Response.Distance );
-
+	UI::AddLine( WorldCenter, WorldCenter - Response.Normal * Response.Distance, Color::Yellow, 1.0f );
 	if( Response.Distance < 0.0f )
 	{
-		Response.Distance = 0.0f;
+		// Response.Distance = 0.0f;
 	}
 
 	return Response;
@@ -889,9 +933,9 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 	}
 
 	LocalMedian /= static_cast<float>( Vertices.size() );
-	Vector3D Median = LocalMedian;// Transform.Transform( LocalMedian );
+	Vector3D Median = LocalMedian; // Transform.Transform( LocalMedian );
 
-	// Median = ( WorldBounds.Minimum + WorldBounds.Maximum ) * 0.5f;
+	Median = ( WorldBounds.Minimum + WorldBounds.Maximum ) * 0.5f;
 
 	BoundingBox UpperBounds = WorldBounds;
 	BoundingBox LowerBounds = UpperBounds;
@@ -1064,13 +1108,27 @@ void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBoun
 		for( unsigned int Index = 0; Index < VertexBufferData.IndexCount; )
 		{
 			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index]] );
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 1] );
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index] + 2] );
+			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index + 1]] );
+			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index + 2]] );
 
 			Index += 3;
 		}
 
-		BuildMedian( Tree, Transform, Mesh->GetBounds(), 16 );
+		/*for( unsigned int Index = 0; Index < Vertices.size(); )
+		{
+			DrawTriangle( Transform,
+				Vertices[Index],
+				Vertices[Index + 1],
+				Vertices[Index + 2],
+				{},
+				Color::Yellow,
+				9001.0f
+			);
+
+			Index += 3;
+		}*/
+
+		BuildMedian( Tree, Transform, Mesh->GetBounds(), 0 );
 	}
 
 	// VisualizeBounds( Tree );
