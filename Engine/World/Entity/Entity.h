@@ -198,6 +198,8 @@ public:
 	/// <param name="TagName">Tag that will be erased if it exists.</param>
 	void Untag( const std::string& TagName );
 
+	bool HasTag( const std::string& TagName ) const;
+
 	/// Next tick time, defaults to always (-1.0).
 	double NextTickTime = -1.0;
 

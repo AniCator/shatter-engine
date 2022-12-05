@@ -399,6 +399,11 @@ void CEntity::Untag( const std::string& TagName )
 	}
 }
 
+bool CEntity::HasTag( const std::string& TagName ) const
+{
+	return Tags.find( TagName ) != Tags.end();
+}
+
 double CEntity::GetCurrentTime()
 {
 	return GameLayersInstance->GetCurrentTime();
