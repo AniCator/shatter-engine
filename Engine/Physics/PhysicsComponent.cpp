@@ -28,16 +28,12 @@ size_t TextPosition = 0;
 using VertexFormat = CompactVertex;
 struct TriangleTree
 {
-	TriangleTree()
-	{
-		Upper = nullptr;
-		Lower = nullptr;
-	}
-
+	TriangleTree() = default;
 	~TriangleTree()
 	{
 		delete Upper;
 		delete Lower;
+		Source = nullptr;
 	}
 
 	BoundingBox Bounds;
@@ -45,7 +41,15 @@ struct TriangleTree
 	TriangleTree* Upper = nullptr;
 	TriangleTree* Lower = nullptr;
 
-	std::vector<CompactVertex> Vertices;
+	std::vector<glm::uint> Indices;
+
+	// Fetches the vertex data of a given index.
+	const VertexFormat& Get( const glm::uint Index ) const
+	{
+		return Source->GetVertexData().Vertices[Index];
+	}
+
+	CMesh* Source = nullptr;
 };
 
 void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBounds, TriangleTree*& Tree, CBody* Body );
@@ -177,6 +181,7 @@ CollisionResponse CollisionResponseAABBAABB( const BoundingBox& A, const Boundin
 		Response.Normal.Z = HalfSizeA.Z + Math::Sign( CenterDistance.Z );
 	}
 
+	Response.Normal.Normalize();
 	return Response;
 }
 
@@ -220,7 +225,7 @@ void DrawVertex( FTransform& Transform, const VertexFormat& Vertex, const Collis
 	ByteToVector( Vertex.Normal, VertexNormal );
 	VertexNormal = Transform.Rotate( VertexNormal ).Normalized() * 0.1f;
 
-	UI::AddLine( WorldSpacePosition, WorldSpacePosition + VertexNormal, Color );
+	UI::AddLine( WorldSpacePosition, WorldSpacePosition - VertexNormal, Color );
 }
 
 void DrawTriangle(
@@ -392,8 +397,6 @@ CollisionResponse CollisionResponseTriangleAABB( const VertexFormat& A, const Ve
 	return Response;
 }
 
-#pragma optimize("", off)
-
 CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingBox& WorldBounds, FTransform& Transform, FTransform& OtherTransform );
 
 void ProcessTreeLeaf( 
@@ -433,17 +436,17 @@ void ProcessLeafTriangles(
 	VisualizeBounds( Leaf, &Transform, Color::Red );
 #endif
 
-	for( unsigned int Index = 0; Index < Leaf->Vertices.size(); )
+	for( unsigned int Index = 0; Index < Leaf->Indices.size(); )
 	{
-		const VertexFormat& VertexA = Leaf->Vertices[Index];
-		const VertexFormat& VertexB = Leaf->Vertices[Index + 1];
-		const VertexFormat& VertexC = Leaf->Vertices[Index + 2];
+		const VertexFormat& VertexA = Leaf->Get( Leaf->Indices[Index] );
+		const VertexFormat& VertexB = Leaf->Get( Leaf->Indices[Index + 1] );
+		const VertexFormat& VertexC = Leaf->Get( Leaf->Indices[Index + 2] );
 
 		CollisionResponse TriangleResponse = CollisionResponseTriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
 		// if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
 		if( TriangleResponse.Distance < Response.Distance )
 		{
-			Response.Normal = TriangleResponse.Normal;
+			Response.Normal += TriangleResponse.Normal;
 			Response.Distance = TriangleResponse.Distance;
 
 #if DrawDebugTriangleCollisions == 1
@@ -481,19 +484,17 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 	Extent.Y = Math::Abs( Extent.Y );
 	Extent.Z = Math::Abs( Extent.Z );
 
-	const Vector3D WorldCenter = Transform.Transform( Center );
-
 	/*FBounds TreeRelativeBounds = Math::AABB( LocalBounds, Transform );
 	UI::AddAABB( TreeRelativeBounds.Minimum, TreeRelativeBounds.Maximum );
 
 	FBounds TreeBounds = Math::AABB( Tree->Bounds, Transform );
 	UI::AddAABB( TreeBounds.Minimum, TreeBounds.Maximum, Color( 255, 255, 0 ) );*/
 
-	if( !Math::BoundingBoxIntersection( LocalBounds.Minimum, LocalBounds.Maximum, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
+	if( !Math::BoundingBoxIntersection( LocalBounds.Minimum * 1.5f, LocalBounds.Maximum * 1.5f, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
 		return Response;
 	
 	// Prime the response's starting distance.
-	Response.Distance = FLT_MAX;
+	Response.Distance = INFINITY;
 
 	ProcessTreeLeaf( Tree->Upper, WorldBounds, Transform, OtherTransform, Response );
 	ProcessTreeLeaf( Tree->Lower, WorldBounds, Transform, OtherTransform, Response );
@@ -503,20 +504,18 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 		ProcessLeafTriangles( Tree, Transform, Center, Extent, Response );
 	}
 
-	Response.Normal = Transform.GetTransformationMatrix().To3D().Transform( Response.Normal );
-	Response.Normal *= -1.0f;
-	Response.Normal = Response.Normal.Normalized();
+	Response.Normal = Transform.GetRotationMatrix().Transform( Response.Normal );
+	// Response.Distance *= Math::Abs( Response.Normal.Dot( Transform.GetSize() ) );
+	Response.Normal = Response.Normal.Normalized() * -1.0f;
 	
-	UI::AddLine( WorldCenter, WorldCenter - Response.Normal * Response.Distance, Color::Yellow, 1.0f );
-	if( Response.Distance < 0.0f )
-	{
-		// Response.Distance = 0.0f;
-	}
+	Response.Distance = Math::Abs( Response.Distance );
+	Response.Distance *= 0.00165f;
+
+	// const Vector3D WorldCenter = Transform.Transform( Center );
+	// UI::AddLine( WorldCenter, WorldCenter - Response.Normal, Color::Yellow, 1.0f );
 
 	return Response;
 }
-
-#pragma optimize("", on)
 
 CBody::~CBody()
 {
@@ -635,6 +634,8 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 	{
 		if( A->Owner && A->Tree && A->TriangleMesh && !B->Stationary )
 		{
+			// A = Triangle Mesh
+			// B = Bounding Box
 			Response = CollisionResponseTreeAABB( A->Tree, B->WorldBounds, A->PreviousTransform, B->PreviousTransform );
 		}
 		else
@@ -646,6 +647,26 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 			else
 			{
 				Response = CollisionResponseAABBAABB( B->WorldBounds, A->WorldBounds );
+			}
+		}
+	}
+	else if( !A->Static && B->Static )
+	{
+		if( B->Owner && B->Tree && B->TriangleMesh && !A->Stationary )
+		{
+			// B = Triangle Mesh
+			// A = Bounding Box
+			// Response = CollisionResponseTreeAABB( B->Tree, A->WorldBounds, B->PreviousTransform, A->PreviousTransform );
+		}
+		else
+		{
+			if( B->Continuous )
+			{
+				Response = CollisionResponseAABBAABBSwept( A->WorldBounds, A->Velocity, B->WorldBounds, SweptResult );
+			}
+			else
+			{
+				Response = CollisionResponseAABBAABB( A->WorldBounds, B->WorldBounds );
 			}
 		}
 	}
@@ -661,7 +682,9 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 		}
 	}
 
-	Response.Normal.Normalize();
+	const Vector3D WorldCenter = ( B->WorldBounds.Minimum + B->WorldBounds.Maximum ) * 0.5f;
+	UI::AddLine( WorldCenter, WorldCenter - Response.Normal * Response.Distance, Color::Yellow, 1.0f );
+
 	return Response;
 }
 
@@ -847,21 +870,21 @@ bool CBody::Collision( CBody* Body )
 	return Collided;
 }
 
-std::vector<VertexFormat> GatherVertices( std::vector<VertexFormat>& Vertices, const Vector3D& Median, const bool Direction, const size_t Axis )
+std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, std::vector<glm::uint>& Indices, const Vector3D& Median, const bool Direction, const size_t Axis )
 {
-	std::vector<VertexFormat> GatheredVertices;
-	GatheredVertices.reserve( Vertices.size() );
+	std::vector<glm::uint> GatheredIndices;
+	GatheredIndices.reserve( Indices.size() );
 
-	for( unsigned int Index = 0; Index < Vertices.size(); )
+	for( unsigned int Index = 0; Index < Indices.size(); )
 	{
 		bool InsideBounds = false;
 
-		Vector3D TriangleCenter = Vertices[Index].Position + Vertices[Index + 1].Position + Vertices[Index + 2].Position;
+		Vector3D TriangleCenter = Tree->Get( Indices[Index] ).Position + Tree->Get( Indices[Index + 1] ).Position + Tree->Get( Indices[Index + 2] ).Position;
 		TriangleCenter /= 3.0f;
 
 		for( unsigned int TriangleIndex = 0; TriangleIndex < 3; TriangleIndex++ )
 		{
-			const VertexFormat& Vertex = Vertices[Index + TriangleIndex];
+			const VertexFormat& Vertex = Tree->Get( Indices[Index + TriangleIndex] );
 			if( Direction )
 			{
 				if( Axis == 0 && Vertex.Position.X >= Median.X )
@@ -899,15 +922,15 @@ std::vector<VertexFormat> GatherVertices( std::vector<VertexFormat>& Vertices, c
 		
 		if( InsideBounds )
 		{
-			GatheredVertices.emplace_back( Vertices[Index] );
-			GatheredVertices.emplace_back( Vertices[Index + 1] );
-			GatheredVertices.emplace_back( Vertices[Index + 2] );
+			GatheredIndices.emplace_back( Index );
+			GatheredIndices.emplace_back( Index + 1 );
+			GatheredIndices.emplace_back( Index + 2 );
 		}
 
 		Index += 3;
 	}
 
-	return GatheredVertices;
+	return GatheredIndices;
 }
 
 bool VectorCompare( const Vector3D& A, const Vector3D& B )
@@ -924,15 +947,15 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 		Tree = new TriangleTree();
 	}
 
-	std::vector<VertexFormat>& Vertices = Tree->Vertices;
+	std::vector<glm::uint>& Indices = Tree->Indices;
 
 	Vector3D LocalMedian = Vector3D( 0.0f, 0.0f, 0.0f );
-	for( size_t Index = 0; Index < Vertices.size(); Index++ )
+	for( size_t Index = 0; Index < Indices.size(); Index++ )
 	{
-		LocalMedian += Vertices[Index].Position;
+		LocalMedian += Tree->Get( Indices[Index] ).Position;
 	}
 
-	LocalMedian /= static_cast<float>( Vertices.size() );
+	LocalMedian /= static_cast<float>( Indices.size() );
 	Vector3D Median = LocalMedian; // Transform.Transform( LocalMedian );
 
 	Median = ( WorldBounds.Minimum + WorldBounds.Maximum ) * 0.5f;
@@ -983,7 +1006,7 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 	// Ensure we have at least some volume.
 	EnsureVolume( Tree->Bounds );
 
-	if( Depth > 0 && Vertices.size() > 25 )
+	if( Depth > 0 && Indices.size() > 25 )
 	{
 		if( !Tree->Upper )
 		{
@@ -995,8 +1018,8 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 			Tree->Lower = new TriangleTree();
 		}
 
-		Tree->Upper->Vertices = GatherVertices( Vertices, Median, true, Axis );
-		if( Tree->Upper->Vertices.size() == 0 )
+		Tree->Upper->Indices = GatherVertices( Tree, Indices, Median, true, Axis );
+		if( Tree->Upper->Indices.size() == 0 )
 		{
 			delete Tree->Upper;
 			Tree->Upper = nullptr;
@@ -1006,8 +1029,8 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 			BuildMedian( Tree->Upper, Transform, UpperBounds, Depth - 1 );
 		}
 
-		Tree->Lower->Vertices = GatherVertices( Vertices, Median, false, Axis );
-		if( Tree->Lower->Vertices.size() == 0 )
+		Tree->Lower->Indices = GatherVertices( Tree, Indices, Median, false, Axis );
+		if( Tree->Lower->Indices.size() == 0 )
 		{
 			delete Tree->Lower;
 			Tree->Lower = nullptr;
@@ -1025,7 +1048,7 @@ void VisualizeBounds( TriangleTree* Tree, const FTransform* Transform, const Col
 	{
 		if( !Tree->Upper && !Tree->Lower )
 		{
-			if( Tree->Vertices.size() > 0 )
+			if( !Tree->Indices.empty() )
 			{
 				Vector3D Median = ( Tree->Bounds.Maximum + Tree->Bounds.Minimum ) * 0.5f;
 
@@ -1097,19 +1120,19 @@ void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBoun
 		ProfileMemory( "Physics Triangle Trees" );
 
 		Tree = new TriangleTree();
+		Tree->Source = Mesh;
 
-		const auto& VertexData = Mesh->GetVertexData();
 		const auto& IndexData = Mesh->GetIndexData();
 		const auto& VertexBufferData = Mesh->GetVertexBufferData();
 
-		std::vector<VertexFormat>& Vertices = Tree->Vertices;
-		Vertices.reserve( VertexBufferData.IndexCount );
+		std::vector<glm::uint>& Indices = Tree->Indices;
+		Indices.reserve( VertexBufferData.IndexCount );
 
 		for( unsigned int Index = 0; Index < VertexBufferData.IndexCount; )
 		{
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index]] );
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index + 1]] );
-			Vertices.emplace_back( VertexData.Vertices[IndexData.Indices[Index + 2]] );
+			Indices.emplace_back( IndexData.Indices[Index] );
+			Indices.emplace_back( IndexData.Indices[Index + 1] );
+			Indices.emplace_back( IndexData.Indices[Index + 2] );
 
 			Index += 3;
 		}
@@ -1128,6 +1151,7 @@ void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBoun
 			Index += 3;
 		}*/
 
+		// TODO: Fix transformation issues with a depth greater than 0.
 		BuildMedian( Tree, Transform, Mesh->GetBounds(), 0 );
 	}
 
