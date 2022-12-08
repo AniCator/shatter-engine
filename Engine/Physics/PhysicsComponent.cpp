@@ -682,8 +682,8 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 		}
 	}
 
-	const Vector3D WorldCenter = ( B->WorldBounds.Minimum + B->WorldBounds.Maximum ) * 0.5f;
-	UI::AddLine( WorldCenter, WorldCenter - Response.Normal * Response.Distance, Color::Yellow, 1.0f );
+	// const Vector3D WorldCenter = ( B->WorldBounds.Minimum + B->WorldBounds.Maximum ) * 0.5f;
+	// UI::AddLine( WorldCenter, WorldCenter - Response.Normal * Response.Distance, Color::Yellow, 1.0f );
 
 	return Response;
 }
