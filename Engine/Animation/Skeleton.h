@@ -7,6 +7,7 @@
 #include <string>
 
 #include <Engine/Utility/DataString.h>
+#include <Engine/Utility/Flag.h>
 #include <Engine/Utility/Math/Matrix.h>
 
 static constexpr char SkeletonIdentifier[5] = "LSKE";
@@ -45,6 +46,13 @@ struct Key
 	int32_t BoneIndex = -1;
 	float Time = 0.0f;
 	Vector4D Value{ 0.0f,0.0f,0.0f,0.0f };
+};
+
+struct CompoundKey
+{
+	Key Position;
+	Key Rotation;
+	Key Scale;
 };
 
 template<typename T>
@@ -187,6 +195,16 @@ struct Bone
 
 	// Used to check if this bone has been evaluated yet in the current tick.
 	bool Evaluated = false;
+
+	// Bone override options.
+	enum Evaluation : uint8_t
+	{
+		Disable = 0,
+		Replace, // Replace the local transformation.
+		Add, // Apply the transformation on top of existing ones.
+		Direct // Apply the transformation directly to the bone transform, with no regard of its hierarchy.
+	} Override = Disable;
+	Matrix4D OverrideTransform;
 };
 
 class Skeleton

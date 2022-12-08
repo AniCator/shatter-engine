@@ -73,11 +73,14 @@ struct Animator
 
 		BoundingBox CalculateBounds( const struct FTransform& Transform ) const;
 
+		bool IsValidBone( const int32_t Handle ) const;
+		Bone& GetBone( const int32_t Handle );
+
 		Vector3D GetBonePosition( const std::string& Name ) const;
 		Vector3D GetBonePosition( const int32_t Handle ) const;
 		int32_t GetBoneIndex( const std::string& Name ) const;
 		Matrix4D GetBoneTransform( const int32_t Handle ) const;
-		void SetBoneTransform( const int32_t Handle, const Matrix4D& Matrix );
+		void SetBoneTransform( const int32_t Handle, const Matrix4D& Matrix, const Bone::Evaluation Method = Bone::Replace );
 
 		void Debug( const struct FTransform& Transform ) const;
 
@@ -106,13 +109,6 @@ struct Animator
 	/// <param name="BoneIndex">The bone for which we're getting the matrices.</param>
 	/// <returns>Interpolated translation, rotation and scaling matrix.</returns>
 	static Matrices GetMatrices( const Animation& Animation, const float& Time, const int32_t& BoneIndex );
-
-	struct CompoundKey
-	{
-		Key Position;
-		Key Rotation;
-		Key Scale;
-	};
 
 	/// <summary>
 	/// Retrieves animation data in compound key.

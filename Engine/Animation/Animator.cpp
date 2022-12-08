@@ -101,6 +101,19 @@ BoundingBox Animator::Instance::CalculateBounds( const FTransform& Transform ) c
 	return Math::AABB( NewBoundVertices.data(), NewBoundVertices.size() );
 }
 
+bool Animator::Instance::IsValidBone( const int32_t Handle ) const
+{
+	if( Handle < 0 || Handle >= Bones.size() )
+		return false; // Bone vector has either not been populated or the handle is invalid.
+
+	return true;
+}
+
+Bone& Animator::Instance::GetBone( const int32_t Handle )
+{
+	return Bones[Handle];
+}
+
 Vector3D Animator::Instance::GetBonePosition( const std::string& Name ) const
 {
 	const auto Index = GetBoneIndex( Name );
@@ -109,10 +122,7 @@ Vector3D Animator::Instance::GetBonePosition( const std::string& Name ) const
 
 Vector3D Animator::Instance::GetBonePosition( const int32_t Handle ) const
 {
-	if( Handle < 0 )
-		return Vector3D::Zero;
-
-	if( Handle >= Bones.size() )
+	if( !IsValidBone( Handle ) )
 		return Vector3D::Zero;
 
 	return Bones[Handle].GlobalTransform.Transform( Vector3D::Zero );
@@ -138,25 +148,35 @@ int32_t Animator::Instance::GetBoneIndex( const std::string& Name ) const
 
 Matrix4D Animator::Instance::GetBoneTransform( const int32_t Handle ) const
 {
-	if( Handle < 0 || Handle >= Bones.size() )
-		return Matrix4D(); // Bone vector has either not been populated or the handle is invalid.
+	if( !IsValidBone( Handle ) )
+		return {};
 
 	const auto& Skeleton = Mesh->GetSkeleton();
 	return Bones[Handle].BoneTransform * Skeleton.Bones[Handle].BoneToModel;
 }
 
-void Animator::Instance::SetBoneTransform( const int32_t Handle, const Matrix4D& Matrix )
+void Animator::Instance::SetBoneTransform( const int32_t Handle, const Matrix4D& Matrix, const Bone::Evaluation Method )
 {
+	if( !IsValidBone( Handle ) )
+		return;
+
 	if( !Mesh )
 		return;
 
-	const auto& Skeleton = Mesh->GetSkeleton();
-	if( Handle < 0 || Handle >= Bones.size() )
-		return; // Bone vector has either not been populated or the handle is invalid.
+	auto& Bone = GetBone( Handle );
+	if( Method == Bone::Direct )
+	{
+		// Apply the transformation directly, without relying on the override transform.
+		const auto& Skeleton = Mesh->GetSkeleton();
+		Bone.GlobalTransform = Skeleton.Bones[Handle].BoneToModel * Matrix;
+		Bone.BoneTransform = Bones[Handle].GlobalTransform * Skeleton.Bones[Handle].ModelToBone;
+		Bone.Evaluated = true; // Indicate that the bone has already been evaluated.
 
-	Bones[Handle].GlobalTransform = Skeleton.Bones[Handle].BoneToModel * Matrix;
-	Bones[Handle].BoneTransform = Bones[Handle].GlobalTransform * Skeleton.Bones[Handle].ModelToBone;
-	Bones[Handle].Evaluated = true; // Indicate that the bone has already been evaluated.
+		return;
+	}
+
+	Bone.Override = Method;
+	Bone.OverrideTransform = Matrix;
 }
 
 void Animator::Instance::Debug( const FTransform& WorldTransform ) const
@@ -220,15 +240,15 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 		return;
 	}
 
-	if( Skeleton.Animations.empty() )
-	{
-		// This lad has no animations.
-		return;
-	}
-
 	if( Skeleton.RootIndex < 0 )
 	{
 		// No root found.
+		return;
+	}
+
+	if( Skeleton.Animations.empty() )
+	{
+		// Skeleton has no animations.
 		return;
 	}
 
@@ -358,7 +378,7 @@ Animator::Matrices Animator::GetMatrices( const Animation& Animation, const floa
 	return Get( Key );
 }
 
-Animator::CompoundKey Animator::Get( const Animation& Animation, const float& Time, const int32_t& BoneIndex, const int32_t& Offset )
+CompoundKey Animator::Get( const Animation& Animation, const float& Time, const int32_t& BoneIndex, const int32_t& Offset )
 {
 	const auto Pair = GetPair( Animation, Time, BoneIndex, Offset );
 	return BlendSeparate( Pair.first, Pair.second, Time );
@@ -475,7 +495,7 @@ std::pair<Key, Key> Animator::GetPair( const float& Time, const float& Duration,
 	return ConstructPair( Index, Keys );
 }
 
-std::pair<Animator::CompoundKey, Animator::CompoundKey> Animator::GetPair( const Animation& Animation, const float& Time, const int32_t& BoneIndex, const int32_t& Offset )
+std::pair<CompoundKey, CompoundKey> Animator::GetPair( const Animation& Animation, const float& Time, const int32_t& BoneIndex, const int32_t& Offset )
 {
 	std::pair<CompoundKey, CompoundKey> Pair;
 
@@ -587,7 +607,7 @@ Vector3D ExtractRootMotion( const Key& A, const Key& B, const float& Alpha, cons
 	return Motion;
 }
 
-Animator::CompoundKey Animator::Blend( const CompoundKey& A, const CompoundKey& B, const float& Alpha )
+CompoundKey Animator::Blend( const CompoundKey& A, const CompoundKey& B, const float& Alpha )
 {
 	CompoundKey Output = A;
 
@@ -613,7 +633,7 @@ Animator::CompoundKey Animator::Blend( const CompoundKey& A, const CompoundKey& 
 	return Output;
 }
 
-Animator::CompoundKey Animator::BlendSeparate( const CompoundKey& A, const CompoundKey& B, const float& Time )
+CompoundKey Animator::BlendSeparate( const CompoundKey& A, const CompoundKey& B, const float& Time )
 {
 	CompoundKey Output = A;
 
@@ -752,6 +772,15 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 
 	const auto Matrices = Get( Blend );
 
+	// Save the override data.
+	Bone::Evaluation Override = Data.Bones[Bone->Index].Override;
+	Matrix4D OverrideTransform;
+
+	if( Override != Bone::Disable )
+	{
+		OverrideTransform = Data.Bones[Bone->Index].OverrideTransform;
+	}
+
 	Data.Bones[Bone->Index] = *Bone;
 
 	// Local bone data
@@ -761,7 +790,21 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 	const auto& InverseModelMatrix = Bone->InverseModelMatrix;
 
 	// Concatenate all the keyframe transformations.
-	const auto LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
+	auto LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
+
+	// Handle bone transform overrides.
+	if( Override != Bone::Disable )
+	{
+		if( Override == Bone::Replace )
+		{
+			// TODO: If we're replacing we shouldn't need to look up any keyframe information above.
+			LocalTransform = OverrideTransform;
+		}
+		else
+		{
+			LocalTransform = OverrideTransform * LocalTransform;
+		}
+	}
 
 	Data.Bones[Bone->Index].LocalTransform = LocalTransform;
 
