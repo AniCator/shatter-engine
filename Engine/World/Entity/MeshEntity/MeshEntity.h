@@ -64,6 +64,15 @@ public:
 	float GetAnimationTime() const;
 	void SetAnimationTime( const float& Value );
 
+	int32_t GetBoneIndex( const std::string& Name ) const;
+
+	enum Space
+	{
+		Local,
+		World
+	};
+	Matrix4D GetBoneTransform( const int32_t Handle, const Space Space = World ) const;
+
 	void SetPosition( const Vector3D& Position, const bool& Teleport = true );
 	void SetOrientation( const Vector3D& Orientation );
 	void SetSize( const Vector3D& Size );
@@ -99,7 +108,6 @@ public:
 
 	// Location used for fetching light data when UseLightOrigin is true.
 	Vector3D LightOrigin = Vector3D::Zero;
-
 protected:
 	void ConstructRenderable();
 	void ConstructPhysics();

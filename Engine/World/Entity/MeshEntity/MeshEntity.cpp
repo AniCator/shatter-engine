@@ -628,6 +628,22 @@ void CMeshEntity::SetAnimationTime( const float& Value )
 	AnimationInstance.SetAnimationTime( Value );
 }
 
+int32_t CMeshEntity::GetBoneIndex( const std::string& Name ) const
+{
+	return AnimationInstance.GetBoneIndex( Name );
+}
+
+Matrix4D CMeshEntity::GetBoneTransform( const int32_t Handle, const Space Space ) const
+{
+	if( Space == World )
+	{
+		// Transform the bone into world space.
+		return Transform.GetTransformationMatrix() * AnimationInstance.GetBoneTransform( Handle );
+	}
+
+	return AnimationInstance.GetBoneTransform( Handle );
+}
+
 void CMeshEntity::SetPosition( const Vector3D& Position, const bool& Teleport )
 {
 	ShouldUpdateTransform = true;

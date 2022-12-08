@@ -80,6 +80,21 @@ Matrix4D& FTransform::GetTransformationMatrixInverse()
 	return TransformationMatrixInverse;
 }
 
+const Matrix4D& FTransform::GetRotationMatrix() const
+{
+	return RotationMatrix;
+}
+
+const Matrix4D& FTransform::GetTransformationMatrix() const
+{
+	return TransformationMatrix;
+}
+
+const Matrix4D& FTransform::GetTransformationMatrixInverse() const
+{
+	return TransformationMatrixInverse;
+}
+
 const Vector3D& FTransform::GetPosition() const
 {
 	return StoredPosition;

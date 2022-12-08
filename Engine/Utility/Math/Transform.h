@@ -23,6 +23,10 @@ public:
 	Matrix4D& GetTransformationMatrix();
 	Matrix4D& GetTransformationMatrixInverse();
 
+	const Matrix4D& GetRotationMatrix() const;
+	const Matrix4D& GetTransformationMatrix() const;
+	const Matrix4D& GetTransformationMatrixInverse() const;
+
 	const Vector3D& GetPosition() const;
 	const Vector3D& GetOrientation() const;
 	const Vector3D& GetSize() const;
