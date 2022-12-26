@@ -202,14 +202,25 @@ void CTriggerBoxEntity::Import( CData& Data )
 
 void CTriggerBoxEntity::OnEnter( Interactable* Interactable )
 {
-	if( !ShouldTrigger() )
+	const auto ShouldTrigger = ( Frequency < 0 || Count < Frequency );
+	if( !ShouldTrigger )
 		return;
+
+	if( IsDebugEnabled() )
+	{
+		Log::Event( "OnEnter\n" );
+	}
 
 	Send( "OnEnter", this );
 }
 
 void CTriggerBoxEntity::OnLeave( Interactable* Interactable )
 {
+	if( IsDebugEnabled() )
+	{
+		Log::Event( "OnLeave\n" );
+	}
+
 	Send( "OnLeave", this );
 }
 
