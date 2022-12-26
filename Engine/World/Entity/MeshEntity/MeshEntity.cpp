@@ -166,10 +166,10 @@ void PrintColumn( const Vector4D& Column )
 void PrintMatrix( const std::string& Name, const Matrix4D& Matrix )
 {
 	Log::Event( "%s\n", Name.c_str() );
-	PrintColumn( Matrix.Columns[0] );
-	PrintColumn( Matrix.Columns[1] );
-	PrintColumn( Matrix.Columns[2] );
-	PrintColumn( Matrix.Columns[3] );
+	PrintColumn( Matrix[0] );
+	PrintColumn( Matrix[1] );
+	PrintColumn( Matrix[2] );
+	PrintColumn( Matrix[3] );
 }
 
 void CMeshEntity::TickAnimation()
