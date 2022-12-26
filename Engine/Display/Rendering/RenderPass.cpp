@@ -378,27 +378,6 @@ void CRenderPass::ConfigureDepthTest( CShader* Shader )
 	}
 }
 
-void CRenderPass::ConfigureStencilTest( CShader* Shader )
-{
-	const auto NextStencilValue = Shader->GetStencilValue();
-	if( NextStencilValue != StencilValue )
-	{
-		glStencilFunc( GL_ALWAYS, StencilValue, 255 );
-
-		// Don't write to the buffer when the value is zero.
-		if( StencilValue == 0 )
-		{
-			glStencilMask( 0 );
-		}
-		else
-		{
-			glStencilMask( 255 );
-		}
-
-		StencilValue = NextStencilValue;
-	}
-}
-
 void SphereCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 {
 	return;

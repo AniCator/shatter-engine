@@ -106,8 +106,6 @@ public:
 	const EDepthMask::Type& GetDepthMask() const;
 	const EDepthTest::Type& GetDepthTest() const;
 
-	uint8_t GetStencilValue() const;
-
 	void AutoReload( const bool& Enable );
 	bool AutoReload() const
 	{
@@ -136,8 +134,6 @@ private:
 
 	// glDepthFunc
 	EDepthTest::Type DepthTest = EDepthTest::Less;
-
-	uint8_t StencilValue = 0;
 
 	time_t ModificationTime;
 	bool ShouldAutoReload = false;

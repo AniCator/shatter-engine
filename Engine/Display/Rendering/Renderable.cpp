@@ -189,10 +189,79 @@ void CRenderable::FrustumCull( const CCamera& Camera, const std::vector<CRendera
 	Culling::Frustum( Camera, Renderables );
 }
 
+static const GLenum StencilTestToEnum[EStencilTest::Maximum]
+{
+	GL_NEVER,
+	GL_LESS,
+	GL_EQUAL,
+	GL_LEQUAL,
+	GL_GREATER,
+	GL_NOTEQUAL,
+	GL_GEQUAL,
+	GL_ALWAYS
+};
+
+void CheckStencil( 
+	bool& StencilTest,
+	bool& StencilValue,
+	bool& StencilWrite,
+	const FRenderData& RenderData, const CRenderable* PreviousRenderable 
+)
+{
+	if( !PreviousRenderable )
+		return;
+
+	const auto& PreviousRenderData = PreviousRenderable->GetRenderData();
+	if( RenderData.StencilTest == PreviousRenderData.StencilTest )
+	{
+		// Stencil tests match, doesn't require an update.
+		StencilTest = false;
+	}
+
+	if( RenderData.StencilValue == PreviousRenderData.StencilValue )
+	{
+		// Stencil values match, doesn't require an update.
+		StencilValue = false;
+	}
+
+	if( RenderData.StencilWrite == PreviousRenderData.StencilWrite )
+	{
+		// Stencil write operations match, doesn't require an update.
+		StencilWrite = false;
+	}
+}
+
+void ConfigureStencil( const FRenderData& RenderData, const CRenderable* PreviousRenderable )
+{
+	bool StencilTest = true;
+	bool StencilValue = true;
+	bool StencilWrite = true;
+	CheckStencil( StencilTest, StencilValue, StencilWrite, RenderData, PreviousRenderable );
+
+	if( StencilTest || StencilValue )
+	{
+		glStencilFunc( StencilTestToEnum[RenderData.StencilTest], RenderData.StencilValue, 255 );
+	}
+
+	if( StencilWrite )
+	{
+		if( RenderData.StencilWrite )
+		{
+			glStencilMask( 255 );
+		}
+		else
+		{
+			glStencilMask( 0 );
+		}
+	}
+}
+
 void CRenderable::Prepare( FRenderData& RenderData, const CRenderable* PreviousRenderable )
 {
 	if( !Shader )
 		return;
+
+	ConfigureStencil( RenderData, PreviousRenderable );
 
 	if( !ShouldBindTextures( PreviousRenderable ) )
 		return;

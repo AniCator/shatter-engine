@@ -15,6 +15,16 @@ class CShader;
 
 struct FRenderData
 {
+	bool ShouldRender = false;
+	bool DisableRender = false;
+	bool DoubleSided = false;
+
+	EStencilTest::Type StencilTest = EStencilTest::Always;
+	bool StencilWrite = false;
+	uint8_t StencilValue = 0;
+
+	EDrawMode DrawMode = None;
+
 	GLuint VertexBufferObject = 0;
 	GLuint IndexBufferObject = 0;
 	GLuint ShaderProgram = 0;
@@ -23,12 +33,6 @@ struct FRenderData
 	BoundingBox WorldBounds{};
 	Vector4D Color = Vector4D( 1.0f, 1.0f, 1.0f, 1.0f );
 	LightIndices LightIndex;
-
-	EDrawMode DrawMode = None;
-
-	bool ShouldRender = false;
-	bool DisableRender = false;
-	bool DoubleSided = false;
 };
 
 struct FRenderDataInstanced : public FRenderData

@@ -63,7 +63,6 @@ protected:
 	void ConfigureBlendMode( CShader* Shader );
 	void ConfigureDepthMask( CShader* Shader );
 	void ConfigureDepthTest( CShader* Shader );
-	void ConfigureStencilTest( CShader* Shader );
 };
 
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, UniformMap& Uniforms );
