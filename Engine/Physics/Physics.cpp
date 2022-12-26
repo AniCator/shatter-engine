@@ -53,7 +53,7 @@ struct QueryTask : public Task
 		if( !Scene || !Requests )
 			return;
 
-		if( !SynchronousQuery )
+		if( !SynchronousQuery && !Synchronous )
 		{
 			Mutex.lock();
 		}
@@ -66,7 +66,7 @@ struct QueryTask : public Task
 			Testable->Query( Request.Body->GetBounds(), Request.Result );
 		}
 
-		if( !SynchronousQuery )
+		if( !SynchronousQuery && !Synchronous )
 		{
 			Mutex.unlock();
 		}
@@ -75,6 +75,7 @@ struct QueryTask : public Task
 	std::shared_ptr<Testable> Scene = nullptr;
 	std::shared_ptr<std::vector<QueryRequest>> Requests = nullptr;
 	std::mutex Mutex;
+	bool Synchronous = false;
 };
 
 bool UsesStaticQuery( const CBody* Body )
@@ -332,7 +333,7 @@ public:
 			}
 		);
 
-		if( SynchronousBodyUpdate )
+		if( SynchronousBodyUpdate || IsSynchronous() )
 		{
 			BodyUpdate->Execute();
 		}
@@ -348,7 +349,7 @@ public:
 	{
 		IsSimulating = true;
 
-		if( !SynchronousQuery )
+		if( !SynchronousQuery && !IsSynchronous() )
 		{
 			StaticQuery->Mutex.lock();
 			DynamicQuery->Mutex.lock();
@@ -375,11 +376,13 @@ public:
 
 		StaticQuery->Scene = StaticScene;
 		StaticQuery->Requests = StaticQueryRequests;
+		StaticQuery->Synchronous = IsSynchronous();
 
 		DynamicQuery->Scene = DynamicScene;
 		DynamicQuery->Requests = DynamicQueryRequests;
+		DynamicQuery->Synchronous = IsSynchronous();
 
-		if( SynchronousQuery )
+		if( SynchronousQuery || IsSynchronous() )
 		{
 			StaticQuery->Execute();
 			DynamicQuery->Execute();
@@ -390,7 +393,7 @@ public:
 			DynamicQueryWork = ThreadPool::Add( DynamicQuery );
 		}
 
-		if( !SynchronousQuery )
+		if( !SynchronousQuery && !IsSynchronous() )
 		{
 			StaticQuery->Mutex.unlock();
 			DynamicQuery->Mutex.unlock();
@@ -619,6 +622,16 @@ public:
 		DynamicScene = AccelerationStructure::Build( DynamicVector );
 	}
 
+	bool IsSynchronous() const
+	{
+		return AlwaysSynchronous;
+	}
+
+	void SetSynchronous( const bool Synchronous )
+	{
+		AlwaysSynchronous = Synchronous;
+	}
+
 private:
 	std::vector<CBody*> Bodies;
 
@@ -629,6 +642,8 @@ private:
 	std::future<void> DynamicQueryWork;
 	std::future<void> BodyWork;
 	bool IsSimulating = false;
+
+	bool AlwaysSynchronous = false;
 };
 
 CPhysics::CPhysics()
@@ -689,4 +704,14 @@ std::vector<CBody*> CPhysics::Query( const BoundingBox& AABB, const PollType& Ty
 {
 	OptickEvent(); // For profiling external queries.
 	return Scene->Query( AABB );
+}
+
+bool CPhysics::IsSynchronous() const
+{
+	return Scene->IsSynchronous();
+}
+
+void CPhysics::SetSynchronous( const bool Synchrohous )
+{
+	Scene->SetSynchronous( Synchrohous );
 }
