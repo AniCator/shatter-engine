@@ -215,6 +215,10 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 						struct LevelStruct
 						{
 							std::string Path = "";
+
+							// Local identifier.
+							UniqueIdentifier Identifier;
+
 							Vector3D Position = { 0,0,0 };
 							Vector3D Orientation = { 0,0,0 };
 							Vector3D Size = { 1,1,1 };
@@ -278,7 +282,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 
 							const bool IsLevel = ClassName == "level";
 
-							if( !IsLevel && !EntityID.Valid() )
+							if( !EntityID.Valid() )
 							{
 								// Generate a random UUID.
 								EntityID.Random();
@@ -324,6 +328,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									{
 										LevelStruct Level;
 										Level.Path = LevelPath;
+										Level.Identifier = EntityID;
 										Level.Position = LevelPosition;
 										Level.Orientation = LevelOrientation;
 										Level.Size = LevelSize;
