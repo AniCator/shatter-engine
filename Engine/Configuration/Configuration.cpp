@@ -120,6 +120,9 @@ void CConfiguration::SetFile( const StorageCategory::Type& Location, const std::
 
 void CConfiguration::Reload()
 {
+	std::mutex Mutex;
+	std::unique_lock<std::mutex> Lock( Mutex );
+
 	static const std::wstring DefaultEngineConfigurationFile = L"ShatterEngine.default.ini";
 	static const std::wstring EngineConfigurationFile = L"ShatterEngine.ini";
 
@@ -210,7 +213,6 @@ void CConfiguration::Reload()
 
 		IsFirstFile = false;
 	}
-
 	if( FoundMissingSetting )
 	{
 		// Make sure the missing entries are saved.
@@ -233,6 +235,12 @@ void CConfiguration::ReloadIfModified()
 	{
 		Reload();
 	}
+}
+
+void CConfiguration::Store( const std::string& KeyName, const std::string& Value )
+{
+	StoredSettings.insert_or_assign( KeyName, Value );
+	ExecuteCallback( KeyName, Value );
 }
 
 void CConfiguration::Save()

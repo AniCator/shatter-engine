@@ -49,9 +49,10 @@ public:
 	{
 		std::stringstream Stream;
 		Stream << Value;
-		StoredSettings.insert_or_assign( KeyName, Stream.str() );
-		ExecuteCallback( KeyName, Stream.str() );
+		Store( KeyName, Stream.str() );
 	}
+
+	void Store( const std::string& KeyName, const std::string& Value );
 
 	void Save();
 
