@@ -13,6 +13,22 @@ class CShader;
 
 #include <Engine/Utility/Math.h>
 
+namespace EStencilTest
+{
+	enum Type
+	{
+		Never = 0,
+		Less,
+		Equal,
+		LessEqual,
+		Greater,
+		NotEqual,
+		GreaterEqual,
+		Always,
+		Maximum
+	};
+}
+
 struct FRenderData
 {
 	bool ShouldRender = false;

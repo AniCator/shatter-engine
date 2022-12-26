@@ -314,7 +314,6 @@ void CRenderPass::Draw( CRenderable* Renderable )
 		ConfigureBlendMode( Shader );
 		ConfigureDepthMask( Shader );
 		ConfigureDepthTest( Shader );
-		ConfigureStencilTest( Shader );
 
 		Renderable->Draw( RenderData, PreviousRenderable );
 		PreviousRenderable = Renderable;

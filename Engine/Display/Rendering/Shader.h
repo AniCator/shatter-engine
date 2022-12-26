@@ -53,22 +53,6 @@ namespace EDepthTest
 	};
 }
 
-namespace EStencilTest
-{
-	enum Type
-	{
-		Never = 0,
-		Less,
-		Equal,
-		LessEqual,
-		Greater,
-		NotEqual,
-		GreaterEqual,
-		Always,
-		Maximum
-	};
-}
-
 struct FProgramHandles
 {
 	GLuint Program = 0;
