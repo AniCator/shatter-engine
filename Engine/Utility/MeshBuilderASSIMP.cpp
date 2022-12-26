@@ -139,10 +139,10 @@ void Print( const Vector4D& Column )
 void Print( const std::string& Name, const Matrix4D& Matrix )
 {
 	Log::Event( "%s\n", Name.c_str() );
-	Print( Matrix.Columns[0] );
-	Print( Matrix.Columns[1] );
-	Print( Matrix.Columns[2] );
-	Print( Matrix.Columns[3] );
+	Print( Matrix[0] );
+	Print( Matrix[1] );
+	Print( Matrix[2] );
+	Print( Matrix[3] );
 }
 
 void Print( const ai_real& a1, const ai_real& a2, const ai_real& a3, const ai_real& a4 )
