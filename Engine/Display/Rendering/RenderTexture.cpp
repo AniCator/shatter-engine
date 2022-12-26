@@ -118,7 +118,7 @@ GLuint GenerateDepthBuffer( const GLuint Width, const GLuint Height, const EImag
 	glBindTexture( GL_TEXTURE_2D, Handle );
 
 	// Allocate the texture data.
-	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, Width, Height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
+	glTexImage2D( GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, Width, Height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr );
 
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE );
 	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE );
@@ -151,7 +151,7 @@ GLuint GenerateDepthBufferMultisample( const GLuint Width, const GLuint Height, 
 	glBindTexture( GL_TEXTURE_2D_MULTISAMPLE, Handle );
 
 	// Allocate the texture data and attach the texture to the framebuffer.
-	glTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, Samples, GL_DEPTH_COMPONENT32F, Width, Height, !!FixedSampleLocations );
+	glTexImage2DMultisample( GL_TEXTURE_2D_MULTISAMPLE, Samples, GL_DEPTH32F_STENCIL8, Width, Height, !!FixedSampleLocations );
 	glFramebufferTexture2D( GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D_MULTISAMPLE, Handle, 0 );
 
 	return Handle;

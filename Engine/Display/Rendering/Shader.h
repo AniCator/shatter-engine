@@ -53,6 +53,22 @@ namespace EDepthTest
 	};
 }
 
+namespace EStencilTest
+{
+	enum Type
+	{
+		Never = 0,
+		Less,
+		Equal,
+		LessEqual,
+		Greater,
+		NotEqual,
+		GreaterEqual,
+		Always,
+		Maximum
+	};
+}
+
 struct FProgramHandles
 {
 	GLuint Program = 0;
@@ -86,8 +102,11 @@ public:
 	GLuint Activate();
 	const FProgramHandles& GetHandles() const;
 	const EBlendMode::Type& GetBlendMode() const;
+
 	const EDepthMask::Type& GetDepthMask() const;
 	const EDepthTest::Type& GetDepthTest() const;
+
+	uint8_t GetStencilValue() const;
 
 	void AutoReload( const bool& Enable );
 	bool AutoReload() const
@@ -111,8 +130,14 @@ private:
 
 	EShaderType ShaderType = EShaderType::Fragment;
 	EBlendMode::Type BlendMode = EBlendMode::Opaque;
+
+	// glDepthMask
 	EDepthMask::Type DepthMask = EDepthMask::Write;
+
+	// glDepthFunc
 	EDepthTest::Type DepthTest = EDepthTest::Less;
+
+	uint8_t StencilValue = 0;
 
 	time_t ModificationTime;
 	bool ShouldAutoReload = false;

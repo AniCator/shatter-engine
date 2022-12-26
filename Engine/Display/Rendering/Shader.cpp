@@ -1,6 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Shader.h"
 #include <Engine/Profiling/Logging.h>
+#include <Engine/Utility/Math.h>
 
 #include <sstream>
 
@@ -253,7 +254,12 @@ const EDepthTest::Type& CShader::GetDepthTest() const
 	return DepthTest;
 }
 
-void CShader::AutoReload(const bool& Enable)
+uint8_t CShader::GetStencilValue() const
+{
+	return StencilValue;
+}
+
+void CShader::AutoReload( const bool& Enable )
 {
 	ShouldAutoReload = Enable;
 }
@@ -425,6 +431,15 @@ std::string CShader::Process( std::stringstream& Stream )
 				{
 					DepthTest = EDepthTest::Always;
 				}
+
+				bParsed = true;
+			}
+			else if( Preprocessor == "#stencil" )
+			{
+				std::string Mode;
+				LineStream >> Mode;
+
+				StencilValue = static_cast<uint8_t>( Math::Clamp( std::stoi( Mode ), 0, 255 ) );
 
 				bParsed = true;
 			}

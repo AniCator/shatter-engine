@@ -181,6 +181,10 @@ void CRenderPass::Begin()
 
 	glDepthMask( DepthMask == EDepthMask::Write ? GL_TRUE : GL_FALSE );
 	glDepthFunc( DepthTestToEnum[DepthTest] );
+
+	glStencilOp( GL_KEEP, GL_KEEP, GL_REPLACE );
+	glStencilFunc( GL_ALWAYS, StencilValue, 255 );
+	glStencilMask( 0 );
 }
 
 void CRenderPass::End()
@@ -310,6 +314,7 @@ void CRenderPass::Draw( CRenderable* Renderable )
 		ConfigureBlendMode( Shader );
 		ConfigureDepthMask( Shader );
 		ConfigureDepthTest( Shader );
+		ConfigureStencilTest( Shader );
 
 		Renderable->Draw( RenderData, PreviousRenderable );
 		PreviousRenderable = Renderable;
@@ -370,6 +375,27 @@ void CRenderPass::ConfigureDepthTest( CShader* Shader )
 		glDepthFunc( DepthTestToEnum[NextDepthTest] );
 
 		DepthTest = NextDepthTest;
+	}
+}
+
+void CRenderPass::ConfigureStencilTest( CShader* Shader )
+{
+	const auto NextStencilValue = Shader->GetStencilValue();
+	if( NextStencilValue != StencilValue )
+	{
+		glStencilFunc( GL_ALWAYS, StencilValue, 255 );
+
+		// Don't write to the buffer when the value is zero.
+		if( StencilValue == 0 )
+		{
+			glStencilMask( 0 );
+		}
+		else
+		{
+			glStencilMask( 255 );
+		}
+
+		StencilValue = NextStencilValue;
 	}
 }
 
