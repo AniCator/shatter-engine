@@ -18,6 +18,23 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 namespace EngineTest
 {
+	std::wstring ToString( const Vector3D& In )
+	{
+		return L"{" + 
+			std::to_wstring( In.X ) + L", " + 
+			std::to_wstring( In.Y ) + L", " + 
+			std::to_wstring( In.Z ) + L"}";
+	}
+
+	std::wstring ToString( const Vector4D& In )
+	{
+		return L"{" +
+			std::to_wstring( In.X ) + L", " +
+			std::to_wstring( In.Y ) + L", " +
+			std::to_wstring( In.Z ) + L",";
+			std::to_wstring( In.W ) + L"}";
+	}
+
 	TEST_CLASS( PrimitiveTests )
 	{
 	public:
@@ -692,5 +709,60 @@ namespace EngineTest
 			
 			Assert::IsTrue( Equal, L"Failed to convert Euler angles to rotation matrix." );
 		}*/
+
+		void TestTransform( Vector3D SourcePosition, Vector3D SourceOrientation, Vector3D SourceScale )
+		{
+			std::wstring Text = L"\n";
+			Text += L"pos: " + ToString( SourcePosition ) + L"\n";
+			Text += L"siz: " + ToString( SourceScale ) + L"\n";
+			Text += L"ori: " + ToString( SourceOrientation ) + L"\n";
+
+			FTransform Transform = { SourcePosition, SourceOrientation, SourceScale };
+			Matrix4D Matrix = Transform.GetTransformationMatrix();
+
+			Matrix3D Rotation;
+			Vector3D Position, Scale;
+			Matrix.Decompose( Position, Rotation, Scale );
+
+			Vector3D Direction = Rotation.Transform( WorldForward );
+			Vector3D Orientation = Math::DirectionToEuler( Direction );
+
+			Text += L"converted\n";
+			Text += L"pos: " + ToString( Position ) + L"\n";
+			Text += L"siz: " + ToString( Scale ) + L"\n";
+			Text += L"dir: " + ToString( Direction ) + L"\n";
+			Text += L"ori: " + ToString( Orientation ) + L"\n";
+
+			if( Direction.Length() == 0 )
+			{
+				Text += L"Transformed direction has a magnitude of zero.";
+				Assert::Fail( Text.c_str() );
+			}
+
+			if( !Math::Equal( SourcePosition, Position ) )
+			{
+				Text += L"Positions don't match.";
+				Assert::Fail( Text.c_str() );
+			}
+
+			if( !Math::Equal( SourceScale, Scale ) )
+			{
+				Text += L"Sizes don't match.";
+				Assert::Fail( Text.c_str() );
+			}
+
+			if( !Math::Equal( SourceOrientation, Orientation ) )
+			{
+				Text += L"Orientations don't match.";
+				Assert::Fail( Text.c_str() );
+			}
+		}
+
+		TEST_METHOD( DecompositionTransformMatrix4D )
+		{
+			TestTransform( { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -45.0f }, { 1.0f, 1.0f, 1.0f } );
+			TestTransform( { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -180.0f }, { 1.0f, 1.0f, 1.0f } );
+			TestTransform( { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -90.0f }, { 1.0f, 1.0f, 1.0f } );
+		}
 	};
 }
