@@ -12,7 +12,7 @@ struct UniqueIdentifier
 	void Set( const char* Identifier );
 	bool Valid() const;
 
-	bool operator==( const UniqueIdentifier& B );
+	bool operator==( const UniqueIdentifier& B ) const;
 
 	friend CData& operator<<( CData& Data, const UniqueIdentifier& Identifier );
 	friend CData& operator>>( CData& Data, UniqueIdentifier& Identifier );

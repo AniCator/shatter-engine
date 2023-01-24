@@ -9,8 +9,8 @@
 #include <Engine/World/World.h>
 #include <Engine/Utility/Chunk.h>
 #include <Engine/Utility/DataString.h>
-#include <Engine/Utility/Structures/JSON.h>
 #include <Engine/Utility/Math.h>
+#include <Engine/Utility/Structures/JSON.h>
 
 #include <Engine/Display/UserInterface.h>
 
