@@ -1,5 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "AngelEngine.h"
+#include "AngelFunctions.h"
 
 #include <string>
 
@@ -23,14 +24,19 @@ void MessageCallback( const asSMessageInfo *msg, void *param )
 	Log::Event( Severity, "%s (%d, %d) : %s\n", msg->section, msg->row, msg->col, msg->message );
 }
 
-void print( const std::string &String )
+void ScriptPrint( const std::string& String )
 {
 	Log::Event( "%s", String.c_str() );
 }
 
-void println( const std::string& String )
+void ScriptPrintLine( const std::string& String )
 {
 	Log::Event( "%s\n", String.c_str() );
+}
+
+void ScriptWarning( const std::string& String )
+{
+	Log::Event( Log::Warning, "%s", String.c_str() );
 }
 
 AngelResult ScriptEngine::Initialize()
@@ -45,12 +51,13 @@ AngelResult ScriptEngine::Initialize()
 
 	RegisterStdString( Engine );
 
-	const int PrintFunctionResult = Engine->RegisterGlobalFunction( "void print(const string &in)", asFUNCTION( print ), asCALL_CDECL );
-	if( PrintFunctionResult < 0 )
-	{
-		Log::Event( Log::Error, "Failed to register global print function for AngelScript.\n" );
-		return AngelResult::Engine;
-	}
+	// General print functions.
+	AddFunction( "void Print( const string &in )", ScriptPrint );
+	AddFunction( "void PrintLine( const string &in )", ScriptPrintLine );
+	AddFunction( "void Warning( const string &in )", ScriptWarning );
+
+	// Registers "Shatter Engine"-related objects and functions.
+	RegisterShatterEngine();
 
 	if( !Engine )
 	{
@@ -115,7 +122,7 @@ bool Compile( CScriptBuilder& Builder )
 	return true;
 }
 
-AngelResult ScriptEngine::Add( const char* Name, CFile& File )
+AngelResult ScriptEngine::Add( const char* Name, const CFile& File )
 {
 	if( !Engine )
 		return AngelResult::Unknown;
@@ -157,7 +164,138 @@ AngelResult ScriptEngine::Add( const char* Name, const std::string& Code )
 	return AngelResult::Success;
 }
 
-AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint )
+AngelResult ScriptEngine::Remove( const char* ModuleName )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	if( Engine->DiscardModule( ModuleName ) < 0 )
+		return AngelResult::Unknown;
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddFunction( const char* Declaration, void* Function )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterGlobalFunction( Declaration, asFUNCTION( Function ), asCALL_CDECL );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register global function \"%s\".\n", Declaration );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddTypeSingleton( const char* Name )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterObjectType( Name, 0, asOBJ_REF | asOBJ_NOHANDLE );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register singleton type \"%s\".\n", Name );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddTypeReference( const char* Name )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterObjectType( Name, 0, asOBJ_REF | asOBJ_NOCOUNT );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register reference type \"%s\".\n", Name );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddTypeValue( const char* Name, const size_t Size, const unsigned int Flags )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterObjectType( Name, static_cast<int>( Size ), asOBJ_VALUE | Flags );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register value type \"%s\".\n", Name );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddTypePOD( const char* Name, const size_t Size, const unsigned int Flags )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterObjectType( Name, static_cast<int>( Size ), asOBJ_VALUE | asOBJ_POD | Flags );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register POD type \"%s\".\n", Name );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddObjectMethod( const char* Type, const char* Signature, const asSFuncPtr& Pointer )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterObjectMethod( Type, Signature, Pointer, asCALL_THISCALL );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register object method \"%s\" for type \"%s\".\n", Signature, Type );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddObjectProperty( const char* Type, const char* Signature, int Offset )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterObjectProperty( Type, Signature, Offset );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register object property \"%s\" for type \"%s\".\n", Signature, Type );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddProperty( const char* Signature, void* Property )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterGlobalProperty( Signature, Property );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register global property \"%s\".\n", Signature );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint, void* Object )
 {
 	if( !Engine )
 		return AngelResult::Unknown;
@@ -169,14 +307,21 @@ AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint )
 	if( !Module )
 		return AngelResult::Unknown;
 	
-	asIScriptFunction* EntryFunction = Module->GetFunctionByDecl( EntryPoint ? EntryPoint : "void main()" );
+	const char* EntryName = EntryPoint ? EntryPoint : "void main()";
+	asIScriptFunction* EntryFunction = Module->GetFunctionByDecl( EntryName );
 	if( !EntryFunction )
 	{
-		Log::Event( Log::Warning, "Missing entry function in module \"%s\"\n", Name );
+		Log::Event( Log::Warning, "Missing function \"%s\" in module \"%s\"\n", EntryName, Name );
 		return AngelResult::Unknown;
 	}
 
 	Context->Prepare( EntryFunction );
+
+	if( Object )
+	{
+		Context->SetArgObject( 0, Object );
+	}
+
 	const int ExecutionResult = Context->Execute();
 	if( ExecutionResult > asEXECUTION_FINISHED )
 	{
@@ -185,7 +330,7 @@ AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint )
 			Log::Event( Log::Error, "Failed to execute \"%s\":\n%s.\n", Name, Context->GetExceptionString() );
 
 			// Determine the function where the exception occurred
-			const asIScriptFunction *Function = Context->GetExceptionFunction();
+			const asIScriptFunction* Function = Context->GetExceptionFunction();
 			if( Function )
 			{
 				Log::Event( Log::Error, "Declaration: %s\n", Function->GetDeclaration() );
@@ -198,4 +343,22 @@ AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint )
 	}
 
 	return AngelResult::Success;
+}
+
+bool ScriptEngine::HasFunction( const char* Name, const char* EntryPoint )
+{
+	if( !Engine )
+		return false;
+
+	asIScriptModule* Module = Engine->GetModule( Name );
+	if( !Module )
+		return false;
+
+	asIScriptFunction* EntryFunction = Module->GetFunctionByDecl( EntryPoint );
+	if( !EntryFunction )
+	{
+		return false;
+	}
+
+	return true;
 }

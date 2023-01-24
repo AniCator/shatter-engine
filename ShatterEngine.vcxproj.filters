@@ -168,6 +168,9 @@
     <Filter Include="Source Files\Engine\Network">
       <UniqueIdentifier>{bc347ac5-6ef0-4b81-b4c3-2a1f41871fef}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\Engine\World\Entity\ScriptEntity">
+      <UniqueIdentifier>{e080a72c-ea7d-4d5d-a41d-3430c7fa6e7d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="ThirdParty\glad\src\glad.c">
@@ -487,6 +490,15 @@
     </ClCompile>
     <ClCompile Include="Engine\Display\Rendering\Material.cpp">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\Script\AngelFunctions.cpp">
+      <Filter>Source Files\Engine\Utility\Script</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\World\Entity\ScriptEntity\ScriptEntity.cpp">
+      <Filter>Source Files\Engine\World\Entity\ScriptEntity</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Utility\PropertyTable.cpp">
+      <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -954,6 +966,18 @@
     </ClInclude>
     <ClInclude Include="Engine\Physics\PhysicalSurface.h">
       <Filter>Source Files\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Script\AngelFunctions.h">
+      <Filter>Source Files\Engine\Utility\Script</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Entity\ScriptEntity\ScriptEntity.h">
+      <Filter>Source Files\Engine\World\Entity\ScriptEntity</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Script\AngelTemplate.h">
+      <Filter>Source Files\Engine\Utility\Script</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\PropertyTable.h">
+      <Filter>Source Files\Engine\Utility</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
