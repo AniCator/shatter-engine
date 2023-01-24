@@ -178,7 +178,7 @@ void CEntity::Traverse()
 	}
 
 	const auto CurrentTime = GameLayersInstance->GetCurrentTime();
-	const bool ShouldTick = NextTickTime < CurrentTime;
+	const bool ShouldTick = NextTickTime <= CurrentTime;
 	if( ShouldTick )
 	{
 		// OptickEvent();
@@ -581,7 +581,7 @@ bool UniqueIdentifier::Valid() const
 	return true;
 }
 
-bool UniqueIdentifier::operator==( const UniqueIdentifier& B )
+bool UniqueIdentifier::operator==( const UniqueIdentifier& B ) const
 {
 	if( std::strcmp( ID, B.ID ) == 0 )
 		return true;
