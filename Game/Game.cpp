@@ -60,6 +60,15 @@ void CGameLayers::Frame()
 	ProfileAlways( "Game Frame" );
 	OptickCategory( "Game Frame", Optick::Category::GameLogic );
 
+	Vector4D Time;
+	Time.X = static_cast<float>( GetCurrentTime() );
+	Time.Y = static_cast<float>( GetDeltaTime() );
+	Time.Z = static_cast<float>( GetPreviousTime() );
+	Time.W = static_cast<float>( GetRealTime() );
+
+	CWindow& Window = CWindow::Get();
+	Window.GetRenderer().SetUniformBuffer( "Time", Time );
+
 	for( auto* GameLayer : GameLayers )
 	{
 		if( GameLayer )
@@ -73,15 +82,6 @@ void CGameLayers::Tick()
 {
 	ProfileAlways( "Game Tick" );
 	OptickCategory( "Game Tick", Optick::Category::GameLogic );
-
-	Vector4D Time;
-	Time.X = static_cast<float>( GetCurrentTime() );
-	Time.Y = static_cast<float>( GetDeltaTime() );
-	Time.Z = static_cast<float>( GetPreviousTime() );
-	Time.W = static_cast<float>( GetRealTime() );
-
-	CWindow& Window = CWindow::Get();
-	Window.GetRenderer().SetUniformBuffer( "Time", Time );
 
 	for( auto* GameLayer : GameLayers )
 	{
