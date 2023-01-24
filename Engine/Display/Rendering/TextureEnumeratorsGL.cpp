@@ -64,6 +64,9 @@ static const GLenum ImageFormatToType[static_cast<EImageFormatType>( EImageForma
 	GL_UNSIGNED_BYTE,
 	GL_UNSIGNED_BYTE,
 
+	GL_UNSIGNED_BYTE, // sRGB
+	GL_UNSIGNED_BYTE, // sRGB
+
 	GL_UNSIGNED_SHORT,
 	GL_UNSIGNED_SHORT,
 	GL_UNSIGNED_SHORT,
@@ -89,6 +92,9 @@ static const GLenum ImageFormatToFormat[static_cast<EImageFormatType>( EImageFor
 	GL_RGB,
 	GL_RGBA,
 
+	GL_RGB, // sRGB
+	GL_RGBA, // sRGB
+
 	GL_RED,
 	GL_RG,
 	GL_RGB,
@@ -113,6 +119,9 @@ static const GLenum ImageFormatToInternalFormat[static_cast<EImageFormatType>( E
 	GL_RG8,
 	GL_RGB8,
 	GL_RGBA8,
+
+	GL_SRGB8, // sRGB
+	GL_SRGB8_ALPHA8, // sRGB
 
 	GL_R16,
 	GL_RG16,

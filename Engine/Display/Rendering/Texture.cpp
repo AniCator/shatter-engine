@@ -65,7 +65,7 @@ bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredForm
 		{
 			ImageData32F = stbi_loadf_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
 		}
-		else if( PreferredFormat > EImageFormat::RGBA8 )
+		else if( PreferredFormat > EImageFormat::SRGBA8 )
 		{
 			ImageData16 = stbi_load_16_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
 		}

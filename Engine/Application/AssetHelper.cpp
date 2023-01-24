@@ -64,6 +64,8 @@ void ShowAssetTexture( AssetTexture& Texture )
 				"RG8",
 				"RGB8",
 				"RGBA8",
+				"SRGB8",
+				"SRGBA8",
 				"R16",
 				"RG16",
 				"RGB16",

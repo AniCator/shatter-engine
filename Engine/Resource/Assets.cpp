@@ -144,6 +144,9 @@ static const std::map<std::string, EImageFormat> ImageFormatFromString = {
 	std::make_pair( "rgb8", EImageFormat::RGB8 ),
 	std::make_pair( "rgba8", EImageFormat::RGBA8 ),
 
+	std::make_pair( "srgb8", EImageFormat::SRGB8 ),
+	std::make_pair( "srgba8", EImageFormat::SRGBA8 ),
+
 	std::make_pair( "r16", EImageFormat::R16 ),
 	std::make_pair( "rg16", EImageFormat::RG16 ),
 	std::make_pair( "rgb16", EImageFormat::RGB16 ),
@@ -165,6 +168,9 @@ static const std::map<EImageFormat, std::string> StringToImageFormat = {
 	std::make_pair( EImageFormat::RG8, "rg8" ),
 	std::make_pair( EImageFormat::RGB8, "rgb8" ),
 	std::make_pair( EImageFormat::RGBA8, "rgba8" ),
+
+	std::make_pair( EImageFormat::SRGB8, "srgb8" ),
+	std::make_pair( EImageFormat::SRGBA8, "srgba8" ),
 
 	std::make_pair( EImageFormat::R16, "r16" ),
 	std::make_pair( EImageFormat::RG16, "rg16" ),
