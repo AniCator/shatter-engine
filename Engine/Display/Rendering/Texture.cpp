@@ -93,6 +93,163 @@ bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredForm
 	return false;
 }
 
+bool CreateTexture2D( 
+	GLuint& Handle, 
+	const int Width,
+	const int Height,
+	const int Channels,
+	const EImageFormat Format,
+	const EFilteringMode FilteringMode,
+	const int AnisotropicSamples,
+	const bool GenerateMipMaps,
+	const void* Pixels
+
+)
+{
+	glBindTexture( GL_TEXTURE_2D, Handle );
+
+	// Wrapping parameters
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+
+	// Filtering parameters
+	const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
+	const auto MinFilter = GenerateMipMaps ? GetFilteringMipMapMode( Mode ) : GetFilteringMode( Mode );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinFilter );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
+
+#ifdef GL_ARB_texture_filter_anisotropic
+	if( !!GLAD_GL_ARB_texture_filter_anisotropic )
+	{
+		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
+	}
+#endif
+
+	const auto ImageFormat = static_cast<EImageFormatType>( Format );
+	auto Type = GetImageFormatType( ImageFormat );
+	auto InternalFormat = ::GetImageFormat( ImageFormat );
+
+	const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
+	const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
+	if( PowerOfTwoWidth && PowerOfTwoHeight )
+	{
+		if( Channels == 1 )
+		{
+			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RED, Type, Pixels );
+		}
+		else if( Channels == 2 )
+		{
+			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RG, Type, Pixels );
+		}
+		else if( Channels == 3 )
+		{
+			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RGB, Type, Pixels );
+		}
+		else if( Channels == 4 )
+		{
+			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RGBA, Type, Pixels );
+		}
+		else
+		{
+			// Unsupported.
+			Log::Event( Log::Warning, "Unsupported 2D texture format.\n" );
+			return false;
+		}
+	}
+	else
+	{
+		// Not a power of two.
+		Log::Event( Log::Warning, "Not a power of two texture.\n" );
+		return false;
+	}
+
+	if( GenerateMipMaps )
+	{
+		glGenerateMipmap( GL_TEXTURE_2D );
+	}
+
+	return true;
+}
+
+bool CreateTexture3D(
+	GLuint& Handle,
+	const int Width,
+	const int Height,
+	const int Depth,
+	const int Channels,
+	const EImageFormat Format,
+	const EFilteringMode FilteringMode,
+	const int AnisotropicSamples,
+	const bool GenerateMipMaps,
+	const void* Pixels
+
+)
+{
+	glBindTexture( GL_TEXTURE_3D, Handle );
+
+	// Wrapping parameters
+	glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_WRAP_S, GL_REPEAT );
+	glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+
+	// Filtering parameters
+	const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
+	const auto MinFilter = GenerateMipMaps ? GetFilteringMipMapMode( Mode ) : GetFilteringMode( Mode );
+	glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_MIN_FILTER, MinFilter );
+	glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
+
+#ifdef GL_ARB_texture_filter_anisotropic
+	if( !!GLAD_GL_ARB_texture_filter_anisotropic )
+	{
+		glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
+	}
+#endif
+
+	const auto ImageFormat = static_cast<EImageFormatType>( Format );
+	auto Type = GetImageFormatType( ImageFormat );
+	auto InternalFormat = ::GetImageFormat( ImageFormat );
+
+	const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
+	const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
+	if( PowerOfTwoWidth && PowerOfTwoHeight )
+	{
+		if( Channels == 1 )
+		{
+			glTexImage3D( GL_TEXTURE_3D, 0, InternalFormat, Width, Height, Depth, 0, GL_RED, Type, Pixels );
+		}
+		else if( Channels == 2 )
+		{
+			glTexImage3D( GL_TEXTURE_3D, 0, InternalFormat, Width, Height, Depth, 0, GL_RG, Type, Pixels );
+		}
+		else if( Channels == 3 )
+		{
+			glTexImage3D( GL_TEXTURE_3D, 0, InternalFormat, Width, Height, Depth, 0, GL_RGB, Type, Pixels );
+		}
+		else if( Channels == 4 )
+		{
+			glTexImage3D( GL_TEXTURE_3D, 0, InternalFormat, Width, Height, Depth, 0, GL_RGBA, Type, Pixels );
+		}
+		else
+		{
+			// Unsupported.
+			Log::Event( Log::Warning, "Unsupported 3D texture format.\n" );
+			return false;
+		}
+	}
+	else
+	{
+		// Not a power of two.
+		Log::Event( Log::Warning, "Not a power of two texture.\n" );
+		return false;
+	}
+
+	if( GenerateMipMaps )
+	{
+		glGenerateMipmap( GL_TEXTURE_3D );
+	}
+
+	return true;
+}
+
 bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn, const int ChannelsIn, const EFilteringMode ModeIn, const EImageFormat PreferredFormatIn, const bool& GenerateMipMaps )
 {
 	bool Supported = false;
@@ -136,63 +293,40 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 		return false;
 	}
 
-	glBindTexture( GL_TEXTURE_2D, Handle );
-
-	// Wrapping parameters
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
-
-	// Filtering parameters
-	const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
-	const auto MinFilter = GenerateMipMaps ? GetFilteringMipMapMode( Mode ) : GetFilteringMode( Mode );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinFilter );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
-
-#ifdef GL_ARB_texture_filter_anisotropic
-	if( !!GLAD_GL_ARB_texture_filter_anisotropic )
+	if( Depth <= 1 )
 	{
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
-	}
-#endif
-
-	const auto ImageFormat = static_cast<EImageFormatType>( PreferredFormatIn );
-	// auto Format = ImageFormatToFormat[ImageFormat];
-	auto Type = GetImageFormatType( ImageFormat );
-	auto InternalFormat = ::GetImageFormat( ImageFormat );
-
-	const bool PowerOfTwoWidth = ( Width & ( Width - 1 ) ) == 0;
-	const bool PowerOfTwoHeight = ( Height & ( Height - 1 ) ) == 0;
-	if( PowerOfTwoWidth && PowerOfTwoHeight )
-	{
-		if( Channels == 1 )
-		{
-			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RED, Type, Pixels );
-			Supported = true;
-		}
-		else if( Channels == 2 )
-		{
-			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RG, Type, Pixels );
-			Supported = true;
-		}
-		else if( Channels == 3 )
-		{
-			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RGB, Type, Pixels );
-			Supported = true;
-		}
-		else if( Channels == 4 )
-		{
-			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RGBA, Type, Pixels );
-			Supported = true;
-		}
+		Supported = CreateTexture2D(
+			Handle,
+			Width,
+			Height,
+			Channels,
+			Format,
+			FilteringMode,
+			AnisotropicSamples,
+			GenerateMipMaps,
+			Pixels
+		);
 	}
 	else
 	{
-		Log::Event( Log::Warning, "Not a power of two texture (\"%s\").\n", Location.c_str() );
+		Supported = CreateTexture3D(
+			Handle,
+			Width,
+			Height,
+			Depth,
+			Channels,
+			Format,
+			FilteringMode,
+			AnisotropicSamples,
+			GenerateMipMaps,
+			Pixels
+		);
 	}
 
-	if( Supported && GenerateMipMaps )
+	if( !Supported )
 	{
-		glGenerateMipmap( GL_TEXTURE_2D );
+		Log::Event( Log::Warning, "Failed to initialize texture (\"%s\").\n", Location.c_str() );
+		return false;
 	}
 
 	return Supported;

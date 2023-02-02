@@ -44,6 +44,7 @@ protected:
 
 	int Width;
 	int Height;
+	int Depth = 0;
 	int Channels;
 
 	unsigned char* ImageData8;
