@@ -1059,6 +1059,11 @@ bool* DisplayTagList()
 {
 	return &ShowTagList;
 }
+static bool ShowColorManagement = false;
+bool* DisplayColorManagement()
+{
+	return &ShowColorManagement;
+}
 
 static auto TranslateBus = Translate<std::string, Bus::Type>( {
 		{"Master", Bus::Master},
@@ -1727,6 +1732,55 @@ void TagListUI()
 	ImGui::End();
 }
 
+constexpr ImGuiColorEditFlags ColorPickerFlags =
+ImGuiColorEditFlags_PickerHueWheel |
+ImGuiColorEditFlags_NoSidePreview |
+ImGuiColorEditFlags_NoLabel |
+ImGuiColorEditFlags_Float
+;
+
+constexpr float DefaultExposure = 0.0f;
+static Vector4D ColorTint = { 1.0f, 1.0f, 1.0f, DefaultExposure };
+static Vector4D ColorLift = { 0.0f, 0.0f, 0.0f, 0.0f };
+static Vector4D ColorGamma = { 0.0f, 0.0f, 0.0f, 0.0f };
+static Vector4D ColorGain = { 1.0f, 1.0f, 1.0f, 1.0f };
+void ColorManagementUI()
+{
+	auto& Renderer = CWindow::Get().GetRenderer();
+	Renderer.SetUniformBuffer( "ColorTint", ColorTint );
+	Renderer.SetUniformBuffer( "ColorLift", ColorLift );
+	Renderer.SetUniformBuffer( "ColorGamma", ColorGamma );
+	Renderer.SetUniformBuffer( "ColorGain", ColorGain );
+
+	if( !ShowColorManagement )
+		return;
+
+	if( ImGui::Begin( "Color Management", &ShowColorManagement, ImVec2( 250.0f, 1000.0f ) ) )
+	{
+		if( ImGui::Button( "Reset to Neutral" ) )
+		{
+			ColorTint = { 1.0f, 1.0f, 1.0f, DefaultExposure };
+			ColorLift = { 0.0f, 0.0f, 0.0f, 0.0f };
+			ColorGamma = { 0.0f, 0.0f, 0.0f, 0.0f };
+			ColorGain = { 1.0f, 1.0f, 1.0f, 1.0f };
+		}
+
+		ImGui::ColorPicker3( "Tint", &ColorTint.R, ColorPickerFlags );
+		ImGui::DragFloat( "Exposure", &ColorTint.A, 0.01f, -10.0f, 10.0f, "%.2f" );
+
+		ImGui::ColorPicker3( "Lift#ColorLift", &ColorLift.R, ColorPickerFlags );
+		ImGui::DragFloat( "Lift", &ColorLift.A, 0.01f, -1.0f, 1.0f, "%.2f" );
+
+		ImGui::ColorPicker3( "Gamma#ColorGamma", &ColorGamma.R, ColorPickerFlags );
+		ImGui::DragFloat( "Gamma", &ColorGamma.A, 0.01f, -1.0f, 1.0f, "%.2f" );
+
+		ImGui::ColorPicker3( "Gain#ColorGain", &ColorGain.R, ColorPickerFlags );
+		ImGui::DragFloat( "Gain", &ColorGain.A, 0.01f, 0.0f, 16.0f, "%.2f" );
+	}
+
+	ImGui::End();
+}
+
 bool PerpetualRecompile = false;
 double LastRecompile = -1.0;
 void PerformPerpetualRecompile()
@@ -1815,6 +1869,7 @@ void RenderWindowItems()
 	MenuItem( "Audio Player", DisplayAudioPlayer() );
 	MenuItem( "Shader Toy", DisplayShaderToy() );
 	MenuItem( "Tag List", DisplayTagList() );
+	MenuItem( "Color Management", DisplayColorManagement() );
 }
 
 void RenderWindowPanels()
@@ -1825,6 +1880,7 @@ void RenderWindowPanels()
 	AudioPlayerUI();
 	ShaderToyUI();
 	TagListUI();
+	ColorManagementUI();
 
 	PerformPerpetualRecompile();
 }
