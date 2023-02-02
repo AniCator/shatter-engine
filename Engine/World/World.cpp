@@ -159,7 +159,8 @@ void CWorld::Destroy()
 	
 	Camera = nullptr;
 
-	Physics->Destroy();
+	if( Physics )
+		Physics->Destroy();
 
 	for( auto Level : Levels )
 	{
