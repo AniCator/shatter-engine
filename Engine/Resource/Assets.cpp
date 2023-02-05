@@ -292,6 +292,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 			EImageFormat ImageFormat = EImageFormat::RGB8;
 			uint8_t AnisotropicSamples = 0;
 
+			// "format" field
 			if( Payload.Data.size() > 1 )
 			{
 				// Transform given format into lower case string
@@ -304,6 +305,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 				}
 			}
 
+			// "filter" field
 			if( Payload.Data.size() > 2 )
 			{
 				// Transform given format into lower case string
@@ -315,6 +317,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 				}
 			}
 
+			// "samples" field
 			if( Payload.Data.size() > 3 )
 			{
 				int Samples = 0;
