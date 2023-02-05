@@ -4,18 +4,6 @@
 #include <Engine/Resource/Assets.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
 
-CRenderTexture* BloomA = nullptr;
-CRenderTexture* BloomB = nullptr;
-
-CRenderTexture* HalfSizeX = nullptr;
-CRenderTexture* HalfSizeY = nullptr;
-CRenderTexture* QuarterSizeX = nullptr;
-CRenderTexture* QuarterSizeY = nullptr;
-CRenderTexture* EigthSizeX = nullptr;
-CRenderTexture* EigthSizeY = nullptr;
-CRenderTexture* TinySizeX = nullptr;
-CRenderTexture* TinySizeY = nullptr;
-
 CRenderPassBloom::CRenderPassBloom( int Width, int Height, const CCamera& Camera, const bool AlwaysClear ) : CRenderPass( "Bloom", Width, Height, Camera, AlwaysClear )
 {
 	auto& Assets = CAssets::Get();
@@ -54,7 +42,7 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 	Threshold.SetShader( BloomThreshold );
 	Threshold.SetTexture( Framebuffer, ETextureSlot::Slot0 );
 
-	auto CreateRenderTexture = [&] ( CRenderTexture*& Texture, const std::string& Name, float Factor )
+	auto CreateRenderTexture = [this] ( CRenderTexture*& Texture, const std::string& Name, float Factor )
 	{
 		const int Width = ViewportWidth * Factor;
 		const int Height = ViewportHeight * Factor;

@@ -5,6 +5,8 @@
 #include <Engine/Display/Rendering/RenderPass.h>
 #include <Engine/Utility/Math.h>
 
+class CRenderTexture;
+
 class CRenderPassBloom : public CRenderPass
 {
 public:
@@ -23,4 +25,16 @@ public:
 	class CShader* BloomComposite = nullptr;
 
 	class CTexture* LensDirt = nullptr;
+
+	CRenderTexture* BloomA = nullptr;
+	CRenderTexture* BloomB = nullptr;
+
+	CRenderTexture* HalfSizeX = nullptr;
+	CRenderTexture* HalfSizeY = nullptr;
+	CRenderTexture* QuarterSizeX = nullptr;
+	CRenderTexture* QuarterSizeY = nullptr;
+	CRenderTexture* EigthSizeX = nullptr;
+	CRenderTexture* EigthSizeY = nullptr;
+	CRenderTexture* TinySizeX = nullptr;
+	CRenderTexture* TinySizeY = nullptr;
 };
