@@ -4,6 +4,7 @@
 #include "AngelTemplate.h"
 
 #include <Engine/Audio/Sound.h>
+#include <Engine/Audio/SoundInstance.h>
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Math.h>
@@ -59,48 +60,21 @@ void RegisterVectorType()
 	ScriptEngine::AddTypeMethod( "Vector3D", "bool IsValid() const", &Vector3D::IsValid );
 }
 
-void LoadSound( const std::string& Name, const std::string& Location )
+template<typename T>
+void RegisterSoundType( const char* Type )
 {
-	auto& Assets = CAssets::Get();
-	Assets.CreateNamedSound( Name.c_str(), Location.c_str() );
-}
-
-int32_t PlaySoundByName( const std::string& Name )
-{
-	auto& Assets = CAssets::Get();
-	if( CSound* Sound = Assets.Sounds.Find( Name ) )
-	{
-		return Sound->Start();
-	}
-
-	return -1;
-}
-
-void StopSoundByName( const std::string& Name )
-{
-	auto& Assets = CAssets::Get();
-	if( CSound* Sound = Assets.Sounds.Find( Name ) )
-	{
-		Sound->Stop();
-	}
-}
-
-void StopSoundByHandle( const int32_t& Handle )
-{
-	if( Handle < 0 )
-		return;
-
-	SoundHandle SoundHandle;
-	SoundHandle.Handle = Handle;
-	SoLoudSound::Stop( SoundHandle );
-}
-
-void RegisterSound()
-{
-	ScriptEngine::AddFunction( "void LoadSound( const string &in, const string& in )", LoadSound );
-	ScriptEngine::AddFunction( "int PlaySound( const string &in )", PlaySoundByName );
-	ScriptEngine::AddFunction( "void StopSound( const int &in )", StopSoundByHandle );
-	ScriptEngine::AddFunction( "void StopSound( const string &in )", StopSoundByName );
+	ScriptEngine::AddTypeReference( Type );
+	ScriptEngine::AddTypeMethod( Type, "int Start( const Spatial &in )", &T::Start );
+	ScriptEngine::AddTypeMethod( Type, "void Stop( const float &in )", &T::Stop );
+	ScriptEngine::AddTypeMethod( Type, "void Loop( const bool &in )", &T::Loop );
+	ScriptEngine::AddTypeMethod( Type, "void Rate( const bool &in )", &T::Rate );
+	ScriptEngine::AddTypeMethod( Type, "double Time() const", &T::Time );
+	ScriptEngine::AddTypeMethod( Type, "double Length() const", &T::Length );
+	ScriptEngine::AddTypeMethod( Type, "void Offset( const double &in )", &T::Offset );
+	ScriptEngine::AddTypeMethod( Type, "double Playing() const", &T::Playing );
+	ScriptEngine::AddTypeMethod( Type, "void Volume( const float &in )", &T::Volume );
+	ScriptEngine::AddTypeMethod( Type, "void Fade( const float &in, const float &in )", &T::Fade );
+	ScriptEngine::AddTypeMethod( Type, "void Update( const Vector3D &in, const Vector3D &in )", &T::Update );
 }
 
 void LoadStream( const std::string& Name, const std::string& Location )
@@ -147,10 +121,80 @@ void RegisterStream()
 	ScriptEngine::AddFunction( "void StopStream( const string &in )", StopStreamByName );
 }
 
-void LoadSequence( const std::string& Name, const std::string& Location )
+void LoadSound( const std::string& Name, const std::string& Location )
 {
 	auto& Assets = CAssets::Get();
-	Assets.CreateNamedSequence( Name.c_str(), Location.c_str() );
+	Assets.CreateNamedSound( Name.c_str(), Location.c_str() );
+}
+
+int32_t PlaySoundByName( const std::string& Name )
+{
+	auto& Assets = CAssets::Get();
+	if( CSound* Sound = Assets.Sounds.Find( Name ) )
+	{
+		return Sound->Start();
+	}
+
+	return -1;
+}
+
+void StopSoundByName( const std::string& Name )
+{
+	auto& Assets = CAssets::Get();
+	if( CSound* Sound = Assets.Sounds.Find( Name ) )
+	{
+		Sound->Stop();
+	}
+}
+
+void StopSoundByHandle( const int32_t& Handle )
+{
+	if( Handle < 0 )
+		return;
+
+	SoundHandle SoundHandle;
+	SoundHandle.Handle = Handle;
+	SoLoudSound::Stop( SoundHandle );
+}
+
+void RegisterSpatial()
+{
+	ScriptEngine::AddTypePOD<Spatial>( "Spatial" );
+	ScriptEngine::AddTypeProperty( "Spatial", "bool Is3D", &Spatial::Is3D );
+	ScriptEngine::AddTypeProperty( "Spatial", "Vector3D Position", &Spatial::Position );
+	ScriptEngine::AddTypeProperty( "Spatial", "Vector3D Velocity", &Spatial::Velocity );
+	ScriptEngine::AddTypeProperty( "Spatial", "float MinimumDistance", &Spatial::MinimumDistance );
+	ScriptEngine::AddTypeProperty( "Spatial", "float MaximumDistance", &Spatial::MaximumDistance );
+	ScriptEngine::AddTypeProperty( "Spatial", "bool DelayByDistance", &Spatial::DelayByDistance );
+	ScriptEngine::AddTypeProperty( "Spatial", "int Attenuation", &Spatial::Attenuation );
+	ScriptEngine::AddTypeProperty( "Spatial", "float Rolloff", &Spatial::Rolloff );
+	ScriptEngine::AddTypeProperty( "Spatial", "float Doppler", &Spatial::Doppler );
+	ScriptEngine::AddTypeProperty( "Spatial", "int Bus", &Spatial::Bus );
+	ScriptEngine::AddTypeProperty( "Spatial", "bool StartPaused", &Spatial::StartPaused );
+	ScriptEngine::AddTypeProperty( "Spatial", "float FadeIn", &Spatial::FadeIn );
+	ScriptEngine::AddTypeProperty( "Spatial", "float Volume", &Spatial::Volume );
+	ScriptEngine::AddTypeProperty( "Spatial", "float Rate", &Spatial::Rate );
+}
+
+void RegisterSound()
+{
+	RegisterSpatial();
+
+	ScriptEngine::AddFunction( "void LoadSound( const string &in, const string& in )", LoadSound );
+	ScriptEngine::AddFunction( "int PlaySound( const string &in )", PlaySoundByName );
+	ScriptEngine::AddFunction( "void StopSound( const int &in )", StopSoundByHandle );
+	ScriptEngine::AddFunction( "void StopSound( const string &in )", StopSoundByName );
+
+	RegisterSoundType<CSound>( "Sound" );
+	RegisterSoundType<SoundInstance>( "SoundInstance" );
+
+	RegisterStream();
+}
+
+CSequence* LoadSequence( const std::string& Name, const std::string& Location )
+{
+	auto& Assets = CAssets::Get();
+	return Assets.CreateNamedSequence( Name.c_str(), Location.c_str() );
 }
 
 void PlaySequence( const std::string& Name )
@@ -173,9 +217,29 @@ void StopSequence( const std::string& Name )
 
 void RegisterSequence()
 {
-	ScriptEngine::AddFunction( "void LoadSequence( const string &in, const string& in )", LoadSequence );
+	ScriptEngine::AddTypeReference( "Sequence" );
+
+	ScriptEngine::AddFunction( "Sequence @ LoadSequence( const string &in, const string& in )", LoadSequence );
 	ScriptEngine::AddFunction( "void PlaySequence( const string &in )", PlaySequence );
 	ScriptEngine::AddFunction( "void StopSequence( const string &in )", StopSequence );
+
+	ScriptEngine::AddTypeMethod( "Sequence", "string Location() const", &CSequence::Location );
+
+	ScriptEngine::AddTypeMethod( "Sequence", "void Play()", &CSequence::Play );
+	ScriptEngine::AddTypeMethod( "Sequence", "void Pause()", &CSequence::Pause );
+	ScriptEngine::AddTypeMethod( "Sequence", "void Stop()", &CSequence::Stop );
+
+	ScriptEngine::AddTypeMethod( "Sequence", "bool Playing() const", &CSequence::Playing );
+	ScriptEngine::AddTypeMethod( "Sequence", "bool Stopped() const", &CSequence::Stopped );
+
+	ScriptEngine::AddTypeMethod( "Sequence", "void Step()", &CSequence::Step );
+	ScriptEngine::AddTypeMethod( "Sequence", "void GoTo( uint64 )", &CSequence::GoTo );
+
+	ScriptEngine::AddTypeMethod( "Sequence", "uint64 CurrentMarker() const", &CSequence::CurrentMarker );
+	ScriptEngine::AddTypeMethod( "Sequence", "uint64 Size() const", &CSequence::Size );
+
+	ScriptEngine::AddTypeMethod( "Sequence", "double Time() const", &CSequence::Time );
+	ScriptEngine::AddTypeMethod( "Sequence", "double Length() const", &CSequence::Length );
 }
 
 CEntity* GetEntityByName( const std::string& Name )
@@ -279,6 +343,17 @@ void RegisterEntity()
 	ScriptEngine::AddFunction( "void Send( Entity @, string &in )", SendEntity );
 	ScriptEngine::AddFunction( "void AddInput( Entity @, string &in )", AddEntityInput );
 	ScriptEngine::AddFunction( "void AddOutput( Entity @, string &in, Entity @, string &in )", AddEntityOutput );
+
+	// Entity methods.
+	ScriptEngine::AddTypeMethod( "Entity", "void SetParent(Entity &in)", &CEntity::SetParent );
+	ScriptEngine::AddTypeMethod( "Entity", "Entity @ GetParent() const", &CEntity::GetParent );
+
+	ScriptEngine::AddTypeMethod( "Entity", "void Tag(string &in)", &CEntity::Tag );
+	ScriptEngine::AddTypeMethod( "Entity", "void Untag(string &in)", &CEntity::Untag );
+	ScriptEngine::AddTypeMethod( "Entity", "bool HasTag(string &in) const", &CEntity::HasTag );
+
+	ScriptEngine::AddTypeMethod( "Entity", "bool IsDebugEnabled() const", &CEntity::IsDebugEnabled );
+	ScriptEngine::AddTypeMethod( "Entity", "void EnableDebug( const bool )", &CEntity::EnableDebug );
 }
 
 CEntity* ScriptToEntity( ScriptEntity* Script )
@@ -325,7 +400,6 @@ void RegisterScriptFunctions()
 {
 	RegisterVectorType();
 	RegisterSound();
-	RegisterStream();
 	RegisterSequence();
 	RegisterEntity();
 	RegisterScriptEntity();
