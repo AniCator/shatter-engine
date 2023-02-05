@@ -12,6 +12,9 @@
 #define ConsoleWindowDisabled
 #endif
 
+#define OptimizeOff __pragma( optimize("", off) )
+#define OptimizeOn __pragma( optimize("", on) )
+
 void BreakDebugger();
 
 namespace Log
