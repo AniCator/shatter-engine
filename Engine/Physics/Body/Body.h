@@ -77,6 +77,11 @@ public:
 	// This body is able to move on its own but cannot be moved by other bodies.
 	bool Stationary = true;
 
+	bool IsKinetic() const
+	{
+		return !Static && !Stationary;
+	}
+
 	// This body is allowed to block other bodies from moving through it.
 	bool Block = true;
 
