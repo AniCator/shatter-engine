@@ -6,6 +6,16 @@
 template<typename Key, typename Value>
 struct Translate
 {
+	Translate( const std::initializer_list<std::pair<Key, Value>>& Table )
+	{
+		FromKey.insert( Table.begin(), Table.end() );
+
+		for( auto& Pair : FromKey )
+		{
+			ToKey.insert_or_assign( Pair.second, Pair.first );
+		}
+	}
+
 	Translate( const std::unordered_map<Key, Value>& Table )
 	{
 		FromKey = Table;
