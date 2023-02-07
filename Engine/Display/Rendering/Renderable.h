@@ -72,14 +72,12 @@ public:
 	CTexture* GetTexture( ETextureSlot Slot );
 	void SetTexture( CTexture* Texture, ETextureSlot Slot );
 
-	void ApplyMaterial();
-
 	UniformMap GetUniforms() const
 	{
-			return Uniforms;
+		return Uniforms;
 	}
-
 	void SetUniform( const std::string& Name, const Uniform& Uniform );
+	void CheckCachedUniforms();
 
 	virtual void Draw( FRenderData& RenderData, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride = None );
 

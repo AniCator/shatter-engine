@@ -55,18 +55,11 @@ void CRenderable::SetShader( CShader* Shader )
 	if( !Shader )
 		return;
 
-	if( this->Shader != Shader || Shader->GetHandles().Program != this->Shader->GetHandles().Program )
-	{
-		this->Shader = Shader;
+	if( this->Shader == Shader )
+		return;
 
-		const FProgramHandles& Handles = Shader->GetHandles();
-		RenderData.ShaderProgram = Handles.Program;
-
-		for( size_t Index = 0; Index < TextureSlots; Index++ )
-		{
-			TextureLocation[Index] = glGetUniformLocation( Handles.Program, TextureSlotName[Index] );
-		}
-	}
+	this->Shader = Shader;
+	CheckCachedUniforms();
 }
 
 CTexture* CRenderable::GetTexture( ETextureSlot Slot )
@@ -92,6 +85,24 @@ void CRenderable::SetTexture( CTexture* Texture, ETextureSlot Slot )
 void CRenderable::SetUniform( const std::string& Name, const Uniform& Uniform )
 {
 	Uniforms.insert_or_assign( Name, Uniform );
+}
+
+void CRenderable::CheckCachedUniforms()
+{
+	if( !Shader )
+		return;
+
+	const auto Handles = Shader->GetHandles();
+	if( RenderData.ShaderProgram == Handles.Program )
+		return;
+
+	RenderData.ShaderProgram = Handles.Program;
+
+	// Cache the texture locations.
+	for( size_t Index = 0; Index < TextureSlots; Index++ )
+	{
+		TextureLocation[Index] = glGetUniformLocation( Handles.Program, TextureSlotName[Index] );
+	}
 }
 
 void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride )
@@ -261,6 +272,7 @@ void CRenderable::Prepare( FRenderData& RenderData, const CRenderable* PreviousR
 	if( !Shader )
 		return;
 
+	CheckCachedUniforms();
 	ConfigureStencil( RenderData, PreviousRenderable );
 
 	if( !ShouldBindTextures( PreviousRenderable ) )

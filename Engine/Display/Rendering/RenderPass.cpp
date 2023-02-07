@@ -218,6 +218,7 @@ void CRenderPass::Setup( CRenderable* Renderable, std::unordered_map<std::string
 		{
 			ShaderProgramHandle = Shader->Activate();
 
+			Renderable->CheckCachedUniforms();
 			RenderData.ShaderProgram = ShaderProgramHandle;
 
 			for( auto& UniformBuffer : Uniforms )
