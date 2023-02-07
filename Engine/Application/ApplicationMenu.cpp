@@ -1739,43 +1739,53 @@ ImGuiColorEditFlags_NoLabel |
 ImGuiColorEditFlags_Float
 ;
 
-constexpr float DefaultExposure = 0.0f;
-static Vector4D ColorTint = { 1.0f, 1.0f, 1.0f, DefaultExposure };
-static Vector4D ColorLift = { 0.0f, 0.0f, 0.0f, 0.0f };
-static Vector4D ColorGamma = { 0.0f, 0.0f, 0.0f, 0.0f };
-static Vector4D ColorGain = { 1.0f, 1.0f, 1.0f, 1.0f };
+std::string VectorToString( const Vector4D& Vector )
+{
+	return std::to_string( Vector.X ) + "f, " + std::to_string( Vector.Y ) + "f, " + std::to_string( Vector.Z ) + "f, " + std::to_string( Vector.W ) + "f";
+}
+
+static ColorGrade OverrideGrade;
 void ColorManagementUI()
 {
-	auto& Renderer = CWindow::Get().GetRenderer();
-	Renderer.SetUniformBuffer( "ColorTint", ColorTint );
-	Renderer.SetUniformBuffer( "ColorLift", ColorLift );
-	Renderer.SetUniformBuffer( "ColorGamma", ColorGamma );
-	Renderer.SetUniformBuffer( "ColorGain", ColorGain );
-
 	if( !ShowColorManagement )
 		return;
+
+	auto& Renderer = GetRenderer();
+	Renderer.Grade = OverrideGrade; // Assign the override grade directly.
 
 	if( ImGui::Begin( "Color Management", &ShowColorManagement, ImVec2( 250.0f, 1000.0f ) ) )
 	{
 		if( ImGui::Button( "Reset to Neutral" ) )
 		{
-			ColorTint = { 1.0f, 1.0f, 1.0f, DefaultExposure };
-			ColorLift = { 0.0f, 0.0f, 0.0f, 0.0f };
-			ColorGamma = { 0.0f, 0.0f, 0.0f, 0.0f };
-			ColorGain = { 1.0f, 1.0f, 1.0f, 1.0f };
+			OverrideGrade.Tint = { 1.0f, 1.0f, 1.0f, DefaultExposure };
+			OverrideGrade.Lift = { 0.0f, 0.0f, 0.0f, 0.0f };
+			OverrideGrade.Gamma = { 0.0f, 0.0f, 0.0f, 0.0f };
+			OverrideGrade.Gain = { 1.0f, 1.0f, 1.0f, 1.0f };
 		}
 
-		ImGui::ColorPicker3( "Tint", &ColorTint.R, ColorPickerFlags );
-		ImGui::DragFloat( "Exposure", &ColorTint.A, 0.01f, -10.0f, 10.0f, "%.2f" );
+		ImGui::SameLine();
 
-		ImGui::ColorPicker3( "Lift#ColorLift", &ColorLift.R, ColorPickerFlags );
-		ImGui::DragFloat( "Lift", &ColorLift.A, 0.01f, -1.0f, 1.0f, "%.2f" );
+		if( ImGui::Button( "Copy to Clipboard" ) )
+		{
+			std::string Clipboard;
+			Clipboard += ".Tint = {" + VectorToString( OverrideGrade.Tint ) + "}\n";
+			Clipboard += ".Lift = {" + VectorToString( OverrideGrade.Lift ) + "}\n";
+			Clipboard += ".Gamma = {" + VectorToString( OverrideGrade.Gamma ) + "}\n";
+			Clipboard += ".Gain = {" + VectorToString( OverrideGrade.Gain ) + "}\n";
+			glfwSetClipboardString( CWindow::Get().Handle(), Clipboard.c_str() );
+		}
 
-		ImGui::ColorPicker3( "Gamma#ColorGamma", &ColorGamma.R, ColorPickerFlags );
-		ImGui::DragFloat( "Gamma", &ColorGamma.A, 0.01f, -1.0f, 1.0f, "%.2f" );
+		ImGui::ColorPicker3( "Tint", &OverrideGrade.Tint.R, ColorPickerFlags );
+		ImGui::DragFloat( "Exposure", &OverrideGrade.Tint.A, 0.01f, -10.0f, 10.0f, "%.2f" );
 
-		ImGui::ColorPicker3( "Gain#ColorGain", &ColorGain.R, ColorPickerFlags );
-		ImGui::DragFloat( "Gain", &ColorGain.A, 0.01f, 0.0f, 16.0f, "%.2f" );
+		ImGui::ColorPicker3( "Lift#ColorLift", &OverrideGrade.Lift.R, ColorPickerFlags );
+		ImGui::DragFloat( "Lift", &OverrideGrade.Lift.A, 0.01f, -1.0f, 1.0f, "%.2f" );
+
+		ImGui::ColorPicker3( "Gamma#ColorGamma", &OverrideGrade.Gamma.R, ColorPickerFlags );
+		ImGui::DragFloat( "Gamma", &OverrideGrade.Gamma.A, 0.01f, -1.0f, 1.0f, "%.2f" );
+
+		ImGui::ColorPicker3( "Gain#ColorGain", &OverrideGrade.Gain.R, ColorPickerFlags );
+		ImGui::DragFloat( "Gain", &OverrideGrade.Gain.A, 0.01f, 0.0f, 16.0f, "%.2f" );
 	}
 
 	ImGui::End();
