@@ -76,6 +76,11 @@ void DebugCallbackGLFW( int error, const char* description )
 	Log::Event( "GLFW: %s\n", description );
 }
 
+CRenderer& GetRenderer()
+{
+	return CWindow::Get().GetRenderer();
+}
+
 void CWindow::Create( const char* Title )
 {
 	ProfileBare( __FUNCTION__ );

@@ -41,6 +41,34 @@ namespace RenderableStage
 	};
 }
 
+constexpr float DefaultExposure = 0.0f;
+struct ColorGrade
+{
+	Vector4D Tint = { 1.0f, 1.0f, 1.0f, DefaultExposure };
+	Vector4D Lift = { 0.0f, 0.0f, 0.0f, 0.0f };
+	Vector4D Gamma = { 0.0f, 0.0f, 0.0f, 0.0f };
+	Vector4D Gain = { 1.0f, 1.0f, 1.0f, 1.0f };
+
+	// Determines how much this grade should be mixed. (0-1)
+	float Weight = 1.0f;
+
+	void Blend( const ColorGrade& B )
+	{
+		const float BlendWeight = Math::Clamp( B.Weight, 0.0f, 1.0f );
+		const float Exposure = Tint.W + B.Tint.W * BlendWeight;
+		Tint = Math::Lerp( Tint, B.Tint, BlendWeight );
+		Tint.W = Exposure;
+		Lift = Math::Lerp( Lift, B.Lift, BlendWeight );
+		Gamma = Math::Lerp( Gamma, B.Gamma, BlendWeight );
+		Gain = Math::Lerp( Gain, B.Gain, BlendWeight );
+	}
+
+	void Reset()
+	{
+		*this = {};
+	}
+};
+
 class CRenderer
 {
 public:
@@ -72,6 +100,9 @@ public:
 	const CRenderTexture& GetFramebuffer() const;
 
 	bool ForceWireFrame;
+
+	// Color grading settings.
+	ColorGrade Grade;
 
 protected:
 	void RefreshShaderHandle( CRenderable* Renderable );
@@ -116,3 +147,6 @@ private:
 	// Used to determine which renderables to clear.
 	RenderableStage::Type Stage = RenderableStage::Tick;
 };
+
+// Fetch the renderer from the main window.
+CRenderer& GetRenderer();

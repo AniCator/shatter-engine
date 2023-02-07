@@ -174,6 +174,14 @@ unsigned char* GenerateBlackTexture()
 
 static unsigned char* BlackTextureData = GenerateBlackTexture();
 
+void ConfigureGrade( CRenderer* Renderer )
+{
+	Renderer->SetUniformBuffer( "ColorTint", Renderer->Grade.Tint );
+	Renderer->SetUniformBuffer( "ColorLift", Renderer->Grade.Lift );
+	Renderer->SetUniformBuffer( "ColorGamma", Renderer->Grade.Gamma );
+	Renderer->SetUniformBuffer( "ColorGain", Renderer->Grade.Gain );
+}
+
 void CRenderer::Initialize()
 {
 	CAssets& Assets = CAssets::Get();
@@ -251,6 +259,9 @@ void CRenderer::RefreshFrame()
 	DynamicRenderables.clear();
 
 	UI::Refresh();
+
+	// Reset the color grading settings.
+	Grade.Reset();
 }
 
 void CRenderer::QueueRenderable( CRenderable* Renderable )
@@ -273,6 +284,7 @@ void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 void CRenderer::DrawQueuedRenderables()
 {
 	UI::SetCamera( Camera );
+	ConfigureGrade( this );
 
 	// Make sure memory transactions have occured. (for shader storage buffers)
 	glMemoryBarrier( GL_SHADER_STORAGE_BARRIER_BIT | GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT );
