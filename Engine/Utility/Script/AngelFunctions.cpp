@@ -14,6 +14,8 @@
 
 #include <Game/Game.h>
 
+void RegisterScriptEntity();
+
 void RegisterVectorType()
 {
 	ScriptEngine::AddTypePOD<Vector3D>( "Vector3D" );
@@ -354,36 +356,6 @@ void RegisterEntity()
 
 	ScriptEngine::AddTypeMethod( "Entity", "bool IsDebugEnabled() const", &CEntity::IsDebugEnabled );
 	ScriptEngine::AddTypeMethod( "Entity", "void EnableDebug( const bool )", &CEntity::EnableDebug );
-}
-
-CEntity* ScriptToEntity( ScriptEntity* Script )
-{
-	return dynamic_cast<CEntity*>( Script );
-}
-
-void RegisterScriptEntity()
-{
-	ScriptEngine::AddTypeReference( "Script" );
-	ScriptEngine::AddFunction( "Entity @ ToEntity( Script @ )", ScriptToEntity );
-
-	// Floating point script properties.
-	ScriptEngine::AddTypeMethod( "Script", "bool HasFloat(string &in)", &ScriptEntity::HasFloat );
-	ScriptEngine::AddTypeMethod( "Script", "float GetFloat(string &in)", &ScriptEntity::GetFloat );
-	ScriptEngine::AddTypeMethod( "Script", "void SetFloat(string &in, float &in)", &ScriptEntity::SetFloat );
-
-	// Integer script properties.
-	ScriptEngine::AddTypeMethod( "Script", "bool HasInteger(string &in)", &ScriptEntity::HasInteger );
-	ScriptEngine::AddTypeMethod( "Script", "int GetInteger(string &in)", &ScriptEntity::GetInteger );
-	ScriptEngine::AddTypeMethod( "Script", "void SetInteger(string &in, int &in)", &ScriptEntity::SetInteger );
-
-	// String script properties.
-	ScriptEngine::AddTypeMethod( "Script", "bool HasString(string &in)", &ScriptEntity::HasString );
-	ScriptEngine::AddTypeMethod( "Script", "string GetString(string &in)", &ScriptEntity::GetString );
-	ScriptEngine::AddTypeMethod( "Script", "void SetString(string &in, string &in)", &ScriptEntity::SetString );
-
-	// Script think functionality.
-	ScriptEngine::AddTypeMethod( "Script", "void SetTick(string &in)", &ScriptEntity::SetTick );
-	ScriptEngine::AddTypeMethod( "Script", "void SetInterval(double &in)", &ScriptEntity::SetInterval );
 }
 
 double GlobalCurrentTime()

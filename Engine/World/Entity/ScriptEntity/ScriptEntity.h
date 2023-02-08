@@ -1,12 +1,13 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Physics/PhysicsComponent.h>
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/PropertyTable.h>
 
 #include <string>
 
-class ScriptEntity : public CPointEntity
+class ScriptEntity : public CPointEntity, public Interactable
 {
 public:
 	ScriptEntity();
@@ -22,6 +23,9 @@ public:
 
 	void Import( CData& Data ) override;
 	void Export( CData& Data ) override;
+
+	void Interact( Interactable* Caller );
+	bool CanInteract( Interactable* Caller ) const;
 
 	bool HasScript() const
 	{
@@ -39,11 +43,14 @@ public:
 	bool Execute( const std::string& Function );
 	bool HasFunction( const std::string& Function ) const;
 
-	// Specify which script tick function to use.
+	// Specify which script function to use for ticks.
 	void SetTick( const std::string& Function );
 
 	// Set the interval time between ticks.
 	void SetInterval( const double& Interval );
+
+	// Specify which script function to use for interactions.
+	void SetInteract( const std::string& Function );
 
 	// Checks if script property is set.
 	bool HasFloat( const std::string& Key );
@@ -72,6 +79,8 @@ public:
 	// Set script property.
 	void SetString( const std::string& Key, const std::string& Value );
 
+	// The entity associated with the most recent interaction.
+	CEntity* InteractionEntity = nullptr;
 protected:
 	// Path to the script's location.
 	std::string Script;
@@ -86,4 +95,7 @@ protected:
 
 	// Script-controlled properties.
 	PropertyTable Properties;
+
+	// Name of the function that should be called when handling interactions.
+	std::string InteractionFunction;
 };

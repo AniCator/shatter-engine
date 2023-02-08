@@ -2,6 +2,7 @@
 #include "ScriptEntity.h"
 
 #include <Engine/Utility/Script/AngelEngine.h>
+#include <Engine/Utility/Script/AngelTemplate.h>
 
 static CEntityFactory<ScriptEntity> Factory( "script" );
 
@@ -74,6 +75,20 @@ void ScriptEntity::Export( CData& Data )
 
 	Serialize::Export( Data, "s", Script );
 	Serialize::Export( Data, "d", Properties );
+}
+
+void ScriptEntity::Interact( Interactable* Caller )
+{
+	// Update the interaction entity.
+	InteractionEntity = dynamic_cast<CEntity*>( Caller );
+
+	Execute( InteractionFunction );
+	Send( "OnInteract" );
+}
+
+bool ScriptEntity::CanInteract( Interactable* Caller ) const
+{
+	return !InteractionFunction.empty();
 }
 
 void ScriptEntity::LoadScript()
@@ -162,6 +177,11 @@ void ScriptEntity::SetInterval( const double& Interval )
 	NextTickTime = GetCurrentTime() + Interval;
 }
 
+void ScriptEntity::SetInteract( const std::string& Function )
+{
+	InteractionFunction = Function;
+}
+
 bool ScriptEntity::HasFloat( const std::string& Key )
 {
 	return Properties.Has( Key, PropertyType::Float );
@@ -229,4 +249,40 @@ std::string ScriptEntity::GetString( const std::string& Key )
 void ScriptEntity::SetString( const std::string& Key, const std::string& Value )
 {
 	Properties.Set( Key, Value );
+}
+
+CEntity* ScriptToEntity( ScriptEntity* Script )
+{
+	return dynamic_cast<CEntity*>( Script );
+}
+
+void RegisterScriptEntity()
+{
+	ScriptEngine::AddTypeReference( "Script" );
+	ScriptEngine::AddFunction( "Entity @ ToEntity( Script @ )", ScriptToEntity );
+
+	// Floating point script properties.
+	ScriptEngine::AddTypeMethod( "Script", "bool HasFloat(string &in)", &ScriptEntity::HasFloat );
+	ScriptEngine::AddTypeMethod( "Script", "float GetFloat(string &in)", &ScriptEntity::GetFloat );
+	ScriptEngine::AddTypeMethod( "Script", "void SetFloat(string &in, float &in)", &ScriptEntity::SetFloat );
+
+	// Integer script properties.
+	ScriptEngine::AddTypeMethod( "Script", "bool HasInteger(string &in)", &ScriptEntity::HasInteger );
+	ScriptEngine::AddTypeMethod( "Script", "int GetInteger(string &in)", &ScriptEntity::GetInteger );
+	ScriptEngine::AddTypeMethod( "Script", "void SetInteger(string &in, int &in)", &ScriptEntity::SetInteger );
+
+	// String script properties.
+	ScriptEngine::AddTypeMethod( "Script", "bool HasString(string &in)", &ScriptEntity::HasString );
+	ScriptEngine::AddTypeMethod( "Script", "string GetString(string &in)", &ScriptEntity::GetString );
+	ScriptEngine::AddTypeMethod( "Script", "void SetString(string &in, string &in)", &ScriptEntity::SetString );
+
+	// Script think functionality.
+	ScriptEngine::AddTypeMethod( "Script", "void SetTick(string &in)", &ScriptEntity::SetTick );
+	ScriptEngine::AddTypeMethod( "Script", "void SetInterval(double &in)", &ScriptEntity::SetInterval );
+
+	// For user interactions.
+	ScriptEngine::AddTypeMethod( "Script", "void SetInteract(string &in)", &ScriptEntity::SetInteract );
+
+	// Public script members.
+	ScriptEngine::AddTypeProperty( "Script", "Entity @InteractionEntity", &ScriptEntity::InteractionEntity );
 }
