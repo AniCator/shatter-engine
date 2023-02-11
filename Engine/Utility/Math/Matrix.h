@@ -313,6 +313,13 @@ public:
 		};
 	}
 
+	void SetTranslation( const Vector3D& Position )
+	{
+		Columns[W].X = Position.X;
+		Columns[W].Y = Position.Y;
+		Columns[W].Z = Position.Z;
+	}
+
 	Vector3D GetScale() const
 	{
 		// The scale is the length of the sum of each column's 3D vectors.
