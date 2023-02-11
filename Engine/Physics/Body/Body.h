@@ -126,7 +126,7 @@ public:
 	Vector3D Normal = Vector3D::Zero;
 	float Mass = 1.0f;
 	float InverseMass = -1.0f;
-	size_t Contacts = 0;
+	size_t Contacts = 1;
 	CMeshEntity* ContactEntity = nullptr;
 
 	// The surface material of this body.

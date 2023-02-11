@@ -289,6 +289,35 @@ void AddText( const Vector3D& A, const Vector3D& B, const Vector3D& C, const Col
 	UI::AddText( C, "O", nullptr, Color );
 }
 
+bool PointInTriangle( 
+	const Vector3D& TriangleCornerA, 
+	const Vector3D& TriangleCornerB, 
+	const Vector3D& TriangleCornerC,
+	const Vector3D& Point
+)
+{
+	// Calculate the triangle corners relative to the given point.
+	const Vector3D A = TriangleCornerA - Point;
+	const Vector3D B = TriangleCornerB - Point;
+	const Vector3D C = TriangleCornerC - Point;
+
+	// Calculate the triangle edge normals.
+	const Vector3D U = B.Cross( C );
+	const Vector3D V = C.Cross( A );
+	const Vector3D W = A.Cross( B );
+
+	if( U.Dot( V ) < 0.0f )
+	{
+		return false;
+	}
+	else if( U.Dot( W ) < 0.0f )
+	{
+		return false;
+	}
+
+	return true;
+}
+
 CollisionResponse CollisionResponseTriangleAABB( const VertexFormat& A, const VertexFormat& B, const VertexFormat& C, const Vector3D& Center, const Vector3D& Extent )
 {
 	CollisionResponse Response;
@@ -390,8 +419,8 @@ CollisionResponse CollisionResponseTriangleAABB( const VertexFormat& A, const Ve
 	Response.Distance = Response.Normal.Dot( VertexA );
 	ByteToVector( A.Normal, Response.Normal );
 
-	const float Radius = Extent.X * Math::Abs( Response.Normal.X ) + Extent.Y * Math::Abs( Response.Normal.Y ) + Extent.Z * Math::Abs( Response.Normal.Z );
-	const float DistanceFromCenter = Response.Normal.Dot( Extent ) - Response.Distance;
+	// const float Radius = Extent.X * Math::Abs( Response.Normal.X ) + Extent.Y * Math::Abs( Response.Normal.Y ) + Extent.Z * Math::Abs( Response.Normal.Z );
+	// const float DistanceFromCenter = Response.Normal.Dot( Extent ) - Response.Distance;
 	// Response.Distance = Radius * DistanceFromCenter;
 
 	return Response;
@@ -576,13 +605,13 @@ void CBody::PreCollision()
 		return;
 
 	Normal = Vector3D::Zero;
-	Contact = false;
+	// Contact = false;
 	Contacts = 0;
 
 	if( Owner )
 	{
 		// Reset contact information, otherwise it's too late apparently.
-		Owner->Contact = false;
+		// Owner->Contact = false;
 	}
 
 	if( Static )
@@ -694,19 +723,23 @@ void Interpenetration( CBody* A, CBody* B, CollisionResponse& Response )
 		return;
 
 	const auto Penetration = ( Response.Normal * Response.Distance );
-
-	bool Kinetic = !B->Static && !B->Stationary;
-	if( Kinetic )
+	const auto PenetrationScale = Penetration.LengthSquared();
+	if( B->IsKinetic() )
 	{
-		B->Depenetration += Penetration;
-		B->Velocity -= Penetration;
+		// if( B->Depenetration.LengthSquared() < PenetrationScale )
+		{
+			B->Depenetration += Penetration;
+			B->Velocity -= Penetration;
+		}
 	}
 
-	Kinetic = !A->Static && !A->Stationary;
-	if( Kinetic )
+	if( A->IsKinetic() )
 	{
-		A->Depenetration -= Penetration;
-		A->Velocity += Penetration;
+		// if( A->Depenetration.LengthSquared() < PenetrationScale )
+		{
+			A->Depenetration -= Penetration;
+			A->Velocity += Penetration;
+		}
 	}
 
 	Response.Distance *= -1.0f;
@@ -1234,7 +1267,7 @@ void CBody::Tick()
 	Normal.Normalize();
 	Transform.SetPosition( NewPosition );
 
-	Contact = Contact || Contacts > 0;
+	Contact = Contacts > 0;
 
 	if( Owner )
 	{
