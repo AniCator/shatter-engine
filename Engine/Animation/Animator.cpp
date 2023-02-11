@@ -8,17 +8,14 @@
 void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop )
 {
 	CurrentAnimation = Name;
-	LoopAnimation = Loop;
 	AnimationFinished = false;
-	Time = 0.0f;
-
-	// ForceAnimationTick = true;
 
 	if( !Mesh )
 		return;
 
 	BlendEntry Entry;
 	Entry.Weight = 1.0f;
+	Entry.Loop = Loop;
 
 	const auto& Set = Mesh->GetAnimationSet();
 	if( !Set.Lookup( CurrentAnimation, Entry.Animation ) )
@@ -59,9 +56,6 @@ bool Animator::Instance::HasAnimation( const std::string& Name ) const
 
 bool Animator::Instance::IsAnimationFinished() const
 {
-	if( LoopAnimation )
-		return true;
-
 	return AnimationFinished;
 }
 
@@ -77,12 +71,18 @@ void Animator::Instance::SetPlayRate( const float& PlayRate )
 
 float Animator::Instance::GetAnimationTime() const
 {
-	return Time;
+	if( Stack.empty() )
+		return 0.0f;
+
+	return Stack[0].Time;
 }
 
 void Animator::Instance::SetAnimationTime( const float& Value )
 {
-	Time = Value;
+	if( Stack.empty() )
+		return;
+
+	Stack[0].Time = Value;
 }
 
 BoundingBox Animator::Instance::CalculateBounds( const FTransform& Transform ) const
@@ -252,34 +252,32 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 		return;
 	}
 
-	Animation Animation;
-	if( !Set.Lookup( Data.CurrentAnimation, Animation ) )
-	{
-		Data.CurrentAnimation = "";
-		return;
-	}
-
-	// Update the animation time.
-	const float AdjustedDeltaTime = static_cast<float>( DeltaTime ) * Data.PlayRate;
-	const auto NewTime = Data.Time + AdjustedDeltaTime;
-	if( !Data.LoopAnimation && NewTime > Animation.Duration )
+	// Check if the stack is empty.
+	if( Data.Stack.empty() )
 	{
 		Data.AnimationFinished = true;
 		return;
 	}
 
-	// Update the animation time before throttling
-	Data.Time = fmod( NewTime, Animation.Duration );
-
 	// Update the animation times of stack entries.
 	for( auto& Entry : Data.Stack )
 	{
-		// Only update non-negative entries.
-		if( Entry.Time < 0.0f )
+		// Only update non-fixed entries.
+		if( Entry.Fixed )
 			continue;
 
-		const auto PlayRate = Entry.PlayRate < 0.0 ? Data.PlayRate : Entry.PlayRate;
-		Entry.Time += static_cast<float>( DeltaTime ) * PlayRate;
+		Entry.Time += static_cast<float>( DeltaTime ) * Entry.PlayRate * Data.PlayRate;
+	}
+
+	auto& FirstEntry = Data.Stack[0];
+	if( FirstEntry.IsFinished() )
+	{
+		Data.AnimationFinished = true;
+		FirstEntry.Weight = 0.0f;
+	}
+	else
+	{
+		Data.AnimationFinished = false;
 	}
 
 	if( Data.TickRate == 0 && !ForceUpdate )
@@ -331,7 +329,7 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 	}
 
 	// Ensure the first weight is always present in the final result.
-	if( !Data.Stack.empty() )
+	if( Data.Stack.size() == 1 )
 	{
 		Data.Stack.front().Weight = 1.0f;
 	}
@@ -734,40 +732,48 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 		Data.RootMotion = Vector3D::Zero;
 	}
 
-	for( auto& Array : Data.Stack )
+	for( auto& Entry : Data.Stack )
 	{
 		// Ignore animations that have no influence.
-		if( Array.Weight == 0.0f )
+		if( Entry.Weight == 0.0f )
 			continue;
 
-		const auto Time = Array.Time < 0.0f ? Data.Time : Array.Time;
-		const auto WrappedTime = fmod( Time, Array.Animation.Duration );
-		auto Key = Get( Array.Animation, WrappedTime, Bone->Index );
+		float Time = Entry.Time;
+		if( Entry.Loop )
+		{
+			Time = fmod( Entry.Time, Entry.Animation.Duration );
+		}
+		else
+		{
+			Time = Math::Clamp( Entry.Time, 0.0f, Entry.Animation.Duration );
+		}
+
+		auto Key = Get( Entry.Animation, Time, Bone->Index );
 
 		// Extract root motion data if there is no parent. NOTE: this assumes there's only one root bone.
-		if( RootBone && Array.Animation.PositionKeys.size() > 0 )
+		if( RootBone && Entry.Animation.PositionKeys.size() > 0 )
 		{
 			// Get the specific position pair.
-			const auto Pair = GetPair( WrappedTime, Array.Animation.Duration, Bone->Index, Array.Animation.PositionKeys );
+			const auto Pair = GetPair( Time, Entry.Animation.Duration, Bone->Index, Entry.Animation.PositionKeys );
 
 			// Calculate how much the bone has moved.
-			Data.RootMotion += ExtractRootMotion( Pair.first, Pair.second, Array.Weight, Array.Animation.RootMotion );
+			Data.RootMotion += ExtractRootMotion( Pair.first, Pair.second, Entry.Weight, Entry.Animation.RootMotion );
 
 			// Cancel out the movement.
-			const auto& FirstKey = Array.Animation.PositionKeys[0];
-			if( Array.Animation.RootMotion != Animation::None )
+			const auto& FirstKey = Entry.Animation.PositionKeys[0];
+			if( Entry.Animation.RootMotion != Animation::None )
 			{
 				Key.Position.Value.X = FirstKey.Value.X;
 				Key.Position.Value.Y = FirstKey.Value.Y;
 			}
 
-			if( Array.Animation.RootMotion == Animation::XYZ )
+			if( Entry.Animation.RootMotion == Animation::XYZ )
 			{
 				Key.Position.Value.Z = FirstKey.Value.Z;
 			}
 		}
 
-		Blend = Animator::Blend( Blend, Key, Array.Weight );
+		Blend = Animator::Blend( Blend, Key, Entry.Weight );
 	}
 
 	const auto Matrices = Get( Blend );
@@ -825,4 +831,9 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 	Data.Bones[Bone->Index].BoneTransform = Data.Bones[Bone->Index].GlobalTransform * ModelToBone;
 	Data.Bones[Bone->Index].Evaluated = true;
 	EvaluateChildren( Data, Skeleton, Bone );
+}
+
+bool Animator::BlendEntry::IsFinished() const
+{
+	return !Loop && Time > Animation.Duration;
 }

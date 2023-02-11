@@ -420,7 +420,8 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "loop" && Property->Value.length() > 0 )
 		{
-			Extract( Property->Value, AnimationInstance.LoopAnimation );
+			// TODO: LoopAnimation was removed from the main animation instance.
+			// Extract( Property->Value, AnimationInstance.LoopAnimation );
 		}
 		else if( Property->Key == "maximum_render_distance" && Property->Value.length() > 0 )
 		{
@@ -699,7 +700,7 @@ void CMeshEntity::ConstructRenderable()
 	if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
 	{
 		const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
-		SetAnimation( FirstAnimation, AnimationInstance.LoopAnimation );
+		SetAnimation( FirstAnimation, true );
 	}
 
 	AnimationInstance.Mesh = Mesh;

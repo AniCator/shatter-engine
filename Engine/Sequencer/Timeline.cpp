@@ -645,9 +645,9 @@ struct FEventRenderable : TrackEvent
 			const auto AnimationTime = MarkerToTime( Offset ) * PlayRate;
 
 			// Apply the event-relative animation time.
-			Animation.LoopAnimation = LoopAnimation;
-			Animation.Time = static_cast<float>( AnimationTime );
-			Animation.PlayRate = 0.0f;
+			Animation.Stack[0].Loop = LoopAnimation;
+			Animation.Stack[0].Time = static_cast<float>( AnimationTime );
+			Animation.Stack[0].Fixed = true;
 
 			Animator::Update( Animation, 0.0, true );
 			Animator::Submit( Animation, &Renderable );

@@ -26,10 +26,18 @@ struct Animator
 		float Weight = 1.0f;
 
 		// Animation time of this blend entry, use the instance one if negative.
-		float Time = -1.0f;
+		float Time = 0.0f;
 
 		// Animation play rate of this blend entry, use the instance one if negative.
-		float PlayRate = -1.0f;
+		float PlayRate = 1.0f;
+
+		// Determines if the entry should be looping its animation.
+		bool Loop = true;
+
+		// When enabled, the animation time will not be updated automatically.
+		bool Fixed = false;
+
+		bool IsFinished() const;
 	};
 
 	/// <summary>
@@ -39,13 +47,11 @@ struct Animator
 	{
 		// Name of the current animation.
 		std::string CurrentAnimation;
-		bool LoopAnimation = false;
 		bool AnimationFinished = true;
 
 		// Current bone transformations.
 		std::vector<Bone> Bones;
 
-		float Time = 0.0f;
 		float PlayRate = 1.0f;
 
 		class CMesh* Mesh = nullptr;
