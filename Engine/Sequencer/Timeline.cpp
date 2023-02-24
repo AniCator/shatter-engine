@@ -15,6 +15,7 @@
 
 #include <Engine/Sequencer/Events/ImageEvent.h>
 #include <Engine/Sequencer/Events/EntityEvent.h>
+#include <Engine/Sequencer/Events/GradeEvent.h>
 
 #include <Engine/Utility/Gizmo.h>
 #include <Engine/Utility/Locator/InputLocator.h>
@@ -844,7 +845,8 @@ static std::map<std::string, std::function<TrackEvent* ( )>> EventTypes
 	std::make_pair( "Camera", CreateTrack<FEventCamera> ),
 	std::make_pair( "Mesh", CreateTrack<FEventRenderable> ),
 	std::make_pair( "Image", CreateTrack<FEventImage> ),
-	std::make_pair( "Entity", CreateTrack<EventEntity> )
+	std::make_pair( "Entity", CreateTrack<EventEntity> ),
+	std::make_pair( "Grade", CreateTrack<GradeEvent> )
 };
 
 void TrackEvent::Evaluate( const Timecode& Marker )
