@@ -1,6 +1,4 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
-#include "PhysicsComponent.h"
-
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/Rendering/Mesh.h>
 
@@ -306,15 +304,38 @@ bool PointInTriangle(
 	const Vector3D V = C.Cross( A );
 	const Vector3D W = A.Cross( B );
 
+	UI::AddCircle( { 0.0f, 0.0f, 0.0f }, 2.0f, Color::White );
+
+	// Pyramid visualization
+	UI::AddLine( Vector3D::Zero, A, Color::Purple );
+	UI::AddLine( Vector3D::Zero, B, Color::Purple );
+	UI::AddLine( Vector3D::Zero, C, Color::Purple );
+
+	const Vector3D BC = ( B + C ) * 0.5f;
+	const Vector3D CA = ( C + A ) * 0.5f;
+	const Vector3D AB = ( A + B ) * 0.5f;
+	UI::AddLine( BC, BC + U, Color::White );
+	UI::AddLine( CA, CA + V, Color::White );
+	UI::AddLine( AB, AB + W, Color::White );
+
 	if( U.Dot( V ) < 0.0f )
 	{
+		UI::AddLine( B, C, Color::Red );
+		UI::AddLine( C, A, Color::Red );
+		UI::AddLine( A, B, Color::Red );
 		return false;
 	}
 	else if( U.Dot( W ) < 0.0f )
 	{
+		UI::AddLine( B, C, Color::Yellow );
+		UI::AddLine( C, A, Color::Yellow );
+		UI::AddLine( A, B, Color::Yellow );
 		return false;
 	}
 
+	UI::AddLine( B, C, Color::Green );
+	UI::AddLine( C, A, Color::Green );
+	UI::AddLine( A, B, Color::Green );
 	return true;
 }
 
@@ -1397,6 +1418,7 @@ void CBody::Debug() const
 	}
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
+	PointInTriangle( { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { sinf( Physics->CurrentTime ) * 2.0f, 0.5f, 0.0f } );
 
 	if( DisplaySphereBounds )
 		UI::AddSphere( WorldSphere.Origin(), WorldSphere.GetRadius(), BoundsColor );
@@ -1422,7 +1444,7 @@ void CBody::Debug() const
 
 BodyType CBody::GetType() const
 {
-	return BodyType::AABB;
+	return TriangleMesh ? BodyType::TriangleMesh : BodyType::AABB;
 }
 
 bool CBody::ShouldIgnoreBody( CBody* Body ) const
