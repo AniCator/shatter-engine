@@ -217,6 +217,7 @@
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
     <ClCompile Include="Engine\Resource\Assets.cpp" />
     <ClCompile Include="Engine\Sequencer\Events\EntityEvent.cpp" />
+    <ClCompile Include="Engine\Sequencer\Events\GradeEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Events\ImageEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Sequencer.cpp" />
     <ClCompile Include="Engine\Sequencer\Timeline.cpp" />
@@ -337,7 +338,6 @@
     <ClInclude Include="Engine\Physics\GeometryResult.h" />
     <ClInclude Include="Engine\Physics\PhysicalSurface.h" />
     <ClInclude Include="Engine\Physics\Physics.h" />
-    <ClInclude Include="Engine\Physics\PhysicsComponent.h" />
     <ClInclude Include="Engine\Physics\Solvers.h" />
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
@@ -345,6 +345,7 @@
     <ClInclude Include="Engine\Resource\AssetPool.h" />
     <ClInclude Include="Engine\Resource\Assets.h" />
     <ClInclude Include="Engine\Sequencer\Events\EntityEvent.h" />
+    <ClInclude Include="Engine\Sequencer\Events\GradeEvent.h" />
     <ClInclude Include="Engine\Sequencer\Events\ImageEvent.h" />
     <ClInclude Include="Engine\Sequencer\Sequencer.h" />
     <ClInclude Include="Engine\Sequencer\Timeline.h" />
@@ -391,6 +392,7 @@
     <ClInclude Include="Engine\Utility\Structures\QueryResult.h" />
     <ClInclude Include="Engine\Utility\Structures\SpatialGrid.h" />
     <ClInclude Include="Engine\Utility\Structures\SpatialHash.h" />
+    <ClInclude Include="Engine\Utility\Structures\State.h" />
     <ClInclude Include="Engine\Utility\Structures\Testable.h" />
     <ClInclude Include="Engine\Utility\Test.h" />
     <ClInclude Include="Engine\Utility\TestResult.h" />
@@ -417,6 +419,7 @@
     <ClInclude Include="Engine\World\Entity\Trigger\TriggerBoxEntity.h" />
     <ClInclude Include="Engine\World\Entity\Trigger\TriggerProximityEntity.h" />
     <ClInclude Include="Engine\World\EventQueue.h" />
+    <ClInclude Include="Engine\World\Interactable.h" />
     <ClInclude Include="Engine\World\Level\Level.h" />
     <ClInclude Include="Engine\World\World.h" />
     <ClInclude Include="Game\CauseEffect\CauseEffect.h" />

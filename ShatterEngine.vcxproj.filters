@@ -500,6 +500,9 @@
     <ClCompile Include="Engine\Utility\PropertyTable.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Sequencer\Events\GradeEvent.cpp">
+      <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -722,9 +725,6 @@
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Physics\Physics.h">
-      <Filter>Source Files\Engine\Physics</Filter>
-    </ClInclude>
-    <ClInclude Include="Engine\Physics\PhysicsComponent.h">
       <Filter>Source Files\Engine\Physics</Filter>
     </ClInclude>
     <ClInclude Include="Engine\Sequencer\Sequencer.h">
@@ -978,6 +978,15 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\PropertyTable.h">
       <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Structures\State.h">
+      <Filter>Source Files\Engine\Utility\Structures</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sequencer\Events\GradeEvent.h">
+      <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\World\Interactable.h">
+      <Filter>Source Files\Engine\World</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
