@@ -52,8 +52,14 @@ struct ColorGrade
 	// Determines how much this grade should be mixed. (0-1)
 	float Weight = 1.0f;
 
+	// Determines if this grade takes priority over another when blending.
+	uint32_t Priority = 0;
+
 	void Blend( const ColorGrade& B )
 	{
+		if( B.Priority < Priority )
+			return; // This grade has a higher priority than the one that's trying to blend in.
+
 		const float BlendWeight = Math::Clamp( B.Weight, 0.0f, 1.0f );
 		const float Exposure = Tint.W + B.Tint.W * BlendWeight;
 		Tint = Math::Lerp( Tint, B.Tint, BlendWeight );
@@ -61,6 +67,9 @@ struct ColorGrade
 		Lift = Math::Lerp( Lift, B.Lift, BlendWeight );
 		Gamma = Math::Lerp( Gamma, B.Gamma, BlendWeight );
 		Gain = Math::Lerp( Gain, B.Gain, BlendWeight );
+		
+		// Update the priority to that of the grade we're blending with.
+		Priority = B.Priority;
 	}
 
 	void Reset()
