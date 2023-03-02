@@ -13,7 +13,6 @@ public:
 	virtual bool Collision( CBody* Body ) override;
 	virtual void Tick() override;
 	virtual void Debug() const override;
-	virtual BodyType GetType() const override;
 
 	// A point on the plane.
 	Vector3D PlaneOrigin = Vector3D::Zero;

@@ -50,8 +50,6 @@ public:
 	virtual void SetTransform( const FTransform& Transform ) const;
 
 	virtual void Debug() const override;
-
-	virtual BodyType GetType() const;
 	
 	virtual bool ShouldIgnoreBody( CBody* Body ) const;
 
@@ -91,8 +89,8 @@ public:
 	// Uses continuous collision detection.
 	bool Continuous = false;
 
-	// Determines whether triangle mesh tests should be done for this object.
-	bool TriangleMesh = false;
+	// Determines what collision tests should be used for this object.
+	BodyType Type = BodyType::AABB;
 
 	// This body hasn't moved for a while.
 	bool Sleeping = false;
@@ -106,6 +104,9 @@ public:
 	BoundingSphere WorldSphere;
 	BoundingBoxSIMD WorldBoundsSIMD;
 
+	// Generates the inner spherical bounds, based on the world bounds.
+	BoundingSphere InnerSphere() const;
+
 	// Velocity that is applied to the body multiplied by the time delta.
 	Vector3D LinearVelocity = Vector3D::Zero;
 
@@ -115,9 +116,9 @@ public:
 	// Velocity.
 	Vector3D ActualVelocity = Vector3D::Zero;
 	Vector3D Velocity = Vector3D::Zero;
-	float Damping = 0.2f;
-	float Restitution = 0.0f;
-	float Friction = 1.0f;
+	float Damping = 0.98f;
+	float Restitution = 1.0f;
+	float Friction = 0.5f;
 
 	Vector3D Gravity = Vector3D( 0.0f, 0.0f, -9.81f );
 

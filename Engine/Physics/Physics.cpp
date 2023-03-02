@@ -6,7 +6,7 @@
 #include <vector>
 
 #include <Engine/Configuration/Configuration.h>
-#include <Engine/Physics/PhysicsComponent.h>
+#include <Engine/World/Interactable.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Thread.h>
@@ -102,6 +102,8 @@ public:
 
 	void Register( CBody* Body )
 	{
+		Guard();
+
 		if( !Body )
 		{
 			Log::Event( Log::Error, "Null body registered!" );
@@ -113,6 +115,8 @@ public:
 
 	void Unregister( CBody* BodyIn )
 	{
+		Guard();
+
 		for( auto Iterator = Bodies.begin(); Iterator != Bodies.end(); ++Iterator )
 		{
 			auto* Object = *Iterator;
@@ -255,7 +259,7 @@ public:
 			if( B->Owner != A->Owner )
 			{
 				A->Collision( B );
-				B->Collision( A );
+				// B->Collision( A );
 			}
 		}
 	}

@@ -8,6 +8,7 @@ CPlaneBody::CPlaneBody() : CBody()
 	Block = false;
 	Static = false;
 	Stationary = true;
+	Type = BodyType::Plane;
 }
 
 CPlaneBody::~CPlaneBody()
@@ -135,9 +136,4 @@ void CPlaneBody::Debug() const
 {
 	CBody::Debug();
 	UI::AddLine( PlaneOrigin, PlaneOrigin + PlaneNormal, Color::Blue );
-}
-
-BodyType CPlaneBody::GetType() const
-{
-	return BodyType::Plane;
 }

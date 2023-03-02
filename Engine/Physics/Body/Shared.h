@@ -11,7 +11,8 @@ enum class BodyType : uint8_t
 {
 	TriangleMesh,
 	Plane,
-	AABB
+	AABB,
+	Sphere
 };
 
 BodyType ToBodyType( const std::string& Type );

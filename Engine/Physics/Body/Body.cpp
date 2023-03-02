@@ -6,7 +6,8 @@
 static auto TranslateBodyType = Translate<std::string, BodyType>( {
 			{ "triangle", BodyType::TriangleMesh },
 			{ "plane", BodyType::Plane },
-			{ "aabb", BodyType::AABB }
+			{ "aabb", BodyType::AABB },
+			{ "sphere", BodyType::Sphere }
 	} );
 
 BodyType ToBodyType( const std::string& Type )

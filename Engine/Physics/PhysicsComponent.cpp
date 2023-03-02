@@ -17,9 +17,17 @@
 
 #include <Engine/World/World.h>
 
+OptimizeOff;
+
+#ifdef ReleaseBuild // Disable debug drawing for release builds.
+#define DrawDebugLines 0
+#define DrawDebugTriangleCollisions 0
+#define DrawNormalAndDistance 0
+#else
 #define DrawDebugLines 0
 #define DrawDebugTriangleCollisions 1
 #define DrawNormalAndDistance 0
+#endif
 
 size_t TextPosition = 0;
 
@@ -160,7 +168,7 @@ CollisionResponse CollisionResponseAABBAABB( const BoundingBox& A, const Boundin
 	if( Overlap.X < Overlap.Y && Overlap.X < Overlap.Z )
 	{
 		Response.Distance = Overlap.X;
-		Response.Normal.X = HalfSizeA.X * Math::Sign( CenterDistance.X );
+		Response.Normal.X = Math::Sign( CenterDistance.X );
 		Response.Normal.Y = 0.0f;
 		Response.Normal.Z = 0.0f;
 	}
@@ -168,7 +176,7 @@ CollisionResponse CollisionResponseAABBAABB( const BoundingBox& A, const Boundin
 	{
 		Response.Distance = Overlap.Y;
 		Response.Normal.X = 0.0f;
-		Response.Normal.Y = HalfSizeA.Y + Math::Sign( CenterDistance.Y );
+		Response.Normal.Y = Math::Sign( CenterDistance.Y );
 		Response.Normal.Z = 0.0f;
 	}
 	else
@@ -176,7 +184,7 @@ CollisionResponse CollisionResponseAABBAABB( const BoundingBox& A, const Boundin
 		Response.Distance = Overlap.Z;
 		Response.Normal.X = 0.0f;
 		Response.Normal.Y = 0.0f;
-		Response.Normal.Z = HalfSizeA.Z + Math::Sign( CenterDistance.Z );
+		Response.Normal.Z = Math::Sign( CenterDistance.Z );
 	}
 
 	Response.Normal.Normalize();
@@ -567,6 +575,104 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 	return Response;
 }
 
+// Sphere v. Sphere collision
+CollisionResponse CollisionResponseSphereSphere( const BoundingSphere& A, const BoundingSphere& B )
+{
+	const float RadiusSquaredTotal = A.GetRadiusSquared() + B.GetRadiusSquared();
+
+	// Calculate the difference between the two origins.
+	const Vector3D CenterA = A.Origin();
+	const Vector3D CenterB = B.Origin();
+	const Vector3D Difference = CenterB - CenterA;
+	const float DistanceSquared = Difference.LengthSquared();
+
+	// Check if the spheres overlap.
+	if( DistanceSquared > RadiusSquaredTotal || DistanceSquared == 0.0f )
+		return {}; // We're not overlapping.
+
+	CollisionResponse Response;
+
+	// Calculate the separation distance.
+	Response.Distance = ( DistanceSquared - RadiusSquaredTotal );
+
+	// Check if we're dividing by zero.
+	if( Response.Distance == 0.0f )
+	{
+		Response.Distance = 1.0f;
+		Response.Normal = WorldUp;
+		return Response;
+	}
+
+	// Set the output distance and normal.
+	Response.Distance = Math::Abs( Response.Distance / Response.Distance ) * 0.5f;
+	Response.Normal = Difference.Normalized();
+
+	// Calculate the intersection point. (this isn't used right now but it can be used for angular velocity)
+	float DistanceToIntersection = A.GetRadius() - Response.Distance;
+	Response.Point = CenterA + Response.Normal * DistanceToIntersection;
+
+	// UI::AddSphere( B.Origin(), B.GetRadius(), Color::Cyan, 1.0f );
+	// UI::AddSphere( A.Origin(), A.GetRadius(), Color::Green, 1.0f );
+
+	return Response;
+}
+
+// Sphere v. AABB collision
+CollisionResponse CollisionResponseSphereAABB( const BoundingSphere& Sphere, const BoundingBox& Box )
+{
+	Vector3D PointOnBox = Math::ProjectOnAABB( Sphere.Origin(), Box );
+	Vector3D Direction = Sphere.Origin() - PointOnBox;
+
+	const float DistanceSquared = Direction.LengthSquared();
+	if( DistanceSquared > Sphere.GetRadiusSquared() )
+		return {}; // We're not colliding with the bounding box.
+
+	CollisionResponse Response;
+	const bool Inside = DistanceSquared == 0.0f;
+	if( Inside )
+	{
+		// The sphere is inside of the box.
+		Response.Normal = Box.Center() - PointOnBox;
+
+		// Find the shortest distance.
+		if( Response.Normal.X < Response.Normal.Y && Response.Normal.X < Response.Normal.Z )
+		{
+			Response.Normal.X = Math::Sign( Response.Normal.X );
+			Response.Normal.Y = 0.0f;
+			Response.Normal.Z = 0.0f;
+		}
+		else if( Response.Normal.Y < Response.Normal.Z )
+		{
+			Response.Normal.X = 0.0f;
+			Response.Normal.Y = Math::Sign( Response.Normal.Y );
+			Response.Normal.Z = 0.0f;
+		}
+		else
+		{
+			Response.Normal.X = 0.0f;
+			Response.Normal.Y = 0.0f;
+			Response.Normal.Z = Math::Sign( Response.Normal.Z );
+		}
+	}
+	else
+	{
+		Response.Normal = PointOnBox - Sphere.Origin();
+		Response.Normal.Normalize();
+	}
+
+	Vector3D PointOnSphere = Sphere.Origin() - Response.Normal * Sphere.GetRadius();
+	Response.Distance = PointOnBox.Distance( PointOnSphere );
+	Response.Point = PointOnBox + ( PointOnSphere - PointOnBox ) * 0.5f;
+
+	// UI::AddCircle( PointOnBox, 5.0f, Inside ? Color::Red : Color::Yellow );
+	// UI::AddLine( Sphere.Origin(), Sphere.Origin() + Response.Normal, Color::Blue, 0.1f );
+	// UI::AddLine( PointOnBox, PointOnBox + Response.Normal, Inside ? Color::Blue : Color::Purple );
+	// UI::AddSphere( Sphere.Origin(), Sphere.GetRadius(), Color::Cyan );
+	// UI::AddAABB( Box.Minimum, Box.Maximum, Color::Cyan );
+
+	return Response;
+}
+
 CBody::~CBody()
 {
 	delete Tree;
@@ -610,7 +716,7 @@ void CBody::Construct( CPhysics* Physics )
 	PreviousTransform = GetTransform();
 
 	auto Transform = GetTransform();
-	if( Owner && ( Owner->IsStatic() || Owner->IsStationary() ) && TriangleMesh )
+	if( Owner && ( Owner->IsStatic() || Owner->IsStationary() ) && Type == BodyType::TriangleMesh )
 	{
 		auto* Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
 
@@ -668,7 +774,7 @@ void CBody::Simulate()
 
 	// Calculate and apply gravity.
 	Vector3D EnvironmentalForce = Vector3D::Zero;
-	if( AffectedByGravity && Math::Equal( Acceleration, Vector3D::Zero ) )
+	if( AffectedByGravity )
 	{
 		EnvironmentalForce += Gravity;
 	}
@@ -676,19 +782,123 @@ void CBody::Simulate()
 	Acceleration += EnvironmentalForce;
 }
 
+CollisionResponse CalculateResponseSphere( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+{
+	auto InnerSphereA = A->InnerSphere();
+
+	switch( B->Type )
+	{
+	case BodyType::TriangleMesh:
+		break; // TODO: Sphere v. Triangle mesh support.
+	case BodyType::Plane:
+		break; // TODO: Sphere v. Plane support.
+	case BodyType::AABB:
+		return CollisionResponseSphereAABB( InnerSphereA, B->WorldBounds );
+	case BodyType::Sphere:
+	{
+		auto InnerSphereB = B->InnerSphere();
+		return CollisionResponseSphereSphere( InnerSphereA, InnerSphereB );
+	}
+	default:
+		break;
+	}
+
+	// No response generated.
+	return {};
+}
+
+CollisionResponse CalculateResponseAABB( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+{
+	switch( B->Type )
+	{
+	case BodyType::TriangleMesh:
+		if( A->Continuous )
+		{
+			return CollisionResponseAABBAABBSwept( A->WorldBounds, A->Velocity, B->WorldBounds, SweptResult );
+		}
+		else
+		{
+			return CollisionResponseAABBAABB( A->WorldBounds, B->WorldBounds );
+		}
+		// return CollisionResponseTreeAABB( B->Tree, A->WorldBounds, B->PreviousTransform, A->PreviousTransform );
+	case BodyType::Plane:
+		break; // TODO: AABB v. Plane support.
+	case BodyType::AABB:
+		if( A->Continuous )
+		{
+			return CollisionResponseAABBAABBSwept( A->WorldBounds, A->Velocity, B->WorldBounds, SweptResult );
+		}
+		else
+		{
+			return CollisionResponseAABBAABB( A->WorldBounds, B->WorldBounds );
+		}
+	case BodyType::Sphere:
+	{
+		auto InnerSphereB = B->InnerSphere();
+		return CollisionResponseSphereAABB( InnerSphereB, A->WorldBounds );
+	}
+	default:
+		break;
+	}
+
+	// No response generated.
+	return {};
+}
+
+CollisionResponse CalculateResponseTriangleMesh( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+{
+	switch( B->Type )
+	{
+	case BodyType::TriangleMesh:
+		break; // TODO: Triangle mesh v. Triangle mesh support.
+	case BodyType::Plane:
+		break; // TODO: Triangle Mesh v. Plane support.
+	case BodyType::AABB:
+		return CollisionResponseTreeAABB( A->Tree, B->WorldBounds, A->PreviousTransform, B->PreviousTransform );
+	case BodyType::Sphere:
+		break; // TODO: Triangle Mesh v. Sphere support.
+	default:
+		break;
+	}
+
+	// No response generated.
+	return {};
+}
+
 CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 {
+	if( !A->IsKinetic() )
+		return {}; // Only generate responses for kinetic objects.
+
+	switch( A->Type )
+	{
+	case BodyType::TriangleMesh:
+		return CalculateResponseTriangleMesh( A, B, SweptResult );
+	case BodyType::Plane:
+		break; // TODO: Triangle Mesh v. Plane support.
+	case BodyType::AABB:
+		return CalculateResponseAABB( A, B, SweptResult );
+	case BodyType::Sphere:
+		return CalculateResponseSphere( A, B, SweptResult );
+	default:
+		break;
+	}
+
+	// No response generated.
+	return {};
+#if 0
 	CollisionResponse Response;
 
-	if( A->Static && !B->Static )
+	// TODO: Rewrite, reduce duplicate code. Organize in such a way that it's easier to add more collision response types.
+	if( A->Static && !B->Static ) // A is static, and B is dynamic or stationary.
 	{
-		if( A->Owner && A->Tree && A->TriangleMesh && !B->Stationary )
+		if( A->Owner && A->Tree && A->TriangleMesh && !B->Stationary ) // B is dynamic and A is a triangle mesh.
 		{
 			// A = Triangle Mesh
 			// B = Bounding Box
 			Response = CollisionResponseTreeAABB( A->Tree, B->WorldBounds, A->PreviousTransform, B->PreviousTransform );
 		}
-		else
+		else // A is not a triangle mesh, or B is stationary.
 		{
 			if( B->Continuous )
 			{
@@ -700,17 +910,17 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 			}
 		}
 	}
-	else if( !A->Static && B->Static )
+	else if( !A->Static && B->Static ) // A is dynamic or stationary, B is static.
 	{
-		if( B->Owner && B->Tree && B->TriangleMesh && !A->Stationary )
+		if( B->Owner && B->Tree && B->TriangleMesh && !A->Stationary ) // A is dynamic and B is a triangle mesh.
 		{
 			// B = Triangle Mesh
 			// A = Bounding Box
-			// Response = CollisionResponseTreeAABB( B->Tree, A->WorldBounds, B->PreviousTransform, A->PreviousTransform );
+			Response = CollisionResponseTreeAABB( B->Tree, A->WorldBounds, B->PreviousTransform, A->PreviousTransform );
 		}
 		else
 		{
-			if( B->Continuous )
+			if( A->Continuous )
 			{
 				Response = CollisionResponseAABBAABBSwept( A->WorldBounds, A->Velocity, B->WorldBounds, SweptResult );
 			}
@@ -720,8 +930,9 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 			}
 		}
 	}
-	else if( !A->Static || !B->Static )
+	else if( !A->Static || !B->Static ) // A is not static, or B is not static, and previous paths didn't execute.
 	{
+		// Assume bounding box interaction.
 		if( B->Continuous )
 		{
 			Response = CollisionResponseAABBAABBSwept( B->WorldBounds, B->Velocity, A->WorldBounds, SweptResult );
@@ -736,6 +947,7 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 	// UI::AddLine( WorldCenter, WorldCenter - Response.Normal * Response.Distance, Color::Yellow, 1.0f );
 
 	return Response;
+#endif
 }
 
 void Interpenetration( CBody* A, CBody* B, CollisionResponse& Response )
@@ -743,56 +955,48 @@ void Interpenetration( CBody* A, CBody* B, CollisionResponse& Response )
 	if( Response.Distance <= 0.001f )
 		return;
 
-	const auto Penetration = ( Response.Normal * Response.Distance );
-	const auto PenetrationScale = Penetration.LengthSquared();
-	if( B->IsKinetic() )
-	{
-		// if( B->Depenetration.LengthSquared() < PenetrationScale )
-		{
-			B->Depenetration += Penetration;
-			B->Velocity -= Penetration;
-		}
-	}
+	// Halve the response distance.
+	// Response.Distance *= 0.5f;
 
+	const auto Penetration = ( Response.Normal * Response.Distance * 0.5f );
 	if( A->IsKinetic() )
 	{
-		// if( A->Depenetration.LengthSquared() < PenetrationScale )
-		{
-			A->Depenetration -= Penetration;
-			A->Velocity += Penetration;
-		}
+		A->Depenetration += Penetration;
 	}
 
-	Response.Distance *= -1.0f;
+	/*if( B->IsKinetic() )
+	{
+		B->Depenetration -= Penetration * 0.1f;
+	}*/
 }
 
 void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vector3D& RelativeVelocity, const float& InverseMassTotal, const float& ImpulseScale )
 {
 	auto Tangent = RelativeVelocity - ( Response.Normal * RelativeVelocity.Dot( Response.Normal ) );
-	const auto ValidTangent = !Math::Equal( Tangent.LengthSquared(), 0.0f );
-	if( !ValidTangent )
-		return;
+	if( Math::Equal( Tangent.LengthSquared(), 0.0f ) )
+		return; // Invalid tangent vector.
 
 	Tangent.Normalize();
 
-	auto FrictionScale = RelativeVelocity.Dot( Tangent ) / InverseMassTotal;
-	const auto ValidFrictionScale = !Math::Equal( FrictionScale, 0.0f );
-	if( ValidFrictionScale )
-	{
-		const auto Friction = sqrtf( A->Friction );
-		if( FrictionScale > ImpulseScale * Friction )
-		{
-			FrictionScale = ImpulseScale * Friction;
-		}
-		else if( FrictionScale < -ImpulseScale * Friction )
-		{
-			FrictionScale = -ImpulseScale * Friction;
-		}
+	// UI::AddLine( A->WorldSphere.Origin(), A->WorldSphere.Origin() + Tangent, Color::Green, 0.1f );
 
-		const auto TangentImpulse = Tangent * FrictionScale;
-		A->Velocity -= A->InverseMass * TangentImpulse;
-		B->Velocity += B->InverseMass * TangentImpulse;
+	auto FrictionScale = RelativeVelocity.Dot( Tangent * -1.0f ) / InverseMassTotal;
+	if( Math::Equal( FrictionScale, 0.0f ) )
+		return; // Scale shouldn't be zero.
+
+	const auto Friction = sqrtf( A->Friction * B->Friction );
+	if( FrictionScale > ImpulseScale * Friction )
+	{
+		FrictionScale = ImpulseScale * Friction;
 	}
+	else if( FrictionScale < -ImpulseScale * Friction )
+	{
+		FrictionScale = -ImpulseScale * Friction;
+	}
+
+	const auto TangentImpulse = Tangent * FrictionScale;
+	A->Velocity -= A->InverseMass * TangentImpulse;
+	B->Velocity += B->InverseMass * TangentImpulse;
 }
 
 bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
@@ -805,37 +1009,31 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	if( Math::Equal( Response.Normal, Vector3D::Zero ) )
 		return false;
 
-	const Vector3D RelativeVelocity = A->Velocity - B->Velocity;
+	// Interpenetration( A, B, Response );
+
+	const Vector3D RelativeVelocity = B->Velocity - A->Velocity;
 	// float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass; // Old calculation of the seperating velocity.
 
 	const auto SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
-	if( SeparatingVelocity > 0.0f ) // Check if the bodies are moving away from each other.
+	if( SeparatingVelocity >= 0.0f ) // Check if the bodies are moving away from each other.
 		return false;
 
-	float DeltaVelocity = -SeparatingVelocity * B->Restitution;
+	const float Restitution = Math::Min( A->Restitution, B->Restitution );
+	float ResponseForce = -SeparatingVelocity * ( 1.0f + Restitution );
 
-	const auto AccelerationCausedVelocity = ( A->Acceleration - B->Acceleration ).Dot( Response.Normal ) * ( 1.0f / 60.0f );
-	if( AccelerationCausedVelocity < 0.0f )
-	{
-		DeltaVelocity += B->Restitution * AccelerationCausedVelocity;
-
-		DeltaVelocity = Math::Max( 0.0f, DeltaVelocity );
-	}
-
-	DeltaVelocity -= SeparatingVelocity;
-
-	const float ImpulseScale = DeltaVelocity / InverseMassTotal;
+	const float ImpulseScale = InverseMassTotal == 0.0f ? 0.0f : ResponseForce / InverseMassTotal;
 	const Vector3D Impulse = Response.Normal * ImpulseScale;
 
-	Interpenetration( A, B, Response );
-
-	A->Velocity += A->InverseMass * Impulse;
-	B->Velocity -= B->InverseMass * Impulse;
+	A->Velocity -= A->InverseMass * Impulse;
+	B->Velocity += B->InverseMass * Impulse;
 
 	A->ContactEntity = B->Owner;
 	B->ContactEntity = A->Owner;
 
-	Friction( A, B, Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
+	// UI::AddSphere( A->WorldSphere.Origin(), A->WorldSphere.GetRadius(), Color::Yellow, 1.0f );
+	// UI::AddLine( A->WorldSphere.Origin(), A->WorldSphere.Origin() + Response.Normal, Color::Blue, 1.0f );
+
+	// Friction( A, B, Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
 
 	return true;
 }
@@ -845,22 +1043,29 @@ bool CBody::Collision( CBody* Body )
 	if( !Block || !Body->Block )
 		return false;
 
+	// Check the outer sphere bounds.
 	if( !WorldSphere.Intersects( Body->WorldSphere ) )
 		return false;
 
 	if( ShouldIgnoreBody( Body ) )
 		return false;
 
+	// CCD
 	Geometry::Result SweptResult;
-	if( Continuous )
+
+	// Only perform the bounding box check for non-spherical objects.
+	if( Type != BodyType::Sphere )
 	{
-		if( !SweptIntersection( WorldBounds, LinearVelocity, Body->WorldBounds, SweptResult ) )
-			return false;
-	}
-	else
-	{
-		if( !WorldBounds.Intersects( Body->WorldBounds ) )
-			return false;
+		if( Continuous )
+		{
+			if( !SweptIntersection( WorldBounds, LinearVelocity, Body->WorldBounds, SweptResult ) )
+				return false;
+		}
+		else
+		{
+			if( !WorldBounds.Intersects( Body->WorldBounds ) )
+				return false;
+		}
 	}
 
 	if( IsType<CPlaneBody>( Body ) )
@@ -880,15 +1085,6 @@ bool CBody::Collision( CBody* Body )
 	// UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Response.Normal * Response.Distance, Color( 255, 0, 255 ) );
 	UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Body->Depenetration, Color( 255, 0, 255 ) );
 #endif
-
-//#if DrawDebugLines == 1
-//	auto Position = Transform.GetPosition();
-//	const auto ImpulseEnd = Position + Impulse + ( InverseMass * Impulse * Mass );
-//	UI::AddLine( Position, Position + Response.Normal.Normalized(), Color( 0, 255, 0 ) );
-//	UI::AddLine( Position, ImpulseEnd, Color( 255, 0, 0 ) );
-//	UI::AddCircle( ImpulseEnd, 5.0f, Color( 255, 0, 255 ) );
-//	UI::AddText( ImpulseEnd, std::to_string( VelocityAlongNormal ).c_str() );
-//#endif
 
 #if DrawDebugLines == 1
 	Color BoundsColor = Color( 0, 255, 0 );
@@ -1212,6 +1408,112 @@ void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBoun
 	// VisualizeBounds( Tree );
 }
 
+// Constraint that stops a body from moving below the specified value, on the Z-axis.
+void ConstrainZ( CBody* Body, Vector3D& Position, float Height )
+{
+	if( Position.Z >= Height )
+		return;
+	
+	if( Body->Velocity.Z < 0.0f )
+	{
+		// Reset the velocity to help stabilize the body.
+		Body->Velocity.Z = 0.0f;
+	}
+
+	Position.Z = Height;
+	Body->Normal = Vector3D( 0.0f, 0.0f, 1.0f );
+	Body->Contact = true;
+	Body->Contacts++;
+}
+
+// Constraint that stops a body from moving below the specified value, on the Z-axis.
+void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D BoxExtent )
+{
+	BoxExtent = Math::Abs( BoxExtent );
+	Vector3D Maximum = BoxOrigin + BoxExtent;
+	Vector3D Minimum = BoxOrigin - BoxExtent;
+
+	constexpr float BoxRestitution = 0.25f;
+	float Force = BoxRestitution;
+	float Radius = Body->WorldSphere.GetRadius();
+
+	bool Contact = false;
+	if( Position.X > Maximum.X - Radius )
+	{
+		Position.X = Maximum.X - Radius;
+		Body->Velocity.X = -Force * Body->Velocity.X;
+		Contact = true;
+	}
+
+	if( Position.Y > Maximum.Y - Radius )
+	{
+		Position.Y = Maximum.Y - Radius;
+		Body->Velocity.Y = -Force * Body->Velocity.Y;
+		Contact = true;
+	}
+
+	if( Position.Z > Maximum.Z - Radius )
+	{
+		Position.Z = Maximum.Z - Radius;
+		Body->Velocity.Z = -Force * Body->Velocity.Z;
+		Contact = true;
+	}
+
+	if( Position.X < Minimum.X + Radius )
+	{
+		Position.X = Minimum.X + Radius;
+		Body->Velocity.X = -Force * Body->Velocity.X;
+		Contact = true;
+	}
+
+	if( Position.Y < Minimum.Y + Radius )
+	{
+		Position.Y = Minimum.Y + Radius;
+		Body->Velocity.Y = -Force * Body->Velocity.Y;
+		Contact = true;
+	}
+
+	if( Position.Z < Minimum.Z + Radius )
+	{
+		Position.Z = Minimum.Z + Radius;
+		Body->Velocity.Z = -Force * Body->Velocity.Z;
+		Contact = true;
+	}
+
+	if( Contact )
+	{
+		Body->Contact = true;
+		Body->Contacts++;
+	}
+}
+
+// Constraint that stops a body from moving below the specified value, on the Z-axis.
+void ConstrainSphere( CBody* Body, Vector3D& Position, const BoundingSphere& Sphere )
+{
+	Vector3D SphereNormal = Position - Sphere.Origin();
+	const float Distance = SphereNormal.Length();
+	const float Radius = Body->WorldSphere.GetRadius();
+	const float AdjustedRadius = Sphere.GetRadius() - Radius;
+	if( Distance < AdjustedRadius )
+		return; // We're inside the sphere.
+
+	if( Distance == 0.0f )
+		return; // Invalid distance.
+
+	SphereNormal /= Distance; // Normalize.
+	
+	const float Direction = Body->Velocity.Dot( SphereNormal );
+	if( Direction < 0.0f )
+		return; // Moving away.
+
+	Body->Normal = SphereNormal * -1.0f;
+	Body->Velocity -= SphereNormal * Direction;
+	Body->Contact = true;
+	Body->Contacts++;
+
+	// Position = Sphere.Origin() + SphereNormal * ( AdjustedRadius - Radius );
+}
+
 void CBody::Tick()
 {
 	auto Transform = GetTransform();	
@@ -1223,7 +1525,7 @@ void CBody::Tick()
 
 	bool TriedToMove = false;
 
-	if( !Static && !Stationary )
+	if( IsKinetic() )
 	{
 		const auto DeltaTime = static_cast<float>( Physics->TimeStep );
 
@@ -1232,6 +1534,9 @@ void CBody::Tick()
 		Normal = Depenetration * -1.0f;
 		Depenetration = { 0.0f, 0.0f, 0.0f };
 
+		// const Vector3D MassAcceleration = InverseMass * Acceleration;
+
+		// Semi-implicit Euler integration.
 		Velocity += Acceleration * DeltaTime;
 		NewPosition += Velocity * DeltaTime;
 
@@ -1253,16 +1558,15 @@ void CBody::Tick()
 
 		// Hard limit Z to stop you from falling forever.
 		constexpr float MinimumHeight = -200.0f;
-		if( NewPosition.Z < MinimumHeight )
+		if( Type == BodyType::Sphere )
 		{
-			if( Velocity.Z < 0.0f )
-			{
-				Velocity.Z = 0.0f;
-			}
-
-			NewPosition.Z = MinimumHeight;
-			Normal = Vector3D( 0.0f, 0.0f, -1.0f );
-			Contact = true;
+			ConstrainBox( this, NewPosition, Vector3D::Zero, MinimumHeight * -1.0f );
+			// BoundingSphere Border( Vector3D::Zero, MinimumHeight * -1.0f );
+			// ConstrainSphere( this, NewPosition, Border );
+		}
+		else
+		{
+			ConstrainZ( this, NewPosition, MinimumHeight );
 		}
 
 		if( Contacts > 0 )
@@ -1326,14 +1630,15 @@ void CBody::CalculateBounds()
 	// Ensure we have at least some volume.
 	EnsureVolume( WorldBounds );
 	WorldBoundsSIMD = WorldBounds;
-
 	WorldSphere = WorldBounds;
 
 	// Update the inverse mass once.
 	if( InverseMass < 0.0f )
 	{
-		Mass = ( WorldBounds.Maximum - WorldBounds.Minimum ).Length() * 40.0f;
-		const bool Unmoving = Static || Stationary;
+		constexpr float DefaultDensity = 40.0f;
+		const float Diameter = InnerSphere().GetRadius() * 2.0f;
+		Mass = Diameter * DefaultDensity;
+		const bool Unmoving = Static || Stationary || Mass == 0.0f;
 		InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
 	}
 }
@@ -1442,11 +1747,6 @@ void CBody::Debug() const
 	Offset.Y += 20.0f;
 }
 
-BodyType CBody::GetType() const
-{
-	return TriangleMesh ? BodyType::TriangleMesh : BodyType::AABB;
-}
-
 bool CBody::ShouldIgnoreBody( CBody* Body ) const
 {
 	const auto* MeshEntity = ::Cast<CMeshEntity>( Body->Owner );
@@ -1523,7 +1823,7 @@ void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result )
 Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const
 {
 	Geometry::Result Empty;
-	if( !Block || TriangleMesh ) // TODO: Triangle mesh support
+	if( !Block || Type == BodyType::TriangleMesh ) // TODO: Triangle mesh support
 		return Empty;
 
 	for( auto* Ignored : Ignore )
@@ -1545,4 +1845,11 @@ Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const 
 	// }
 
 	return Result;
+}
+
+BoundingSphere CBody::InnerSphere() const
+{
+	// Find the shortest axis.
+	auto SmallestFit = Math::Min( WorldBounds.Size() );
+	return BoundingSphere( WorldBounds.Center(), SmallestFit * 0.5f );
 }
