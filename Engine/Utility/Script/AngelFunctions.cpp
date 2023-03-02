@@ -7,16 +7,18 @@
 #include <Engine/Audio/SoundInstance.h>
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Resource/Assets.h>
+#include <Engine/Physics/Body/Body.h>
 #include <Engine/Utility/Math.h>
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/ScriptEntity/ScriptEntity.h>
+#include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 #include <Engine/World/World.h>
 
 #include <Game/Game.h>
 
 void RegisterScriptEntity();
 
-void RegisterVectorType()
+void RegisterVector3Type()
 {
 	ScriptEngine::AddTypePOD<Vector3D>( "Vector3D" );
 	ScriptEngine::AddTypeProperty( "Vector3D", "float X", &Vector3D::X );
@@ -60,6 +62,53 @@ void RegisterVectorType()
 	ScriptEngine::AddTypeMethod( "Vector3D", "bool IsNaN() const", &Vector3D::IsNaN );
 	ScriptEngine::AddTypeMethod( "Vector3D", "bool IsInfinite() const", &Vector3D::IsInfinite );
 	ScriptEngine::AddTypeMethod( "Vector3D", "bool IsValid() const", &Vector3D::IsValid );
+}
+
+void RegisterVector4Type()
+{
+	ScriptEngine::AddTypePOD<Vector4D>( "Vector4D" );
+	ScriptEngine::AddTypeProperty( "Vector4D", "float X", &Vector4D::X );
+	ScriptEngine::AddTypeProperty( "Vector4D", "float Y", &Vector4D::Y );
+	ScriptEngine::AddTypeProperty( "Vector4D", "float Z", &Vector4D::Z );
+	ScriptEngine::AddTypeProperty( "Vector4D", "float W", &Vector4D::W );
+
+	// Operators
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opAdd(float &in) const", static_cast<Vector4D( Vector4D::* )( const float& )const>( &Vector4D::operator+ ) );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opAdd(Vector4D &in) const", static_cast<Vector4D( Vector4D::* )( const Vector4D& )const>( &Vector4D::operator+ ) );
+
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opSub(float &in) const", static_cast<Vector4D( Vector4D::* )( const float& )const>( &Vector4D::operator- ) );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opSub(Vector4D &in) const", static_cast<Vector4D( Vector4D::* )( const Vector4D& )const>( &Vector4D::operator- ) );
+
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opMul(float &in) const", static_cast<Vector4D( Vector4D::* )( const float& )const>( &Vector4D::operator* ) );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opMul(Vector4D &in) const", static_cast<Vector4D( Vector4D::* )( const Vector4D& )const>( &Vector4D::operator* ) );
+
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opDiv(float &in) const", static_cast<Vector4D( Vector4D::* )( const float& )const>( &Vector4D::operator/ ) );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opDiv(Vector4D &in) const", static_cast<Vector4D( Vector4D::* )( const Vector4D& )const>( &Vector4D::operator/ ) );
+
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opAddAssign(float &in)", static_cast<Vector4D( Vector4D::* )( const float& )>( &Vector4D::operator+= ) );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opAddAssign(Vector4D &in)", static_cast<Vector4D( Vector4D::* )( const Vector4D& )>( &Vector4D::operator+= ) );
+
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opSubAssign(float &in)", static_cast<Vector4D( Vector4D::* )( const float& )>( &Vector4D::operator-= ) );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opSubAssign(Vector4D &in)", static_cast<Vector4D( Vector4D::* )( const Vector4D& )>( &Vector4D::operator-= ) );
+
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opMulAssign(float &in)", static_cast<Vector4D( Vector4D::* )( const float& )>( &Vector4D::operator*= ) );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opMulAssign(Vector4D &in)", static_cast<Vector4D( Vector4D::* )( const Vector4D& )>( &Vector4D::operator*= ) );
+
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opDivAssign(float &in)", static_cast<Vector4D( Vector4D::* )( const float& )>( &Vector4D::operator/= ) );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D opDivAssign(Vector4D &in)", static_cast<Vector4D( Vector4D::* )( const Vector4D& )>( &Vector4D::operator/= ) );
+
+	// Functions
+	ScriptEngine::AddTypeMethod( "Vector4D", "float Length() const", static_cast<float( Vector4D::* )( void )const>( &Vector4D::Length ) );
+	// ScriptEngine::AddTypeMethod( "Vector4D", "float LengthSquared() const", &Vector4D::LengthSquared );
+	ScriptEngine::AddTypeMethod( "Vector4D", "float Dot(Vector4D &in) const", &Vector4D::Dot );
+	// ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D Cross(Vector4D &in) const", &Vector4D::Cross );
+	ScriptEngine::AddTypeMethod( "Vector4D", "Vector4D Normalized() const", &Vector4D::Normalized );
+	// ScriptEngine::AddTypeMethod( "Vector4D", "float Normalize()", &Vector4D::Normalize );
+	ScriptEngine::AddTypeMethod( "Vector4D", "float Distance(Vector4D &in) const", &Vector4D::Distance );
+	// ScriptEngine::AddTypeMethod( "Vector4D", "float DistanceSquared(Vector4D &in) const", &Vector4D::DistanceSquared );
+	// ScriptEngine::AddTypeMethod( "Vector4D", "bool IsNaN() const", &Vector4D::IsNaN );
+	// ScriptEngine::AddTypeMethod( "Vector4D", "bool IsInfinite() const", &Vector4D::IsInfinite );
+	// ScriptEngine::AddTypeMethod( "Vector4D", "bool IsValid() const", &Vector4D::IsValid );
 }
 
 template<typename T>
@@ -274,6 +323,30 @@ CEntity* SpawnEntity( const std::string& Name, const std::string& Class )
 	return Level->Spawn( Class, Name );
 }
 
+CEntity* CopyEntity( CEntity* Entity )
+{
+	auto* World = CWorld::GetPrimaryWorld();
+	if( !World )
+		return nullptr;
+
+	auto* Level = World->GetActiveLevel();
+	if( !Level )
+		return nullptr;
+
+	UniqueIdentifier Random;
+	Random.Random();
+	auto* Copy = Level->Spawn( Entity->ClassName, Random.ID );
+
+	// Transfer data.
+	CData Data;
+	Entity->Export( Data );
+	Copy->Import( Data );
+	Copy->Reload();
+	Copy->Construct();
+
+	return Copy;
+}
+
 void SendEntity( CEntity* Entity, const std::string& Input )
 {
 	if( !Entity )
@@ -336,15 +409,108 @@ void AddEntityOutput( CEntity* Object, const std::string& Output, CEntity* Targe
 	Object->Outputs[Output].emplace_back( Message );
 }
 
+void SetEntityPosition( CEntity* Object, const Vector3D& Position )
+{
+	if( !Object )
+	{
+		Log::Event( Log::Warning, "SetEntityPosition: Entity invalid.\n" );
+		return;
+	}
+
+	auto* Point = dynamic_cast<CPointEntity*>( Object );
+	if( !Point )
+	{
+		Log::Event( Log::Warning, "SetEntityPosition: Entity is not a point entity.\n" );
+		return;
+	}
+
+	// Override the position.
+	auto Transform = Point->GetTransform();
+	Transform.SetPosition( Position );
+	Point->SetTransform( Transform );
+}
+
+void SetEntitySize( CEntity* Object, const Vector3D& Size )
+{
+	if( !Object )
+	{
+		Log::Event( Log::Warning, "SetEntitySize: Entity invalid.\n" );
+		return;
+	}
+
+	auto* Point = dynamic_cast<CPointEntity*>( Object );
+	if( !Point )
+	{
+		Log::Event( Log::Warning, "SetEntitySize: Entity is not a point entity.\n" );
+		return;
+	}
+
+	// Override the size.
+	auto Transform = Point->GetTransform();
+	Transform.SetSize( Size );
+	Point->SetTransform( Transform );
+}
+
+void SetEntityVelocity( CEntity* Object, const Vector3D& Velocity )
+{
+	if( !Object )
+	{
+		Log::Event( Log::Warning, "SetEntityVelocity: Entity invalid.\n" );
+		return;
+	}
+
+	auto* Mesh = dynamic_cast<CMeshEntity*>( Object );
+	if( !Mesh )
+	{
+		Log::Event( Log::Warning, "SetEntityVelocity: Entity is not a mesh entity.\n" );
+		return;
+	}
+
+	auto* Body = Mesh->GetBody();
+	if( !Body )
+	{
+		Log::Event( Log::Warning, "SetEntityVelocity: Entity has no physics body.\n" );
+		return;
+	}
+
+	// Set the velocity.
+	Body->Velocity = Velocity;
+}
+
+void SetEntityColor( CEntity* Object, const Vector4D& Color )
+{
+	if( !Object )
+	{
+		Log::Event( Log::Warning, "SetEntityColor: Entity invalid.\n" );
+		return;
+	}
+
+	auto* Mesh = dynamic_cast<CMeshEntity*>( Object );
+	if( !Mesh )
+	{
+		Log::Event( Log::Warning, "SetEntityColor: Entity is not a mesh entity.\n" );
+		return;
+	}
+
+	// Override the previously set object color.
+	Mesh->Color = Color;
+}
+
 void RegisterEntity()
 {
 	ScriptEngine::AddTypeReference( "Entity" );
 	ScriptEngine::AddFunction( "Entity @ GetEntityByName( string &in )", GetEntityByName );
 	ScriptEngine::AddFunction( "string GetEntityName( Entity @ )", GetEntityName );
 	ScriptEngine::AddFunction( "Entity @ Spawn( string &in, string &in )", SpawnEntity );
+	ScriptEngine::AddFunction( "Entity @ Copy( Entity @ )", CopyEntity );
 	ScriptEngine::AddFunction( "void Send( Entity @, string &in )", SendEntity );
 	ScriptEngine::AddFunction( "void AddInput( Entity @, string &in )", AddEntityInput );
 	ScriptEngine::AddFunction( "void AddOutput( Entity @, string &in, Entity @, string &in )", AddEntityOutput );
+
+	ScriptEngine::AddFunction( "void SetPosition( Entity @, Vector3D &in )", SetEntityPosition );
+	ScriptEngine::AddFunction( "void SetSize( Entity @, Vector3D &in )", SetEntitySize );
+	ScriptEngine::AddFunction( "void SetVelocity( Entity @, Vector3D &in )", SetEntityVelocity );
+	ScriptEngine::AddFunction( "void SetColor( Entity @, Vector4D &in )", SetEntityColor );
 
 	// Entity methods.
 	ScriptEngine::AddTypeMethod( "Entity", "void SetParent(Entity &in)", &CEntity::SetParent );
@@ -368,23 +534,36 @@ double GlobalRealTime()
 	return GameLayersInstance->GetRealTime();
 }
 
+void RegisterTime()
+{
+	ScriptEngine::AddFunction( "double GetCurrentTime()", GlobalCurrentTime );
+	ScriptEngine::AddFunction( "double GetRealTime()", GlobalRealTime );
+}
+
+void RegisterMath()
+{
+	ScriptEngine::AddFunction( "float Random()", Math::Random );
+	ScriptEngine::AddFunction( "float Saturate( float& in )", static_cast<float( * )( const float& )>( Math::Saturate ) );
+	ScriptEngine::AddFunction( "Vector3D HSVToRGB( Vector3D &in )", Math::HSVToRGB );
+	ScriptEngine::AddFunction( "float pow( float, float )", powf );
+	ScriptEngine::AddFunction( "float sin( float )", sinf );
+	ScriptEngine::AddFunction( "float cos( float )", cosf );
+	ScriptEngine::AddFunction( "float tan( float )", tanf );
+
+	ScriptEngine::AddFunction( "float ToRadians( float &in )", static_cast<float( * )( const float& )>( Math::ToRadians ) );
+	ScriptEngine::AddFunction( "float ToDegrees( float &in )", static_cast<float( * )( const float& )>( Math::ToDegrees ) );
+}
+
 void RegisterScriptFunctions()
 {
-	RegisterVectorType();
+	RegisterVector3Type();
+	RegisterVector4Type();
+	RegisterMath();
 	RegisterSound();
 	RegisterSequence();
 	RegisterEntity();
 	RegisterScriptEntity();
-
-	// Time functions.
-	ScriptEngine::AddFunction( "double GetCurrentTime()", GlobalCurrentTime );
-	ScriptEngine::AddFunction( "double GetRealTime()", GlobalRealTime );
-
-	// Math library
-	ScriptEngine::AddFunction( "float Random()", Math::Random );
-
-	ScriptEngine::AddFunction( "float ToRadians( float &in )", static_cast<float( * )( const float& )>( Math::ToRadians ) );
-	ScriptEngine::AddFunction( "float ToDegrees( float &in )", static_cast<float( * )( const float& )>( Math::ToDegrees ) );
+	RegisterTime();
 }
 
 void RegisterShatterEngine()
