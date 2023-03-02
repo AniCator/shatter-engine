@@ -29,62 +29,6 @@
 #endif
 #endif
 
-const char* MouseLabels[] = 
-{
-	"Unknown",
-
-	"MouseX",
-	"MouseY",
-	
-	"MouseScrollUp",
-	"MouseScrollDown",
-	
-	"LeftMouseButton",
-	"RightMouseButton",
-	"MiddleMouseButton",
-	
-	"MouseButton4",
-	"MouseButton5",
-	"MouseButton6",
-	"MouseButton7",
-	"MouseButton8",
-	
-	"Maximum"
-};
-
-const char* GamepadLabels[] =
-{
-	"Unknown",
-
-	"GamepadFaceButtonUp",
-	"GamepadFaceButtonDown",
-	"GamepadFaceButtonLeft",
-	"GamepadFaceButtonRight",
-
-	"GamepadDirectionalButtonUp",
-	"GamepadDirectionalButtonDown",
-	"GamepadDirectionalButtonLeft",
-	"GamepadDirectionalButtonRight",
-
-	"GamepadLeftStickX",
-	"GamepadLeftStickY",
-	"GamepadLeftStickTrigger",
-
-	"GamepadLeftTrigger",
-	"GamepadLeftShoulder",
-	"GamepadLeftSpecial",
-
-	"GamepadRightStickX",
-	"GamepadRightStickY",
-	"GamepadRightStickTrigger",
-
-	"GamepadRightTrigger",
-	"GamepadRightShoulder",
-	"GamepadRightSpecial",
-
-	"Maximum"
-};
-
 // NOTE: Crappy memory tracker.
 static size_t MemoryUsageBytes = 0;
 static size_t LargestAllocation = 0;
@@ -691,7 +635,7 @@ void CProfiler::Display()
 						const auto& Button = GamepadButtons[Index];
 						if( Button.Action == EAction::Press )
 						{
-							ImGui::Text( "%s", GamepadLabels[Index] );
+							ImGui::Text( "%s", GetGamepadLabel( Index ) );
 						}
 					}
 
@@ -711,7 +655,7 @@ void CProfiler::Display()
 						const auto& Button = Mouse[Index];
 						if( Button.Action == EAction::Press )
 						{
-							ImGui::Text( "%s", MouseLabels[Index] );
+							ImGui::Text( "%s", GetMouseLabel( Index ) );
 						}
 					}
 				}

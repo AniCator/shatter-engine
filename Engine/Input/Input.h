@@ -39,6 +39,10 @@ enum class EJoystickStatus : uint8_t
 	Connected
 };
 
+const char* GetMouseLabel( const EMouseType Index );
+const char* GetGamepadLabel( const EGamepadType Index );
+
+using ActionMap = std::map<NameSymbol, std::vector<FActionBinding>>;
 class CInput : public IInput
 {
 public:
@@ -47,36 +51,37 @@ public:
 	CInput( CInput const& ) = delete;
 	void operator=( CInput const& ) = delete;
 
-	virtual void RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, int Modifiers ) override;
-	virtual void RegisterMouseButtonInput( EMouse MouseButton, EAction Action, int Modifiers ) override;
-	virtual void RegisterMousePositionInput( double PositionX, double PositionY ) override;
-	virtual void RegisterScrollInput( int OffsetX, int OffsetY ) override;
-	virtual void RegisterJoystickStatus( int Joystick, int Event ) override;
+	void RegisterKeyInput( EKey KeyInput, int ScanCode, EAction Action, int Modifiers ) override;
+	void RegisterMouseButtonInput( EMouse MouseButton, EAction Action, int Modifiers ) override;
+	void RegisterMousePositionInput( double PositionX, double PositionY ) override;
+	void RegisterScrollInput( int OffsetX, int OffsetY ) override;
+	void RegisterJoystickStatus( int Joystick, int Event ) override;
 
-	virtual void CreateActionBinding( const NameSymbol& ActionName ) override;
-	virtual void AddActionBinding( const NameSymbol& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
-	virtual void AddActionBinding( const NameSymbol& ActionName, const EMouse& Mouse, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
-	virtual void AddActionBinding( const NameSymbol& ActionName, const EGamepad& Gamepad, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
-	virtual void ClearActionBindings() override;
+	void CreateActionBinding( const NameSymbol& ActionName ) override;
+	void AddActionBinding( const NameSymbol& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
+	void AddActionBinding( const NameSymbol& ActionName, const EMouse& Mouse, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
+	void AddActionBinding( const NameSymbol& ActionName, const EGamepad& Gamepad, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale = 1.0f ) override;
+	void ClearActionBindings() override;
 
-	virtual void Tick() override;
+	void Tick() override;
 	void PollJoysticks();
 
-	virtual bool IsKeyDown( EKey KeyInput ) const override;
-	virtual bool IsMouseDown( EMouse MouseInput ) const override;
-	virtual bool IsAnyKeyDown() const override;
-	virtual FFixedPosition2D GetMousePosition() const override;
-	virtual void SetMousePosition( const FFixedPosition2D& Position ) override;
+	bool IsKeyDown( EKey KeyInput ) const override;
+	bool IsMouseDown( EMouse MouseInput ) const override;
+	bool IsAnyKeyDown() const override;
+	FFixedPosition2D GetMousePosition() const override;
+	void SetMousePosition( const FFixedPosition2D& Position ) override;
 
 	const FKeyInput* GetKeys() const;
 	const FGamepadInput* GetGamepad() const;
 	const FMouseInput* GetMouse() const;
 
+	const ActionMap& GetBindings() const;
 private:
 	void PollJoystick( int Joystick );
 	void ClearJoystick( int Joystick );
 	void AddActionBinding( const FActionBinding& Binding );
-	std::map<NameSymbol, std::vector<FActionBinding>> ActionBindings;
+	ActionMap ActionBindings;
 
 	// Keyboard Inputs
 	FKeyInput KeyboardInput[MaximumKeyboardInputs] = {};

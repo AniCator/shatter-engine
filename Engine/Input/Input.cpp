@@ -87,6 +87,129 @@ void InputJoystickStatusCallback( int Joystick, int Event )
 	CInputLocator::Get().RegisterJoystickStatus( Joystick, Event );
 }
 
+void UpdateImGuiNavigation( FGamepadInput* Inputs, EJoystickStatus Status )
+{
+	ImGuiIO& io = ImGui::GetIO();
+
+	// Set the navigation inputs to 0.
+	memset( io.NavInputs, 0, sizeof( io.NavInputs ) );
+	if( ( io.ConfigFlags & ImGuiConfigFlags_NavEnableGamepad ) == 0 )
+		return; // Don't do anything if gamepad navigation is disabled.
+
+	static std::vector<std::pair<ImGuiNavInput_, EGamepad>> BinaryInputs = {
+		{ ImGuiNavInput_Activate,	EGamepad::GamepadFaceButtonDown },			// Cross / A
+		{ ImGuiNavInput_Cancel,		EGamepad::GamepadFaceButtonRight },			// Circle / B
+		{ ImGuiNavInput_Menu,		EGamepad::GamepadFaceButtonLeft },			// Square / X
+		{ ImGuiNavInput_Input,		EGamepad::GamepadFaceButtonUp },			// Triangle / Y
+		{ ImGuiNavInput_DpadLeft,	EGamepad::GamepadDirectionalButtonLeft },	// D-Pad Left
+		{ ImGuiNavInput_DpadRight,	EGamepad::GamepadDirectionalButtonRight },	// D-Pad Right
+		{ ImGuiNavInput_DpadUp,		EGamepad::GamepadDirectionalButtonUp },		// D-Pad Up
+		{ ImGuiNavInput_DpadDown,	EGamepad::GamepadDirectionalButtonDown },	// D-Pad Down
+		{ ImGuiNavInput_FocusPrev,	EGamepad::GamepadLeftShoulder },			// L1 / LB
+		{ ImGuiNavInput_FocusNext,	EGamepad::GamepadRightShoulder },			// R1 / RB
+		{ ImGuiNavInput_TweakSlow,	EGamepad::GamepadLeftShoulder },			// L1 / LB
+		{ ImGuiNavInput_TweakFast,	EGamepad::GamepadRightShoulder }			// R1 / RB
+	};
+
+	for( const auto& Input : BinaryInputs )
+	{
+		const auto Value = static_cast<size_t>( Input.second );
+		if( Inputs[Value].Action == EAction::Release && io.NavInputs[Input.first] == 0.0f )
+		{
+			io.NavInputs[Input.first] = 1.0f;
+			Log::Event( "Release\n" );
+		}
+		else if( io.NavInputs[Input.first] > 0.0f )
+		{
+			io.NavInputs[Input.first] = 0.0f;
+			Log::Event( "Unknown\n" );
+		}
+	}
+
+	// TODO: Handle analog inputs for ImGui.
+	/*std::vector<std::pair<int, EGamepad>> AnalogInputs = {
+	{ ImGuiNavInput_LStickLeft, 0, -0.3f, -0.9f },
+	{ ImGuiNavInput_LStickRight, 0, +0.3f, +0.9f },
+	{ ImGuiNavInput_LStickUp, 1, +0.3f, +0.9f },
+	{ ImGuiNavInput_LStickDown, 1, -0.3f, -0.9f }
+	};*/
+
+	if( Status == EJoystickStatus::Connected )
+	{
+		io.BackendFlags |= ImGuiBackendFlags_HasGamepad;
+	}
+	else
+	{
+		io.BackendFlags &= ~ImGuiBackendFlags_HasGamepad;
+	}
+}
+
+const char* MouseLabels[] =
+{
+	"Unknown",
+
+	"MouseX",
+	"MouseY",
+
+	"MouseScrollUp",
+	"MouseScrollDown",
+
+	"LeftMouseButton",
+	"RightMouseButton",
+	"MiddleMouseButton",
+
+	"MouseButton4",
+	"MouseButton5",
+	"MouseButton6",
+	"MouseButton7",
+	"MouseButton8",
+
+	"Maximum"
+};
+
+const char* GetMouseLabel( const EMouseType Index )
+{
+	return MouseLabels[Index];
+}
+
+const char* GamepadLabels[] =
+{
+	"Unknown",
+
+	"GamepadFaceButtonUp",
+	"GamepadFaceButtonDown",
+	"GamepadFaceButtonLeft",
+	"GamepadFaceButtonRight",
+
+	"GamepadDirectionalButtonUp",
+	"GamepadDirectionalButtonDown",
+	"GamepadDirectionalButtonLeft",
+	"GamepadDirectionalButtonRight",
+
+	"GamepadLeftStickX",
+	"GamepadLeftStickY",
+	"GamepadLeftStickTrigger",
+
+	"GamepadLeftTrigger",
+	"GamepadLeftShoulder",
+	"GamepadLeftSpecial",
+
+	"GamepadRightStickX",
+	"GamepadRightStickY",
+	"GamepadRightStickTrigger",
+
+	"GamepadRightTrigger",
+	"GamepadRightShoulder",
+	"GamepadRightSpecial",
+
+	"Maximum"
+};
+
+const char* GetGamepadLabel( const EGamepadType Index )
+{
+	return GamepadLabels[Index];
+}
+
 CInput::CInput()
 {
 	AnyKey = false;
@@ -200,11 +323,16 @@ void CInput::RegisterJoystickStatus( int Joystick, int Event )
 
 	if( JoystickStatus[Joystick] == EJoystickStatus::Connected && Status == EJoystickStatus::Disconnected )
 	{
-		// A connected joystick or gamepad has been disconnected, make sure to clear its inputs.
+		// Joystick status changed, clear the inputs.
 		ClearJoystick( Joystick );
 	}
 
 	JoystickStatus[Joystick] = Status;
+}
+
+const ActionMap& CInput::GetBindings() const
+{
+	return ActionBindings;
 }
 
 void CInput::PollJoystick( int Joystick )
@@ -296,22 +424,22 @@ void CInput::AddActionBinding( const FActionBinding& Binding )
 {
 	CreateActionBinding( Binding.ActionName );
 	const auto& Iterator = ActionBindings.find( Binding.ActionName );
-	if( Iterator != ActionBindings.end() )
-	{
-		auto& Bindings = *Iterator;
-		Bindings.second.emplace_back( Binding );
-	}
+	if( Iterator == ActionBindings.end() )
+		return;
+	
+	auto& Bindings = *Iterator;
+	Bindings.second.emplace_back( Binding );
 }
 
 void CInput::CreateActionBinding( const NameSymbol& ActionName )
 {
 	// Check if the action already exists in the binding list.
 	const auto& Iterator = ActionBindings.find( ActionName );
-	if( Iterator == ActionBindings.end() )
-	{
-		// Create a new action.
-		ActionBindings.insert_or_assign( ActionName, std::vector<FActionBinding>() );
-	}
+	if( Iterator != ActionBindings.end() )
+		return;
+
+	// Create a new action.
+	ActionBindings.insert_or_assign( ActionName, std::vector<FActionBinding>() );
 }
 
 void CInput::AddActionBinding( const NameSymbol& ActionName, const EKey& Key, const EAction& Action, const ActionTarget& TargetFunc, const float& Scale )
