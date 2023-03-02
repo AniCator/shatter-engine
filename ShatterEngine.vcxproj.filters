@@ -437,9 +437,6 @@
     <ClCompile Include="Engine\Physics\Geometry.cpp">
       <Filter>Source Files\Engine\Physics</Filter>
     </ClCompile>
-    <ClCompile Include="Engine\Physics\Solvers.cpp">
-      <Filter>Source Files\Engine\Physics</Filter>
-    </ClCompile>
     <ClCompile Include="Engine\Network\Network.cpp">
       <Filter>Source Files\Engine\Network</Filter>
     </ClCompile>
@@ -502,6 +499,9 @@
     </ClCompile>
     <ClCompile Include="Engine\Sequencer\Events\GradeEvent.cpp">
       <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Physics\Response.cpp">
+      <Filter>Source Files\Engine\Physics</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -877,9 +877,6 @@
     <ClInclude Include="Engine\Physics\GeometryResult.h">
       <Filter>Source Files\Engine\Physics</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\Physics\Solvers.h">
-      <Filter>Source Files\Engine\Physics</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\Network\Network.h">
       <Filter>Source Files\Engine\Network</Filter>
     </ClInclude>
@@ -987,6 +984,12 @@
     </ClInclude>
     <ClInclude Include="Engine\World\Interactable.h">
       <Filter>Source Files\Engine\World</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\Response.h">
+      <Filter>Source Files\Engine\Physics</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Physics\CollisionResponse.h">
+      <Filter>Source Files\Engine\Physics</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

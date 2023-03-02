@@ -212,7 +212,7 @@
     <ClCompile Include="Engine\Physics\Geometry.cpp" />
     <ClCompile Include="Engine\Physics\Physics.cpp" />
     <ClCompile Include="Engine\Physics\PhysicsComponent.cpp" />
-    <ClCompile Include="Engine\Physics\Solvers.cpp" />
+    <ClCompile Include="Engine\Physics\Response.cpp" />
     <ClCompile Include="Engine\Profiling\Logging.cpp" />
     <ClCompile Include="Engine\Profiling\Profiling.cpp" />
     <ClCompile Include="Engine\Resource\Assets.cpp" />
@@ -334,11 +334,12 @@
     <ClInclude Include="Engine\Physics\Body\Plane.h" />
     <ClInclude Include="Engine\Physics\Body\Shared.h" />
     <ClInclude Include="Engine\Physics\Body\TriggerBody.h" />
+    <ClInclude Include="Engine\Physics\CollisionResponse.h" />
     <ClInclude Include="Engine\Physics\Geometry.h" />
     <ClInclude Include="Engine\Physics\GeometryResult.h" />
     <ClInclude Include="Engine\Physics\PhysicalSurface.h" />
     <ClInclude Include="Engine\Physics\Physics.h" />
-    <ClInclude Include="Engine\Physics\Solvers.h" />
+    <ClInclude Include="Engine\Physics\Response.h" />
     <ClInclude Include="Engine\Profiling\Logging.h" />
     <ClInclude Include="Engine\Profiling\Profiling.h" />
     <ClInclude Include="Engine\Resource\Asset.h" />
