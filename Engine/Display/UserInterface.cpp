@@ -26,6 +26,7 @@ Color Color::Black = Color( 0, 0, 0 );
 
 Color Color::Yellow = Color( 255, 255, 0 );
 Color Color::Purple = Color( 255, 0, 255 );
+Color Color::Cyan = Color( 0, 255, 255 );
 
 extern ConfigurationVariable<bool> FlipHorizontal;
 

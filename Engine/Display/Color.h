@@ -15,6 +15,7 @@ public:
 
 	static Color Yellow;
 	static Color Purple;
+	static Color Cyan;
 
 public:
 	Color()
