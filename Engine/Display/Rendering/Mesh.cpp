@@ -2,13 +2,11 @@
 #include "Mesh.h"
 
 #include <Engine/Display/Window.h>
+#include <Engine/Display/Rendering/Vertex.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
 static std::string GeneratedMesh = "gen";
-
-// Vertex structure used for rendered vertices.
-using VertexFormat = CompactVertex;
 
 void VectorToByte( const Vector3D& Input, GLbyte* Output )
 {
@@ -304,7 +302,7 @@ void CMesh::GenerateAABB()
 {
 	for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 	{
-		const FVertex& Vertex = Primitive.Vertices[VertexIndex];
+		const ComplexVertex& Vertex = Primitive.Vertices[VertexIndex];
 
 		if( VertexIndex == 0 )
 		{

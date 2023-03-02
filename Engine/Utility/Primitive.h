@@ -1,57 +1,12 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
+#include <Engine/Display/Rendering/ComplexVertex.h>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/Math.h>
 
 static const char PrimitiveIdentifier[5] = "LPRI"; // Lofty PRImitive
 static const size_t PrimitiveVersion = 1;
-
-struct FVertex
-{
-	FVertex()
-	{
-		
-	}
-
-	FVertex( const Vector3D& InPosition )
-	{
-		Position = InPosition;
-	}
-
-	FVertex( const Vector3D& InPosition, const Vector3D& InNormal)
-	{
-		Position = InPosition;
-		Normal = InNormal;
-	}
-
-	FVertex( const Vector3D& InPosition, const Vector3D& InNormal, const Vector2D& InTextureCoordinate )
-	{
-		Position = InPosition;
-		Normal = InNormal;
-		TextureCoordinate = InTextureCoordinate;
-	}
-
-	Vector3D Position = Vector3D::Zero;
-	Vector2D TextureCoordinate = Vector2D( 0.0f, 0.0f );
-	Vector3D Normal = Vector3D( 0.0f, 0.0f, 1.0f );
-	Vector3D Color = Vector3D::One;
-
-	Vector4D Bone = Vector4D( -1.0f, -1.0f, -1.0f, -1.0f );
-	Vector4D Weight = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
-
-	bool operator<( const FVertex& B ) const 
-	{
-		//const auto ComparePosition = !Math::Equal( Position, B.Position, 1.0f );
-		//const auto CompareCoordinate = TextureCoordinate < B.TextureCoordinate;
-		//const auto CompareNormal = Normal < B.Normal;
-		//const auto CompareColor = Color < B.Color;
-		//const auto CompareBone = Bone < B.Bone;
-		//const auto CompareWeight = Weight < B.Weight;
-		//return ComparePosition;//&& CompareCoordinate&& CompareNormal&& CompareColor&& CompareBone&& CompareWeight;
-		return memcmp( ( void*) this, ( void*) &B, sizeof( FVertex ) ) > 0;
-	};
-};
 
 struct FPrimitive
 {
@@ -70,10 +25,10 @@ struct FPrimitive
 		VertexCount = Primitive.VertexCount;
 		IndexCount = Primitive.IndexCount;
 
-		Vertices = new FVertex[Primitive.VertexCount];
+		Vertices = new ComplexVertex[Primitive.VertexCount];
 		Indices = new glm::uint[Primitive.IndexCount];
 
-		memcpy( Vertices, Vertices, Primitive.VertexCount * sizeof( FVertex ) );
+		memcpy( Vertices, Vertices, Primitive.VertexCount * sizeof( ComplexVertex ) );
 		memcpy( Indices, Indices, Primitive.IndexCount * sizeof( uint32_t ) );
 
 		HasNormals = Primitive.HasNormals;
@@ -92,7 +47,7 @@ struct FPrimitive
 		}
 	}
 
-	FVertex* Vertices;
+	ComplexVertex* Vertices;
 	uint32_t VertexCount;
 	uint32_t* Indices;
 	uint32_t IndexCount;
@@ -137,7 +92,7 @@ struct FPrimitive
 
 			Data >> Primitive.HasNormals;
 
-			Primitive.Vertices = new FVertex[Primitive.VertexCount];
+			Primitive.Vertices = new ComplexVertex[Primitive.VertexCount];
 			for( size_t Index = 0; Index < Primitive.VertexCount; Index++ )
 			{
 				Data >> Primitive.Vertices[Index];

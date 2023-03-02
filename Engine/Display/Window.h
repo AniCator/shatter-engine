@@ -1,9 +1,10 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include "Rendering/Renderer.h"
-
+#include <Engine/Display/Rendering/Renderer.h>
 #include <Engine/Utility/Singleton.h>
+
+#include <ThirdParty/glfw-3.3.2.bin.WIN64/include/GLFW/glfw3.h>
 
 #define IMGUI_ENABLED
 
@@ -95,7 +96,7 @@ public:
 private:
 	void Recreate();
 
-	struct GLFWwindow* WindowHandle = nullptr;
+	GLFWwindow* WindowHandle = nullptr;
 	CRenderer Renderer;
 
 	bool Initialized = false;

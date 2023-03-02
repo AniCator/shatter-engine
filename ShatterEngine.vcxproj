@@ -298,6 +298,8 @@
     <ClInclude Include="Engine\Display\imgui_impl_glfw.h" />
     <ClInclude Include="Engine\Display\imgui_impl_opengl3.h" />
     <ClInclude Include="Engine\Display\Rendering\Camera.h" />
+    <ClInclude Include="Engine\Display\Rendering\CompactVertex.h" />
+    <ClInclude Include="Engine\Display\Rendering\ComplexVertex.h" />
     <ClInclude Include="Engine\Display\Rendering\Culling.h" />
     <ClInclude Include="Engine\Display\Rendering\Framebuffer.h" />
     <ClInclude Include="Engine\Display\Rendering\FramebufferTexture.h" />
@@ -321,6 +323,7 @@
     <ClInclude Include="Engine\Display\Rendering\TextureEnumerators.h" />
     <ClInclude Include="Engine\Display\Rendering\TextureEnumeratorsGL.h" />
     <ClInclude Include="Engine\Display\Rendering\Uniform.h" />
+    <ClInclude Include="Engine\Display\Rendering\Vertex.h" />
     <ClInclude Include="Engine\Display\UserInterface.h" />
     <ClInclude Include="Engine\Display\Window.h" />
     <ClInclude Include="Engine\Event\ActionTarget.h" />

@@ -32,7 +32,7 @@ struct ImportedMeshData
 		Indices.reserve( 10000 );
 	}
 
-	std::vector<FVertex> Vertices;
+	std::vector<ComplexVertex> Vertices;
 	std::vector<uint32_t> Indices;
 
 	Skeleton* Skeleton = nullptr;
@@ -363,7 +363,7 @@ void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* 
 	const size_t IndexOffset = MeshData.Vertices.size();
 	for( size_t VertexIndex = 0; VertexIndex < Mesh->mNumVertices; VertexIndex++ )
 	{
-		FVertex NewVertex;
+		ComplexVertex NewVertex;
 
 		const auto& Vertex = Mesh->mVertices[VertexIndex];
 		auto TransformedVector = NodeTransformation * Vertex;
@@ -761,13 +761,13 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	if( !HasMeshes )
 		return;
 
-	std::vector<FVertex> FatVertices;
+	std::vector<ComplexVertex> FatVertices;
 	std::vector<uint32_t> FatIndices;
-	std::map<FVertex, uint32_t> IndexMap;
+	std::map<ComplexVertex, uint32_t> IndexMap;
 
 	for( size_t Index = 0; Index < MeshData.Indices.size(); Index++ )
 	{
-		FVertex Vertex = MeshData.Vertices[MeshData.Indices[Index]];
+		ComplexVertex Vertex = MeshData.Vertices[MeshData.Indices[Index]];
 
 		uint32_t FatIndex = 0;
 		const bool ExistingVertex = FindVertex( Vertex, IndexMap, FatIndex );
@@ -784,7 +784,7 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 		}
 	}
 
-	auto* VertexArray = new FVertex[FatVertices.size()];
+	auto* VertexArray = new ComplexVertex[FatVertices.size()];
 	for( size_t Index = 0; Index < FatVertices.size(); Index++ )
 	{
 		VertexArray[Index] = FatVertices[Index];

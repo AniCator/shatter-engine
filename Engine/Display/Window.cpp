@@ -4,8 +4,6 @@
 #include <stdint.h>
 
 #include <ThirdParty/glad/include/glad/glad.h>
-#include <ThirdParty/glfw-3.3.2.bin.WIN64/include/GLFW/glfw3.h>
-
 #include <Engine/Application/Application.h>
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/UserInterface.h>

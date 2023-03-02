@@ -52,5 +52,5 @@ public:
 private:
 	static void Soup( FPrimitive& Primitive, std::vector<Vector3D> Vertices );
 
-	static bool FindVertex( const FVertex& Vertex, const std::map<FVertex, uint32_t>& IndexMap, uint32_t& OutIndex );
+	static bool FindVertex( const ComplexVertex& Vertex, const std::map<ComplexVertex, uint32_t>& IndexMap, uint32_t& OutIndex );
 };

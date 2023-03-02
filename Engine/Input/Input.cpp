@@ -1,8 +1,6 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Input.h"
 
-// #include <ThirdParty/glfw-3.3.2.bin.WIN64/include/GLFW/glfw3.h>
-
 #include <Engine/Display/Window.h>
 #include <Engine/Utility/Locator/InputLocator.h>
 #include <Engine/Profiling/Logging.h>

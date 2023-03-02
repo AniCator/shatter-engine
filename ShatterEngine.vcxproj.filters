@@ -991,6 +991,15 @@
     <ClInclude Include="Engine\Physics\CollisionResponse.h">
       <Filter>Source Files\Engine\Physics</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\CompactVertex.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\ComplexVertex.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Vertex.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">

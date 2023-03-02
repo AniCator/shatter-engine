@@ -29,12 +29,12 @@ void MeshBuilder::Plane( FPrimitive& Primitive, const float Radius )
 	static const Vector3D Normal = Vector3D( 0.0f, 0.0f, 1.0f );
 
 	static const uint32_t VertexCount = 4;
-	FVertex* Vertices = new FVertex[VertexCount]
+	ComplexVertex* Vertices = new ComplexVertex[VertexCount]
 	{
-		FVertex( Vector3D( -1.0f, -1.0f, 0.0f ) * Radius, Normal, Vector2D( 0.0f,0.0f ) ), // Bottom-left
-		FVertex( Vector3D( 1.0f, -1.0f, 0.0f ) * Radius, Normal, Vector2D( 1.0f,0.0f ) ), // Bottom-right
-		FVertex( Vector3D( 1.0f,  1.0f, 0.0f ) * Radius, Normal, Vector2D( 1.0f,1.0f ) ), // Top-right
-		FVertex( Vector3D( -1.0f,  1.0f, 0.0f ) * Radius, Normal, Vector2D( 0.0f,1.0f ) ), // Top-left
+		ComplexVertex( Vector3D( -1.0f, -1.0f, 0.0f ) * Radius, Normal, Vector2D( 0.0f,0.0f ) ), // Bottom-left
+		ComplexVertex( Vector3D( 1.0f, -1.0f, 0.0f ) * Radius, Normal, Vector2D( 1.0f,0.0f ) ), // Bottom-right
+		ComplexVertex( Vector3D( 1.0f,  1.0f, 0.0f ) * Radius, Normal, Vector2D( 1.0f,1.0f ) ), // Top-right
+		ComplexVertex( Vector3D( -1.0f,  1.0f, 0.0f ) * Radius, Normal, Vector2D( 0.0f,1.0f ) ), // Top-left
 	};
 
 	static const uint32_t IndexCount = 6;
@@ -55,17 +55,17 @@ void MeshBuilder::Cube( FPrimitive& Primitive, const float Radius )
 	Log::Event( "Generating cube with radius %.2f\n", Radius );
 
 	static const uint32_t VertexCount = 8;
-	FVertex* Vertices = new FVertex[VertexCount]
+	ComplexVertex* Vertices = new ComplexVertex[VertexCount]
 	{
-		FVertex( Vector3D( -1.0f, -1.0f, -1.0f ) * Radius ),
-		FVertex( Vector3D( 1.0f, -1.0f, -1.0f ) * Radius ),
-		FVertex( Vector3D( 1.0f,  1.0f, -1.0f ) * Radius ),
-		FVertex( Vector3D( -1.0f,  1.0f, -1.0f ) * Radius ),
+		ComplexVertex( Vector3D( -1.0f, -1.0f, -1.0f ) * Radius ),
+		ComplexVertex( Vector3D( 1.0f, -1.0f, -1.0f ) * Radius ),
+		ComplexVertex( Vector3D( 1.0f,  1.0f, -1.0f ) * Radius ),
+		ComplexVertex( Vector3D( -1.0f,  1.0f, -1.0f ) * Radius ),
 
-		FVertex( Vector3D( -1.0f, -1.0f, 1.0f ) * Radius ),
-		FVertex( Vector3D( 1.0f, -1.0f, 1.0f ) * Radius ),
-		FVertex( Vector3D( 1.0f,  1.0f, 1.0f ) * Radius ),
-		FVertex( Vector3D( -1.0f,  1.0f, 1.0f ) * Radius ),
+		ComplexVertex( Vector3D( -1.0f, -1.0f, 1.0f ) * Radius ),
+		ComplexVertex( Vector3D( 1.0f, -1.0f, 1.0f ) * Radius ),
+		ComplexVertex( Vector3D( 1.0f,  1.0f, 1.0f ) * Radius ),
+		ComplexVertex( Vector3D( -1.0f,  1.0f, 1.0f ) * Radius ),
 	};
 
 	const uint32_t IndexCount = 36;
@@ -210,7 +210,7 @@ void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
 	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
 }
 
-bool MeshBuilder::FindVertex( const FVertex& Vertex, const std::map<FVertex, uint32_t>& IndexMap, uint32_t& OutIndex )
+bool MeshBuilder::FindVertex( const ComplexVertex& Vertex, const std::map<ComplexVertex, uint32_t>& IndexMap, uint32_t& OutIndex )
 {
 	const auto Iterator = IndexMap.find( Vertex );
 	if( Iterator == IndexMap.end() )
@@ -353,13 +353,13 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 
 	if( VertexIndices.size() == CoordinateIndices.size() && VertexIndices.size() == NormalIndices.size() )
 	{
-		std::vector<FVertex> FatVertices;
+		std::vector<ComplexVertex> FatVertices;
 		std::vector<uint32_t> FatIndices;
-		std::map<FVertex, uint32_t> IndexMap;
+		std::map<ComplexVertex, uint32_t> IndexMap;
 
 		for( size_t Index = 0; Index < VertexIndices.size(); Index++ )
 		{
-			FVertex Vertex;
+			ComplexVertex Vertex;
 			Vertex.Position = Vertices[VertexIndices[Index]];
 			Vertex.Normal = Normals[NormalIndices[Index]];
 			Vertex.TextureCoordinate = Coordinates[CoordinateIndices[Index]];
@@ -380,7 +380,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 			}
 		}
 
-		FVertex* VertexArray = new FVertex[FatVertices.size()];
+		ComplexVertex* VertexArray = new ComplexVertex[FatVertices.size()];
 		for( size_t Index = 0; Index < FatVertices.size(); Index++ )
 		{
 			VertexArray[Index] = FatVertices[Index];
@@ -399,7 +399,7 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 	}
 	else
 	{
-		FVertex* VertexArray = new FVertex[Vertices.size()];
+		ComplexVertex* VertexArray = new ComplexVertex[Vertices.size()];
 		for( size_t Index = 0; Index < Vertices.size(); Index++ )
 		{
 			VertexArray[Index].Position = Vertices[Index];
@@ -450,10 +450,10 @@ void MeshBuilder::Mesh( FPrimitive& Primitive, CMesh* MeshInstance )
 		Primitive.VertexCount = VertexBufferData.VertexCount;
 		Primitive.IndexCount = VertexBufferData.IndexCount;
 
-		Primitive.Vertices = new FVertex[Primitive.VertexCount];
+		Primitive.Vertices = new ComplexVertex[Primitive.VertexCount];
 		Primitive.Indices = new glm::uint[Primitive.IndexCount];
 
-		memcpy( Primitive.Vertices, VertexData.Vertices, Primitive.VertexCount * sizeof( FVertex ) );
+		memcpy( Primitive.Vertices, VertexData.Vertices, Primitive.VertexCount * sizeof( ComplexVertex ) );
 		memcpy( Primitive.Indices, IndexData.Indices, Primitive.IndexCount * sizeof( glm::uint ) );
 
 		Primitive.HasNormals = true;
@@ -488,7 +488,7 @@ void MeshBuilder::Soup( FPrimitive& Primitive, std::vector<Vector3D> Vertices )
 	}
 
 	const size_t SoupCount = Soup.size();
-	FVertex* UniqueVertices = new FVertex[SoupCount];
+	ComplexVertex* UniqueVertices = new ComplexVertex[SoupCount];
 	size_t UniqueVertexIndex = 0;
 	for( const auto SoupVertex : Soup )
 	{
