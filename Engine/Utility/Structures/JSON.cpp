@@ -114,6 +114,9 @@ namespace JSON
 		Start = Token;
 		while( Token[0] != '"' )
 		{
+			if( Token[0] == '\\' ) // Escape character detected.
+				Token++; // Hop over an additional token.
+			
 			Token++;
 		}
 		End = Token;
@@ -168,7 +171,9 @@ namespace JSON
 		Object* Parent = nullptr;
 		while( !Finished && ( Token < End ) )
 		{
-			if( Token[0] == '{' )
+			switch( Token[0] )
+			{
+			case '{':
 			{
 				// Entering object.
 				Depth++;
@@ -212,8 +217,9 @@ namespace JSON
 				}
 
 				LookingForKeyEntry = true;
+				break;
 			}
-			else if( Token[0] == '}' )
+			case '}':
 			{
 				// Exiting object.
 				CheckForSyntaxErrors( LastSpecialToken, Line, Token );
@@ -238,8 +244,10 @@ namespace JSON
 				{
 					Finished = true;
 				}
+
+				break;
 			}
-			else if( Token[0] == '"' )
+			case '"':
 			{
 				const char* Start = nullptr;
 				const char* End = nullptr;
@@ -279,16 +287,19 @@ namespace JSON
 						}
 					}
 				}
+				break;
 			}
-			else if( Token[0] == ':' )
+			case ':':
 			{
 				LookingForKeyEntry = false;
+				break;
 			}
-			else if( Token[0] == ',' )
+			case ',':
 			{
 				LookingForKeyEntry = true;
+				break;
 			}
-			else if( Token[0] == '[' )
+			case '[':
 			{
 				ArrayDepth++;
 				LookingForKeyEntry = true;
@@ -301,8 +312,9 @@ namespace JSON
 
 				Parent = Current;
 				Current = nullptr;
+				break;
 			}
-			else if( Token[0] == ']' )
+			case ']':
 			{
 				CheckForSyntaxErrors( LastSpecialToken, Line, Token );
 				ArrayDepth--;
@@ -313,10 +325,44 @@ namespace JSON
 					Current = Parent;
 					Parent = Parent->Parent;
 				}
+				break;
 			}
-			else if( Token[0] == '\n' )
+			case '\n':
 			{
 				Line++;
+				break;
+			}
+			case '/': // Support comments because, why not.
+			{
+				bool IsComment = false;
+				if( ( Token + 1 ) < End )
+				{
+					IsComment = Token[1] == '/';
+				}
+
+				if( IsComment )
+				{
+					// Flush line.
+					bool Flushed = false;
+					while( !Flushed && Token < End )
+					{
+						if( Token[0] != '\n' )
+						{
+							Token++;
+						}
+						else
+						{
+							// Back up one token so the parsing loop can handle it.
+							Token--;
+							Flushed = true;
+						}
+					}
+				}
+			}
+			default:
+			{
+				break;
+			}
 			}
 
 			UpdateSpecialToken( LastSpecialToken, Token );
