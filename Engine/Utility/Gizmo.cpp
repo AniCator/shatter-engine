@@ -12,7 +12,7 @@
 
 #include <Engine/Utility/Locator/InputLocator.h>
 
-void PointGizmo( CPointEntity* Entity, DragEntity& DragPersistence )
+bool PointGizmo( CPointEntity* Entity, DragEntity& DragPersistence )
 {
 	auto& Input = CInputLocator::Get();
 	const bool WantsToDrag = Input.IsMouseDown( EMouse::LeftMouseButton );
@@ -29,16 +29,16 @@ void PointGizmo( CPointEntity* Entity, DragEntity& DragPersistence )
 			Entity = DragPersistence.Entity;
 		}
 
-		return;
+		return false;
 	}
 
 	auto* World = CWorld::GetPrimaryWorld();
 	if( !World )
-		return;
+		return false;
 
 	auto* Camera = World->GetActiveCamera();
 	if( !Camera )
-		return;
+		return false;
 
 	const auto& CameraSetup = Camera->GetCameraSetup();
 
@@ -129,27 +129,44 @@ void PointGizmo( CPointEntity* Entity, DragEntity& DragPersistence )
 				const auto DragDistance = Origin.Distance( DragWS );
 				if( DragDistance > 0.01f )
 				{
-					Transform.SetPosition( DragWS );
-					Entity->SetTransform( Transform );
-
+					const auto OldPosition = Transform.GetPosition();
 					auto* MeshEntity = Cast<CMeshEntity>( Entity );
 					if( MeshEntity && MeshEntity->GetBody() )
 					{
-						MeshEntity->GetBody()->CalculateBounds();
-					}
+						auto* Body = MeshEntity->GetBody();
+						if( Body->IsKinetic() )
+						{
+							Body->Velocity = ( DragWS - OldPosition );
+						}
+						else
+						{
+							Transform.SetPosition( DragWS );
+							Entity->SetTransform( Transform );
+						}
 
-					Entity->Reload();
+						Body->CalculateBounds();
+					}
+					else
+					{
+						Transform.SetPosition( DragWS );
+						Entity->SetTransform( Transform );
+					}
 				}
 			}
+
+			return true;
 		}
+
+		return false;
 	};
 
-	PlaneDragLambda( Vector3D( 1.0f, 0.0f, 0.0f ) );
-	PlaneDragLambda( Vector3D( 0.0f, 1.0f, 0.0f ) );
-	PlaneDragLambda( Vector3D( 0.0f, 0.0f, 1.0f ) );
+	return 
+		PlaneDragLambda( Vector3D( 1.0f, 0.0f, 0.0f ) ) ||
+		PlaneDragLambda( Vector3D( 0.0f, 1.0f, 0.0f ) ) ||
+		PlaneDragLambda( Vector3D( 0.0f, 0.0f, 1.0f ) );
 }
 
-void PointGizmo( FTransform* Transform, DragTransform& DragPersistence )
+bool PointGizmo( FTransform* Transform, DragTransform& DragPersistence )
 {
 	auto& Input = CInputLocator::Get();
 	const bool WantsToDrag = Input.IsMouseDown( EMouse::LeftMouseButton );
@@ -166,16 +183,16 @@ void PointGizmo( FTransform* Transform, DragTransform& DragPersistence )
 			Transform = DragPersistence.Transform;
 		}
 
-		return;
+		return false;
 	}
 
 	auto* World = CWorld::GetPrimaryWorld();
 	if( !World )
-		return;
+		return false;
 
 	auto* Camera = World->GetActiveCamera();
 	if( !Camera )
-		return;
+		return false;
 
 	const auto& CameraSetup = Camera->GetCameraSetup();
 
@@ -268,15 +285,19 @@ void PointGizmo( FTransform* Transform, DragTransform& DragPersistence )
 					Transform->SetPosition( DragWS );
 				}
 			}
+
+			return true;
 		}
+
+		return false;
 	};
 
-	PlaneDragLambda( Vector3D( 1.0f, 0.0f, 0.0f ) );
-	PlaneDragLambda( Vector3D( 0.0f, 1.0f, 0.0f ) );
-	PlaneDragLambda( Vector3D( 0.0f, 0.0f, 1.0f ) );
+	return PlaneDragLambda( Vector3D( 1.0f, 0.0f, 0.0f ) ) ||
+		PlaneDragLambda( Vector3D( 0.0f, 1.0f, 0.0f ) ) ||
+		PlaneDragLambda( Vector3D( 0.0f, 0.0f, 1.0f ) );
 }
 
-void PointGizmo( Vector3D* Point, DragVector& DragPersistence )
+bool PointGizmo( Vector3D* Point, DragVector& DragPersistence )
 {
 	auto& Input = CInputLocator::Get();
 	const bool WantsToDrag = Input.IsMouseDown( EMouse::LeftMouseButton );
@@ -293,16 +314,16 @@ void PointGizmo( Vector3D* Point, DragVector& DragPersistence )
 			Point = DragPersistence.Point;
 		}
 
-		return;
+		return false;
 	}
 
 	auto* World = CWorld::GetPrimaryWorld();
 	if( !World )
-		return;
+		return false;
 
 	auto* Camera = World->GetActiveCamera();
 	if( !Camera )
-		return;
+		return false;
 
 	const auto& CameraSetup = Camera->GetCameraSetup();
 
@@ -395,10 +416,15 @@ void PointGizmo( Vector3D* Point, DragVector& DragPersistence )
 					*Point = DragWS;
 				}
 			}
+
+			return true;
 		}
+
+		return false;
 	};
 
-	PlaneDragLambda( Vector3D( 1.0f, 0.0f, 0.0f ) );
-	PlaneDragLambda( Vector3D( 0.0f, 1.0f, 0.0f ) );
-	PlaneDragLambda( Vector3D( 0.0f, 0.0f, 1.0f ) );
+	return
+		PlaneDragLambda( Vector3D( 1.0f, 0.0f, 0.0f ) ) ||
+		PlaneDragLambda( Vector3D( 0.0f, 1.0f, 0.0f ) ) ||
+		PlaneDragLambda( Vector3D( 0.0f, 0.0f, 1.0f ) );
 }

@@ -20,10 +20,10 @@ struct DragVector
 };
 
 // Renders an interactive gizmo for moving point entities, takes a drag persistence struct for tracking which entity is being dragged.
-void PointGizmo( CPointEntity* Entity, DragEntity& DragPersistence );
+bool PointGizmo( CPointEntity* Entity, DragEntity& DragPersistence );
 
 // Renders an interactive gizmo for moving transforms, takes a drag persistence struct for tracking which entity is being dragged.
-void PointGizmo( FTransform* Transform, DragTransform& DragPersistence );
+bool PointGizmo( FTransform* Transform, DragTransform& DragPersistence );
 
 // Renders an interactive gizmo for moving transforms, takes a drag persistence struct for tracking which entity is being dragged.
-void PointGizmo( Vector3D* Point, DragVector& DragPersistence );
+bool PointGizmo( Vector3D* Point, DragVector& DragPersistence );
