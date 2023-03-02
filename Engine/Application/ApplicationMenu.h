@@ -19,6 +19,8 @@ void RenderCommandItems();
 void RenderWindowItems();
 void RenderWindowPanels();
 
+void PopulateGradePanel( struct ColorGrade& Grade );
+
 namespace ImGui
 {
 	Bus::Type BusSelector( const Bus::Type& Bus );

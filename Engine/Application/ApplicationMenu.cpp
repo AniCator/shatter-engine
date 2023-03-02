@@ -1744,6 +1744,41 @@ std::string VectorToString( const Vector4D& Vector )
 	return std::to_string( Vector.X ) + "f, " + std::to_string( Vector.Y ) + "f, " + std::to_string( Vector.Z ) + "f, " + std::to_string( Vector.W ) + "f";
 }
 
+void PopulateGradePanel( ColorGrade& Grade )
+{
+	if( ImGui::Button( "Reset to Neutral" ) )
+	{
+		Grade.Tint = { 1.0f, 1.0f, 1.0f, DefaultExposure };
+		Grade.Lift = { 0.0f, 0.0f, 0.0f, 0.0f };
+		Grade.Gamma = { 0.0f, 0.0f, 0.0f, 0.0f };
+		Grade.Gain = { 1.0f, 1.0f, 1.0f, 1.0f };
+	}
+
+	ImGui::SameLine();
+
+	if( ImGui::Button( "Copy to Clipboard" ) )
+	{
+		std::string Clipboard;
+		Clipboard += ".Tint = {" + VectorToString( Grade.Tint ) + "}\n";
+		Clipboard += ".Lift = {" + VectorToString( Grade.Lift ) + "}\n";
+		Clipboard += ".Gamma = {" + VectorToString( Grade.Gamma ) + "}\n";
+		Clipboard += ".Gain = {" + VectorToString( Grade.Gain ) + "}\n";
+		glfwSetClipboardString( CWindow::Get().Handle(), Clipboard.c_str() );
+	}
+
+	ImGui::ColorPicker3( "Tint", &Grade.Tint.R, ColorPickerFlags );
+	ImGui::DragFloat( "Exposure", &Grade.Tint.A, 0.01f, -10.0f, 10.0f, "%.2f" );
+
+	ImGui::ColorPicker3( "Lift#ColorLift", &Grade.Lift.R, ColorPickerFlags );
+	ImGui::DragFloat( "Lift", &Grade.Lift.A, 0.01f, -1.0f, 1.0f, "%.2f" );
+
+	ImGui::ColorPicker3( "Gamma#ColorGamma", &Grade.Gamma.R, ColorPickerFlags );
+	ImGui::DragFloat( "Gamma", &Grade.Gamma.A, 0.01f, -1.0f, 1.0f, "%.2f" );
+
+	ImGui::ColorPicker3( "Gain#ColorGain", &Grade.Gain.R, ColorPickerFlags );
+	ImGui::DragFloat( "Gain", &Grade.Gain.A, 0.01f, 0.0f, 16.0f, "%.2f" );
+}
+
 static ColorGrade OverrideGrade;
 void ColorManagementUI()
 {
@@ -1755,37 +1790,7 @@ void ColorManagementUI()
 
 	if( ImGui::Begin( "Color Management", &ShowColorManagement, ImVec2( 250.0f, 1000.0f ) ) )
 	{
-		if( ImGui::Button( "Reset to Neutral" ) )
-		{
-			OverrideGrade.Tint = { 1.0f, 1.0f, 1.0f, DefaultExposure };
-			OverrideGrade.Lift = { 0.0f, 0.0f, 0.0f, 0.0f };
-			OverrideGrade.Gamma = { 0.0f, 0.0f, 0.0f, 0.0f };
-			OverrideGrade.Gain = { 1.0f, 1.0f, 1.0f, 1.0f };
-		}
-
-		ImGui::SameLine();
-
-		if( ImGui::Button( "Copy to Clipboard" ) )
-		{
-			std::string Clipboard;
-			Clipboard += ".Tint = {" + VectorToString( OverrideGrade.Tint ) + "}\n";
-			Clipboard += ".Lift = {" + VectorToString( OverrideGrade.Lift ) + "}\n";
-			Clipboard += ".Gamma = {" + VectorToString( OverrideGrade.Gamma ) + "}\n";
-			Clipboard += ".Gain = {" + VectorToString( OverrideGrade.Gain ) + "}\n";
-			glfwSetClipboardString( CWindow::Get().Handle(), Clipboard.c_str() );
-		}
-
-		ImGui::ColorPicker3( "Tint", &OverrideGrade.Tint.R, ColorPickerFlags );
-		ImGui::DragFloat( "Exposure", &OverrideGrade.Tint.A, 0.01f, -10.0f, 10.0f, "%.2f" );
-
-		ImGui::ColorPicker3( "Lift#ColorLift", &OverrideGrade.Lift.R, ColorPickerFlags );
-		ImGui::DragFloat( "Lift", &OverrideGrade.Lift.A, 0.01f, -1.0f, 1.0f, "%.2f" );
-
-		ImGui::ColorPicker3( "Gamma#ColorGamma", &OverrideGrade.Gamma.R, ColorPickerFlags );
-		ImGui::DragFloat( "Gamma", &OverrideGrade.Gamma.A, 0.01f, -1.0f, 1.0f, "%.2f" );
-
-		ImGui::ColorPicker3( "Gain#ColorGain", &OverrideGrade.Gain.R, ColorPickerFlags );
-		ImGui::DragFloat( "Gain", &OverrideGrade.Gain.A, 0.01f, 0.0f, 16.0f, "%.2f" );
+		PopulateGradePanel( OverrideGrade );
 	}
 
 	ImGui::End();
