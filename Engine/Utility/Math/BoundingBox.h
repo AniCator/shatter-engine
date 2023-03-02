@@ -27,6 +27,7 @@ struct BoundingSphere
 	BoundingSphere( const BoundingBox& Box );
 
 	bool Intersects( const BoundingSphere& B ) const;
+	bool Intersects( const Vector3D& B ) const;
 
 	Vector3D Origin() const
 	{

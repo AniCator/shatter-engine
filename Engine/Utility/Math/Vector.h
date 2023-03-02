@@ -606,6 +606,16 @@ public:
 		);
 	}
 
+	Vector4D operator/( const Vector4D& Vector ) const
+	{
+		return Vector4D(
+			X / Vector.X,
+			Y / Vector.Y,
+			Z / Vector.Z,
+			W / Vector.W
+		);
+	}
+
 	Vector4D operator+( const float& Scalar ) const
 	{
 		return Vector4D(
@@ -633,6 +643,16 @@ public:
 			Y * Scalar,
 			Z * Scalar,
 			W * Scalar
+		);
+	}
+
+	Vector4D operator/( const float& Scalar ) const
+	{
+		return Vector4D(
+			X / Scalar,
+			Y / Scalar,
+			Z / Scalar,
+			W / Scalar
 		);
 	}
 

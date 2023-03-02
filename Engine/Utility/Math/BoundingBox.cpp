@@ -90,6 +90,12 @@ BoundingSphere::BoundingSphere( const BoundingBox& Box )
 bool BoundingSphere::Intersects( const BoundingSphere& B ) const
 {
 	const auto Difference = Center - B.Center;
+	return Difference.LengthSquared() < RadiusSquared + B.RadiusSquared;
+}
+
+bool BoundingSphere::Intersects( const Vector3D& B ) const
+{
+	const auto Difference = Center - B;
 	return Difference.LengthSquared() < RadiusSquared;
 }
 

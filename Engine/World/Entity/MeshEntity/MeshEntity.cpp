@@ -9,7 +9,7 @@
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Physics/Physics.h>
-#include <Engine/Physics/PhysicsComponent.h>
+#include <Engine/World/Interactable.h>
 #include <Engine/Physics/Body/Body.h>
 #include <Engine/Physics/Body/Plane.h>
 #include <Engine/Profiling/Profiling.h>
@@ -763,21 +763,21 @@ void CMeshEntity::ConstructPhysics()
 		delete PhysicsBody;
 	}
 
-	if( CollisionType == BodyType::Plane )
+	// Create the body and set the collision type.
+	switch( CollisionType )
+	{
+	case BodyType::Plane:
 	{
 		auto* PlaneBody = new CPlaneBody();
 		PlaneBody->TwoSidedCollision = true;
 		PlaneBody->ProjectToSurface = ShouldProject;
 		PhysicsBody = PlaneBody;
+		break;
 	}
-	else if( CollisionType == BodyType::AABB )
-	{
+	default: 
 		PhysicsBody = new CBody();
-	}
-	else
-	{
-		PhysicsBody = new CBody();
-		PhysicsBody->TriangleMesh = true;
+		PhysicsBody->Type = CollisionType;
+		break;
 	}
 
 	PhysicsBody->Owner = this;

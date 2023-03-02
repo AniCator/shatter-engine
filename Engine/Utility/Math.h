@@ -314,7 +314,7 @@ namespace Math
 		return LengthBiased;
 	}
 
-	// Returns the largest.
+	// Returns the largest. ( A > B ? A : B )
 	template<typename T, typename G>
 	inline T Max( const T& A, const G& B )
 	{
@@ -331,7 +331,7 @@ namespace Math
 		);
 	}
 
-	// Returns the smallest.
+	// Returns the smallest. ( A < B ? A : B )
 	template<typename T, typename G>
 	inline T Min( const T& A, const G& B )
 	{
@@ -680,6 +680,19 @@ namespace Math
 	inline Vector3D PointOnLine( const Vector3D& Point, const Vector3D& Start, const Vector3D End )
 	{
 		return Start + ProjectOnVector( Point - Start, End - Start );
+	}
+
+	inline Vector3D ProjectOnAABB( Vector3D Point, const BoundingBox& Box )
+	{
+		Point.X = Math::Max( Point.X, Box.Minimum.X );
+		Point.Y = Math::Max( Point.Y, Box.Minimum.Y );
+		Point.Z = Math::Max( Point.Z, Box.Minimum.Z );
+
+		Point.X = Math::Min( Point.X, Box.Maximum.X );
+		Point.Y = Math::Min( Point.Y, Box.Maximum.Y );
+		Point.Z = Math::Min( Point.Z, Box.Maximum.Z );
+
+		return Point;
 	}
 
 	inline bool BoundingBoxIntersection( const Vector3D& MinimumA, const Vector3D& MaximumA, const Vector3D& MinimumB, const Vector3D& MaximumB )
