@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <Engine/Physics/PhysicsComponent.h>
+#include <Engine/World/Interactable.h>
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/PropertyTable.h>
 

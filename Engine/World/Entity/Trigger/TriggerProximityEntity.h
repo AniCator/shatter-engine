@@ -2,7 +2,7 @@
 #pragma once
 
 #include <Engine/Physics/Body/TriggerBody.h>
-#include <Engine/Physics/PhysicsComponent.h>
+#include <Engine/World/Interactable.h>
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 
 class CTriggerProximityEntity : public CPointEntity
