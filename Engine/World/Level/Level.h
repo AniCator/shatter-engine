@@ -34,9 +34,9 @@ public:
 			Entity->Name = Name;
 			Entity->Identifier.Random();
 			Entity->SetEntityID( EntityUID::Create() );
-			Entity->SetLevelID( LevelUID( Entities.size() ) );
+			Entity->SetLevelID( LevelUID( Entities.size() + Spawned.size() ) );
 			Entity->SetLevel( this );
-			Entities.push_back( Entity );
+			Spawned.push_back( Entity );
 		}
 
 		return dynamic_cast<T*>( Entity );
@@ -60,9 +60,9 @@ public:
 			
 			Entity->ClassName = Type;
 			Entity->SetEntityID( EntityUID::Create() );
-			Entity->SetLevelID( LevelUID( Entities.size() ) );
+			Entity->SetLevelID( LevelUID( Entities.size() + Spawned.size() ) );
 			Entity->SetLevel( this );
-			Entities.push_back( Entity );
+			Spawned.push_back( Entity );
 		}
 		else
 		{
@@ -137,9 +137,16 @@ public:
 	UniqueIdentifier Identifier;
 
 private:
-	std::vector<CEntity*> Entities;
 	CWorld* World;
 	std::string Name;
+
+	std::vector<CEntity*> Entities;
+
+	// Entities that have just been spawned.
+	std::vector<CEntity*> Spawned;
+
+	// Migrate entities that have just been spawned to the main list.
+	void MigrateSpawned();
 
 	bool DisableSerialization = false;
 

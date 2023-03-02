@@ -39,6 +39,9 @@ CLevel::~CLevel()
 
 void CLevel::Construct()
 {
+	// Migrate entities that have just been spawned over to the main list.
+	MigrateSpawned();
+
 	for( auto* Entity : Entities )
 	{
 		if( !Entity )
@@ -117,11 +120,19 @@ void CLevel::PostTick()
 
 		Entity->PostTick();
 	}
+
+	// Migrate entities that have just been spawned over to the main list.
+	MigrateSpawned();
 }
 
 void CLevel::Destroy()
 {
-	for( auto* Entity : Entities )
+	// Migrate entities that have just been spawned over to the main list.
+	MigrateSpawned();
+
+	// Copy the entity vector, since the iterator will become invalid for the original vector.
+	std::vector<CEntity*> Copy = Entities;
+	for( auto* Entity : Copy )
 	{
 		if( !Entity )
 			continue;
@@ -134,7 +145,12 @@ void CLevel::Destroy()
 
 void CLevel::Reload()
 {
-	for( auto* Entity : Entities )
+	// Migrate entities that have just been spawned over to the main list.
+	MigrateSpawned();
+
+	// Copy the entity vector, since the iterator will become invalid for the original vector.
+	std::vector<CEntity*> Copy = Entities;
+	for( auto* Entity : Copy )
 	{
 		if( !Entity )
 			continue;
@@ -496,9 +512,9 @@ bool CLevel::Transfer( CEntity* Entity )
 	return true;
 }
 
-CEntity* CLevel::Find( const NameSymbol& Name ) const
+CEntity* SearchForEntity( const std::vector<CEntity*>& Entities, const NameSymbol Name )
 {
-	for( auto* Entity : Entities )
+	for( CEntity* Entity : Entities )
 	{
 		if( Entity && Entity->Name == Name )
 		{
@@ -507,6 +523,17 @@ CEntity* CLevel::Find( const NameSymbol& Name ) const
 	}
 
 	return nullptr;
+}
+
+CEntity* CLevel::Find( const NameSymbol& Name ) const
+{
+	auto* Entity = SearchForEntity( Spawned, Name );
+	if( !Entity )
+	{
+		Entity = SearchForEntity( Entities, Name );
+	}
+
+	return Entity;
 }
 
 CEntity* CLevel::Find( const size_t& ID ) const
@@ -563,6 +590,16 @@ const std::string& CLevel::GetName() const
 void CLevel::SetName( const std::string& NameIn )
 {
 	Name = NameIn;
+}
+
+void CLevel::MigrateSpawned()
+{
+	if( Spawned.empty() )
+		return; // No new entities to add.
+
+	// Insert the spawned entities into the main list.
+	Entities.insert( Entities.end(), Spawned.begin(), Spawned.end() );
+	Spawned.clear();
 }
 
 bool IsSerializable( const CEntity* Entity )
@@ -677,14 +714,17 @@ CData& operator>> ( CData& Data, CLevel& Level )
 				UniqueIdentifier Identifier;
 				Chunk.Data >> Identifier.ID;
 
+				CEntity* Entity = nullptr;
 				{
 					ProfileMemory( "Entities" );
-					Level.Entities[Index] = Level.Spawn( ClassName, EntityName, Identifier );
+					Entity = Level.Spawn( ClassName, EntityName, Identifier );
 				}
 
-				Chunk.Data >> Level.Entities[Index];
+				Chunk.Data >> Entity;
 			}
 		}
+
+		Level.MigrateSpawned();
 
 		for( auto* Entity : Level.Entities )
 		{

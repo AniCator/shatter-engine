@@ -54,7 +54,7 @@ void CWorld::Construct()
 
 	LightEntity::Initialize();
 
-	for( auto Level : Levels )
+	for( auto& Level : Levels )
 	{
 		Level.Construct();
 	}
@@ -66,7 +66,7 @@ void CWorld::Frame()
 {
 	OptickEvent();
 
-	for( auto Level : Levels )
+	for( auto& Level : Levels )
 	{
 		Level.Frame();
 	}
@@ -162,7 +162,7 @@ void CWorld::Destroy()
 	if( Physics )
 		Physics->Destroy();
 
-	for( auto Level : Levels )
+	for( auto& Level : Levels )
 	{
 		Level.Destroy();
 	}
@@ -170,7 +170,7 @@ void CWorld::Destroy()
 
 void CWorld::Reload()
 {
-	for( auto Level : Levels )
+	for( auto& Level : Levels )
 	{
 		Level.Reload();
 	}
