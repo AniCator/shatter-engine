@@ -627,68 +627,6 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 
 	// No response generated.
 	return {};
-#if 0
-	CollisionResponse Response;
-
-	// TODO: Rewrite, reduce duplicate code. Organize in such a way that it's easier to add more collision response types.
-	if( A->Static && !B->Static ) // A is static, and B is dynamic or stationary.
-	{
-		if( A->Owner && A->Tree && A->TriangleMesh && !B->Stationary ) // B is dynamic and A is a triangle mesh.
-		{
-			// A = Triangle Mesh
-			// B = Bounding Box
-			Response = CollisionResponseTreeAABB( A->Tree, B->WorldBounds, A->PreviousTransform, B->PreviousTransform );
-		}
-		else // A is not a triangle mesh, or B is stationary.
-		{
-			if( B->Continuous )
-			{
-				Response = CollisionResponseAABBAABBSwept( B->WorldBounds, B->Velocity, A->WorldBounds, SweptResult );
-			}
-			else
-			{
-				Response = CollisionResponseAABBAABB( B->WorldBounds, A->WorldBounds );
-			}
-		}
-	}
-	else if( !A->Static && B->Static ) // A is dynamic or stationary, B is static.
-	{
-		if( B->Owner && B->Tree && B->TriangleMesh && !A->Stationary ) // A is dynamic and B is a triangle mesh.
-		{
-			// B = Triangle Mesh
-			// A = Bounding Box
-			Response = CollisionResponseTreeAABB( B->Tree, A->WorldBounds, B->PreviousTransform, A->PreviousTransform );
-		}
-		else
-		{
-			if( A->Continuous )
-			{
-				Response = CollisionResponseAABBAABBSwept( A->WorldBounds, A->Velocity, B->WorldBounds, SweptResult );
-			}
-			else
-			{
-				Response = CollisionResponseAABBAABB( A->WorldBounds, B->WorldBounds );
-			}
-		}
-	}
-	else if( !A->Static || !B->Static ) // A is not static, or B is not static, and previous paths didn't execute.
-	{
-		// Assume bounding box interaction.
-		if( B->Continuous )
-		{
-			Response = CollisionResponseAABBAABBSwept( B->WorldBounds, B->Velocity, A->WorldBounds, SweptResult );
-		}
-		else
-		{
-			Response = CollisionResponseAABBAABB( B->WorldBounds, A->WorldBounds );
-		}
-	}
-
-	// const Vector3D WorldCenter = ( B->WorldBounds.Minimum + B->WorldBounds.Maximum ) * 0.5f;
-	// UI::AddLine( WorldCenter, WorldCenter - Response.Normal * Response.Distance, Color::Yellow, 1.0f );
-
-	return Response;
-#endif
 }
 
 void Interpenetration( CBody* A, CBody* B, CollisionResponse& Response )
@@ -1176,47 +1114,51 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 
 	constexpr float BoxRestitution = 0.25f;
 	float Force = BoxRestitution;
-	float Radius = Body->WorldSphere.GetRadius();
+	float Radius = Body->InnerSphere().GetRadius();
+
+	// Adjust the distance.
+	Maximum = Maximum - Radius;
+	Minimum = Minimum + Radius;
 
 	bool Contact = false;
-	if( Position.X > Maximum.X - Radius )
+	if( Position.X > Maximum.X )
 	{
-		Position.X = Maximum.X - Radius;
+		Position.X = Maximum.X;
 		Body->Velocity.X = -Force * Body->Velocity.X;
 		Contact = true;
 	}
 
-	if( Position.Y > Maximum.Y - Radius )
+	if( Position.Y > Maximum.Y )
 	{
-		Position.Y = Maximum.Y - Radius;
+		Position.Y = Maximum.Y;
 		Body->Velocity.Y = -Force * Body->Velocity.Y;
 		Contact = true;
 	}
 
-	if( Position.Z > Maximum.Z - Radius )
+	if( Position.Z > Maximum.Z )
 	{
-		Position.Z = Maximum.Z - Radius;
+		Position.Z = Maximum.Z;
 		Body->Velocity.Z = -Force * Body->Velocity.Z;
 		Contact = true;
 	}
 
-	if( Position.X < Minimum.X + Radius )
+	if( Position.X < Minimum.X )
 	{
-		Position.X = Minimum.X + Radius;
+		Position.X = Minimum.X;
 		Body->Velocity.X = -Force * Body->Velocity.X;
 		Contact = true;
 	}
 
-	if( Position.Y < Minimum.Y + Radius )
+	if( Position.Y < Minimum.Y )
 	{
-		Position.Y = Minimum.Y + Radius;
+		Position.Y = Minimum.Y;
 		Body->Velocity.Y = -Force * Body->Velocity.Y;
 		Contact = true;
 	}
 
-	if( Position.Z < Minimum.Z + Radius )
+	if( Position.Z < Minimum.Z )
 	{
-		Position.Z = Minimum.Z + Radius;
+		Position.Z = Minimum.Z;
 		Body->Velocity.Z = -Force * Body->Velocity.Z;
 		Contact = true;
 	}
