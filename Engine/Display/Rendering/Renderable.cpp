@@ -141,42 +141,48 @@ void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRend
 		UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
 	}
 
-	if( Mesh )
+	if( DrawMode == EDrawMode::FullScreenTriangle )
 	{
-		bool BindBuffers = true;
-		if( PreviousRenderable )
-		{
-			const FVertexBufferData& Data = Mesh->GetVertexBufferData();
-			const auto& PreviousRenderData = PreviousRenderable->RenderData;
-			BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || 
-				PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
-		}
+		glDrawArrays( GL_TRIANGLES, 0, 3 );
+		return;
+	}
 
-		if( BindBuffers )
-		{
-			Mesh->Prepare( DrawMode );
-		}
+	if( !Mesh )
+		return; // No mesh provided.
+	
+	bool BindBuffers = true;
+	if( PreviousRenderable )
+	{
+		const FVertexBufferData& Data = Mesh->GetVertexBufferData();
+		const auto& PreviousRenderData = PreviousRenderable->RenderData;
+		BindBuffers = PreviousRenderData.VertexBufferObject != Data.VertexBufferObject || 
+			PreviousRenderData.IndexBufferObject != Data.IndexBufferObject;
+	}
 
-		const bool IsFlipped = RenderData.Transform.GetSize().X < 0.0f || RenderData.Transform.GetSize().Y < 0.0f || RenderData.Transform.GetSize().Z < 0.0f;
-		if( RenderData.DoubleSided )
-		{
-			// Render the mesh twice with different winding directions.
-			glCullFace( GL_FRONT );
-			Mesh->Draw( DrawMode );
-			glCullFace( GL_BACK );
-		}
-		else if ( IsFlipped )
-		{
-			// Flip the winding order.
-			glCullFace( GL_FRONT );
-		}
+	if( BindBuffers )
+	{
+		Mesh->Prepare( DrawMode );
+	}
 
+	const bool IsFlipped = RenderData.Transform.GetSize().X < 0.0f || RenderData.Transform.GetSize().Y < 0.0f || RenderData.Transform.GetSize().Z < 0.0f;
+	if( RenderData.DoubleSided )
+	{
+		// Render the mesh twice with different winding directions.
+		glCullFace( GL_FRONT );
 		Mesh->Draw( DrawMode );
+		glCullFace( GL_BACK );
+	}
+	else if ( IsFlipped )
+	{
+		// Flip the winding order.
+		glCullFace( GL_FRONT );
+	}
 
-		if( IsFlipped )
-		{
-			glCullFace( GL_BACK );
-		}
+	Mesh->Draw( DrawMode );
+
+	if( IsFlipped )
+	{
+		glCullFace( GL_BACK );
 	}
 }
 

@@ -15,7 +15,7 @@ public:
 
 	uint32_t Render( UniformMap& Uniforms ) override;
 
-	class CMesh* Mesh = nullptr;
+	bool Anamorphic = false;
 
 	class CShader* BloomThreshold = nullptr;
 

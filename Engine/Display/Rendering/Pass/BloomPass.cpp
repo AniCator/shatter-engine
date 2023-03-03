@@ -7,11 +7,10 @@
 CRenderPassBloom::CRenderPassBloom( int Width, int Height, const CCamera& Camera, const bool AlwaysClear ) : CRenderPass( "Bloom", Width, Height, Camera, AlwaysClear )
 {
 	auto& Assets = CAssets::Get();
-	Mesh = Assets.Meshes.Find( "square" );
-	BlurX = Assets.CreateNamedShader( "BloomBlurX", "Shaders/FullScreenQuad", "Shaders/BloomBlurX" );
-	BlurY = Assets.CreateNamedShader( "BloomBlurY", "Shaders/FullScreenQuad", "Shaders/BloomBlurY" );
-	BloomThreshold = Assets.CreateNamedShader( "BloomThreshold", "Shaders/FullScreenQuad", "Shaders/BloomThreshold" );
-	BloomComposite = Assets.CreateNamedShader( "BloomComposite", "Shaders/FullScreenQuad", "Shaders/BloomComposite" );
+	BlurX = Assets.CreateNamedShader( "BloomBlurX", "Shaders/FullScreenTriangle", "Shaders/BloomBlurX" );
+	BlurY = Assets.CreateNamedShader( "BloomBlurY", "Shaders/FullScreenTriangle", "Shaders/BloomBlurY" );
+	BloomThreshold = Assets.CreateNamedShader( "BloomThreshold", "Shaders/FullScreenTriangle", "Shaders/BloomThreshold" );
+	BloomComposite = Assets.CreateNamedShader( "BloomComposite", "Shaders/FullScreenTriangle", "Shaders/BloomComposite" );
 
 	LensDirt = Assets.CreateNamedTexture( "LensDirt", "Textures/LensDirt.png" );
 }
@@ -36,16 +35,20 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 		return 0;
 
 	CRenderTexture* Framebuffer = Target;
-
-	CRenderable Threshold;
-	Threshold.SetMesh( Mesh );
-	Threshold.SetShader( BloomThreshold );
-	Threshold.SetTexture( Framebuffer, ETextureSlot::Slot0 );
-
-	auto CreateRenderTexture = [this] ( CRenderTexture*& Texture, const std::string& Name, float Factor )
+	auto CreateRenderTexture = [this] ( CRenderTexture*& Texture, const std::string& Name, float Factor, bool Anamorphic )
 	{
-		const int Width = ViewportWidth * Factor;
-		const int Height = ViewportHeight * Factor;
+		int Width, Height;
+		if( Anamorphic )
+		{
+			Width = ViewportHeight * Factor;
+			Height = ViewportHeight * Factor;
+		}
+		else
+		{
+			Width = ViewportWidth * Factor;
+			Height = ViewportHeight * Factor;
+		}
+
 		const bool CreateTexture = !Texture || Texture->GetWidth() != Width || Texture->GetHeight() != Height;
 		if( CreateTexture )
 		{
@@ -54,19 +57,24 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 		}
 	};
 
-	CreateRenderTexture( BloomA, "BloomA", 1.0f );
-	CreateRenderTexture( BloomB, "BloomB", 1.0f );
-	CreateRenderTexture( HalfSizeX, "HalfSizeX", 0.5f );
-	CreateRenderTexture( HalfSizeY, "HalfSizeY", 0.5f );
-	CreateRenderTexture( QuarterSizeX, "QuarterSizeX", 0.25f );
-	CreateRenderTexture( QuarterSizeY, "QuarterSizeY", 0.25f );
-	CreateRenderTexture( EigthSizeX, "EigthSizeX", 0.125f );
-	CreateRenderTexture( EigthSizeY, "EigthSizeY", 0.125f );
-	CreateRenderTexture( TinySizeX, "TinySizeX", 0.0625f );
-	CreateRenderTexture( TinySizeY, "TinySizeY", 0.0625f );
+	CreateRenderTexture( BloomA, "BloomA", 1.0f, Anamorphic );
+	CreateRenderTexture( BloomB, "BloomB", 1.0f, false ); // Final composite image should never be anamorphic.
+	CreateRenderTexture( HalfSizeX, "HalfSizeX", 0.5f, Anamorphic );
+	CreateRenderTexture( HalfSizeY, "HalfSizeY", 0.5f, Anamorphic );
+	CreateRenderTexture( QuarterSizeX, "QuarterSizeX", 0.25f, Anamorphic );
+	CreateRenderTexture( QuarterSizeY, "QuarterSizeY", 0.25f, Anamorphic );
+	CreateRenderTexture( EigthSizeX, "EigthSizeX", 0.125f, Anamorphic );
+	CreateRenderTexture( EigthSizeY, "EigthSizeY", 0.125f, Anamorphic );
+	CreateRenderTexture( TinySizeX, "TinySizeX", 0.0625f, Anamorphic );
+	CreateRenderTexture( TinySizeY, "TinySizeY", 0.0625f, Anamorphic );
 
 	Target = BloomA;
 
+	CRenderable Threshold;
+	Threshold.SetMesh( nullptr ); // No buffer needed.
+	Threshold.SetShader( BloomThreshold );
+	Threshold.SetTexture( Framebuffer, ETextureSlot::Slot0 );
+	Threshold.GetRenderData().DrawMode = FullScreenTriangle;
 	Calls += RenderRenderable( &Threshold, Uniforms );
 
 	Calls += DownsampleTexture( Target, HalfSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
@@ -75,7 +83,8 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 	Calls += DownsampleTexture( EigthSizeX, TinySizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 
 	CRenderable Blur;
-	Blur.SetMesh( Mesh );
+	Blur.SetMesh( nullptr ); // No buffer needed.
+	Blur.GetRenderData().DrawMode = FullScreenTriangle;
 
 	auto BlurPass = [&] ( CShader* Shader, CRenderTexture* SourceTarget, CRenderTexture* RenderTarget )
 	{
@@ -107,11 +116,12 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 	Calls += CopyTexture( HalfSizeX, BloomA, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 
 	CRenderable Composite;
-	Composite.SetMesh( Mesh );
+	Composite.SetMesh( nullptr ); // No buffer needed.
 	Composite.SetShader( BloomComposite );
 	Composite.SetTexture( Framebuffer, ETextureSlot::Slot0 );
 	Composite.SetTexture( BloomA, ETextureSlot::Slot1 );
 	Composite.SetTexture( LensDirt, ETextureSlot::Slot2 );
+	Composite.GetRenderData().DrawMode = FullScreenTriangle;
 
 	Target = BloomB;
 	Calls += RenderRenderable( &Composite, Uniforms );

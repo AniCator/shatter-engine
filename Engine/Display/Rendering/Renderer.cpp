@@ -213,13 +213,13 @@ void CRenderer::Initialize()
 	Assets.CreateNamedTexture( "error", ErrorData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
 	Assets.CreateNamedTexture( "black", BlackTextureData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
 
-	SuperSampleBicubicShader = Assets.CreateNamedShader( "SuperSampleBicubic", "Shaders/FullScreenQuad", "Shaders/SuperSampleBicubic" );
-	FramebufferRenderable.SetMesh( SquareMesh );
+	SuperSampleBicubicShader = Assets.CreateNamedShader( "SuperSampleBicubic", "Shaders/FullScreenTriangle", "Shaders/SuperSampleBicubic" );
+	FramebufferRenderable.SetMesh( nullptr ); // No buffer needed for full screen triangles.
 	FramebufferRenderable.SetShader( SuperSampleBicubicShader );
+	FramebufferRenderable.GetRenderData().DrawMode = FullScreenTriangle;
 
-	ResolveShader = Assets.CreateNamedShader( "Resolve", "Shaders/FullScreenQuad", "Shaders/Resolve" );
-	CopyShader = Assets.CreateNamedShader( "Copy", "Shaders/FullScreenQuad", "Shaders/Copy" );
-	ImageProcessingShader = Assets.CreateNamedShader( "ImageProcessing", "Shaders/FullScreenQuad", "Shaders/ImageProcessing" );
+	ResolveShader = Assets.CreateNamedShader( "Resolve", "Shaders/FullScreenTriangle", "Shaders/Resolve" );
+	ImageProcessingShader = Assets.CreateNamedShader( "ImageProcessing", "Shaders/FullScreenTriangle", "Shaders/ImageProcessing" );
 
 	GlobalUniformBuffers.clear();
 
@@ -368,7 +368,7 @@ void CRenderer::DrawQueuedRenderables()
 	DrawCalls = 0;
 
 	{
-		Profile( "ERenderPassLocation::PreScene" );
+		Profile( "Pre-Scene Passes" );
 		DrawPasses( ERenderPassLocation::PreScene );
 	}
 
@@ -382,7 +382,7 @@ void CRenderer::DrawQueuedRenderables()
 	Framebuffer.Prepare();
 
 	{
-		Profile( "ERenderPassLocation::Scene" );
+		Profile( "Scene Passes" );
 		DrawPasses( ERenderPassLocation::Scene );
 	}
 
@@ -392,7 +392,7 @@ void CRenderer::DrawQueuedRenderables()
 	}
 
 	{
-		Profile( "ERenderPassLocation::Translucent" );
+		Profile( "Post-Translucent Scene Passes" );
 		DrawPasses( ERenderPassLocation::Translucent );
 	}
 
@@ -407,7 +407,7 @@ void CRenderer::DrawQueuedRenderables()
 			// BufferA = Framebuffer;
 		}
 
-		if( MainPass.Target && MainPass.Target->Ready() && SuperSampleBicubicShader && ResolveShader && ImageProcessingShader && CopyShader )
+		if( MainPass.Target && MainPass.Target->Ready() && SuperSampleBicubicShader && ResolveShader && ImageProcessingShader )
 		{
 			FramebufferRenderable.SetShader( SuperSampleBicubicShader );
 			FramebufferRenderable.SetTexture( MainPass.Target, ETextureSlot::Slot0 );
@@ -522,27 +522,27 @@ void CRenderer::DrawQueuedRenderables()
 	}
 
 	{
-		Profile( "ERenderPassLocation::Standard" );
+		Profile( "Standard Passes" );
 		DrawPasses( ERenderPassLocation::Standard );
 	}
 
 	CProfiler& Profiler = CProfiler::Get();
-	Profiler.AddCounterEntry( ProfileTimeEntry( "Draw Calls", DrawCalls ), true );
+	Profiler.AddCounterEntry( { "Draw Calls", DrawCalls }, true );
 
 	const int64_t RenderQueueOpaqueSize = static_cast<int64_t>( RenderQueueOpaque.size() );
-	Profiler.AddCounterEntry( ProfileTimeEntry( "Render Queue (Opaque)", RenderQueueOpaqueSize ), true );
+	Profiler.AddCounterEntry( { "Render Queue (Opaque)", RenderQueueOpaqueSize }, true );
 
 	const int64_t RenderQueueTranslucentSize = static_cast<int64_t>( RenderQueueTranslucent.size() );
-	Profiler.AddCounterEntry( ProfileTimeEntry( "Render Queue (Translucent)", RenderQueueTranslucentSize ), true );
+	Profiler.AddCounterEntry( { "Render Queue (Translucent)", RenderQueueTranslucentSize }, true );
 
 	const int64_t RenderablesSize = static_cast<int64_t>( Renderables.size() );
-	Profiler.AddCounterEntry( ProfileTimeEntry( "Renderables", RenderablesSize ), true );
+	Profiler.AddCounterEntry( { "Renderables", RenderablesSize }, true );
 
 	const int64_t RenderablesPerFrameSize = static_cast<int64_t>( RenderablesPerFrame.size() );
-	Profiler.AddCounterEntry( ProfileTimeEntry( "Renderables (Frame)", RenderablesPerFrameSize ), true );
+	Profiler.AddCounterEntry( { "Renderables (Frame)", RenderablesPerFrameSize }, true );
 
 	const int64_t DynamicRenderablesSize = static_cast<int64_t>( DynamicRenderables.size() );
-	Profiler.AddCounterEntry( ProfileTimeEntry( "Renderables (Dynamic)", DynamicRenderablesSize ), true );
+	Profiler.AddCounterEntry( { "Renderables (Dynamic)", DynamicRenderablesSize }, true );
 
 	// Clean up render passes.
 	Passes.clear();

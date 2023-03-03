@@ -12,7 +12,7 @@ void Uniform::Bind( const unsigned int& Program, const std::string& Location )
 	Bind( Program );
 }
 
-void Uniform::Bind( const unsigned& Program )
+void Uniform::Bind( const unsigned int& Program )
 {
 	// Cache the program location.
 	if( Program != LastProgram )

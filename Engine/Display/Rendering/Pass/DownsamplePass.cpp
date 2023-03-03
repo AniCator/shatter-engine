@@ -9,15 +9,16 @@ CRenderPassDownsample::CRenderPassDownsample( int Width, int Height, const CCame
 {
 	auto& Assets = CAssets::Get();
 	Mesh = Assets.Meshes.Find( "square" );
-	Shader = Assets.CreateNamedShader( "Downsample", "Shaders/FullScreenQuad", "Shaders/Downsample" );
+	Shader = Assets.CreateNamedShader( "Downsample", "Shaders/FullScreenTriangle", "Shaders/Downsample" );
 }
 
 uint32_t CRenderPassDownsample::Render( UniformMap& Uniforms )
 {
-	CRenderable Copy;
-	Copy.SetMesh( Mesh );
-	Copy.SetShader( Shader );
-	Copy.SetTexture( Source, ETextureSlot::Slot0 );
+	CRenderable Downsample;
+	Downsample.SetMesh( nullptr ); // No buffers needed for the full screen triangle.
+	Downsample.SetShader( Shader );
+	Downsample.SetTexture( Source, ETextureSlot::Slot0 );
+	Downsample.GetRenderData().DrawMode = FullScreenTriangle;
 
-	return RenderRenderable( &Copy, Uniforms );
+	return RenderRenderable( &Downsample, Uniforms );
 }

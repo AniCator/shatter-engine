@@ -109,6 +109,12 @@ void CMesh::Draw( EDrawMode DrawModeOverride )
 	const GLenum DrawMode = DrawModeOverride != EDrawMode::None ? DrawModeOverride : VertexBufferData.DrawMode;
 	if( DrawMode == EDrawMode::None )
 		return;
+
+	if( DrawMode == EDrawMode::FullScreenTriangle )
+	{
+		glDrawArrays( GL_TRIANGLES, 0, 3 );
+		return;
+	}
 	
 	if( HasIndexBuffer )
 	{

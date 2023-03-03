@@ -36,7 +36,8 @@ enum EDrawMode
 	TriangleStrip = GL_TRIANGLE_STRIP,
 	Lines = GL_LINES,
 	LineStrip = GL_LINE_STRIP,
-	LineLoop = GL_LINE_LOOP
+	LineLoop = GL_LINE_LOOP,
+	FullScreenTriangle = 69
 };
 
 struct FVertexData

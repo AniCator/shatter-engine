@@ -9,15 +9,16 @@ CRenderPassCopy::CRenderPassCopy( int Width, int Height, const CCamera& Camera, 
 {
 	auto& Assets = CAssets::Get();
 	Mesh = Assets.Meshes.Find( "square" );
-	Shader = Assets.CreateNamedShader( "Copy", "Shaders/FullScreenQuad", "Shaders/Copy" );
+	Shader = Assets.CreateNamedShader( "Copy", "Shaders/FullScreenTriangle", "Shaders/Copy" );
 }
 
 uint32_t CRenderPassCopy::Render( UniformMap& Uniforms )
 {
 	CRenderable Copy;
-	Copy.SetMesh( Mesh );
+	Copy.SetMesh( nullptr ); // No buffers needed for the full screen triangle.
 	Copy.SetShader( Shader );
 	Copy.SetTexture( Source, ETextureSlot::Slot0 );
+	Copy.GetRenderData().DrawMode = FullScreenTriangle;
 
 	return RenderRenderable( &Copy, Uniforms );
 }
