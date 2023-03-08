@@ -3,11 +3,15 @@
 
 #include <Engine/Display/Rendering/Vertex.h>
 #include <Engine/Physics/CollisionResponse.h>
-#include <Engine/Utility/Math/BoundingBox.h>
+
+struct BoundingSphere;
+struct BoundingBox;
+struct Plane;
 
 namespace Response
 {
 	CollisionResponse SphereSphere( const BoundingSphere& A, const BoundingSphere& B );
+	CollisionResponse SpherePlane( const BoundingSphere& Sphere, const Plane& Plane );
 	CollisionResponse SphereAABB( const BoundingSphere& Sphere, const BoundingBox& Box );
 
 	CollisionResponse AABBAABB( const BoundingBox& A, const BoundingBox& B );
