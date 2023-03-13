@@ -95,6 +95,7 @@ public:
 	BoundingBox LocalBounds;
 	BoundingBox WorldBounds;
 	BoundingBox WorldBoundsSwept;
+	BoundingBoxSIMD WorldBoundsSweptSIMD;
 	BoundingSphere WorldSphere;
 	BoundingBoxSIMD WorldBoundsSIMD;
 
@@ -112,7 +113,7 @@ public:
 	Vector3D Velocity = Vector3D::Zero;
 	float Damping = 0.98f;
 	float Restitution = 1.0f;
-	float Friction = 0.5f;
+	float Friction = 0.05f;
 
 	Vector3D Gravity = Vector3D( 0.0f, 0.0f, -9.81f );
 

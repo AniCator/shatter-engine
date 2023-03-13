@@ -18,8 +18,6 @@
 
 #include <Engine/World/World.h>
 
-OptimizeOff;
-
 #ifdef ReleaseBuild // Disable debug drawing for release builds.
 #define DrawDebugLines 0
 #define DrawDebugTriangleCollisions 0
@@ -89,8 +87,6 @@ bool SweptIntersection( const BoundingBox& ContinuousBounds, Vector3D& Continuou
 	if( Intersecting )
 		return true;
 
-	UI::AddLine( ContinuousBounds.Minimum, ContinuousBounds.Minimum + ContinuousVelocity, Color::Blue, 0.5f );
-
 	// Calculate where we want to be.
 	auto Target = BoundingBox(
 		ContinuousBounds.Minimum + ContinuousVelocity,
@@ -104,24 +100,24 @@ bool SweptIntersection( const BoundingBox& ContinuousBounds, Vector3D& Continuou
 	// Test if the boxes intersect.
 	for( size_t Index = 0; Index < BoundingPoints::Count; Index++ )
 	{
-		UI::AddLine( SourceVertices.Position[Index], SourceVertices.Position[Index] + ContinuousVelocity, Color::White, 0.5f );
-		UI::AddLine( SourceVertices.Position[Index], TargetVertices.Position[Index], Color::Green, 0.5f );
+		// UI::AddLine( SourceVertices.Position[Index], SourceVertices.Position[Index] + ContinuousVelocity, Color::White, 0.5f );
+		// UI::AddLine( SourceVertices.Position[Index], TargetVertices.Position[Index], Color::Green, 0.5f );
 
 		Result = Geometry::LineInBoundingBox( SourceVertices.Position[Index], TargetVertices.Position[Index], B );
 		if( Result.Hit )
 		{
 			// Update the velocity?
 			ContinuousVelocity = (Result.Position - SourceVertices.Position[Index]).Normalized() * ContinuousVelocity.Length();
-			UI::AddLine( SourceVertices.Position[Index], Result.Position, Color::Red, 10.0 );
+			// UI::AddLine( SourceVertices.Position[Index], Result.Position, Color::Red, 1.0 );
 			break;
 		}
 	}
 
 	if( Result.Hit )
 	{
-		UI::AddAABB( ContinuousBounds.Minimum, ContinuousBounds.Maximum, Color::Blue, 10.0 );
-		UI::AddAABB( Target.Minimum, Target.Maximum, Color::Yellow, 10.0 );
-		UI::AddAABB( B.Minimum, B.Maximum, Color::Red, 10.0 );
+		// UI::AddAABB( ContinuousBounds.Minimum, ContinuousBounds.Maximum, Color::Blue, 1.0 );
+		// UI::AddAABB( Target.Minimum, Target.Maximum, Color::Yellow, 1.0 );
+		// UI::AddAABB( B.Minimum, B.Maximum, Color::Red, 1.0 );
 
 		// Recalculate the new target.
 		Target = BoundingBox(
@@ -135,15 +131,15 @@ bool SweptIntersection( const BoundingBox& ContinuousBounds, Vector3D& Continuou
 		Target = ContinuousBounds;
 		Target.Minimum += Unit * Result.Distance;
 		Target.Maximum += Unit * Result.Distance;
-		UI::AddAABB( Target.Minimum, Target.Maximum, Color::Purple, 10.0 );
+		// UI::AddAABB( Target.Minimum, Target.Maximum, Color::Purple, 1.0 );
 
-		UI::AddLine( Result.Position, Result.Position + WorldUp, Color::Green, 10.0 );
+		// UI::AddLine( Result.Position, Result.Position + WorldUp, Color::Green, 1.0 );
 
 		return true;
 	}
 	else
 	{
-		UI::AddAABB( ContinuousBounds.Minimum, ContinuousBounds.Maximum, Color::Black );
+		// UI::AddAABB( ContinuousBounds.Minimum, ContinuousBounds.Maximum, Color::Black );
 	}
 
 	return Intersecting;
@@ -164,13 +160,20 @@ CollisionResponse CollisionResponseAABBAABBSwept( const BoundingBox& A, const Ve
 	const auto Offset = Target.Minimum - A.Minimum;
 	const auto Unit = Offset.Normalized();
 
-	Response.Distance = Result.Distance;
+	Response.Distance = Result.Distance - ( B.Size() * Unit ).Length();
+	if( Response.Distance <= 0.0f )
+		return {};
+
 	Response.Normal = Unit;
 
-	// Target = A;
-	// Target.Minimum += Unit * Result.Distance;
-	// Target.Maximum += Unit * Result.Distance;
-	// UI::AddAABB( Target.Minimum, Target.Maximum, Color::Purple, 10.0 );
+	Target = A;
+	Target.Minimum += Unit * Result.Distance;
+	Target.Maximum += Unit * Result.Distance;
+
+	UI::AddAABB( A.Minimum, A.Maximum, Color::Red, 1.0 );
+	UI::AddAABB( B.Minimum, B.Maximum, Color::Blue, 1.0 );
+	UI::AddAABB( Target.Minimum, Target.Maximum, Color::Purple );
+	UI::AddLine( A.Center(), A.Center() + Response.Normal * Response.Distance, Color::Cyan, 1.0 );
 
 	return Response;
 }
@@ -466,6 +469,30 @@ void CBody::Construct( CPhysics* Physics )
 	}
 }
 
+void ApplyLinearVelocity( CBody* Body )
+{
+	const auto NoLinearVelocity = Math::Equal( Body->LinearVelocity, Vector3D::Zero );
+	if( NoLinearVelocity )
+		return;
+
+	// Apply linear velocity before testing collisions.
+	auto Transform = Body->GetTransform();
+	auto Position = Transform.GetPosition();
+	auto NewPosition = Position;
+	NewPosition += Body->LinearVelocity;
+	Transform.SetPosition( NewPosition );
+	Body->SetTransform( Transform );
+
+	// Reset.
+	Body->LinearVelocity = { 0.0f, 0.0f, 0.0f };
+
+	// Make sure we recalculate the bounds because the position has been changed.
+	Body->CalculateBounds();
+
+	// We have applied linear velocity so we've got to activate.
+	Body->LastActivity = Body->Physics->CurrentTime;
+}
+
 void CBody::PreCollision()
 {
 	// Don't reset the values if we're sleeping.
@@ -473,54 +500,51 @@ void CBody::PreCollision()
 		return;
 
 	Normal = Vector3D::Zero;
-	// Contact = false;
 	Contacts = 0;
-
-	if( Owner )
-	{
-		// Reset contact information, otherwise it's too late apparently.
-		// Owner->Contact = false;
-	}
 
 	if( Static )
 		return;
 
-	const auto NoLinearVelocity = Math::Equal( LinearVelocity, Vector3D::Zero );
-	if( NoLinearVelocity )
-		return;
+	ApplyLinearVelocity( this );
+}
 
-	// Apply linear velocity before testing collisions.
-	auto Transform = GetTransform();
-	auto Position = Transform.GetPosition();
-	Position += LinearVelocity * Physics->TimeStep;
-	Transform.SetPosition( Position );
-	SetTransform( Transform );
+void GenerateGravity( CBody* Body )
+{
+	if( !Body->AffectedByGravity )
+		return; // Body is not affected by gravity.
 
-	// Make sure we recalculate the bounds because the position has been changed.
-	CalculateBounds();
+	// Ensure the gravity force affects all objects equally by multiplying it with the mass of an object.
+	Body->Acceleration += Body->Gravity * Body->Mass;
+}
 
-	// We have applied linear velocity so we've got to activate.
-	LastActivity = Physics->CurrentTime;
+constexpr float DragCoefficientSphereSmooth = 0.1f;
+constexpr float DragCoefficientSphere = 0.47f;
+constexpr float DragCoefficient = DragCoefficientSphere * 0.01f * 0.01f;
+constexpr float DragCoefficientSquared = DragCoefficient * DragCoefficient;
+void GenerateDrag( CBody* Body )
+{
+	float Drag = Body->Velocity.Length();
+	Vector3D Direction = Body->Velocity;
+	if( Drag != 0.0f )
+	{
+		Direction /= Drag;
+	}
+
+	Drag = DragCoefficient * Drag + DragCoefficientSquared * ( Drag * Drag );
+	Body->Acceleration -= Direction * Drag;
 }
 
 void CBody::Simulate()
 {
 	// We don't need to simulate environmental factors for bodies that don't move.
-	if( Static || Stationary )
-		return;
-
-	// We can't apply environmental factors if we don't have an owner.
-	if( !Owner )
+	if( !IsKinetic() )
 		return;
 
 	// Calculate and apply gravity.
-	Vector3D EnvironmentalForce = Vector3D::Zero;
-	if( AffectedByGravity )
-	{
-		EnvironmentalForce += Gravity;
-	}
+	GenerateGravity( this );
 
-	Acceleration += EnvironmentalForce;
+	// Apply drag force.
+	GenerateDrag( this );
 }
 
 CollisionResponse CalculateResponseSphere( CBody* A, CBody* B, const Geometry::Result& SweptResult )
@@ -530,15 +554,41 @@ CollisionResponse CalculateResponseSphere( CBody* A, CBody* B, const Geometry::R
 	switch( B->Type )
 	{
 	case BodyType::TriangleMesh:
-		break; // TODO: Sphere v. Triangle mesh support.
+		break; // TODO: Sphere v. Triangle Mesh.
 	case BodyType::Plane:
-		break; // TODO: Sphere v. Plane support.
+		return Response::SpherePlane( InnerSphereA, { B->PreviousTransform.GetPosition(), B->PreviousTransform.Rotate( WorldUp )});
 	case BodyType::AABB:
 		return Response::SphereAABB( InnerSphereA, B->WorldBounds );
 	case BodyType::Sphere:
 	{
 		auto InnerSphereB = B->InnerSphere();
 		return Response::SphereSphere( InnerSphereA, InnerSphereB );
+	}
+	default:
+		break;
+	}
+
+	// No response generated.
+	return {};
+}
+
+CollisionResponse CalculateResponsePlane( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+{
+	switch( B->Type )
+	{
+	case BodyType::TriangleMesh:
+		break; // TODO: Plane v. Triangle Mesh.
+	case BodyType::Plane:
+		break; // TODO: Plane v. Plane.
+	case BodyType::AABB:
+	{
+		// TODO: Plane v. AABB. (interpret as sphere for now)
+		return Response::SpherePlane( B->WorldSphere, { A->PreviousTransform.GetPosition(), A->PreviousTransform.Rotate( WorldUp ) } );
+	}
+	case BodyType::Sphere:
+	{
+		auto InnerSphereB = B->InnerSphere();
+		return Response::SpherePlane( InnerSphereB, { A->PreviousTransform.GetPosition(), A->PreviousTransform.Rotate( WorldUp ) } );
 	}
 	default:
 		break;
@@ -563,7 +613,10 @@ CollisionResponse CalculateResponseAABB( CBody* A, CBody* B, const Geometry::Res
 		}
 		// return CollisionResponseTreeAABB( B->Tree, A->WorldBounds, B->PreviousTransform, A->PreviousTransform );
 	case BodyType::Plane:
-		break; // TODO: AABB v. Plane support.
+	{
+		// TODO: AABB v. Plane. (using sphere v. AABB here temporarily)
+		return Response::SpherePlane( A->WorldSphere, { B->PreviousTransform.GetPosition(), B->PreviousTransform.Rotate( WorldUp ) } );
+	}
 	case BodyType::AABB:
 		if( A->Continuous )
 		{
@@ -591,13 +644,13 @@ CollisionResponse CalculateResponseTriangleMesh( CBody* A, CBody* B, const Geome
 	switch( B->Type )
 	{
 	case BodyType::TriangleMesh:
-		break; // TODO: Triangle mesh v. Triangle mesh support.
+		break; // TODO: Triangle Mesh v. Triangle Mesh.
 	case BodyType::Plane:
-		break; // TODO: Triangle Mesh v. Plane support.
+		break; // TODO: Triangle Mesh v. Plane.
 	case BodyType::AABB:
 		return CollisionResponseTreeAABB( A->Tree, B->WorldBounds, A->PreviousTransform, B->PreviousTransform );
 	case BodyType::Sphere:
-		break; // TODO: Triangle Mesh v. Sphere support.
+		break; // TODO: Triangle Mesh v. Sphere.
 	default:
 		break;
 	}
@@ -616,7 +669,7 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 	case BodyType::TriangleMesh:
 		return CalculateResponseTriangleMesh( A, B, SweptResult );
 	case BodyType::Plane:
-		break; // TODO: Triangle Mesh v. Plane support.
+		return CalculateResponsePlane( A, B, SweptResult );
 	case BodyType::AABB:
 		return CalculateResponseAABB( A, B, SweptResult );
 	case BodyType::Sphere:
@@ -629,30 +682,27 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 	return {};
 }
 
-void Interpenetration( CBody* A, CBody* B, CollisionResponse& Response )
+bool Interpenetration( CBody* A, CBody* B, const float InverseMassTotal, CollisionResponse& Response )
 {
-	if( Response.Distance <= 0.001f )
-		return;
+	if( Response.Distance <= 0.0f )
+		return false;
 
-	// Halve the response distance.
-	// Response.Distance *= 0.5f;
+	if( !A->IsKinetic() )
+		return false;
 
-	const auto Penetration = ( Response.Normal * Response.Distance * 0.5f );
-	if( A->IsKinetic() )
-	{
-		A->Depenetration += Penetration;
-	}
+	const auto Offset = 0.5f * Response.Normal * Response.Distance / InverseMassTotal;
+	A->Depenetration += Offset * A->InverseMass;
+	B->Depenetration += Offset * B->InverseMass;
 
-	/*if( B->IsKinetic() )
-	{
-		B->Depenetration -= Penetration * 0.1f;
-	}*/
+	// Log::Event( "Penetration distance: %.3f Depenetration: %.3f\n", Response.Distance, A->Depenetration.Z );
+
+	return true;
 }
 
 void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vector3D& RelativeVelocity, const float& InverseMassTotal, const float& ImpulseScale )
 {
 	auto Tangent = RelativeVelocity - ( Response.Normal * RelativeVelocity.Dot( Response.Normal ) );
-	if( Math::Equal( Tangent.LengthSquared(), 0.0f ) )
+	if( Math::Equal( Tangent.LengthSquared(), 0.0f, 0.0001f ) )
 		return; // Invalid tangent vector.
 
 	Tangent.Normalize();
@@ -680,27 +730,41 @@ void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vect
 
 bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 {
-	const auto InverseMassTotal = A->InverseMass + B->InverseMass;
+	const float InverseMassTotal = A->InverseMass + B->InverseMass;
 	if( InverseMassTotal <= 0.0f )
-		return false;
+		return false; // Both objects are of infinite mass and thus considered immovable.
 
 	CollisionResponse Response = CalculateResponse( A, B, SweptResult );
 	if( Math::Equal( Response.Normal, Vector3D::Zero ) )
 		return false;
 
-	// Interpenetration( A, B, Response );
+	bool WasPenetrating = Interpenetration( A, B, InverseMassTotal, Response );
 
 	const Vector3D RelativeVelocity = B->Velocity - A->Velocity;
-	// float VelocityAlongNormal = RelativeVelocity.Dot( Response.Normal ) + Response.Distance * InverseMass; // Old calculation of the seperating velocity.
 
-	const auto SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
-	if( SeparatingVelocity >= 0.0f ) // Check if the bodies are moving away from each other.
-		return false;
+	float SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
+	if( SeparatingVelocity >= 0.0f )
+		return WasPenetrating; // The bodies are moving away from each other.
 
-	const float Restitution = Math::Min( A->Restitution, B->Restitution );
-	float ResponseForce = -SeparatingVelocity * ( 1.0f + Restitution );
+	const float Restitution = 1.0f + Math::Min( A->Restitution, B->Restitution );
+	float ResponseForce = -SeparatingVelocity * Restitution;
 
-	const float ImpulseScale = InverseMassTotal == 0.0f ? 0.0f : ResponseForce / InverseMassTotal;
+	// Account for acceleration.
+	/*const Vector3D RelativeAcceleration = A->Acceleration - B->Acceleration;
+	const float SeparatingAcceleration = RelativeAcceleration.Dot( Response.Normal );
+	if( SeparatingAcceleration < 0.0f )
+	{
+		ResponseForce += SeparatingAcceleration * Restitution;
+
+		if( ResponseForce < 0.0f )
+		{
+			ResponseForce = 0.0f;
+		}
+	}*/
+
+	// ResponseForce = ResponseForce + SeparatingVelocity;
+
+	const float ImpulseScale = ResponseForce / InverseMassTotal;
 	const Vector3D Impulse = Response.Normal * ImpulseScale;
 
 	A->Velocity -= A->InverseMass * Impulse;
@@ -709,10 +773,17 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	A->ContactEntity = B->Owner;
 	B->ContactEntity = A->Owner;
 
-	// UI::AddSphere( A->WorldSphere.Origin(), A->WorldSphere.GetRadius(), Color::Yellow, 1.0f );
-	// UI::AddLine( A->WorldSphere.Origin(), A->WorldSphere.Origin() + Response.Normal, Color::Blue, 1.0f );
+	/*if( A->IsKinetic() )
+	{
+		UI::AddLine( A->WorldBounds.Center(), A->WorldBounds.Center() + A->InverseMass * Impulse, Color::Red );
+	}
 
-	// Friction( A, B, Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
+	if( B->IsKinetic() )
+	{
+		UI::AddLine( B->WorldBounds.Center(), B->WorldBounds.Center() + B->InverseMass * Impulse, Color::Blue );
+	}*/
+
+	Friction( A, B, Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
 
 	return true;
 }
@@ -723,7 +794,7 @@ bool CBody::Collision( CBody* Body )
 		return false;
 
 	// Check the outer sphere bounds.
-	if( !WorldSphere.Intersects( Body->WorldSphere ) )
+	if( !Continuous && !WorldSphere.Intersects( Body->WorldSphere ) )
 		return false;
 
 	if( ShouldIgnoreBody( Body ) )
@@ -737,7 +808,7 @@ bool CBody::Collision( CBody* Body )
 	{
 		if( Continuous )
 		{
-			if( !SweptIntersection( WorldBounds, LinearVelocity, Body->WorldBounds, SweptResult ) )
+			if( !SweptIntersection( WorldBounds, Velocity + LinearVelocity, Body->WorldBounds, SweptResult ) )
 				return false;
 		}
 		else
@@ -1101,8 +1172,11 @@ void ConstrainZ( CBody* Body, Vector3D& Position, float Height )
 
 	Position.Z = Height;
 	Body->Normal = Vector3D( 0.0f, 0.0f, 1.0f );
-	Body->Contact = true;
 	Body->Contacts++;
+
+	// Fake friction through damping.
+	Body->Velocity.X *= Body->Damping;
+	Body->Velocity.Y *= Body->Damping;
 }
 
 // Constraint that stops a body from moving below the specified value, on the Z-axis.
@@ -1116,7 +1190,7 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 	float Force = BoxRestitution;
 	float Radius = Body->InnerSphere().GetRadius();
 
-	// Adjust the distance.
+	// Account for the radius of the collision sphere.
 	Maximum = Maximum - Radius;
 	Minimum = Minimum + Radius;
 
@@ -1126,6 +1200,10 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 		Position.X = Maximum.X;
 		Body->Velocity.X = -Force * Body->Velocity.X;
 		Contact = true;
+
+		// Damping
+		Body->Velocity.Y *= Body->Damping;
+		Body->Velocity.Z *= Body->Damping;
 	}
 
 	if( Position.Y > Maximum.Y )
@@ -1133,6 +1211,10 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 		Position.Y = Maximum.Y;
 		Body->Velocity.Y = -Force * Body->Velocity.Y;
 		Contact = true;
+
+		// Damping
+		Body->Velocity.X *= Body->Damping;
+		Body->Velocity.Z *= Body->Damping;
 	}
 
 	if( Position.Z > Maximum.Z )
@@ -1140,6 +1222,10 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 		Position.Z = Maximum.Z;
 		Body->Velocity.Z = -Force * Body->Velocity.Z;
 		Contact = true;
+
+		// Damping
+		Body->Velocity.X *= Body->Damping;
+		Body->Velocity.Y *= Body->Damping;
 	}
 
 	if( Position.X < Minimum.X )
@@ -1147,6 +1233,10 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 		Position.X = Minimum.X;
 		Body->Velocity.X = -Force * Body->Velocity.X;
 		Contact = true;
+
+		// Damping
+		Body->Velocity.Y *= Body->Damping;
+		Body->Velocity.Z *= Body->Damping;
 	}
 
 	if( Position.Y < Minimum.Y )
@@ -1154,6 +1244,10 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 		Position.Y = Minimum.Y;
 		Body->Velocity.Y = -Force * Body->Velocity.Y;
 		Contact = true;
+
+		// Damping
+		Body->Velocity.X *= Body->Damping;
+		Body->Velocity.Z *= Body->Damping;
 	}
 
 	if( Position.Z < Minimum.Z )
@@ -1161,11 +1255,14 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 		Position.Z = Minimum.Z;
 		Body->Velocity.Z = -Force * Body->Velocity.Z;
 		Contact = true;
+
+		// Damping
+		Body->Velocity.X *= Body->Damping;
+		Body->Velocity.Y *= Body->Damping;
 	}
 
 	if( Contact )
 	{
-		Body->Contact = true;
 		Body->Contacts++;
 	}
 }
@@ -1191,7 +1288,6 @@ void ConstrainSphere( CBody* Body, Vector3D& Position, const BoundingSphere& Sph
 
 	Body->Normal = SphereNormal * -1.0f;
 	Body->Velocity -= SphereNormal * Direction;
-	Body->Contact = true;
 	Body->Contacts++;
 
 	// Position = Sphere.Origin() + SphereNormal * ( AdjustedRadius - Radius );
@@ -1217,27 +1313,21 @@ void CBody::Tick()
 		Normal = Depenetration * -1.0f;
 		Depenetration = { 0.0f, 0.0f, 0.0f };
 
-		// const Vector3D MassAcceleration = InverseMass * Acceleration;
-
 		// Semi-implicit Euler integration.
-		Velocity += Acceleration * DeltaTime;
+		Velocity += InverseMass * Acceleration * DeltaTime;
 		NewPosition += Velocity * DeltaTime;
 
-		// Add the linear velocity afterwards.
-		Velocity += LinearVelocity;
+		// Subtract the linear velocity that was applied during this tick.
+		// Velocity -= LinearVelocity;
 
 		// Damping is used to simulate drag.
-		Velocity *= powf( Damping, DeltaTime );
+		// Velocity *= powf( Damping, DeltaTime );
 
-		TriedToMove = !Math::Equal( Acceleration, Vector3D::Zero );
+		TriedToMove = !Math::Equal( Transform.GetPosition(), NewPosition, 0.001f );
 
 		// Clear the acceleration and linear velocity.
 		Acceleration = { 0.0f, 0.0f, 0.0f };
 		LinearVelocity = { 0.0f, 0.0f, 0.0f };
-
-		// Penetration friction?
-		// const float Factor = Math::Saturate( ( Depenetration.Normalized().Dot( Velocity.Normalized() ) * -1.0f ) + 1.0f );
-		// Velocity *= powf( Factor, DeltaTime );
 
 		// Hard limit Z to stop you from falling forever.
 		constexpr float MinimumHeight = -200.0f;
@@ -1251,16 +1341,11 @@ void CBody::Tick()
 		{
 			ConstrainZ( this, NewPosition, MinimumHeight );
 		}
-
-		if( Contacts > 0 )
-		{
-			Contact = true;
-		}
 	}
 
 	const auto Difference = NewPosition - PreviousTransform.GetPosition();
 	const auto DifferenceLengthSquared = Difference.LengthSquared();
-	if( DifferenceLengthSquared > 0.001f || LastActivity < 0.0 || TriedToMove )
+	if( LastActivity < 0.0 || TriedToMove )
 	{
 		LastActivity = Physics->CurrentTime;
 	}
@@ -1304,10 +1389,13 @@ void CBody::CalculateBounds()
 
 	if( Continuous )
 	{
+		const auto DeltaTime = static_cast<float>( Physics->TimeStep );
+
 		WorldBoundsSwept = WorldBounds;
-		WorldBoundsSwept.Minimum += Velocity;
-		WorldBoundsSwept.Maximum += Velocity;
+		WorldBoundsSwept.Minimum += Velocity * DeltaTime;
+		WorldBoundsSwept.Maximum += Velocity * DeltaTime;
 		WorldBoundsSwept = WorldBoundsSwept.Combine( WorldBounds );
+		WorldBoundsSweptSIMD = WorldBoundsSwept;
 	}
 
 	// Ensure we have at least some volume.
@@ -1328,6 +1416,11 @@ void CBody::CalculateBounds()
 
 BoundingBoxSIMD CBody::GetBounds() const
 {
+	if( Continuous )
+	{
+		return WorldBoundsSwept;
+	}
+
 	return WorldBoundsSIMD;
 }
 
@@ -1488,12 +1581,12 @@ void CBody::Ignore( CMeshEntity* Entity, const bool Clear )
 
 void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result )
 {
-	/*if( Continuous )
+	if( Continuous )
 	{
 		if( !Box.Intersects( WorldBoundsSwept ) )
 			return;
 	}
-	else*/
+	else
 	{
 		if( !Box.Intersects( GetBounds() ) )
 			return;
