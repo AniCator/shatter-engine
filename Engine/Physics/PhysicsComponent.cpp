@@ -725,25 +725,29 @@ void Detect( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	Manifold.Response = CalculateResponse( A, B, SweptResult );
 	Manifold.Other = B;
 
+	// If the normal is zero, that means we didn't collide.
 	if( Math::Equal( Manifold.Response.Normal, Vector3D::Zero ) )
 		return;
 
 	A->Contacts.emplace_back( Manifold );
 }
 
+void Interpenetration( CBody* A, const ContactManifold& Manifold )
+{
+	// Are the bodies penetrating?
+	if( Manifold.Response.Distance <= 0.0f )
+		return;
+	
+	// Resolve penetration.
+	const float InverseMassTotal = A->InverseMass + Manifold.Other->InverseMass;
+	const auto Offset = 0.5f * Manifold.Response.Normal * Manifold.Response.Distance / InverseMassTotal;
+	A->Depenetration += Offset * A->InverseMass;
+	Manifold.Other->Depenetration += Offset * Manifold.Other->InverseMass;
+}
+
 void Integrate( CBody* A, const ContactManifold& Manifold )
 {
 	const float InverseMassTotal = A->InverseMass + Manifold.Other->InverseMass;
-	
-	// Are the bodies penetrating?
-	if( Manifold.Response.Distance > 0.0f )
-	{
-		// Resolve penetration.
-		const auto Offset = 0.5f * Manifold.Response.Normal * Manifold.Response.Distance / InverseMassTotal;
-		A->Depenetration += Offset * A->InverseMass;
-		Manifold.Other->Depenetration += Offset * Manifold.Other->InverseMass;
-	}
-
 	const Vector3D RelativeVelocity = Manifold.Other->Velocity - A->Velocity;
 
 	float SeparatingVelocity = RelativeVelocity.Dot( Manifold.Response.Normal );
@@ -790,11 +794,56 @@ void Integrate( CBody* A, const ContactManifold& Manifold )
 	Friction( A, Manifold.Other, Manifold.Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
 }
 
+constexpr size_t DebugTableSize = 7;
+const Color DebugTable[DebugTableSize] = {
+	Color( 0, 0, 255 ),
+	Color( 0, 64, 127 ),
+	Color( 0, 127, 64 ),
+	Color( 0, 255, 0 ),
+	Color( 64, 127, 0 ),
+	Color( 127, 64, 0 ),
+	Color( 255, 0, 0 ),
+};
+
 void Resolve( CBody* A )
 {
+	if( A->Contacts.empty() )
+		return; // No contacts to resolve.
+
+	// Resolve penetration first.
+	size_t Debug = 0;
 	for( const auto& Manifold : A->Contacts )
 	{
-		Integrate( A, Manifold );
+		if( Manifold.Other )
+		{
+			UI::AddAABB( Manifold.Other->WorldBounds.Minimum, Manifold.Other->WorldBounds.Maximum, DebugTable[Debug++] );
+			Debug = Debug % DebugTableSize;
+		}
+
+		Interpenetration( A, Manifold );
+	}
+
+	constexpr size_t Iterations = 8;
+	size_t Iteration = 0;
+	while( Iteration < Iterations )
+	{
+		float SeparationThreshold = 0.0f;
+		size_t ManifoldIndex = 0;
+		for( size_t Index = 0; Index < A->Contacts.size(); Index++ )
+		{
+			const ContactManifold& Manifold = A->Contacts[Index];
+			const Vector3D RelativeVelocity = Manifold.Other->Velocity - A->Velocity;
+
+			float SeparatingVelocity = RelativeVelocity.Dot( Manifold.Response.Normal );
+			if( SeparatingVelocity >= SeparationThreshold )
+				continue;
+
+			SeparationThreshold = SeparatingVelocity;
+			ManifoldIndex = Index;
+		}
+
+		Integrate( A, A->Contacts[ManifoldIndex] );
+		Iteration++;
 	}
 }
 
@@ -823,16 +872,12 @@ void CBody::Collision( CBody* Body )
 		}
 		else
 		{
-			if( !WorldBounds.Intersects( Body->WorldBounds ) )
+			if( !WorldBoundsSIMD.Intersects( Body->WorldBoundsSIMD ) )
 				return;
 		}
 	}
 
-	if( IsType<CPlaneBody>( Body ) )
-		return;
-
 	Detect( this, Body, SweptResult );
-	return;
 }
 
 std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, std::vector<glm::uint>& Indices, const Vector3D& Median, const bool Direction, const size_t Axis )
@@ -1363,12 +1408,24 @@ void CBody::CalculateBounds()
 		WorldBoundsSwept.Minimum += Velocity * DeltaTime;
 		WorldBoundsSwept.Maximum += Velocity * DeltaTime;
 		WorldBoundsSwept = WorldBoundsSwept.Combine( WorldBounds );
-		WorldBoundsSweptSIMD = WorldBoundsSwept;
+
+		// Use larger bounds for the SIMD query.
+		auto InflatedBounds = WorldBoundsSwept;
+		InflatedBounds.Minimum -= {0.01f, 0.01f, 0.01f};
+		InflatedBounds.Maximum += {0.01f, 0.01f, 0.01f};
+
+		WorldBoundsSweptSIMD = InflatedBounds;
 	}
 
 	// Ensure we have at least some volume.
 	EnsureVolume( WorldBounds );
-	WorldBoundsSIMD = WorldBounds;
+
+	// Use larger bounds for the SIMD query.
+	auto InflatedBounds = WorldBounds;
+	InflatedBounds.Minimum -= {0.01f, 0.01f, 0.01f};
+	InflatedBounds.Maximum += {0.01f, 0.01f, 0.01f};
+
+	WorldBoundsSIMD = InflatedBounds;
 	WorldSphere = WorldBounds;
 
 	// Update the inverse mass once.
