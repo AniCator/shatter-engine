@@ -46,7 +46,7 @@ public:
 		const auto Bounds = Mesh->GetBounds();
 		const auto Center = ( Bounds.Maximum + Bounds.Minimum ) * 0.5f;
 		const auto Extent = ( Bounds.Maximum - Bounds.Minimum ) * 0.5f;
-		const auto MaximumDistance = Math::VectorMax( Extent.X, Extent.Y, Extent.Z );
+		const auto MaximumDistance = Math::Max( Extent );
 
 		const auto Time = StaticCast<float>( GameLayersInstance->GetRealTime() );
 		
@@ -1059,10 +1059,17 @@ bool* DisplayTagList()
 {
 	return &ShowTagList;
 }
+
 static bool ShowColorManagement = false;
 bool* DisplayColorManagement()
 {
 	return &ShowColorManagement;
+}
+
+static bool ShowCameraInformation = false;
+bool* DisplayCameraInformation()
+{
+	return &ShowCameraInformation;
 }
 
 static auto TranslateBus = Translate<std::string, Bus::Type>( {
@@ -1796,6 +1803,103 @@ void ColorManagementUI()
 	ImGui::End();
 }
 
+void PopulateCameraPanel()
+{
+	auto* World = CWorld::GetPrimaryWorld();
+	if( !World )
+	{
+		ImGui::Text( "Primary world unavailable." );
+		return;
+	}
+
+	auto* Camera = World->GetActiveCamera();
+	if( !Camera )
+	{
+		ImGui::Text( "No active camera in primary world." );
+		return;
+	}
+
+	ImGui::Text( "Camera 0x%p", Camera );
+	ImGui::Checkbox( "Freeze", &Camera->Freeze );
+
+	if( ImGui::IsItemHovered() )
+	{
+		ImGui::BeginTooltip();
+		ImGui::Text( "Freezes culling frustum update." );
+		ImGui::EndTooltip();
+	}
+
+	const auto& CameraSetup = Camera->GetCameraSetup();
+	ImGui::Columns( 3 );
+
+	ImGui::Text( "Camera Location:" );
+	ImGui::NextColumn();
+	ImGui::Text( "%.2f %.2f %.2f", CameraSetup.CameraPosition[0], CameraSetup.CameraPosition[1], CameraSetup.CameraPosition[2] );
+	ImGui::NextColumn();
+	if( ImGui::Button( "Copy Location" ) )
+	{
+		std::stringstream Coordinate;
+		Coordinate << CameraSetup.CameraPosition[0] << " " << CameraSetup.CameraPosition[1] << " " << CameraSetup.CameraPosition[2];
+		glfwSetClipboardString( CWindow::Get().Handle(), Coordinate.str().c_str() );
+	}
+	ImGui::NextColumn();
+
+	ImGui::Separator();
+
+	ImGui::Text( "Camera Direction:" );
+	ImGui::NextColumn();
+	ImGui::Text( "%.2f %.2f %.2f", CameraSetup.CameraDirection[0], CameraSetup.CameraDirection[1], CameraSetup.CameraDirection[2] );
+	ImGui::NextColumn();
+	if( ImGui::Button( "Copy Direction" ) )
+	{
+		std::stringstream Coordinate;
+		Coordinate << CameraSetup.CameraDirection[0] << " " << CameraSetup.CameraDirection[1] << " " << CameraSetup.CameraDirection[2];
+		glfwSetClipboardString( CWindow::Get().Handle(), Coordinate.str().c_str() );
+	}
+	ImGui::NextColumn();
+
+	ImGui::Separator();
+
+	ImGui::Text( "Camera Orientation:" );
+	ImGui::NextColumn();
+	ImGui::Text( "%.2f %.2f %.2f", Camera->CameraOrientation[0], Camera->CameraOrientation[2], Camera->CameraOrientation[1] );
+	ImGui::NextColumn();
+	if( ImGui::Button( "Copy Orientation" ) )
+	{
+		std::stringstream Coordinate;
+		Coordinate << Camera->CameraOrientation[0] << " " << Camera->CameraOrientation[2] << " " << Camera->CameraOrientation[1];
+		glfwSetClipboardString( CWindow::Get().Handle(), Coordinate.str().c_str() );
+	}
+	ImGui::NextColumn();
+
+	ImGui::Separator();
+
+	ImGui::Text( "Camera FOV:" );
+	ImGui::NextColumn();
+	ImGui::Text( "%.2f", CameraSetup.FieldOfView );
+	ImGui::NextColumn();
+	if( ImGui::Button( "Copy FOV" ) )
+	{
+		std::stringstream FOV;
+		FOV << CameraSetup.FieldOfView;
+		glfwSetClipboardString( CWindow::Get().Handle(), FOV.str().c_str() );
+	}
+	ImGui::NextColumn();
+}
+
+void CameraInformationUI()
+{
+	if( !ShowCameraInformation )
+		return;
+
+	if( ImGui::Begin( "Camera Information", &ShowCameraInformation, ImVec2( 400.0f, 400.0f ) ) )
+	{
+		PopulateCameraPanel();
+	}
+
+	ImGui::End();
+}
+
 bool PerpetualRecompile = false;
 double LastRecompile = -1.0;
 void PerformPerpetualRecompile()
@@ -1885,6 +1989,7 @@ void RenderWindowItems()
 	MenuItem( "Shader Toy", DisplayShaderToy() );
 	MenuItem( "Tag List", DisplayTagList() );
 	MenuItem( "Color Management", DisplayColorManagement() );
+	MenuItem( "Camera Information", DisplayCameraInformation() );
 }
 
 void RenderWindowPanels()
@@ -1896,6 +2001,7 @@ void RenderWindowPanels()
 	ShaderToyUI();
 	TagListUI();
 	ColorManagementUI();
+	CameraInformationUI();
 
 	PerformPerpetualRecompile();
 }
