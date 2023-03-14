@@ -21,7 +21,7 @@ public:
 
 	}
 
-	void Insert( T Value )
+	void Insert( const T& Value )
 	{
 		Buffer[WritePosition] = Value;
 
