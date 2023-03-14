@@ -10,7 +10,7 @@ public:
 	virtual ~CPlaneBody();
 
 	virtual void PreCollision() override;
-	virtual bool Collision( CBody* Body ) override;
+	virtual void Collision( CBody* Body ) override;
 	virtual void Tick() override;
 	virtual void Debug() const override;
 

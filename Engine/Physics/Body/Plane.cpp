@@ -33,24 +33,22 @@ void CPlaneBody::PreCollision()
 	PlaneNormal.Normalize();
 }
 
-bool CPlaneBody::Collision( CBody* Body )
+void CPlaneBody::Collision( CBody* Body )
 {
-	bool Collided = false;
-
 	// Planes currently only support mesh entities.
 	if( Ghost || !Owner )
-		return Collided;
+		return;
 
 	if( !Body->Block || Body->Static )
-		return Collided;
+		return;
 
 	if( ShouldIgnoreBody( Body ) )
-		return Collided;
+		return;
 
 	const BoundingBox& BoundsA = Body->WorldBounds;
 	const BoundingBox& BoundsB = WorldBounds;
 	if( !Math::BoundingBoxIntersection( BoundsA.Minimum, BoundsA.Maximum, BoundsB.Minimum, BoundsB.Maximum ) )
-	 	return Collided;
+	 	return;
 
 	const auto Bounds = Body->WorldBounds;
 	const auto Center = ( Bounds.Maximum + Bounds.Minimum ) * 0.5f;
@@ -61,7 +59,7 @@ bool CPlaneBody::Collision( CBody* Body )
 	// Check if we're behind the plane, exit here if we're not checking back faces.
 	if( !TwoSidedCollision && Sign < 0.0f )
 	{
-		return Collided;
+		return;
 	}
 
 	if( ProjectToSurface )
@@ -77,7 +75,7 @@ bool CPlaneBody::Collision( CBody* Body )
 	const auto Extent = ( Bounds.Maximum - Bounds.Minimum );
 	const auto AbsoluteDistance = Math::Abs( Distance );
 	if( ( AbsoluteDistance * AbsoluteDistance ) > Extent.LengthSquared() )
-		return Collided;
+		return;
 
 	// Project a vector along the plane towards the interacting body.
 	const auto Tangent = SignedNormal.Cross( Delta );
@@ -107,8 +105,7 @@ bool CPlaneBody::Collision( CBody* Body )
 		const float Scale = VelocityAlongNormal / ( InverseMass + Body->InverseMass );
 		
 		Body->Depenetration -= SignedNormal * ProjectedDistance;
-		Body->Contacts++;
-		Collided = true;
+		Body->Contact = true;
 	}
 
 	// UI::AddLine( PlaneOrigin, PlaneOrigin + Delta, Color::Green, 0.25 );
@@ -123,8 +120,6 @@ bool CPlaneBody::Collision( CBody* Body )
 	// UI::AddAABB( BoundsB.Minimum, BoundsB.Maximum - Body->Depenetration, Color::Red, 0.25 );
 	// UI::AddLine( PlaneOrigin, PlaneOrigin + Tangent, Color( 255, 0, 255 ) );
 	// UI::AddLine( PlaneOrigin, PlaneOrigin + PlaneNormal, Color::Blue );
-
-	return Collided;
 }
 
 void CPlaneBody::Tick()

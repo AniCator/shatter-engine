@@ -424,6 +424,8 @@ CBody::~CBody()
 
 void CBody::Construct()
 {
+	Contacts.reserve( 8 );
+
 	CEntity* Entity = nullptr;
 	if( Owner && Owner->ShouldCollide() )
 	{
@@ -450,6 +452,8 @@ void CBody::Construct()
 
 void CBody::Construct( CPhysics* Physics )
 {
+	Contacts.reserve( 8 );
+
 	if( !Physics )
 		return;
 	
@@ -500,7 +504,7 @@ void CBody::PreCollision()
 		return;
 
 	Normal = Vector3D::Zero;
-	Contacts = 0;
+	Contacts.clear();
 
 	if( Static )
 		return;
@@ -682,23 +686,6 @@ CollisionResponse CalculateResponse( CBody* A, CBody* B, const Geometry::Result&
 	return {};
 }
 
-bool Interpenetration( CBody* A, CBody* B, const float InverseMassTotal, CollisionResponse& Response )
-{
-	if( Response.Distance <= 0.0f )
-		return false;
-
-	if( !A->IsKinetic() )
-		return false;
-
-	const auto Offset = 0.5f * Response.Normal * Response.Distance / InverseMassTotal;
-	A->Depenetration += Offset * A->InverseMass;
-	B->Depenetration += Offset * B->InverseMass;
-
-	// Log::Event( "Penetration distance: %.3f Depenetration: %.3f\n", Response.Distance, A->Depenetration.Z );
-
-	return true;
-}
-
 void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vector3D& RelativeVelocity, const float& InverseMassTotal, const float& ImpulseScale )
 {
 	auto Tangent = RelativeVelocity - ( Response.Normal * RelativeVelocity.Dot( Response.Normal ) );
@@ -728,30 +715,47 @@ void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vect
 	B->Velocity += B->InverseMass * TangentImpulse;
 }
 
-bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+void Detect( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 {
 	const float InverseMassTotal = A->InverseMass + B->InverseMass;
 	if( InverseMassTotal <= 0.0f )
-		return false; // Both objects are of infinite mass and thus considered immovable.
+		return; // Both objects are of infinite mass and thus considered immovable.
 
-	CollisionResponse Response = CalculateResponse( A, B, SweptResult );
-	if( Math::Equal( Response.Normal, Vector3D::Zero ) )
-		return false;
+	ContactManifold Manifold;
+	Manifold.Response = CalculateResponse( A, B, SweptResult );
+	Manifold.Other = B;
 
-	bool WasPenetrating = Interpenetration( A, B, InverseMassTotal, Response );
+	if( Math::Equal( Manifold.Response.Normal, Vector3D::Zero ) )
+		return;
 
-	const Vector3D RelativeVelocity = B->Velocity - A->Velocity;
+	A->Contacts.emplace_back( Manifold );
+}
 
-	float SeparatingVelocity = RelativeVelocity.Dot( Response.Normal );
+void Integrate( CBody* A, const ContactManifold& Manifold )
+{
+	const float InverseMassTotal = A->InverseMass + Manifold.Other->InverseMass;
+	
+	// Are the bodies penetrating?
+	if( Manifold.Response.Distance > 0.0f )
+	{
+		// Resolve penetration.
+		const auto Offset = 0.5f * Manifold.Response.Normal * Manifold.Response.Distance / InverseMassTotal;
+		A->Depenetration += Offset * A->InverseMass;
+		Manifold.Other->Depenetration += Offset * Manifold.Other->InverseMass;
+	}
+
+	const Vector3D RelativeVelocity = Manifold.Other->Velocity - A->Velocity;
+
+	float SeparatingVelocity = RelativeVelocity.Dot( Manifold.Response.Normal );
 	if( SeparatingVelocity >= 0.0f )
-		return WasPenetrating; // The bodies are moving away from each other.
+		return; // The bodies are moving away from each other.
 
-	const float Restitution = 1.0f + Math::Min( A->Restitution, B->Restitution );
+	const float Restitution = 1.0f + Math::Min( A->Restitution, Manifold.Other->Restitution );
 	float ResponseForce = -SeparatingVelocity * Restitution;
 
 	// Account for acceleration.
-	/*const Vector3D RelativeAcceleration = A->Acceleration - B->Acceleration;
-	const float SeparatingAcceleration = RelativeAcceleration.Dot( Response.Normal );
+	/*const Vector3D RelativeAcceleration = A->Acceleration - Manifold.Other->Acceleration;
+	const float SeparatingAcceleration = RelativeAcceleration.Dot( Manifold.Response.Normal );
 	if( SeparatingAcceleration < 0.0f )
 	{
 		ResponseForce += SeparatingAcceleration * Restitution;
@@ -765,13 +769,13 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 	// ResponseForce = ResponseForce + SeparatingVelocity;
 
 	const float ImpulseScale = ResponseForce / InverseMassTotal;
-	const Vector3D Impulse = Response.Normal * ImpulseScale;
+	const Vector3D Impulse = Manifold.Response.Normal * ImpulseScale;
 
 	A->Velocity -= A->InverseMass * Impulse;
-	B->Velocity += B->InverseMass * Impulse;
+	Manifold.Other->Velocity += Manifold.Other->InverseMass * Impulse;
 
-	A->ContactEntity = B->Owner;
-	B->ContactEntity = A->Owner;
+	Manifold.Other->ContactEntity = Manifold.Other->Owner;
+	Manifold.Other->ContactEntity = A->Owner;
 
 	/*if( A->IsKinetic() )
 	{
@@ -783,22 +787,28 @@ bool Integrate( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 		UI::AddLine( B->WorldBounds.Center(), B->WorldBounds.Center() + B->InverseMass * Impulse, Color::Blue );
 	}*/
 
-	Friction( A, B, Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
-
-	return true;
+	Friction( A, Manifold.Other, Manifold.Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
 }
 
-bool CBody::Collision( CBody* Body )
+void Resolve( CBody* A )
+{
+	for( const auto& Manifold : A->Contacts )
+	{
+		Integrate( A, Manifold );
+	}
+}
+
+void CBody::Collision( CBody* Body )
 {
 	if( !Block || !Body->Block )
-		return false;
+		return;
 
 	// Check the outer sphere bounds.
 	if( !Continuous && !WorldSphere.Intersects( Body->WorldSphere ) )
-		return false;
+		return;
 
 	if( ShouldIgnoreBody( Body ) )
-		return false;
+		return;
 
 	// CCD
 	Geometry::Result SweptResult;
@@ -809,65 +819,20 @@ bool CBody::Collision( CBody* Body )
 		if( Continuous )
 		{
 			if( !SweptIntersection( WorldBounds, Velocity + LinearVelocity, Body->WorldBounds, SweptResult ) )
-				return false;
+				return;
 		}
 		else
 		{
 			if( !WorldBounds.Intersects( Body->WorldBounds ) )
-				return false;
+				return;
 		}
 	}
 
 	if( IsType<CPlaneBody>( Body ) )
-		return false;
+		return;
 
-	const auto Transform = GetTransform();
-	const auto Collided = Integrate( this, Body, SweptResult );
-	if( Collided )
-	{
-		Contacts++;
-		Body->Contacts++;
-		Contact = true;
-	}
-
-#if DrawNormalAndDistance == 1
-	const auto BodyTransform = Body->GetTransform();
-	// UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Response.Normal * Response.Distance, Color( 255, 0, 255 ) );
-	UI::AddLine( BodyTransform.GetPosition(), BodyTransform.GetPosition() + Body->Depenetration, Color( 255, 0, 255 ) );
-#endif
-
-#if DrawDebugLines == 1
-	Color BoundsColor = Color( 0, 255, 0 );
-	if( Contacts < 1 )
-	{
-		BoundsColor = Color::Red;
-	}
-	else if( Contacts == 1 )
-	{
-		BoundsColor = Color( 255, 127, 0 );
-	}
-	else if( Contacts == 3 )
-	{
-		BoundsColor = Color( 255, 255, 0 );
-	}
-	else if( Contacts == 4 )
-	{
-		BoundsColor = Color( 127, 255, 0 );
-	}
-
-	if( Contacts > 0 )
-	{
-		UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
-	}
-
-	if( Body->Static )
-	{
-		BoundsColor = Color::White;
-		// UI::AddAABB( Body->WorldBounds.Minimum, Body->WorldBounds.Maximum, BoundsColor );
-	}
-#endif
-
-	return Collided;
+	Detect( this, Body, SweptResult );
+	return;
 }
 
 std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, std::vector<glm::uint>& Indices, const Vector3D& Median, const bool Direction, const size_t Axis )
@@ -1172,7 +1137,7 @@ void ConstrainZ( CBody* Body, Vector3D& Position, float Height )
 
 	Position.Z = Height;
 	Body->Normal = Vector3D( 0.0f, 0.0f, 1.0f );
-	Body->Contacts++;
+	Body->Contact = true;
 
 	// Fake friction through damping.
 	Body->Velocity.X *= Body->Damping;
@@ -1263,7 +1228,7 @@ void ConstrainBox( CBody* Body, Vector3D& Position, Vector3D BoxOrigin, Vector3D
 
 	if( Contact )
 	{
-		Body->Contacts++;
+		Body->Contact = true;
 	}
 }
 
@@ -1288,8 +1253,7 @@ void ConstrainSphere( CBody* Body, Vector3D& Position, const BoundingSphere& Sph
 
 	Body->Normal = SphereNormal * -1.0f;
 	Body->Velocity -= SphereNormal * Direction;
-	Body->Contacts++;
-
+	Body->Contact = true;
 	// Position = Sphere.Origin() + SphereNormal * ( AdjustedRadius - Radius );
 }
 
@@ -1304,8 +1268,14 @@ void CBody::Tick()
 
 	bool TriedToMove = false;
 
+	// Update contact boolean.
+	Contact = Contacts.size() > 0;
+
 	if( IsKinetic() )
 	{
+		// Resolve contact manifolds.
+		Resolve( this );
+
 		const auto DeltaTime = static_cast<float>( Physics->TimeStep );
 
 		// Apply depenetration.
@@ -1359,8 +1329,6 @@ void CBody::Tick()
 
 	Normal.Normalize();
 	Transform.SetPosition( NewPosition );
-
-	Contact = Contacts > 0;
 
 	if( Owner )
 	{
@@ -1476,19 +1444,20 @@ void CBody::Debug() const
 		return;
 
 	Color BoundsColor = Color( 0, 255, 0 );
-	if( Contacts < 1 )
+	const size_t Count = Contacts.size();
+	if( Count < 1 )
 	{
 		BoundsColor = Color::Red;
 	}
-	else if( Contacts == 1 )
+	else if( Count == 1 )
 	{
 		BoundsColor = Color( 255, 127, 0 );
 	}
-	else if( Contacts == 3 )
+	else if( Count == 3 )
 	{
 		BoundsColor = Color( 255, 255, 0 );
 	}
-	else if( Contacts == 4 )
+	else if( Count == 4 )
 	{
 		BoundsColor = Color( 127, 255, 0 );
 	}

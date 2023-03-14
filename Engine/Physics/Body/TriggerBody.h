@@ -51,12 +51,12 @@ public:
 		CBody::PreCollision();
 	}
 
-	bool Collision( CBody* Body ) override
+	void Collision( CBody* Body ) override
 	{
 		const auto& BoundsB = GetBounds();
 		const auto& BoundsA = Body->GetBounds();
 		if( !BoundsA.Intersects( BoundsB ) )
-			return false;
+			return;
 
 		CEntity* Target = Body->Owner ? Body->Owner : Body->Ghost;
 		TriggerType Collider = dynamic_cast<TriggerType>( Target );
@@ -64,8 +64,6 @@ public:
 		{
 			Entities.insert( Collider );
 		}
-
-		return false;
 	}
 
 	void Simulate() override

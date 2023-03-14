@@ -10,6 +10,12 @@
 #include <Engine/Utility/Structures/Testable.h>
 #include <Engine/World/Entity/MeshEntity/MeshEntity.h>
 
+struct ContactManifold
+{
+	CollisionResponse Response;
+	class CBody* Other = nullptr;
+};
+
 class CBody : public Testable
 {
 public:
@@ -25,7 +31,7 @@ public:
 
 	// The collision function is used to generate collision responses and update the velocity vectors of bodies.
 	// These are applied in the Tick function.
-	virtual bool Collision( CBody* Body );
+	virtual void Collision( CBody* Body );
 
 	// The tick currently applies the collision results produced by the Collision function to the owning object and resets the body's internal values.
 	virtual void Tick();
@@ -122,7 +128,8 @@ public:
 	Vector3D Normal = Vector3D::Zero;
 	float Mass = 1.0f;
 	float InverseMass = -1.0f;
-	size_t Contacts = 1;
+
+	std::vector<ContactManifold> Contacts;
 	CMeshEntity* ContactEntity = nullptr;
 
 	// The surface material of this body.
