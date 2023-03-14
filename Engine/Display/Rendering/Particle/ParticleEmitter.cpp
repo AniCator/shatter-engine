@@ -105,7 +105,7 @@ public:
 		// Emitter->Render->Activate();
 		glBindVertexArray( VAO );
 		glDrawArrays( GL_POINTS, 0, Buffer.Count() );
-		glBindVertexArray( 0 );
+		// glBindVertexArray( 0 );
 	}
 
 	ParticleEmitter* Emitter = nullptr;
