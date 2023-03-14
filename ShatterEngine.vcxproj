@@ -369,6 +369,7 @@
     <ClInclude Include="Engine\Utility\Math.h" />
     <ClInclude Include="Engine\Utility\Math\BoundingBox.h" />
     <ClInclude Include="Engine\Utility\Math\Matrix.h" />
+    <ClInclude Include="Engine\Utility\Math\Plane.h" />
     <ClInclude Include="Engine\Utility\Math\Transform.h" />
     <ClInclude Include="Engine\Utility\Math\Unit.h" />
     <ClInclude Include="Engine\Utility\Math\Vector.h" />

@@ -1000,6 +1000,9 @@
     <ClInclude Include="Engine\Display\Rendering\Vertex.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Utility\Math\Plane.h">
+      <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">

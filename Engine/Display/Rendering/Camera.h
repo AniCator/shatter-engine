@@ -3,6 +3,9 @@
 
 #include <ThirdParty/glm/glm.hpp>
 #include <Engine/Utility/Math.h>
+#include <Engine/Utility/Math/Plane.h>
+
+class CData;
 
 struct FCameraSetup
 {
@@ -36,24 +39,15 @@ struct FCameraSetup
 	static FCameraSetup Mix( const FCameraSetup& A, const FCameraSetup& B, const float& Alpha );
 };
 
-struct Plane
-{
-	Plane();
-	Plane( const Vector3D& Point, const Vector3D& Normal );
-	Plane( const Vector3D& A, const Vector3D& B, const Vector3D& C );
-
-	Vector3D Point;
-	Vector3D Normal;
-	float Distance;
-};
-
 struct Frustum
 {
 	Frustum() = default;
 	Frustum( FCameraSetup& Setup );
 
+	bool Contains( const Vector3D& Point ) const;
 	bool Contains( const Vector3D& Point, const float Radius = 0.0f ) const;
-	bool Contains( const Vector3D& Start, const Vector3D& End ) const;
+	bool Contains( const BoundingSphere& Sphere ) const;
+	bool Contains( const BoundingBox& Box ) const;
 
 	Vector3D TopRightNear;
 	Vector3D BottomLeftNear;
@@ -108,11 +102,17 @@ public:
 	FCameraSetup GetCameraSetup() const;
 	Frustum GetFrustum() const;
 
+	friend CData& operator<<( CData& Data, const CCamera& Camera );
+	friend CData& operator>>( CData& Data, CCamera& Camera );
+
 	static CCamera Lerp( const CCamera& A, const CCamera& B, const float& Alpha );
 	static CCamera BezierBlend( const CCamera& A, const float& TangentA, const CCamera& B, const float& TangentB, const float& Factor );
 	static CCamera HandheldSimulation( const CCamera& Camera, const float& Factor, const double& Time );
 
 	Vector3D CameraOrientation;
+
+	// Disables frustum updates.
+	bool Freeze = false;
 private:
 	FCameraSetup CameraSetup;
 

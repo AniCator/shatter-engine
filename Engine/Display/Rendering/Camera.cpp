@@ -5,16 +5,29 @@
 
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Utility/Data.h>
+#include <Engine/Utility/Serialize.h>
 
-CData& operator<<( CData& Data, CCamera& Camera )
+CData& operator<<( CData& Data, const CCamera& Camera )
 {
-	Data << Camera.GetCameraSetup();
+	Data << Camera.CameraOrientation;
+	Data << Camera.CameraSetup;
+	Data << Camera.ProjectionMatrix;
+	Data << Camera.ViewMatrix;
+	Data << Camera.ProjectionViewInverseMatrix;
+	Data << Camera.CameraQuaternion;
+	Data << Camera.Frustum;
 	return Data;
 }
 
 CData& operator>>( CData& Data, CCamera& Camera )
 {
-	Data >> Camera.GetCameraSetup();
+	Data >> Camera.CameraOrientation;
+	Data >> Camera.CameraSetup;
+	Data >> Camera.ProjectionMatrix;
+	Data >> Camera.ViewMatrix;
+	Data >> Camera.ProjectionViewInverseMatrix;
+	Data >> Camera.CameraQuaternion;
+	Data >> Camera.Frustum;
 	return Data;
 }
 
@@ -23,38 +36,9 @@ FCameraSetup FCameraSetup::Mix( const FCameraSetup& A, const FCameraSetup& B, co
 	return A;
 }
 
-Plane::Plane()
-{
-	Point = Vector3D::Zero;
-	Normal = Vector3D( 0.0f, 0.0f, 1.0f );
-	Distance = 1.0f;
-}
-
-Plane::Plane( const Vector3D& Point, const Vector3D& Normal )
-{
-	this->Point = Point;
-	this->Normal = Normal;
-	Distance = Normal.Length();
-}
-
-Plane::Plane( const Vector3D& A, const Vector3D& B, const Vector3D& C )
-{
-	Point = B - A;
-
-	const Vector3D Edge = C - A;
-	Normal = Point.Cross( Edge ).Normalized();
-	Distance = -Normal.Dot( A );
-	Point = A;
-}
-
 float HalfSpace( const Plane& Plane, const Vector3D& Point )
 {
 	return Plane.Normal.Dot( Point ) + Plane.Distance;
-}
-
-float Dot( const Plane& Plane, const Vector3D& Point )
-{
-	return Plane.Normal.X * Point.X + Plane.Normal.Y * Point.Y + Plane.Normal.Z * Point.Z;
 }
 
 bool HalfSpaceTest( const Plane& Plane, const Vector3D& Point, const float& Radius = 0.0f )
@@ -67,29 +51,70 @@ bool HalfSpaceTest( const Plane& Plane, const Vector3D& Point, const float& Radi
 	return false;
 }
 
-float DistanceToPlane( const Plane& Plane, const Vector3D& Point )
+bool PointTest( const Plane& Plane, const Vector3D& Point )
 {
-	return Plane.Point.Dot( Point );
+	return Point.Dot( Plane.Normal ) + Plane.Distance > 0.0f;
 }
 
-bool PlaneTest( const Plane& Plane, const Vector3D& Point, const float& Radius )
+bool Frustum::Contains( const Vector3D& Point ) const
 {
-	const auto Difference = ( Point - Plane.Point );
-	return Difference.Dot( Plane.Normal ) >= Radius;
+	for( int Side = 0; Side < Frustum::Maximum; Side++ )
+	{
+		if( PointTest( Plane[Side], Point ) )
+			return false;
+	}
+
+	return true;
 }
 
-bool SphereTest( const Plane& Plane, const Vector3D& Point, const float& Radius )
+bool SphereTest( const Plane& Plane, const Vector3D& Point, const float Radius )
 {
-	// const auto Difference = ( Point - Plane.Point );
-	// return Point.Dot( Plane.Normal ) + Plane.Distance + Radius * Radius >= 0.0f;
-	return HalfSpaceTest( Plane, Point, Radius );
+	return Point.Dot( Plane.Normal ) + Plane.Distance > Radius;
 }
 
 bool Frustum::Contains( const Vector3D& Point, const float Radius ) const
 {
 	for( int Side = 0; Side < Frustum::Maximum; Side++ )
 	{
-		if( PlaneTest( Plane[Side], Point, Radius ) )
+		if( SphereTest( Plane[Side], Point, Radius ) )
+			return false;
+	}
+
+	return true;
+}
+
+bool Frustum::Contains( const BoundingSphere& Sphere ) const
+{
+	for( int Side = 0; Side < Frustum::Maximum; Side++ )
+	{
+		if( SphereTest( Plane[Side], Sphere.Origin(), Sphere.GetRadius() ) )
+			return false;
+	}
+
+	return true;
+}
+
+bool BoxTest( const Plane& Plane, const BoundingBox& Box )
+{
+	const float Radius = Math::Abs( Box.Size().Dot( Plane.Normal ) );
+	const float Distance = Plane.Normal.Dot( Box.Center() ) + Plane.Distance;
+	if( Math::Abs( Distance ) < Radius )
+	{
+		return false; // Intersecting with plane.
+	}
+	else if( Distance < 0.0f )
+	{
+		return Distance + Radius > 0.0f;
+	}
+
+	return Distance - Radius > 0.0f;
+}
+
+bool Frustum::Contains( const BoundingBox& Box ) const
+{
+	for( int Side = 0; Side < Frustum::Maximum; Side++ )
+	{
+		if( BoxTest( Plane[Side], Box ) )
 			return false;
 	}
 
@@ -190,6 +215,12 @@ void CCamera::Update()
 
 	ProjectionViewInverseMatrix = glm::inverse( ProjectionMatrix * ViewMatrix );
 
+	if( Freeze )
+	{
+		DrawFrustum(); // Always draw the frustum when frozen.
+		return;
+	}
+
 	Frustum = ::Frustum( CameraSetup );
 	
 }
@@ -218,23 +249,23 @@ void CCamera::DrawFrustum() const
 
 	const Color FrustumPlaneColor = Color( 255, 0, 255 );
 	const Color FrustumClipPlaneColor = Color( 0, 255, 255 );
-	// UI::AddLine( Frustum.Plane[Frustum::Top].Point, Frustum.Plane[Frustum::Top].Point + Frustum.Plane[Frustum::Top].Normal, FrustumPlaneColor );
-	// UI::AddLine( Frustum.Plane[Frustum::Bottom].Point, Frustum.Plane[Frustum::Bottom].Point + Frustum.Plane[Frustum::Bottom].Normal, FrustumPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Top].Origin, Frustum.Plane[Frustum::Top].Origin + Frustum.Plane[Frustum::Top].Normal, FrustumPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Bottom].Origin, Frustum.Plane[Frustum::Bottom].Origin + Frustum.Plane[Frustum::Bottom].Normal, FrustumPlaneColor );
 	// 
-	// UI::AddLine( Frustum.Plane[Frustum::Left].Point, Frustum.Plane[Frustum::Left].Point + Frustum.Plane[Frustum::Left].Normal, FrustumPlaneColor );
-	// UI::AddLine( Frustum.Plane[Frustum::Right].Point, Frustum.Plane[Frustum::Right].Point + Frustum.Plane[Frustum::Right].Normal, FrustumPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Left].Origin, Frustum.Plane[Frustum::Left].Origin + Frustum.Plane[Frustum::Left].Normal, FrustumPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Right].Origin, Frustum.Plane[Frustum::Right].Origin + Frustum.Plane[Frustum::Right].Normal, FrustumPlaneColor );
 	// 
-	// UI::AddLine( Frustum.Plane[Frustum::Near].Point, Frustum.Plane[Frustum::Near].Point + Frustum.Plane[Frustum::Near].Normal, FrustumClipPlaneColor );
-	// UI::AddLine( Frustum.Plane[Frustum::Far].Point, Frustum.Plane[Frustum::Far].Point + Frustum.Plane[Frustum::Far].Normal, FrustumClipPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Near].Origin, Frustum.Plane[Frustum::Near].Origin + Frustum.Plane[Frustum::Near].Normal, FrustumClipPlaneColor );
+	// UI::AddLine( Frustum.Plane[Frustum::Far].Origin, Frustum.Plane[Frustum::Far].Origin + Frustum.Plane[Frustum::Far].Normal, FrustumClipPlaneColor );
 
-	UI::AddCircle( Frustum.Plane[Frustum::Top].Point, 2.0f, Color::White );
-	UI::AddCircle( Frustum.Plane[Frustum::Bottom].Point, 2.0f, Color::White );
+	UI::AddCircle( Frustum.Plane[Frustum::Top].Origin, 2.0f, Color::White );
+	UI::AddCircle( Frustum.Plane[Frustum::Bottom].Origin, 2.0f, Color::White );
 	
-	UI::AddCircle( Frustum.Plane[Frustum::Left].Point, 2.0f, Color::White );
-	UI::AddCircle( Frustum.Plane[Frustum::Right].Point, 2.0f, Color::White );
+	UI::AddCircle( Frustum.Plane[Frustum::Left].Origin, 2.0f, Color::White );
+	UI::AddCircle( Frustum.Plane[Frustum::Right].Origin, 2.0f, Color::White );
 	
-	UI::AddCircle( Frustum.Plane[Frustum::Near].Point, 2.0f, Color::White );
-	UI::AddCircle( Frustum.Plane[Frustum::Far].Point, 2.0f, Color::White );
+	UI::AddCircle( Frustum.Plane[Frustum::Near].Origin, 2.0f, Color::White );
+	UI::AddCircle( Frustum.Plane[Frustum::Far].Origin, 2.0f, Color::White );
 }
 
 void CCamera::SetFieldOfView( const float& FieldOfView )

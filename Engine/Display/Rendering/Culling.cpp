@@ -9,17 +9,14 @@ namespace Culling
 	bool SphereCull( const CCamera& Camera, const BoundingBox& Bounds )
 	{
 		const auto& Frustum = Camera.GetFrustum();
+		// TODO: Don't call length here every time.
+		return Frustum.Contains( Bounds.Center(), Bounds.Size().Length() * 0.5f );
+	}
 
-		const auto& Center = ( Bounds.Maximum + Bounds.Minimum ) * 0.5f;
-		const auto Minimum = Math::Abs( Bounds.Minimum );
-		const auto& Maximum = Math::Abs( Bounds.Maximum );
-
-		const float X = Math::Max( Minimum.X, Maximum.X );
-		const float Y = Math::Max( Minimum.Y, Maximum.Y );
-		const float Z = Math::Max( Minimum.Z, Maximum.Z );
-
-		const float Radius = Math::VectorMax( X, Y, Z );
-		return Frustum.Contains( Center, Radius );
+	bool BoxCull( const CCamera& Camera, const BoundingBox& Bounds )
+	{
+		const auto& Frustum = Camera.GetFrustum();
+		return Frustum.Contains( Bounds );
 	}
 
 	void SphereCull( const CCamera& Camera, CRenderable* Renderable )
@@ -36,11 +33,33 @@ namespace Culling
 		}
 	}
 
+	void BoxCull( const CCamera& Camera, CRenderable* Renderable )
+	{
+		auto& RenderData = Renderable->GetRenderData();
+		RenderData.ShouldRender = false;
+
+		if( RenderData.DisableRender )
+			return;
+
+		if( BoxCull( Camera, RenderData.WorldBounds ) )
+		{
+			RenderData.ShouldRender = true;
+		}
+	}
+
 	void SphereCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 	{
 		for( auto* Renderable : Renderables )
 		{
 			SphereCull( Camera, Renderable );
+		}
+	}
+
+	void BoxCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
+	{
+		for( auto* Renderable : Renderables )
+		{
+			BoxCull( Camera, Renderable );
 		}
 	}
 
