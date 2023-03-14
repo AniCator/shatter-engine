@@ -34,7 +34,7 @@ CEntity::CEntity()
 	Level = nullptr;
 	Parent = nullptr;
 
-	Enabled = false;
+	Enabled = true;
 	ShouldDebug = false;
 
 	ClassName = "-";
