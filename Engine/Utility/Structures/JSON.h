@@ -46,7 +46,6 @@ namespace JSON
 		Object& operator=( const std::string& Value );
 		Object& operator=( const JSON::Container& Container );
 
-	protected:
 		Object* Find( const std::string& Key ) const;
 	};
 
