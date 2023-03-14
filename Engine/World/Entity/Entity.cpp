@@ -179,7 +179,7 @@ void CEntity::Traverse()
 
 	const auto CurrentTime = GameLayersInstance->GetCurrentTime();
 	const bool ShouldTick = NextTickTime <= CurrentTime;
-	if( ShouldTick )
+	if( Enabled && ShouldTick )
 	{
 		// OptickEvent();
 
@@ -377,6 +377,11 @@ void CEntity::Debug()
 void CEntity::EnableDebug( const bool Enable )
 {
 	ShouldDebug = Enable;
+}
+
+void CEntity::Enable( const bool Enable )
+{
+	Enabled = Enable;
 }
 
 void CEntity::Tag( const std::string& TagName )

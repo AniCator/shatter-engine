@@ -126,6 +126,11 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 				Tag( Data );
 			}
 		}
+		else if( Property->Key == "disable" )
+		{
+			Extract( Property->Value, Enabled );
+			Enabled = !Enabled; // Flip it, since we're extracting a disabled state.
+		}
 	}
 
 	ShouldUpdateTransform = true;

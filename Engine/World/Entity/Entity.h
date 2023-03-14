@@ -182,6 +182,9 @@ public:
 
 	void EnableDebug( const bool Enable );
 
+	// Enable/disable the entity.
+	void Enable( const bool Enable );
+
 	std::string ClassName;
 
 	/// <summary>
