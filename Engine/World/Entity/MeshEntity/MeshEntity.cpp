@@ -764,20 +764,14 @@ void CMeshEntity::ConstructPhysics()
 	}
 
 	// Create the body and set the collision type.
-	switch( CollisionType )
+	PhysicsBody = new CBody();
+	PhysicsBody->Type = CollisionType;
+
+	// Adjust the defaults for non-spherical objects.
+	if( CollisionType != BodyType::Sphere )
 	{
-	case BodyType::Plane:
-	{
-		auto* PlaneBody = new CPlaneBody();
-		PlaneBody->TwoSidedCollision = true;
-		PlaneBody->ProjectToSurface = ShouldProject;
-		PhysicsBody = PlaneBody;
-		break;
-	}
-	default: 
-		PhysicsBody = new CBody();
-		PhysicsBody->Type = CollisionType;
-		break;
+		PhysicsBody->Restitution = 0.001f;
+		PhysicsBody->Friction = 0.5f;
 	}
 
 	PhysicsBody->Owner = this;
