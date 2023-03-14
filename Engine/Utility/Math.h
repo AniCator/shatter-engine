@@ -7,6 +7,7 @@
 
 #include <Engine/Utility/Math/BoundingBox.h>
 #include <Engine/Utility/Math/Vector.h>
+#include <Engine/Utility/Math/Plane.h>
 #include <Engine/Utility/Math/Matrix.h>
 #include <Engine/Utility/Math/Transform.h>
 
@@ -680,6 +681,11 @@ namespace Math
 	inline Vector3D PointOnLine( const Vector3D& Point, const Vector3D& Start, const Vector3D End )
 	{
 		return Start + ProjectOnVector( Point - Start, End - Start );
+	}
+
+	inline Vector3D ProjectOnPlane( Vector3D Point, const Plane& Plane )
+	{
+		return Point - Plane.Normal * ( Plane.Normal.Dot( Point ) - Plane.Distance );
 	}
 
 	inline Vector3D ProjectOnAABB( Vector3D Point, const BoundingBox& Box )
