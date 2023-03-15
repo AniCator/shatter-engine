@@ -405,11 +405,9 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 	}
 
 	Response.Normal = Transform.GetRotationMatrix().Transform( Response.Normal );
-	// Response.Distance *= Math::Abs( Response.Normal.Dot( Transform.GetSize() ) );
-	Response.Normal = Response.Normal.Normalized() * -1.0f;
-	
-	Response.Distance = Math::Abs( Response.Distance );
-	Response.Distance *= 0.00165f;
+	Response.Normal *= -1.0f; // Flip the normal.
+	const float Size = Response.Normal.Normalize();
+	Response.Distance *= Size; // Scale the penetration distance.
 
 	// const Vector3D WorldCenter = Transform.Transform( Center );
 	// UI::AddLine( WorldCenter, WorldCenter - Response.Normal, Color::Yellow, 1.0f );
@@ -613,9 +611,9 @@ CollisionResponse CalculateResponseAABB( CBody* A, CBody* B, const Geometry::Res
 		}
 		else
 		{
-			return Response::AABBAABB( A->WorldBounds, B->WorldBounds );
+			return CollisionResponseTreeAABB( B->Tree, A->WorldBounds, B->PreviousTransform, A->PreviousTransform );
+			// return Response::AABBAABB( A->WorldBounds, B->WorldBounds );
 		}
-		// return CollisionResponseTreeAABB( B->Tree, A->WorldBounds, B->PreviousTransform, A->PreviousTransform );
 	case BodyType::Plane:
 	{
 		// TODO: AABB v. Plane. (using sphere v. AABB here temporarily)
@@ -814,11 +812,11 @@ void Resolve( CBody* A )
 	size_t Debug = 0;
 	for( const auto& Manifold : A->Contacts )
 	{
-		if( Manifold.Other )
+		/*if( Manifold.Other )
 		{
 			UI::AddAABB( Manifold.Other->WorldBounds.Minimum, Manifold.Other->WorldBounds.Maximum, DebugTable[Debug++] );
 			Debug = Debug % DebugTableSize;
-		}
+		}*/
 
 		Interpenetration( A, Manifold );
 	}
@@ -1411,8 +1409,8 @@ void CBody::CalculateBounds()
 
 		// Use larger bounds for the SIMD query.
 		auto InflatedBounds = WorldBoundsSwept;
-		InflatedBounds.Minimum -= {0.01f, 0.01f, 0.01f};
-		InflatedBounds.Maximum += {0.01f, 0.01f, 0.01f};
+		// InflatedBounds.Minimum -= {0.01f, 0.01f, 0.01f};
+		// InflatedBounds.Maximum += {0.01f, 0.01f, 0.01f};
 
 		WorldBoundsSweptSIMD = InflatedBounds;
 	}
@@ -1422,8 +1420,8 @@ void CBody::CalculateBounds()
 
 	// Use larger bounds for the SIMD query.
 	auto InflatedBounds = WorldBounds;
-	InflatedBounds.Minimum -= {0.01f, 0.01f, 0.01f};
-	InflatedBounds.Maximum += {0.01f, 0.01f, 0.01f};
+	// InflatedBounds.Minimum -= {0.01f, 0.01f, 0.01f};
+	// InflatedBounds.Maximum += {0.01f, 0.01f, 0.01f};
 
 	WorldBoundsSIMD = InflatedBounds;
 	WorldSphere = WorldBounds;

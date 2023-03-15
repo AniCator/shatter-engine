@@ -278,25 +278,26 @@ public:
 		{
 			ResolveCollisions( Request.Body, Request.Result );
 		}
+
+#if 0 // O(n^2) zone
+		for( auto* A : Bodies )
+		{
+			for( auto* B : Bodies )
+			{
+				if( B == A || !B || !A )
+					continue;
+
+				if( B->Owner != A->Owner )
+				{
+					A->Collision( B );
+				}
+			}
+		}
+#endif
 	}
 
 	void UpdateBodies()
 	{
-		uint32_t Iterations = 2;
-		while( Iterations )
-		{
-			ResolveCollisions();
-			Iterations--;
-		}
-
-		for( auto* BodyA : Bodies )
-		{
-			if( !BodyA )
-				continue;
-
-			BodyA->Tick();
-		}
-
 		for( auto* BodyA : Bodies )
 		{
 			if( !BodyA )
@@ -307,6 +308,16 @@ public:
 
 			// Simulate environmental factors. (gravity etc.)
 			BodyA->Simulate();
+		}
+
+		ResolveCollisions();
+
+		for( auto* BodyA : Bodies )
+		{
+			if( !BodyA )
+				continue;
+
+			BodyA->Tick();
 		}
 	}
 
