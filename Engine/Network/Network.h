@@ -16,6 +16,7 @@ namespace Network
 			"Host: example.com\r\n"
 			"Connection: close\r\n\r\n";
 
+		bool SSL = false;
 		std::string Data;
 
 		void Execute();

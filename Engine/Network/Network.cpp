@@ -9,6 +9,7 @@
 #include "asio.hpp"
 #include "asio/ts/buffer.hpp"
 #include "asio/ts/internet.hpp"
+// #include "asio/ssl.hpp"
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Utility/Structures/JSON.h>
@@ -37,6 +38,9 @@ void Network::HTTPRequest::Execute()
 
 	Log::Event( "Connecting to %s:%s...\n", HostName.c_str(), Port.c_str() );
 
+	// asio::ssl::context ContextSSL( asio::ssl::context::sslv23 );
+	// ContextSSL.set_default_verify_paths();
+
 	asio::io_context Context;
 	asio::ip::tcp::socket Socket( Context );
 
@@ -62,7 +66,7 @@ void Network::HTTPRequest::Execute()
 
 			if( Bytes > 0 )
 			{
-				break;
+				continue;
 			}
 		}
 	}
