@@ -733,70 +733,120 @@ namespace Math
 			State = Value + 1;
 		}
 
-		uint32_t Random()
+		uint32_t Integer()
 		{
 			State = static_cast<uint64_t>( State * 48271 % 0x7fffffff );
 			return State;
 		}
 
+		float Float()
+		{
+			return static_cast<float>( Double() );
+		}
+
+		double Double()
+		{
+			return static_cast<double>( Integer() ) / static_cast<double>( Maximum );
+		}
+
+		float Range( const float Minimum, const float Maximum )
+		{
+			return ( Maximum - Minimum ) * Float() + Minimum;
+		}
+
+		double Range( const double Minimum, const double Maximum )
+		{
+			return ( Maximum - Minimum ) * Double() + Minimum;
+		}
+
+		int32_t Range( const int32_t Minimum, const int32_t Maximum )
+		{
+			return static_cast<int64_t>( Minimum ) + ( static_cast<int64_t>( Integer() ) % ( static_cast<int64_t>( Maximum ) - static_cast<int64_t>( Minimum ) + 1 ) );
+		}
+
 	private:
 		uint32_t State = 1;
+
+		static constexpr uint32_t Maximum = -1;
 	};
 
 	// https://en.wikipedia.org/wiki/Permuted_congruential_generator
-	/*struct PCG
+	struct PCG
 	{
 		void Seed( const uint32_t& Value )
 		{
 			State = Value + Increment;
-			Random();
+			Integer();
 		}
 
-		uint32_t Random()
+		uint32_t Integer()
 		{
-			uint64_t X = State;
-			const auto Count = static_cast<unsigned>( X >> 59 );
+			uint64_t PreviousState = State;
 
-			State = X * Multiplier + Increment;
-			X ^= X >> 21;
-			return rotr32( static_cast<uint32_t>( X >> 27 ), Count );
+			State = PreviousState * Multiplier + Increment;
+			uint32_t Shift = ( ( PreviousState >> 18u ) ^ PreviousState ) >> 27u;
+			uint32_t Rotation = PreviousState >> 59u;
+			return ( Shift >> Rotation ) | ( Shift << ( ( Maximum - Rotation ) & 31 ) );
+		}
+
+		float Float()
+		{
+			return static_cast<float>( Double() );
+		}
+
+		double Double()
+		{
+			return static_cast<double>( Integer() ) / static_cast<double>( Maximum );
+		}
+
+		float Range( const float Minimum, const float Maximum )
+		{
+			return ( Maximum - Minimum ) * Float() + Minimum;
+		}
+
+		double Range( const double Minimum, const double Maximum )
+		{
+			return ( Maximum - Minimum ) * Double() + Minimum;
+		}
+
+		int32_t Range( const int32_t Minimum, const int32_t Maximum )
+		{
+			return static_cast<int64_t>( Minimum ) + ( static_cast<int64_t>( Integer() ) % ( static_cast<int64_t>( Maximum ) - static_cast<int64_t>( Minimum ) + 1 ) );
 		}
 
 	private:
-		static uint32_t rotr32( uint32_t x, unsigned r )
-		{
-			return x >> r | x << ( -r & 31 );
-		}
-
 		uint64_t State = 0x4d595df4d0f33173;
 		uint64_t Multiplier = 6364136223846793005u;
 		uint64_t Increment = 1442695040888963407u;
-	};*/
 
-	static Lehmer Generator;
+		static constexpr uint32_t Maximum = -1;
+	};
+
+	static PCG Generator;
 	constexpr uint32_t RandomMaximum = -1;
 
 	inline void Seed( uint32_t Value )
 	{
-		std::srand( Value );
-		// Generator.Seed( Value );
+		// std::srand( Value );
+		Generator.Seed( Value );
 	}
 
 	inline float Random()
 	{
-		return static_cast<float>( std::rand() ) / static_cast<float>( RAND_MAX );
-		// return static_cast<float>( Generator.Random() ) / static_cast<float>( RandomMaximum );
+		// return static_cast<float>( std::rand() ) / static_cast<float>( RAND_MAX );
+		return Generator.Float();
 	}
 
 	inline float RandomRange( const float Minimum, const float Maximum )
 	{
-		return ( Maximum - Minimum ) * Random() + Minimum;
+		// return ( Maximum - Minimum ) * Random() + Minimum;
+		return Generator.Range( Minimum, Maximum );
 	}
 
 	inline int32_t RandomRangeInteger( const int32_t Minimum, const int32_t Maximum )
 	{
-		return Minimum + ( std::rand() % ( Maximum - Minimum + 1 ) );
-		// return Minimum + ( Generator.Random() % ( Maximum - Minimum + 1 ) );
+		// return Minimum + ( std::rand() % ( Maximum - Minimum + 1 ) );
+		return Generator.Range( Minimum, Maximum );
 	}
 
 	inline Vector4D FromGLM( const glm::vec4& Vector )

@@ -26,10 +26,12 @@ public:
 			return;
 		}
 
-		if( BufferHandle && DeleteExisting )
+		bool DataExists = BufferHandle != 0;
+		if( DataExists && DeleteExisting )
 		{
 			glDeleteBuffers( 1, &BufferHandle );
 			BufferHandle = 0;
+			DataExists = false;
 		}
 
 		if( !BufferHandle )
@@ -38,7 +40,15 @@ public:
 		}
 
 		glBindBuffer( GL_SHADER_STORAGE_BUFFER, BufferHandle );
-		glBufferData( GL_SHADER_STORAGE_BUFFER, BufferCount * sizeof( T ), BufferData, GL_DYNAMIC_DRAW );
+
+		if( DataExists )
+		{
+			glBufferSubData( GL_SHADER_STORAGE_BUFFER, 0, BufferCount * sizeof( T ), BufferData );
+		}
+		else
+		{
+			glBufferData( GL_SHADER_STORAGE_BUFFER, BufferCount * sizeof( T ), BufferData, GL_DYNAMIC_DRAW );
+		}
 	}
 
 	void Bind( const uint32_t& Binding = 0 ) const

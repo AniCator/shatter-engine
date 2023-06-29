@@ -5,6 +5,27 @@
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Utility/Math.h>
 
+bool Animator::Instance::SetLayerAnimation( const size_t Layer, const std::string& Animation )
+{
+	if( Stack.empty() )
+		return false; // Invalid layer.
+
+	if( Layer >= Stack.size() )
+		return false; // Invalid layer.
+
+	if( !Mesh )
+		return false; // No mesh is set.
+
+	// Lookup the animation and assign it to the stack layer.
+	const auto& Set = Mesh->GetAnimationSet();
+	if( Set.Lookup( Animation, Stack[Layer].Animation ) )
+	{
+		return true; // Animation has been assigned.
+	}
+
+	return false; // Could not assign the animation.
+}
+
 void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop )
 {
 	CurrentAnimation = Name;
@@ -112,6 +133,29 @@ bool Animator::Instance::IsValidBone( const int32_t Handle ) const
 Bone& Animator::Instance::GetBone( const int32_t Handle )
 {
 	return Bones[Handle];
+}
+
+bool Animator::Instance::HasParent( int32_t Index, const int32_t Parent ) const
+{
+	if( Index < 0 )
+		return false;
+
+	if( Parent < 0 )
+		return true; // Negative parent indices will always return true.
+
+	if( Index == Parent )
+		return true; // The current bone is the parent.
+
+	while( Bones[Index].ParentIndex != -1 )
+	{
+		if( Bones[Index].ParentIndex == Parent )
+			return true; // Parent index is in the bone's hierarchy.
+
+		Index = Bones[Index].ParentIndex;
+	}
+
+	// The parent index wasn't found.
+	return false;
 }
 
 Vector3D Animator::Instance::GetBonePosition( const std::string& Name ) const
@@ -512,6 +556,47 @@ std::pair<CompoundKey, CompoundKey> Animator::GetPair( const Animation& Animatio
 	return Pair;
 }
 
+CompoundKey Animator::Add( const CompoundKey& A, const CompoundKey& B, const float& Alpha )
+{
+	CompoundKey Output = A;
+
+	// Check if this is a valid position key.
+	if( A.Position.BoneIndex == B.Position.BoneIndex )
+	{
+		Output.Position.Value += B.Position.Value * Alpha;
+		Output.Position.Value.W = 1.0f;
+	}
+
+	// Check if this is a valid rotation key.
+	if( A.Rotation.BoneIndex == B.Rotation.BoneIndex )
+	{
+		// Output.Rotation = BlendSpherical( Output.Rotation, B.Rotation, Alpha );
+		auto QuaternionB = glm::quat( B.Rotation.Value.W, B.Rotation.Value.X, B.Rotation.Value.Y, B.Rotation.Value.Z );
+
+		auto Quaternion = glm::quat( A.Rotation.Value.W, A.Rotation.Value.X, A.Rotation.Value.Y, A.Rotation.Value.Z );
+		
+		// Transform A by B.
+		QuaternionB = QuaternionB * Quaternion;
+
+		Quaternion = glm::slerp( Quaternion, QuaternionB, Alpha );
+
+		Output.Rotation.Value.X = Quaternion.x;
+		Output.Rotation.Value.Y = Quaternion.y;
+		Output.Rotation.Value.Z = Quaternion.z;
+		Output.Rotation.Value.W = Quaternion.w;
+
+		Output.Rotation.Time = Math::Lerp( A.Rotation.Time, B.Rotation.Time, Alpha );
+	}
+
+	// Check if this is a valid scale key.
+	if( A.Scale.BoneIndex == B.Scale.BoneIndex )
+	{
+		// Output.Scale = BlendLinear( Output.Scale, B.Scale, Alpha );
+	}
+
+	return Output;
+}
+
 /*Animator::TransformationResult Animator::Blend(const TransformationResult& A, const TransformationResult& B, const float& Alpha)
 {
 	// The vectors have to be the same size.
@@ -600,6 +685,7 @@ Vector3D ExtractRootMotion( const Key& A, const Key& B, const float& Alpha, cons
 		}
 
 		Motion *= Alpha;
+		Motion *= 0.5f;
 	}
 
 	return Motion;
@@ -734,9 +820,11 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 
 	for( auto& Entry : Data.Stack )
 	{
-		// Ignore animations that have no influence.
 		if( Entry.Weight == 0.0f )
-			continue;
+			continue; // Ignore animations that have no influence.
+
+		if( Entry.Mask > -1 && !Data.HasParent( Bone->Index, Entry.Mask ) )
+			continue; // A mask has been specified, but the mask bone is nowhere in the current hierarchy.
 
 		float Time = Entry.Time;
 		if( Entry.Loop )
@@ -773,7 +861,14 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 			}
 		}
 
-		Blend = Animator::Blend( Blend, Key, Entry.Weight );
+		if( Entry.Type == Animator::BlendEntry::Type::Add )
+		{
+			Blend = Animator::Add( Blend, Key, Entry.Weight );
+		}
+		else
+		{
+			Blend = Animator::Blend( Blend, Key, Entry.Weight );
+		}
 	}
 
 	const auto Matrices = Get( Blend );
@@ -787,13 +882,8 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 		OverrideTransform = Data.Bones[Bone->Index].OverrideTransform;
 	}
 
+	// Copy the bone data from the skeleton.
 	Data.Bones[Bone->Index] = *Bone;
-
-	// Local bone data
-	const auto& ModelToBone = Bone->ModelToBone;
-	const auto& BoneToModel = Bone->BoneToModel;
-	const auto& ModelMatrix = Bone->ModelMatrix;
-	const auto& InverseModelMatrix = Bone->InverseModelMatrix;
 
 	// Concatenate all the keyframe transformations.
 	auto LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
@@ -828,7 +918,7 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 		Data.RootMotion = Matrices.Scale.Transform( Data.RootMotion );
 	}
 
-	Data.Bones[Bone->Index].BoneTransform = Data.Bones[Bone->Index].GlobalTransform * ModelToBone;
+	Data.Bones[Bone->Index].BoneTransform = Data.Bones[Bone->Index].GlobalTransform * Bone->ModelToBone;
 	Data.Bones[Bone->Index].Evaluated = true;
 	EvaluateChildren( Data, Skeleton, Bone );
 }

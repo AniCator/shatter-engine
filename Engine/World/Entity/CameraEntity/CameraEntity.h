@@ -17,16 +17,17 @@ class CCameraEntity : public CPointEntity
 public:
 	CCameraEntity();
 
-	virtual void Construct() override;
-	virtual void Tick() override;
-	virtual void Destroy() override;
-	virtual void Load( const JSON::Vector& Objects ) override;
+	void Construct() override;
+	void Tick() override;
+	void Destroy() override;
+	void Load( const JSON::Vector& Objects ) override;
+	void Debug() override;
 
 	void Activate();
 	void Deactivate();
 
-	virtual void Export( CData& Data ) override;
-	virtual void Import( CData& Data ) override;
+	void Export( CData& Data ) override;
+	void Import( CData& Data ) override;
 
 protected:
 	CCamera Camera;

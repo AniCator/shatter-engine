@@ -173,14 +173,6 @@ bool BoundingBoxSIMD::Intersects( const BoundingBoxSIMD& B ) const
     const auto Mask = _mm_movemask_ps( ResultCmp );
 
     return ( Mask & 0x0F ) == 0;
-
-	// Store the result.
-	Vector4D Vector = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
-	_mm_storeu_ps( &Vector.X, ResultAnd );
-	const int X = static_cast<int>( Vector.X );
-	const int Y = static_cast<int>( Vector.Y );
-	const int Z = static_cast<int>( Vector.Z );
-	return 0 == X == Y == Z;
 }
 
 BoundingBoxSIMD BoundingBoxSIMD::Combine( const BoundingBoxSIMD& B ) const

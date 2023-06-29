@@ -1,6 +1,7 @@
 ﻿// Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "CameraEntity.h"
 
+#include <Engine/Display/Window.h>
 #include <Engine/World/World.h>
 
 static CEntityFactory<CCameraEntity> Factory( "camera" );
@@ -39,7 +40,14 @@ void CCameraEntity::Tick()
 	const FTransform& Transform = GetTransform();
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 	CameraSetup.CameraPosition = Transform.GetPosition();
-	Camera.SetCameraOrientation( Transform.GetOrientation() );
+	auto Orientation = Transform.GetOrientation();
+	auto Time = static_cast<float>( GetCurrentTime() );
+	auto Rotation = fmod( Time * 0.1f, 1.0f ) * 360.0f;
+	Vector3D CameraOrientation = Vector3D::Zero;
+	CameraOrientation.X = Orientation.Y - 90.0f;
+	CameraOrientation.Y = Orientation.Z;
+	CameraOrientation.Z = 0.0f; // Orientation.X;
+	Camera.SetCameraOrientation( CameraOrientation );
 
 	World->SetActiveCamera( &Camera, Priority );
 }
@@ -87,6 +95,12 @@ void CCameraEntity::Deactivate()
 		return;
 
 	World->SetActiveCamera( nullptr, Priority );
+}
+
+void CCameraEntity::Debug()
+{
+	CPointEntity::Debug();
+	Camera.DrawFrustum();
 }
 
 void CCameraEntity::Export( CData& Data )

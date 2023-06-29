@@ -171,7 +171,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 {
 	OptickEvent();
 
-	// Log::Event( "Parsing level \"%s\".\n", File.Location().c_str() );
+	Log::Event( "Parsing level \"%s\".\n", File.Location().c_str() );
 
 	JSON::Container JSON = JSON::Tree( File );
 

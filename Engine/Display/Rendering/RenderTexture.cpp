@@ -16,9 +16,9 @@ struct ScreenRequest
 	ScreenBuffer Output;
 };
 
-GLuint GenerateColorBuffer( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter )
+TextureHandle GenerateColorBuffer( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter )
 {
-	GLuint Handle = 0;
+	TextureHandle Handle = 0;
 
 	glGenTextures( 1, &Handle );
 	glBindTexture( GL_TEXTURE_2D, Handle );
@@ -65,9 +65,9 @@ GLuint GenerateColorBuffer( const GLuint Width, const GLuint Height, const EImag
 	return Handle;
 }
 
-GLuint GenerateColorBufferMultisample( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter, const GLuint Samples )
+TextureHandle GenerateColorBufferMultisample( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter, const GLuint Samples )
 {
-	GLuint Handle = 0;
+	TextureHandle Handle = 0;
 
 	// Generate a texture handle and bind it as a multisample texture.
 	glGenTextures( 1, &Handle );
@@ -102,7 +102,7 @@ GLuint GenerateColorBufferMultisample( const GLuint Width, const GLuint Height, 
 	return Handle;
 }
 
-GLuint GenerateColorBuffer( const RenderTextureConfiguration& Configuration )
+TextureHandle GenerateColorBuffer( const RenderTextureConfiguration& Configuration )
 {
 	if( Configuration.Samples > 1 )
 		return GenerateColorBufferMultisample( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Trilinear, Configuration.Samples );
@@ -110,9 +110,9 @@ GLuint GenerateColorBuffer( const RenderTextureConfiguration& Configuration )
 	return GenerateColorBuffer( Configuration.Width, Configuration.Height, Configuration.Format, EFilteringMode::Trilinear );
 }
 
-GLuint GenerateDepthBuffer( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter, const bool DepthOnly )
+TextureHandle GenerateDepthBuffer( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter, const bool DepthOnly )
 {
-	GLuint Handle = 0;
+	TextureHandle Handle = 0;
 
 	glGenTextures( 1, &Handle );
 	glBindTexture( GL_TEXTURE_2D, Handle );
@@ -143,9 +143,9 @@ GLuint GenerateDepthBuffer( const GLuint Width, const GLuint Height, const EImag
 	return Handle;
 }
 
-GLuint GenerateDepthBufferMultisample( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter, const GLuint Samples, const bool DepthOnly )
+TextureHandle GenerateDepthBufferMultisample( const GLuint Width, const GLuint Height, const EImageFormat Format, const EFilteringMode Filter, const GLuint Samples, const bool DepthOnly )
 {
-	GLuint Handle = 0;
+	TextureHandle Handle = 0;
 
 	glGenTextures( 1, &Handle );
 	glBindTexture( GL_TEXTURE_2D_MULTISAMPLE, Handle );
@@ -157,7 +157,7 @@ GLuint GenerateDepthBufferMultisample( const GLuint Width, const GLuint Height, 
 	return Handle;
 }
 
-GLuint GenerateDepthBuffer( const RenderTextureConfiguration& Configuration )
+TextureHandle GenerateDepthBuffer( const RenderTextureConfiguration& Configuration )
 {
 	const auto DepthOnly = !Configuration.EnableColor && Configuration.EnableDepth;
 	if( Configuration.Samples > 1 )
@@ -444,7 +444,7 @@ RenderTextureConfiguration CRenderTexture::GetConfiguration() const
 	return Configuration;
 }
 
-GLuint CRenderTexture::GetFramebuffer() const
+FramebufferHandle CRenderTexture::GetFramebuffer() const
 {
 	if( Multisampled && !HasBeenResolved )
 		return MultisampledBuffer.Buffer;

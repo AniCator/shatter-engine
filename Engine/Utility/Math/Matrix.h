@@ -7,6 +7,12 @@ class Matrix3D
 {
 public:
 	Matrix3D() = default;
+	Matrix3D( const float Value )
+	{
+		Columns[X] = { Value, 0.0f, 0.0f };
+		Columns[Y] = { 0.0f, Value, 0.0f };
+		Columns[Z] = { 0.0f, 0.0f, Value };
+	}
 
 	void Identity()
 	{
@@ -206,6 +212,14 @@ class Matrix4D
 {
 public:
 	Matrix4D() = default;
+	Matrix4D( const float Value )
+	{
+		Columns[X] = { Value, 0.0f, 0.0f, 0.0f };
+		Columns[Y] = { 0.0f, Value, 0.0f, 0.0f };
+		Columns[Z] = { 0.0f, 0.0f, Value, 0.0f };
+		Columns[W] = { 0.0f, 0.0f, 0.0f, Value };
+	}
+
 	Matrix4D( const Vector3D& Offset )
 	{
 		Translate( Offset );
@@ -372,6 +386,153 @@ public:
 		Result[Z] = Columns[X] * B[Z][X] + Columns[Y] * B[Z][Y] + Columns[Z] * B[Z][Z] + Columns[W] * B[Z][W];
 		Result[W] = Columns[X] * B[W][X] + Columns[Y] * B[W][Y] + Columns[Z] * B[W][Z] + Columns[W] * B[W][W];
 		return Result;
+	}
+
+	Matrix4D operator*=( const Matrix4D& B )
+	{
+		Matrix4D Result;
+		Result[X] = Columns[X] * B[X][X] + Columns[Y] * B[X][Y] + Columns[Z] * B[X][Z] + Columns[W] * B[X][W];
+		Result[Y] = Columns[X] * B[Y][X] + Columns[Y] * B[Y][Y] + Columns[Z] * B[Y][Z] + Columns[W] * B[Y][W];
+		Result[Z] = Columns[X] * B[Z][X] + Columns[Y] * B[Z][Y] + Columns[Z] * B[Z][Z] + Columns[W] * B[Z][W];
+		Result[W] = Columns[X] * B[W][X] + Columns[Y] * B[W][Y] + Columns[Z] * B[W][Z] + Columns[W] * B[W][W];
+
+		*this = Result;
+		return *this;
+	}
+
+	Matrix4D operator*( const float Multiplier ) const
+	{
+		Matrix4D Result = *this;
+		Result.Columns[X][X] *= Multiplier;
+		Result.Columns[X][Y] *= Multiplier;
+		Result.Columns[X][Z] *= Multiplier;
+		Result.Columns[X][W] *= Multiplier;
+		Result.Columns[Y][X] *= Multiplier;
+		Result.Columns[Y][Y] *= Multiplier;
+		Result.Columns[Y][Z] *= Multiplier;
+		Result.Columns[Y][W] *= Multiplier;
+		Result.Columns[Z][X] *= Multiplier;
+		Result.Columns[Z][Y] *= Multiplier;
+		Result.Columns[Z][Z] *= Multiplier;
+		Result.Columns[Z][W] *= Multiplier;
+		Result.Columns[W][X] *= Multiplier;
+		Result.Columns[W][Y] *= Multiplier;
+		Result.Columns[W][Z] *= Multiplier;
+		Result.Columns[W][W] *= Multiplier;
+
+		return Result;
+	}
+
+	Matrix4D operator*=( const float Multiplier )
+	{
+		Columns[X][X] *= Multiplier;
+		Columns[X][Y] *= Multiplier;
+		Columns[X][Z] *= Multiplier;
+		Columns[X][W] *= Multiplier;
+		Columns[Y][X] *= Multiplier;
+		Columns[Y][Y] *= Multiplier;
+		Columns[Y][Z] *= Multiplier;
+		Columns[Y][W] *= Multiplier;
+		Columns[Z][X] *= Multiplier;
+		Columns[Z][Y] *= Multiplier;
+		Columns[Z][Z] *= Multiplier;
+		Columns[Z][W] *= Multiplier;
+		Columns[W][X] *= Multiplier;
+		Columns[W][Y] *= Multiplier;
+		Columns[W][Z] *= Multiplier;
+		Columns[W][W] *= Multiplier;
+
+		return *this;
+	}
+
+	Matrix4D operator+( const Matrix4D& B ) const
+	{
+		Matrix4D Result = B;
+		Result.Columns[X][X] += Columns[X][X];
+		Result.Columns[X][Y] += Columns[X][Y];
+		Result.Columns[X][Z] += Columns[X][Z];
+		Result.Columns[X][W] += Columns[X][W];
+		Result.Columns[Y][X] += Columns[Y][X];
+		Result.Columns[Y][Y] += Columns[Y][Y];
+		Result.Columns[Y][Z] += Columns[Y][Z];
+		Result.Columns[Y][W] += Columns[Y][W];
+		Result.Columns[Z][X] += Columns[Z][X];
+		Result.Columns[Z][Y] += Columns[Z][Y];
+		Result.Columns[Z][Z] += Columns[Z][Z];
+		Result.Columns[Z][W] += Columns[Z][W];
+		Result.Columns[W][X] += Columns[W][X];
+		Result.Columns[W][Y] += Columns[W][Y];
+		Result.Columns[W][Z] += Columns[W][Z];
+		Result.Columns[W][W] += Columns[W][W];
+
+		return Result;
+	}
+
+	Matrix4D operator+=( const Matrix4D& B )
+	{
+		Columns[X][X] += B.Columns[X][X];
+		Columns[X][Y] += B.Columns[X][Y];
+		Columns[X][Z] += B.Columns[X][Z];
+		Columns[X][W] += B.Columns[X][W];
+		Columns[Y][X] += B.Columns[Y][X];
+		Columns[Y][Y] += B.Columns[Y][Y];
+		Columns[Y][Z] += B.Columns[Y][Z];
+		Columns[Y][W] += B.Columns[Y][W];
+		Columns[Z][X] += B.Columns[Z][X];
+		Columns[Z][Y] += B.Columns[Z][Y];
+		Columns[Z][Z] += B.Columns[Z][Z];
+		Columns[Z][W] += B.Columns[Z][W];
+		Columns[W][X] += B.Columns[W][X];
+		Columns[W][Y] += B.Columns[W][Y];
+		Columns[W][Z] += B.Columns[W][Z];
+		Columns[W][W] += B.Columns[W][W];
+
+		return *this;
+	}
+
+	Matrix4D operator-( const Matrix4D& B ) const
+	{
+		Matrix4D Result = B;
+		Result.Columns[X][X] -= Columns[X][X];
+		Result.Columns[X][Y] -= Columns[X][Y];
+		Result.Columns[X][Z] -= Columns[X][Z];
+		Result.Columns[X][W] -= Columns[X][W];
+		Result.Columns[Y][X] -= Columns[Y][X];
+		Result.Columns[Y][Y] -= Columns[Y][Y];
+		Result.Columns[Y][Z] -= Columns[Y][Z];
+		Result.Columns[Y][W] -= Columns[Y][W];
+		Result.Columns[Z][X] -= Columns[Z][X];
+		Result.Columns[Z][Y] -= Columns[Z][Y];
+		Result.Columns[Z][Z] -= Columns[Z][Z];
+		Result.Columns[Z][W] -= Columns[Z][W];
+		Result.Columns[W][X] -= Columns[W][X];
+		Result.Columns[W][Y] -= Columns[W][Y];
+		Result.Columns[W][Z] -= Columns[W][Z];
+		Result.Columns[W][W] -= Columns[W][W];
+
+		return Result;
+	}
+
+	Matrix4D operator-=( const Matrix4D& B )
+	{
+		Columns[X][X] -= B.Columns[X][X];
+		Columns[X][Y] -= B.Columns[X][Y];
+		Columns[X][Z] -= B.Columns[X][Z];
+		Columns[X][W] -= B.Columns[X][W];
+		Columns[Y][X] -= B.Columns[Y][X];
+		Columns[Y][Y] -= B.Columns[Y][Y];
+		Columns[Y][Z] -= B.Columns[Y][Z];
+		Columns[Y][W] -= B.Columns[Y][W];
+		Columns[Z][X] -= B.Columns[Z][X];
+		Columns[Z][Y] -= B.Columns[Z][Y];
+		Columns[Z][Z] -= B.Columns[Z][Z];
+		Columns[Z][W] -= B.Columns[Z][W];
+		Columns[W][X] -= B.Columns[W][X];
+		Columns[W][Y] -= B.Columns[W][Y];
+		Columns[W][Z] -= B.Columns[W][Z];
+		Columns[W][W] -= B.Columns[W][W];
+
+		return *this;
 	}
 
 	const Vector4D& operator[](uint32_t Column) const

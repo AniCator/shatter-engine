@@ -373,6 +373,13 @@ void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* 
 		auto TransformedNormal = aiMatrix3x3( NodeTransformation ) * Normal;
 		NewVertex.Normal = Vector3D( TransformedNormal.x, TransformedNormal.y, TransformedNormal.z );
 
+		if( Mesh->HasTangentsAndBitangents() )
+		{
+			const auto& Tangent = Mesh->mTangents[VertexIndex];
+			auto TransformedTangent = aiMatrix3x3( NodeTransformation ) * Tangent;
+			NewVertex.Tangent = Vector3D( TransformedTangent.x, TransformedTangent.y, TransformedTangent.z );
+		}
+
 		if( Mesh->HasTextureCoords( 0 ) )
 		{
 			const auto& Coordinate = Mesh->mTextureCoords[0][VertexIndex];
@@ -663,6 +670,16 @@ void FinishSkeleton( ImportedMeshData& MeshData )
 		MeshData.Vertices[VertexIndex].Weight[1] = Math::Float( Skeleton.Weights[VertexIndex].Weight[1] );
 		MeshData.Vertices[VertexIndex].Weight[2] = Math::Float( Skeleton.Weights[VertexIndex].Weight[2] );
 		MeshData.Vertices[VertexIndex].Weight[3] = Math::Float( Skeleton.Weights[VertexIndex].Weight[3] );
+
+		// The total weight should never be zero.
+		/*assert( !Math::Equal( MeshData.Vertices[VertexIndex].Weight, Vector4D( 0.0f, 0.0f, 0.0f, 0.0f ) ) );
+
+		if( MeshData.Vertices[VertexIndex].Bone[0] > -1 )
+		{
+			const auto& Vertex = MeshData.Vertices[VertexIndex];
+			std::string Log = "Weights " + std::to_string( Vertex.Weight[0] ) + " " + std::to_string( Vertex.Weight[1] ) + " " + std::to_string( Vertex.Weight[2] ) + " " + std::to_string( Vertex.Weight[3] );
+			Log::Event( "%s\n", Log.c_str() );
+		}*/
 	}
 }
 
@@ -686,7 +703,7 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	Importer.SetPropertyBool( "AI_CONFIG_IMPORT_REMOVE_EMPTY_BONES", false );
 
     const aiScene* Scene = Importer.ReadFile( File.Location().c_str(), 
-		// aiProcess_CalcTangentSpace			| // Calculate tangents and bitangents if possible.
+		aiProcess_CalcTangentSpace			| // Calculate tangents and bitangents if possible.
 		aiProcess_JoinIdenticalVertices		| // Join identical vertices/ optimize indexing.
 		// aiProcess_ValidateDataStructure		| // Perform a full validation of the loader's output.
 		aiProcess_ImproveCacheLocality		| // Improve the cache locality of the output vertices.
@@ -696,7 +713,7 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 		aiProcess_GenUVCoords				| // Convert spherical, cylindrical, box and planar mapping to proper UVs.
 		aiProcess_TransformUVCoords			| // Preprocess UV transformations (scaling, translation ...).
 		// aiProcess_FindInstances				| // Search for instanced meshes and remove them by references to one master.
-		aiProcess_LimitBoneWeights			| // Limit bone weights to 4 per vertex.
+		// aiProcess_LimitBoneWeights			| // Limit bone weights to 4 per vertex.
 		aiProcess_OptimizeMeshes			| // Join small meshes, if possible.
 		// aiProcess_SplitByBoneCount			| // Split meshes with too many bones.
 

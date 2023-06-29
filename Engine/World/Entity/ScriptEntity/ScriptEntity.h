@@ -60,6 +60,7 @@ public:
 
 	// Set script property.
 	void SetFloat( const std::string& Key, const float& Value );
+	void SetFloatIfNotSet( const std::string& Key, const float& Value );
 
 	// Checks if script property is set.
 	bool HasInteger( const std::string& Key );
@@ -69,6 +70,7 @@ public:
 
 	// Set script property.
 	void SetInteger( const std::string& Key, const int32_t& Value );
+	void SetIntegerIfNotSet( const std::string& Key, const int32_t& Value );
 
 	// Checks if script property is set.
 	bool HasString( const std::string& Key );
@@ -78,6 +80,7 @@ public:
 
 	// Set script property.
 	void SetString( const std::string& Key, const std::string& Value );
+	void SetStringIfNotSet( const std::string& Key, const std::string& Value );
 
 	// The entity associated with the most recent interaction.
 	CEntity* InteractionEntity = nullptr;

@@ -516,6 +516,8 @@ void RegisterEntity()
 	ScriptEngine::AddTypeMethod( "Entity", "void SetParent(Entity &in)", &CEntity::SetParent );
 	ScriptEngine::AddTypeMethod( "Entity", "Entity @ GetParent() const", &CEntity::GetParent );
 
+	ScriptEngine::AddTypeMethod( "Entity", "void Send(string &in, Entity @)", &CEntity::Send );
+	ScriptEngine::AddTypeMethod( "Entity", "void Receive(string &in, Entity @)", &CEntity::Receive );
 	ScriptEngine::AddTypeMethod( "Entity", "void Tag(string &in)", &CEntity::Tag );
 	ScriptEngine::AddTypeMethod( "Entity", "void Untag(string &in)", &CEntity::Untag );
 	ScriptEngine::AddTypeMethod( "Entity", "bool HasTag(string &in) const", &CEntity::HasTag );

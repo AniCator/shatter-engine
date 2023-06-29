@@ -93,6 +93,7 @@ static ImVec2 Drag = ImVec2();
 static class CTexture* PreviewTexture = nullptr;
 static std::string PreviewName;
 static float PreviousZoomWheel = -1.0f;
+static bool TiledPreview = false;
 
 std::unordered_map<std::string, CTexture*> Thumbnails;
 CTexture* GetThumbnail( const std::string& Name )
@@ -132,7 +133,7 @@ CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh )
 
 	auto& Window = CWindow::Get();
 	CRenderer& Renderer = Window.GetRenderer();
-	Renderer.AddRenderPass( &ModelPass, ERenderPassLocation::Translucent );
+	Renderer.AddRenderPass( &ModelPass, RenderPassLocation::Translucent );
 	
 	return GetThumbnail( Name );
 }
@@ -160,7 +161,7 @@ void ShowTexture( CTexture* Texture )
 		ModelPass.Target = PreviewRenderTexture;
 		ModelPass.Mesh = PreviewMesh;
 		PreviewTexture = PreviewRenderTexture;
-		Renderer.AddRenderPass( &ModelPass, ERenderPassLocation::PreScene );
+		Renderer.AddRenderPass( &ModelPass, RenderPassLocation::PreScene );
 	}
 
 	if( !Texture )
@@ -199,7 +200,8 @@ void ShowTexture( CTexture* Texture )
 	const auto CursorPosition = ImGui::GetCursorScreenPos();
 
 	auto* TextureID = reinterpret_cast<ImTextureID>( Texture->GetHandle() );
-	ImGui::Image( TextureID, ImageSize, ImVec2( 0, 1 ), ImVec2( 1, 0 ) );
+	const float TileScale = TiledPreview ? 2.0f : 1.0f;
+	ImGui::Image( TextureID, ImageSize, ImVec2( 0.0f, TileScale ), ImVec2( TileScale, 0.0f ) );
 	ImGui::SetCursorPos( ContentPosition );
 	ImGui::InvisibleButton( "PreviewPanel", ImageSize );
 
@@ -207,6 +209,12 @@ void ShowTexture( CTexture* Texture )
 	{
 		float TextureX = ( ( ImGui::GetMousePos().x - CursorPosition.x ) / ImageSize.x ) * Texture->GetWidth();
 		float TextureY = ( ( ImGui::GetMousePos().y - CursorPosition.y ) / ImageSize.y ) * Texture->GetHeight();
+
+		if( TiledPreview )
+		{
+			TextureX = std::fmod( TextureX * 2.0f, Texture->GetWidth() );
+			TextureY = std::fmod( TextureY * 2.0f, Texture->GetHeight() );
+		}
 
 		ImGui::PushStyleVar( ImGuiStyleVar_Alpha, 0.8f );
 		ImGui::BeginTooltip();
@@ -266,6 +274,11 @@ void ShowTexture( CTexture* Texture )
 	if( ImGui::Button( "Center" ) )
 	{
 		Drag = ImVec2();
+	}
+
+	if( ImGui::Button( TiledPreview ? "Single" : "Tile") )
+	{
+		TiledPreview = !TiledPreview;
 	}
 }
 
@@ -801,7 +814,7 @@ void AssetUI()
 
 					if( ImGui::Selectable( ( Pair.first + "##Custom" ).c_str(), false, ImGuiSelectableFlags_SpanAllColumns ) )
 					{
-						// 
+						Asset->Reload();
 					}
 					ImGui::NextColumn();
 
@@ -1515,8 +1528,12 @@ void AudioPlayerUI()
 static CRenderTexture ShaderToyTexture;
 static CShader* ShaderToyShader = nullptr;
 static CTexture* Slot0 = nullptr;
+static bool Slot0External = false;
 static CTexture* Slot1 = nullptr;
+static bool Slot1External = false;
 static CTexture* Slot2 = nullptr;
+static bool Slot2External = false;
+
 class CRenderPassShaderToy : public CRenderPass
 {
 public:
@@ -1602,11 +1619,27 @@ void ShaderToyUI()
 				const CFile File( Path );
 				if( File.Exists() )
 				{
-					delete Slot0;
+					if( Slot0External )
+					{
+						delete Slot0;
+					}
+
 					Slot0 = new CTexture( Path.c_str() );
 					Slot0->Load();
 					CAssets::Get().CreateNamedTexture( "shadertoy_slot0", Slot0 );
+					Slot0External = true;
 				}
+			}
+
+			if( ImGui::IsItemClicked( 1 ) && PreviewTexture )
+			{
+				if( Slot0External )
+				{
+					delete Slot0;
+				}
+
+				Slot0 = PreviewTexture;
+				Slot0External = false;
 			}
 
 			ImGui::SameLine();
@@ -1618,11 +1651,27 @@ void ShaderToyUI()
 				const CFile File( Path );
 				if( File.Exists() )
 				{
-					delete Slot1;
+					if( Slot1External )
+					{
+						delete Slot1;
+					}
+
 					Slot1 = new CTexture( Path.c_str() );
 					Slot1->Load();
 					CAssets::Get().CreateNamedTexture( "shadertoy_slot1", Slot1 );
+					Slot1External = true;
 				}
+			}
+
+			if( ImGui::IsItemClicked( 1 ) && PreviewTexture )
+			{
+				if( Slot1External )
+				{
+					delete Slot1;
+				}
+
+				Slot1 = PreviewTexture;
+				Slot1External = false;
 			}
 
 			ImGui::SameLine();
@@ -1634,11 +1683,27 @@ void ShaderToyUI()
 				const CFile File( Path );
 				if( File.Exists() )
 				{
-					delete Slot2;
+					if( Slot2External )
+					{
+						delete Slot2;
+					}
+
 					Slot2 = new CTexture( Path.c_str() );
 					Slot2->Load();
 					CAssets::Get().CreateNamedTexture( "shadertoy_slot2", Slot2 );
+					Slot2External = true;
 				}
+			}
+
+			if( ImGui::IsItemClicked( 1 ) && PreviewTexture )
+			{
+				if( Slot2External )
+				{
+					delete Slot2;
+				}
+
+				Slot2 = PreviewTexture;
+				Slot2External = false;
 			}
 		}
 
@@ -1667,7 +1732,7 @@ void ShaderToyUI()
 
 	static CRenderPassShaderToy ShaderToyPass( 1000, 1000, CCamera() );
 	ShaderToyPass.Target = &ShaderToyTexture;
-	CWindow::Get().GetRenderer().AddRenderPass( &ShaderToyPass, ERenderPassLocation::PreScene );
+	CWindow::Get().GetRenderer().AddRenderPass( &ShaderToyPass, RenderPassLocation::PreScene );
 }
 
 void TagListUI()

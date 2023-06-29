@@ -24,6 +24,7 @@ static CEntityFactory<CMeshEntity> Factory( "mesh" );
 
 ConfigurationVariable<bool> DisplaySkeleton( "debug.MeshEntity.DisplaySkeleton", false );
 ConfigurationVariable<bool> DisplayLightInfluences( "debug.MeshEntity.DisplayLightInfluences", false );
+ConfigurationVariable<bool> DisplayNormals( "debug.MeshEntity.DisplayNormals", false );
 
 CMeshEntity::CMeshEntity()
 {
@@ -95,6 +96,21 @@ void CMeshEntity::Spawn( CMesh* Mesh, CShader* Shader, CTexture* Texture, FTrans
 
 void CMeshEntity::Construct()
 {
+	const auto* World = GetWorld();
+
+	// Find the parent if we haven't yet.
+	if( ParentName.length() > 0 && !Parent && World )
+	{
+		if( auto* Entity = World->Find( ParentName ) )
+		{
+			SetParent( Entity );
+			ShouldUpdateTransform = true;
+		}
+	}
+
+	// Update the transform data.
+	GetTransform();
+
 	if( Mesh )
 	{
 		ConstructRenderable();
@@ -139,7 +155,7 @@ void CMeshEntity::Tick()
 		AnimationTimeAccumulator += DeltaTime;
 
 		FRenderDataInstanced& RenderData = Renderable->GetRenderData();
-		RenderData.Transform = Transform;
+		RenderData.Transform = WorldTransform;
 		RenderData.Color = Color;
 		RenderData.WorldBounds = WorldBounds;
 
@@ -270,12 +286,36 @@ void DebugLight( const Vector3D& Position, const int32_t& Index )
 	UI::AddText( LightPosition + Vector3D( 0.0f, 0.0f, 1.0f ), "Angle", Angle );
 }
 
+std::string GetMatrixLayout2( const Matrix4D& Matrix )
+{
+	const std::string BoneMatrix =
+		std::to_string( Matrix[0][0] )
+		+ " " + std::to_string( Matrix[0][1] )
+		+ " " + std::to_string( Matrix[0][2] )
+		+ " " + std::to_string( Matrix[0][3] )
+		+ "\n" + std::to_string( Matrix[1][0] )
+		+ " " + std::to_string( Matrix[1][1] )
+		+ " " + std::to_string( Matrix[1][2] )
+		+ " " + std::to_string( Matrix[1][3] )
+		+ "\n" + std::to_string( Matrix[2][0] )
+		+ " " + std::to_string( Matrix[2][1] )
+		+ " " + std::to_string( Matrix[2][2] )
+		+ " " + std::to_string( Matrix[2][3] )
+		+ "\n" + std::to_string( Matrix[3][0] )
+		+ " " + std::to_string( Matrix[3][1] )
+		+ " " + std::to_string( Matrix[3][2] )
+		+ " " + std::to_string( Matrix[3][3] )
+		;
+
+	return BoneMatrix;
+}
+
 void CMeshEntity::Debug()
 {
 	CPointEntity::Debug();
 
-	const auto Position = Transform.GetPosition();
-	const auto ForwardVector = Transform.Rotate( Vector3D( 0.0f, 1.0f, 0.0f ) ).Normalized();
+	const auto Position = WorldTransform.GetPosition();
+	const auto ForwardVector = WorldTransform.Rotate( Vector3D( 0.0f, 1.0f, 0.0f ) ).Normalized();
 	const auto RightVector = ForwardVector.Cross( WorldUp );
 	const auto UpVector = RightVector.Cross( ForwardVector );
 
@@ -305,6 +345,98 @@ void CMeshEntity::Debug()
 		DebugLight( Position, RenderData.LightIndex.Index[1] );
 		DebugLight( Position, RenderData.LightIndex.Index[2] );
 		DebugLight( Position, RenderData.LightIndex.Index[3] );
+	}
+
+	if( DisplayNormals && Mesh )
+	{
+		const auto& VertexInfo = Mesh->GetVertexBufferData();
+		const auto& VertexData = Mesh->GetVertexData();
+
+		static bool LogVertPos = true;
+		Vector3D Normal, Tangent, Binormal;
+		for( size_t Index = 0; Index < VertexInfo.VertexCount; Index++ )
+		{
+			const auto& Vertex = VertexData.Vertices[Index];
+
+			ByteToVector( Vertex.Normal, Normal );
+			ByteToVector( Vertex.Tangent, Tangent );
+
+			Matrix4D BoneTransform = Transform.GetTransformationMatrix();
+			if( !AnimationInstance.Bones.empty() )
+			{
+				BoneTransform = Matrix4D( 0.0f );
+
+				// Compose the bone transformations.
+				if( Vertex.Bone[0] > -1 )
+				{
+					BoneTransform += AnimationInstance.Bones[Vertex.Bone[0]].BoneTransform * Vertex.Weight[0];
+				}
+
+				if( Vertex.Bone[1] > -1 )
+				{
+					BoneTransform += AnimationInstance.Bones[Vertex.Bone[1]].BoneTransform * Vertex.Weight[1];
+				}
+
+				if( Vertex.Bone[2] > -1 )
+				{
+					BoneTransform += AnimationInstance.Bones[Vertex.Bone[2]].BoneTransform * Vertex.Weight[2];
+				}
+
+				if( Vertex.Bone[3] > -1 )
+				{
+					BoneTransform += AnimationInstance.Bones[Vertex.Bone[3]].BoneTransform * Vertex.Weight[3];
+				}
+
+				// Transform to the model location.
+				BoneTransform = Transform.GetTransformationMatrix() * BoneTransform;
+			}
+
+			Vector3D Position = BoneTransform.Transform( Vertex.Position );
+			Normal = BoneTransform.Rotate( Normal ).Normalized();
+			Tangent = BoneTransform.Rotate( Tangent ).Normalized();
+			Binormal = Normal.Cross( Tangent ).Normalized();
+
+			if( LogVertPos )
+			{
+				std::string Log = "Index: " + std::to_string( Index );
+				Log += " Position: " + std::to_string( Position.X ) + " " + std::to_string( Position.Y ) + " " + std::to_string( Position.Z );
+				Log += " Normal: " + std::to_string( Normal.X ) + " " + std::to_string( Normal.Y ) + " " + std::to_string( Normal.Z );
+
+				if( Math::Equal( Normal, Vector3D::Zero ) )
+				{
+					Log += "\n";
+					Log += "ByteNormal: " + std::to_string( Vertex.Normal[0] ) + " " + std::to_string( Vertex.Normal[1] ) + " " + std::to_string( Vertex.Normal[2] );
+					Log += "\n";
+
+					Log += GetMatrixLayout2( AnimationInstance.Bones[Vertex.Bone[0]].BoneTransform );
+					Log += "\n";
+
+					Log += GetMatrixLayout2( AnimationInstance.Bones[Vertex.Bone[1]].BoneTransform );
+					Log += "\n";
+
+					Log += GetMatrixLayout2( AnimationInstance.Bones[Vertex.Bone[2]].BoneTransform );
+					Log += "\n";
+
+					Log += GetMatrixLayout2( AnimationInstance.Bones[Vertex.Bone[3]].BoneTransform );
+					Log += "\n";
+
+					Log += "\nWeights " + std::to_string( Vertex.Weight[0] ) + " " + std::to_string( Vertex.Weight[1] ) + " " + std::to_string( Vertex.Weight[2] ) + " " + std::to_string( Vertex.Weight[3] );
+				}
+
+				Log::Event( "%s\n", Log.c_str() );
+			}
+
+			// Scale down the vectors to make them smaller on screen.
+			Normal *= 0.025f;
+			Tangent *= 0.025f;
+			Binormal *= 0.025f;
+
+			UI::AddLine( Position, Position + Normal, Color::Blue );
+			UI::AddLine( Position, Position + Tangent, Color::Red );
+			UI::AddLine( Position, Position + Binormal, Color::Green );
+		}
+
+		LogVertPos = false;
 	}
 }
 
@@ -582,7 +714,7 @@ const FTransform& CMeshEntity::GetTransform()
 	
 	if( UpdateBounds && Mesh )
 	{
-		WorldBounds = Math::AABB( Mesh->GetBounds(), Transform );
+		WorldBounds = Math::AABB( Mesh->GetBounds(), WorldTransform );
 	}
 	
 	return WorldTransform;
@@ -645,6 +777,11 @@ Matrix4D CMeshEntity::GetBoneTransform( const int32_t Handle, const Space Space 
 	return AnimationInstance.GetBoneTransform( Handle );
 }
 
+Vector3D CMeshEntity::GetRootMotion() const
+{
+	return Transform.GetRotationMatrix().Transform( AnimationInstance.RootMotion );
+}
+
 void CMeshEntity::SetPosition( const Vector3D& Position, const bool& Teleport )
 {
 	ShouldUpdateTransform = true;
@@ -690,7 +827,7 @@ void CMeshEntity::ConstructRenderable()
 
 	// Configure the render data.
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
-	RenderData.Transform = Transform;
+	RenderData.Transform = WorldTransform;
 	RenderData.Color = Color;
 	RenderData.WorldBounds = WorldBounds;
 

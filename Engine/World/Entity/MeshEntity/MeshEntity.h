@@ -56,6 +56,11 @@ public:
 	const std::string& GetAnimation() const;
 	bool HasAnimation( const std::string& Name ) const;
 
+	const Animator::Instance& GetAnimationInstance() const
+	{
+		return AnimationInstance;
+	}
+
 	bool IsAnimationFinished() const;
 
 	float GetPlayRate() const;
@@ -72,6 +77,8 @@ public:
 		World
 	};
 	Matrix4D GetBoneTransform( const int32_t Handle, const Space Space = World ) const;
+
+	Vector3D GetRootMotion() const;
 
 	void SetPosition( const Vector3D& Position, const bool& Teleport = true );
 	void SetOrientation( const Vector3D& Orientation );

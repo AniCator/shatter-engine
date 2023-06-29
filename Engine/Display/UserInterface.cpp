@@ -999,11 +999,11 @@ namespace UI
 
 			if( Window.GetRenderer().ForceWireFrame )
 			{
-				Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Standard );
+				Window.GetRenderer().AddRenderPass( &LinePass, RenderPassLocation::Standard );
 			}
 			else
 			{
-				Window.GetRenderer().AddRenderPass( &LinePass, ERenderPassLocation::Standard );
+				Window.GetRenderer().AddRenderPass( &LinePass, RenderPassLocation::Standard );
 			}
 		}
 

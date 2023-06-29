@@ -31,6 +31,10 @@ void Uniform::Bind( const unsigned int& Program )
 		{
 			glUniform3fv( BufferLocation, 1, Uniform3.Base() );
 		}
+		else if( Type == Component2 )
+		{
+			glUniform2fv( BufferLocation, 1, Uniform2.Base() );
+		}
 		else if( Type == Component4x4 )
 		{
 			glUniformMatrix4fv( BufferLocation, 1, GL_FALSE, &Uniform4x4[0][0] );

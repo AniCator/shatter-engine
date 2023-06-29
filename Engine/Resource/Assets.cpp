@@ -41,7 +41,7 @@ void LoadAnimationMetaData( AnimationSet& Set, const JSON::Container& SetData )
 		if( Iterator == Set.Skeleton.Animations.end() )
 			continue; // The animation could not be found.
 
-		auto& Animation = Iterator->second;
+		Animation& Animation = Iterator->second;
 
 		// Check for root motion requests.
 		if( const auto* RootMotion = JSON::Find( Entry->Objects, "rootmotion" ) )
@@ -53,6 +53,156 @@ void LoadAnimationMetaData( AnimationSet& Set, const JSON::Container& SetData )
 			else if( RootMotion->Value == "xyz" )
 			{
 				Animation.RootMotion = Animation::XYZ;
+			}
+		}
+
+		if( Set.Skeleton.Animations.empty() )
+			continue;
+
+		if( const auto* RootMotion = JSON::Find( Entry->Objects, "type" ) )
+		{
+			if( RootMotion->Value == "additive" )
+			{
+				// Grab the first animation in the list.
+				auto& Bind = Set.Skeleton.Animations.begin()->second;
+
+				// Check if another base was specified.
+				if( const auto* Base = JSON::Find( Entry->Objects, "base" ) )
+				{
+					// Lookup the specified base pose.
+					const auto& RealName = Set.Lookup( Base->Value );
+					const auto Iterator = Set.Skeleton.Animations.find( RealName );
+					if( Iterator != Set.Skeleton.Animations.end() )
+					{
+						Bind = Iterator->second;
+					}
+				}
+				// Log::Event( "%s reference( %s )\n", Animation.Name.c_str(), Bind.Name.c_str() );
+
+				// Create a lookup table for all the bones.
+				std::map<int32_t, Key> BindPosition;
+				for( size_t Index = 0; Index < Bind.PositionKeys.size(); Index++ )
+				{
+					auto& Key = Bind.PositionKeys[Index];
+					if( Key.BoneIndex < 0 )
+						continue; // Invalid bone index.
+
+					if( BindPosition.find( Key.BoneIndex ) != BindPosition.end() )
+						continue; // We already have a key for this bone.
+
+					BindPosition.insert_or_assign( Key.BoneIndex, Key );
+				}
+
+				std::map<int32_t, Key> BindRotation;
+				for( size_t Index = 0; Index < Bind.RotationKeys.size(); Index++ )
+				{
+					auto& Key = Bind.RotationKeys[Index];
+					if( Key.BoneIndex < 0 )
+						continue; // Invalid bone index.
+
+					if( BindRotation.find( Key.BoneIndex ) != BindRotation.end() )
+						continue; // We already have a key for this bone.
+
+					BindRotation.insert_or_assign( Key.BoneIndex, Key );
+				}
+
+				std::map<int32_t, Key> BindScale;
+				for( size_t Index = 0; Index < Bind.ScalingKeys.size(); Index++ )
+				{
+					auto& Key = Bind.ScalingKeys[Index];
+					if( Key.BoneIndex < 0 )
+						continue; // Invalid bone index.
+
+					if( BindScale.find( Key.BoneIndex ) != BindScale.end() )
+						continue; // We already have a key for this bone.
+
+					BindScale.insert_or_assign( Key.BoneIndex, Key );
+				}
+
+				for( size_t Index = 0; Index < Animation.PositionKeys.size(); Index++ )
+				{
+					auto& Key = Animation.PositionKeys[Index];
+					if( Key.BoneIndex < 0 )
+						continue;
+
+					const auto& Root = BindPosition.find( Key.BoneIndex )->second;
+
+					// Log::Event( "posref (%s) %.3f %.3f %.3f %.3f\n", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Root.Value.X, Root.Value.Y, Root.Value.Z, Root.Value.W);
+					// Log::Event( "poskey (%s) %.3f %.3f %.3f %.3f\n", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
+
+					Key.Value.X -= Root.Value.X;
+					Key.Value.Y -= Root.Value.Y;
+					Key.Value.Z -= Root.Value.Z;
+					Key.Value.W = 1.0f;
+
+					std::string Suffix;
+					if( Math::Equal( Key.Value, Vector4D( 0.0f, 0.0f, 0.0f, 1.0f ), 0.0001f ) )
+					{
+						Suffix = " ==\n";
+					}
+					else
+					{
+						Suffix = " !=\n";
+					}
+
+					// Log::Event( "posdta (%s) %.3f %.3f %.3f %.3f%s", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W, Suffix.c_str() );
+				}
+
+				for( size_t Index = 0; Index < Animation.RotationKeys.size(); Index++ )
+				{
+					auto& Key = Animation.RotationKeys[Index];
+					if( Key.BoneIndex < 0 )
+						continue;
+
+					const auto& Root = BindRotation.find( Key.BoneIndex )->second;
+
+					// Log::Event( "rotref (%s) %.3f %.3f %.3f %.3f\n", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Root.Value.X, Root.Value.Y, Root.Value.Z, Root.Value.W );
+					// Log::Event( "rotkey (%s) %.3f %.3f %.3f %.3f\n", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
+
+					auto Quaternion = glm::quat(
+						Key.Value.W,
+						Key.Value.X,
+						Key.Value.Y,
+						Key.Value.Z
+					);
+
+					auto RootQuaternion = glm::quat(
+						Root.Value.W,
+						Root.Value.X,
+						Root.Value.Y,
+						Root.Value.Z
+					);
+
+					Quaternion = Quaternion * glm::conjugate( RootQuaternion );
+
+					Key.Value.X = Quaternion.x;
+					Key.Value.Y = Quaternion.y;
+					Key.Value.Z = Quaternion.z;
+					Key.Value.W = Quaternion.w;
+
+					// Log::Event( "rotdta (%s) %.3f %.3f %.3f %.3f\n", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
+				}
+
+				for( size_t Index = 0; Index < Animation.ScalingKeys.size(); Index++ )
+				{
+					auto& Key = Animation.ScalingKeys[Index];
+					if( Key.BoneIndex < 0 )
+						continue;
+
+					const auto& Root = BindScale.find( Key.BoneIndex )->second;
+
+					// Log::Event( "sizref (%s) %.3f %.3f %.3f %.3f\n", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Root.Value.X, Root.Value.Y, Root.Value.Z, Root.Value.W );
+					// Log::Event( "sizkey (%s) %.3f %.3f %.3f %.3f\n", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
+
+					Key.Value.X /= Root.Value.X;
+					Key.Value.Y /= Root.Value.Y;
+					Key.Value.Z /= Root.Value.Z;
+					Key.Value.W = 0.0f;
+					
+					// Log::Event( "sizdta (%s) %.3f %.3f %.3f %.3f\n", Set.Skeleton.MatrixNames[Key.BoneIndex].c_str(), Key.Value.X, Key.Value.Y, Key.Value.Z, Key.Value.W );
+				}
+
+				Animation.Type = Animation::Additive;
 			}
 		}
 	}
@@ -508,7 +658,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 				if (Primitive.VertexCount > 0 && Primitive.IndexCount > 0)
 				{
 					Mesh->Destroy();
-					Mesh->Populate(Primitive);
+					Mesh->Populate( Primitive );
 				}
 			}
 
@@ -782,6 +932,58 @@ CTexture* CAssets::CreateNamedTexture( const char* Name, CTexture* Texture )
 	}
 	else
 	{
+		return FindTexture( "error" );
+	}
+
+	return nullptr;
+}
+
+CTexture* CAssets::CreateNamedTexture( const TextureContext& Context )
+{
+	if( CWindow::Get().IsWindowless() )
+		return nullptr;
+
+	OptickEvent();
+
+	// Transform given name into lower case string
+	std::string NameString = Context.Name;
+	std::transform( NameString.begin(), NameString.end(), NameString.begin(), ::tolower );
+
+	// Check if the texture exists
+	if( CTexture* ExistingTexture = Textures.Find( NameString ) )
+		return ExistingTexture;
+
+	ProfileMemory( "Textures" );
+
+	CTexture* NewTexture = new CTexture();
+	NewTexture->SetAnisotropicSamples( Context.AnisotropicSamples );
+
+	const bool bSuccessfulCreation = NewTexture->Load( 
+		Context.Data, 
+		Context.Width, 
+		Context.Height, 
+		Context.Depth,
+		Context.Channels, 
+		Context.Mode, 
+		Context.Format, 
+		Context.GenerateMipMaps 
+	);
+
+	if( bSuccessfulCreation )
+	{
+		Textures.Create( NameString, NewTexture );
+
+		CProfiler& Profiler = CProfiler::Get();
+		int64_t Texture = 1;
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Textures", Texture ), false );
+
+		// Log::Event( "Created texture \"%s\".\n", NameString.c_str() );
+
+		return NewTexture;
+	}
+	else
+	{
+		delete NewTexture;
 		return FindTexture( "error" );
 	}
 
@@ -1145,7 +1347,7 @@ void CAssets::ReloadShaders()
 	}
 }
 
-enum AssetType
+enum class AssetType : uint8_t
 {
 	Unknown,
 	Mesh,
@@ -1179,7 +1381,7 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 	std::vector<FGenericAssetPayload> GenericAssets;
 	for( const auto* Asset : AssetsIn.Objects )
 	{
-		auto Type = Unknown;
+		auto Type = AssetType::Unknown;
 		std::string Name;
 		std::vector<std::string> Paths;
 		Paths.reserve( 10 );
@@ -1208,31 +1410,31 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 			{
 				AssignType( Type, 
 					Property->Value == "mesh", 
-					Mesh );
+					AssetType::Mesh );
 				AssignType( Type, 
 					Property->Value == "animation", 
-					Animation );
+					AssetType::Animation );
 				AssignType( Type, 
 					Property->Value == "shader", 
-					Shader );
+					AssetType::Shader );
 				AssignType( Type, 
 					Property->Value == "texture", 
-					Texture );
+					AssetType::Texture );
 				AssignType( Type, 
 					Property->Value == "sound", 
-					Sound );
+					AssetType::Sound );
 				AssignType( Type, 
 					Property->Value == "music", 
-					Stream );
+					AssetType::Stream );
 				AssignType( Type, 
 					Property->Value == "stream", 
-					Stream );
+					AssetType::Stream );
 				AssignType( Type, 
 					Property->Value == "sequence", 
-					Sequence );
+					AssetType::Sequence );
 				AssignType( Type, 
 					Property->Value == "asset" || Property->Value == "generic", 
-					Generic );
+					AssetType::Generic );
 			}
 			else if( Property->Key == "name" )
 			{
@@ -1303,7 +1505,7 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 
 		if( Name.length() > 0 && ( !Paths.empty() || ( !VertexPath.empty() && !FragmentPath.empty() ) ) )
 		{
-			if( Type == Mesh )
+			if( Type == AssetType::Mesh )
 			{
 				for( const auto& Path : Paths )
 				{
@@ -1314,7 +1516,7 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 					MeshList.emplace_back( Payload );
 				}
 			}
-			else if( Type == Animation )
+			else if( Type == AssetType::Animation )
 			{
 				for( const auto& Path : Paths )
 				{
@@ -1325,7 +1527,7 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 					GenericAssets.emplace_back( Payload );
 				}
 			}
-			else if( Type == Shader )
+			else if( Type == AssetType::Shader )
 			{
 				if( VertexPath.length() > 0 && FragmentPath.length() > 0 )
 				{
@@ -1351,7 +1553,7 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 					}
 				}
 			}
-			else if( Type == Texture )
+			else if( Type == AssetType::Texture )
 			{
 				for( const auto& Path : Paths )
 				{
@@ -1365,9 +1567,9 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 					GenericAssets.emplace_back( Payload );
 				}
 			}
-			else if( Type == Sound || Type == Stream )
+			else if( Type == AssetType::Sound || Type == AssetType::Stream )
 			{
-				CSound* NewSound = Type == Stream ? Assets.CreateNamedStream( Name.c_str() ) : Assets.CreateNamedSound( Name.c_str() );
+				CSound* NewSound = Type == AssetType::Stream ? Assets.CreateNamedStream( Name.c_str() ) : Assets.CreateNamedSound( Name.c_str() );
 				if( NewSound )
 				{
 					NewSound->Clear();
@@ -1386,7 +1588,7 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 					GenericAssets.emplace_back( Payload );
 				}
 			}
-			else if( Type == Sequence )
+			else if( Type == AssetType::Sequence )
 			{
 				Assets.CreateNamedSequence( Name.c_str() );
 				FGenericAssetPayload Payload;
@@ -1397,7 +1599,7 @@ void CAssets::Load( const JSON::Object& AssetsIn )
 
 				GenericAssets.emplace_back( Payload );
 			}
-			else if ( Type == Generic )
+			else if ( Type == AssetType::Generic )
 			{
 				FGenericAssetPayload Payload;
 				Payload.Type = EAsset::Generic;

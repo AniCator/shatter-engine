@@ -205,6 +205,14 @@ void ScriptEntity::SetFloat( const std::string& Key, const float& Value )
 	Properties.Set( Key, Value );
 }
 
+void ScriptEntity::SetFloatIfNotSet( const std::string& Key, const float& Value )
+{
+	if( HasFloat( Key ) )
+		return;
+
+	SetFloat( Key, Value );
+}
+
 bool ScriptEntity::HasInteger( const std::string& Key )
 {
 	return Properties.Has( Key, PropertyType::I32 );
@@ -226,6 +234,14 @@ int32_t ScriptEntity::GetInteger( const std::string& Key )
 void ScriptEntity::SetInteger( const std::string& Key, const int32_t& Value )
 {
 	Properties.Set( Key, Value );
+}
+
+void ScriptEntity::SetIntegerIfNotSet( const std::string& Key, const int32_t& Value )
+{
+	if( HasInteger( Key ) )
+		return;
+
+	SetInteger( Key, Value );
 }
 
 bool ScriptEntity::HasString( const std::string& Key )
@@ -251,6 +267,14 @@ void ScriptEntity::SetString( const std::string& Key, const std::string& Value )
 	Properties.Set( Key, Value );
 }
 
+void ScriptEntity::SetStringIfNotSet( const std::string& Key, const std::string& Value )
+{
+	if( HasString( Key ) )
+		return;
+
+	SetString( Key, Value );
+}
+
 CEntity* ScriptToEntity( ScriptEntity* Script )
 {
 	return dynamic_cast<CEntity*>( Script );
@@ -265,16 +289,19 @@ void RegisterScriptEntity()
 	ScriptEngine::AddTypeMethod( "Script", "bool HasFloat(string &in)", &ScriptEntity::HasFloat );
 	ScriptEngine::AddTypeMethod( "Script", "float GetFloat(string &in)", &ScriptEntity::GetFloat );
 	ScriptEngine::AddTypeMethod( "Script", "void SetFloat(string &in, float &in)", &ScriptEntity::SetFloat );
+	ScriptEngine::AddTypeMethod( "Script", "void SetFloatIfNotSet(string &in, float &in)", &ScriptEntity::SetFloatIfNotSet );
 
 	// Integer script properties.
 	ScriptEngine::AddTypeMethod( "Script", "bool HasInteger(string &in)", &ScriptEntity::HasInteger );
 	ScriptEngine::AddTypeMethod( "Script", "int GetInteger(string &in)", &ScriptEntity::GetInteger );
 	ScriptEngine::AddTypeMethod( "Script", "void SetInteger(string &in, int &in)", &ScriptEntity::SetInteger );
+	ScriptEngine::AddTypeMethod( "Script", "void SetIntegerIfNotSet(string &in, int &in)", &ScriptEntity::SetIntegerIfNotSet );
 
 	// String script properties.
 	ScriptEngine::AddTypeMethod( "Script", "bool HasString(string &in)", &ScriptEntity::HasString );
 	ScriptEngine::AddTypeMethod( "Script", "string GetString(string &in)", &ScriptEntity::GetString );
 	ScriptEngine::AddTypeMethod( "Script", "void SetString(string &in, string &in)", &ScriptEntity::SetString );
+	ScriptEngine::AddTypeMethod( "Script", "void SetStringIfNotSet(string &in, string &in)", &ScriptEntity::SetStringIfNotSet );
 
 	// Script think functionality.
 	ScriptEngine::AddTypeMethod( "Script", "void SetTick(string &in)", &ScriptEntity::SetTick );

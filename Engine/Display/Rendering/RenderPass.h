@@ -9,10 +9,28 @@
 
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Uniform.h>
+#include <Engine/Display/Rendering/UniformBuffer.h>
 
 #include <Engine/Utility/Math.h>
 
 class CRenderTexture;
+
+struct RenderPassUniformBlock
+{
+	glm::mat4 View;
+	glm::mat4 Projection;
+
+	Vector3D CameraPosition;
+	Vector3D CameraDirection;
+
+	float CameraNear;
+	float CameraFar;
+
+	Vector3D PreviousCameraPosition;
+	Vector3D PreviousCameraDirection;
+
+	Vector4D Viewport;
+};
 
 class CRenderPass
 {
@@ -37,6 +55,8 @@ public:
 	void SetCamera( const CCamera& Camera );
 	void SetPreviousCamera( const CCamera& Camera );
 
+	void UpdateUniformBufferObject();
+
 	static void FrustumCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables );
 
 	CRenderTexture* Target;
@@ -57,6 +77,8 @@ public:
 	EDepthTest::Type DepthTest;
 	uint8_t StencilValue;
 
+	UniformBufferObject<RenderPassUniformBlock> Block;
+
 protected:
 	std::string PassName;
 
@@ -65,5 +87,5 @@ protected:
 	void ConfigureDepthTest( CShader* Shader );
 };
 
-uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, UniformMap& Uniforms );
+uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, UniformMap& Uniforms );
 uint32_t DownsampleTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, UniformMap& Uniforms );

@@ -5,6 +5,7 @@
 #include "AnimationSet.h"
 
 #include <vector>
+#include <unordered_set>
 
 /// <summary>
 /// Makes animations happen.
@@ -24,6 +25,15 @@ struct Animator
 
 		Animation Animation{};
 		float Weight = 1.0f;
+
+		// Only affect the specified bone index and its children. (-1 to affect all bones)
+		int32_t Mask = -1;
+
+		enum Type : uint8_t
+		{
+			Mix = 0, // Blend linearly between poses.
+			Add, // Apply the transformation on top of existing ones.
+		} Type = Mix;
 
 		// Animation time of this blend entry, use the instance one if negative.
 		float Time = 0.0f;
@@ -65,6 +75,9 @@ struct Animator
 
 		Vector3D RootMotion = Vector3D::Zero;
 
+		// Utility function that set the animation of a stack layer, returns false if it failed to assign the animation.
+		bool SetLayerAnimation( const size_t Layer, const std::string& Animation );
+
 		void SetAnimation( const std::string& Name, const bool& Loop = false );
 		const std::string& GetAnimation() const;
 		bool HasAnimation( const std::string& Name ) const;
@@ -81,6 +94,9 @@ struct Animator
 
 		bool IsValidBone( const int32_t Handle ) const;
 		Bone& GetBone( const int32_t Handle );
+
+		// Returns true if the parent index is anywhere in the hierarchy above the given bone index.
+		bool HasParent( int32_t Index, const int32_t Parent ) const;
 
 		Vector3D GetBonePosition( const std::string& Name ) const;
 		Vector3D GetBonePosition( const int32_t Handle ) const;
@@ -156,6 +172,9 @@ struct Animator
 		const int32_t& BoneIndex,
 		const int32_t& Offset = 0
 	);
+
+	// Add two compound keys together.
+	static CompoundKey Add( const CompoundKey& A, const CompoundKey& B, const float& Alpha );
 
 	// Blend between two compound keys.
 	static CompoundKey Blend( const CompoundKey& A, const CompoundKey& B, const float& Alpha );

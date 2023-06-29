@@ -126,6 +126,15 @@ namespace JSON
 		}
 	}
 
+	inline void Assign( const Vector& Objects, const std::string& Search, Vector4D& Target )
+	{
+		const auto* Object = JSON::Find( Objects, Search );
+		if( Object )
+		{
+			Extract( Object->Value, Target );
+		}
+	}
+
 	struct SearchEntry
 	{
 		SearchEntry() = delete;

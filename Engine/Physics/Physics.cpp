@@ -26,7 +26,7 @@ ConfigurationVariable<bool> AlwaysUpdateStaticScene( "debug.Physics.AlwaysUpdate
 ConfigurationVariable<bool> DrawDebugStaticQueries( "debug.Physics.DrawDebugStaticQueries", false );
 ConfigurationVariable<bool> DrawDebugDynamicQueries( "debug.Physics.DrawDebugDynamicQueries", false );
 
-ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", true );
+ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", false );
 ConfigurationVariable<bool> SynchronousBodyUpdate( "physics.SynchronousBodyUpdate", false );
 ConfigurationVariable<bool> SynchronousQuery( "physics.SynchronousQuery", false );
 
@@ -111,20 +111,98 @@ public:
 		}
 		
 		Bodies.emplace_back( Body );
+
+		// Insert the body into the acceleration structure.
+		Insert( Body );		
 	}
 
-	void Unregister( CBody* BodyIn )
+	void Unregister( CBody* Body )
 	{
 		Guard();
 
 		for( auto Iterator = Bodies.begin(); Iterator != Bodies.end(); ++Iterator )
 		{
 			auto* Object = *Iterator;
-			if( Object == BodyIn )
+			if( Object == Body )
 			{
+				// Remove the body from the acceleration structure.
+				Remove( Body );
+
 				Bodies.erase( Iterator );
 				break;
 			}
+		}
+	}
+
+	void InsertStatic( CBody* Body )
+	{
+		if( !StaticScene )
+			return;
+
+		auto* Node = dynamic_cast<AccelerationStructure::Node*>( StaticScene.get() );
+		if( !Node )
+			return;
+
+		Node->Insert( Body );
+	}
+
+	void InsertDynamic( CBody* Body )
+	{
+		if( !DynamicScene )
+			return;
+
+		auto* Node = dynamic_cast<AccelerationStructure::Node*>( DynamicScene.get() );
+		if( !Node )
+			return;
+
+		Node->Insert( Body );
+	}
+
+	void Insert( CBody* Body )
+	{
+		if( Body->Static )
+		{
+			InsertStatic( Body );
+		}
+		else
+		{
+			InsertDynamic( Body );
+		}
+	}
+
+	void RemoveStatic( CBody* Body )
+	{
+		if( !StaticScene )
+			return;
+
+		auto* Node = dynamic_cast<AccelerationStructure::Node*>( StaticScene.get() );
+		if( !Node )
+			return;
+
+		Node->Remove( Body );
+	}
+
+	void RemoveDynamic( CBody* Body )
+	{
+		if( !DynamicScene )
+			return;
+
+		auto* Node = dynamic_cast<AccelerationStructure::Node*>( DynamicScene.get() );
+		if( !Node )
+			return;
+
+		Node->Remove( Body );
+	}
+
+	void Remove( CBody* Body )
+	{
+		if( Body->Static )
+		{
+			RemoveStatic( Body );
+		}
+		else
+		{
+			RemoveDynamic( Body );
 		}
 	}
 
@@ -318,6 +396,14 @@ public:
 				continue;
 
 			BodyA->Tick();
+
+			// Check if the body moved.
+			if( !UpdateDynamicScene && BodyA->LastActivity == CurrentTime )
+			{
+				// Re-insert the body.
+				Remove( BodyA );
+				Insert( BodyA );
+			}
 		}
 	}
 
@@ -604,9 +690,8 @@ public:
 			AccelerationStructure::Destroy( StaticScene );
 		
 		AccelerationStructure::RawObjectList StaticVector;
-		
 		StaticVector.reserve( Bodies.size() );
-		
+
 		for( auto* Body : Bodies )
 		{
 			if( Body->Static && !Body->Stationary )
@@ -626,9 +711,11 @@ public:
 			AccelerationStructure::Destroy( DynamicScene );
 		
 		AccelerationStructure::RawObjectList DynamicVector;
+		DynamicVector.reserve( Bodies.size() );
+
 		for( auto* Body : Bodies )
 		{
-			if( !Body->Static || Body->Stationary )
+			if( !Body->Static )
 			{
 				DynamicVector.emplace_back( Body );
 			}
@@ -690,17 +777,17 @@ void CPhysics::Tick( const double& Time )
 	Scene->Tick();
 }
 
-void CPhysics::Destroy() const
+void CPhysics::Destroy()
 {
 	Scene->Destroy();
 }
 
-void CPhysics::Register( CBody* Body ) const
+void CPhysics::Register( CBody* Body )
 {
 	Scene->Register( Body );
 }
 
-void CPhysics::Unregister( CBody* Body ) const
+void CPhysics::Unregister( CBody* Body )
 {
 	Scene->Unregister( Body );
 }

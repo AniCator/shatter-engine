@@ -12,6 +12,7 @@ struct Uniform
 	{
 		Component4 = 0,
 		Component3,
+		Component2,
 		Component4x4,
 		Unsigned,
 		Signed,
@@ -20,6 +21,7 @@ struct Uniform
 		Undefined
 	} Type;
 
+	Vector2D Uniform2;
 	Vector3D Uniform3;
 	Vector4D Uniform4;
 	Matrix4D Uniform4x4;
@@ -52,6 +54,12 @@ struct Uniform
 	{
 		Type = Component3;
 		Uniform3 = Vector;
+	}
+
+	Uniform( const Vector2D& Vector )
+	{
+		Type = Component2;
+		Uniform2 = Vector;
 	}
 
 	Uniform( const Matrix4D& Matrix )
@@ -89,6 +97,7 @@ struct Uniform
 		if( this == &B )
 			return *this;
 
+		Uniform2 = B.Uniform2;
 		Uniform3 = B.Uniform3;
 		Uniform4 = B.Uniform4;
 		Uniform4x4 = B.Uniform4x4;
@@ -116,6 +125,12 @@ struct Uniform
 	{
 		Type = Component3;
 		Uniform3 = Vector;
+	}
+
+	void Set( const Vector2D& Vector )
+	{
+		Type = Component2;
+		Uniform2 = Vector;
 	}
 
 	void Set( const Matrix4D& Matrix )

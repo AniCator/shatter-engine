@@ -22,7 +22,12 @@ struct Material
 	/// Applies this material's settings to the given renderable.
 	/// </summary>
 	/// <remarks>Performs asset lookups.</remarks>
-	void Apply( class CRenderable* Renderable );
+	void Apply( class CRenderable* Renderable ) const;
+
+	/// <summary>
+	/// Applies this material's uniforms to the given renderable.
+	/// </summary>
+	void ApplyUniforms( class CRenderable* Renderable ) const;
 
 	static void RegisterAssetLoader();
 };
@@ -38,7 +43,10 @@ public:
 		return Type;
 	}
 
+	void Reload() override;
+
 	Material Material;
+	std::string Location;
 };
 
 Material LoadMaterial( const std::string& Location );

@@ -160,6 +160,12 @@ struct Animation
 		XYZ
 	} RootMotion = None;
 
+	enum AnimationType
+	{
+		Full,
+		Additive // Only stores the difference between a base pose and itself.
+	} Type = Full;
+
 	FixedVector<Key> PositionKeys;
 	FixedVector<Key> RotationKeys;
 	FixedVector<Key> ScalingKeys;
@@ -167,15 +173,9 @@ struct Animation
 
 struct Bone
 {
-	Bone()
-	{
-		Index = -1;
-		ParentIndex = -1;
-	}
+	int Index = -1;
 
-	int Index;
-
-	int ParentIndex;
+	int ParentIndex = -1;
 	std::vector<int> Children;
 
 	// Stores the inverse bind pose (bind -> origin).

@@ -8,6 +8,17 @@
 
 #include <ThirdParty/glm/gtc/type_ptr.hpp>
 
+GLuint DummyVAO = 0;
+void BindDummyVAO()
+{
+	if( DummyVAO == 0 )
+	{
+		glGenVertexArrays( 1, &DummyVAO );
+	}
+
+	glBindVertexArray( DummyVAO );
+}
+
 CRenderable::CRenderable()
 {
 	Mesh = nullptr;
@@ -143,6 +154,7 @@ void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRend
 
 	if( DrawMode == EDrawMode::FullScreenTriangle )
 	{
+		BindDummyVAO();
 		glDrawArrays( GL_TRIANGLES, 0, 3 );
 		return;
 	}
@@ -164,13 +176,22 @@ void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRend
 		Mesh->Prepare( DrawMode );
 	}
 
+	const bool UpdateFaceCulling = PreviousRenderable ? PreviousRenderable->RenderData.DoubleSided != RenderData.DoubleSided : true;
 	const bool IsFlipped = RenderData.Transform.GetSize().X < 0.0f || RenderData.Transform.GetSize().Y < 0.0f || RenderData.Transform.GetSize().Z < 0.0f;
-	if( RenderData.DoubleSided )
+
+	// Check if we need to update face culling first, otherwise check if the geometry is flipped.
+	if( UpdateFaceCulling )
 	{
-		// Render the mesh twice with different winding directions.
-		glCullFace( GL_FRONT );
-		Mesh->Draw( DrawMode );
-		glCullFace( GL_BACK );
+		if( RenderData.DoubleSided )
+		{
+			// Disable face culling.
+			glDisable( GL_CULL_FACE );
+		}
+		else
+		{
+			// Enable face culling.
+			glEnable( GL_CULL_FACE );
+		}
 	}
 	else if ( IsFlipped )
 	{

@@ -6,7 +6,7 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 
-static std::string GeneratedMesh = "gen";
+static std::string GeneratedMesh = "generated";
 
 void VectorToByte( const Vector3D& Input, GLbyte* Output )
 {
@@ -64,27 +64,26 @@ bool CMesh::IsValid() const
 
 bool CMesh::Populate( const FPrimitive& Primitive )
 {
-	this->Primitive = Primitive;
+	// Always try to generate the bounding box.
+	ComputeAABB( Primitive );
 
-	const bool ShouldCreateBuffers = !CWindow::Get().IsWindowless();
-	if( !ShouldCreateBuffers )
+	if( CWindow::Get().IsWindowless() )
+		return true; // Meshes won't be used for rendering.
+
+	if( CreateVertexBuffer( Primitive ) )
 	{
-		GenerateAABB();
+		CreateIndexBuffer( Primitive );
+		
+		if( !Primitive.HasNormals )
+		{
+			ComputeNormals( Primitive );
+			ComputeTangents();
+		}
+
 		return true;
 	}
 
-	const bool CreatedVertexBuffer = CreateVertexBuffer();
-	if( CreatedVertexBuffer )
-	{
-		CreateIndexBuffer();
-		GenerateNormals();
-	}
-
-	// TODO: Little bit ugly.
-	// Destroy the primitive, it's in the vertex data now.
-	this->Primitive = FPrimitive();
-
-	return CreatedVertexBuffer;
+	return false;
 }
 
 void CMesh::Prepare( EDrawMode DrawModeOverride )
@@ -184,6 +183,29 @@ void CMesh::SetAnimationSet( const AnimationSet& Set )
 	this->Set = Set;
 }
 
+namespace VertexAttribute
+{
+	enum Type
+	{
+		Position = 0,
+		TextureCoordinate,
+		Normal,
+		Tangent,
+		Color,
+		Bone,
+		Weight
+	};
+}
+
+constexpr void* PositionOffset = reinterpret_cast<void*>( offsetof( VertexFormat, Position ) );
+constexpr void* CoordinateOffset = reinterpret_cast<void*>( offsetof( VertexFormat, TextureCoordinate ) );
+constexpr void* NormalOffset = reinterpret_cast<void*>( offsetof( VertexFormat, Normal ) );
+constexpr void* TangentOffset = reinterpret_cast<void*>( offsetof( VertexFormat, Tangent ) );
+constexpr void* ColorOffset = reinterpret_cast<void*>( offsetof( VertexFormat, Color ) );
+constexpr void* BoneOffset = reinterpret_cast<void*>( offsetof( VertexFormat, Bone ) );
+constexpr void* WeightOffset = reinterpret_cast<void*>( offsetof( VertexFormat, Weight ) );
+constexpr GLsizei Stride = sizeof( VertexFormat );
+
 bool CMesh::CreateVertexArrayObject()
 {
 	if( VertexArrayObject != 0 )
@@ -194,36 +216,33 @@ bool CMesh::CreateVertexArrayObject()
 
 	glBindBuffer( GL_ARRAY_BUFFER, VertexBufferData.VertexBufferObject );
 
-	glEnableVertexAttribArray( EVertexAttribute::Position );
-	const void* PositionPointer = reinterpret_cast<void*>( offsetof( VertexFormat, Position ) );
-	glVertexAttribPointer( EVertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), PositionPointer );
+	glEnableVertexAttribArray( VertexAttribute::Position );
+	glVertexAttribPointer( VertexAttribute::Position, 3, GL_FLOAT, GL_FALSE, Stride, PositionOffset );
 
-	glEnableVertexAttribArray( EVertexAttribute::TextureCoordinate );
-	const void* CoordinatePointer = reinterpret_cast<void*>( offsetof( VertexFormat, TextureCoordinate ) );
-	glVertexAttribPointer( EVertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), CoordinatePointer );
+	glEnableVertexAttribArray( VertexAttribute::TextureCoordinate );
+	glVertexAttribPointer( VertexAttribute::TextureCoordinate, 2, GL_FLOAT, GL_FALSE, Stride, CoordinateOffset );
 
-	glEnableVertexAttribArray( EVertexAttribute::Normal );
-	const void* NormalPointer = reinterpret_cast<void*>( offsetof( VertexFormat, Normal ) );
-	glVertexAttribPointer( EVertexAttribute::Normal, 3, GL_BYTE, GL_TRUE, sizeof( VertexFormat ), NormalPointer );
+	glEnableVertexAttribArray( VertexAttribute::Normal );
+	glVertexAttribPointer( VertexAttribute::Normal, 3, GL_BYTE, GL_TRUE, Stride, NormalOffset );
 
-	glEnableVertexAttribArray( EVertexAttribute::Color );
-	const void* ColorPointer = reinterpret_cast<void*>( offsetof( VertexFormat, Color ) );
-	glVertexAttribPointer( EVertexAttribute::Color, 3, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), ColorPointer );
+	glEnableVertexAttribArray( VertexAttribute::Tangent );
+	glVertexAttribPointer( VertexAttribute::Tangent, 3, GL_BYTE, GL_TRUE, Stride, TangentOffset );
 
-	glEnableVertexAttribArray( EVertexAttribute::Bone );
-	const void* BonePointer = reinterpret_cast<void*>( offsetof( VertexFormat, Bone ) );
-	glVertexAttribPointer( EVertexAttribute::Bone, 4, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), BonePointer );
+	glEnableVertexAttribArray( VertexAttribute::Color );
+	glVertexAttribPointer( VertexAttribute::Color, 3, GL_FLOAT, GL_FALSE, Stride, ColorOffset );
 
-	glEnableVertexAttribArray( EVertexAttribute::Weight );
-	const void* WeightPointer = reinterpret_cast<void*>( offsetof( VertexFormat, Weight ) );
-	glVertexAttribPointer( EVertexAttribute::Weight, 4, GL_FLOAT, GL_FALSE, sizeof( VertexFormat ), WeightPointer );
+	glEnableVertexAttribArray( VertexAttribute::Bone );
+	glVertexAttribPointer( VertexAttribute::Bone, 4, GL_FLOAT, GL_FALSE, Stride, BoneOffset );
+
+	glEnableVertexAttribArray( VertexAttribute::Weight );
+	glVertexAttribPointer( VertexAttribute::Weight, 4, GL_FLOAT, GL_FALSE, Stride, WeightOffset );
 
 	glBindBuffer( GL_ELEMENT_ARRAY_BUFFER, VertexBufferData.IndexBufferObject );
 
 	return true;
 }
 
-bool CMesh::CreateVertexBuffer()
+bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 {
 	if( VertexBufferData.VertexBufferObject != 0 )
 	{
@@ -237,8 +256,6 @@ bool CMesh::CreateVertexBuffer()
 		Log::Event( Log::Error, "Mesh vertex buffer has no vertices.\n" );
 		return false;
 	}
-
-	GenerateAABB();
 
 	const uint32_t Size = sizeof( VertexFormat ) * Primitive.VertexCount;
 
@@ -254,9 +271,17 @@ bool CMesh::CreateVertexBuffer()
 	{
 		VertexData.Vertices[Index].Position = Primitive.Vertices[Index].Position;
 		VertexData.Vertices[Index].TextureCoordinate = Primitive.Vertices[Index].TextureCoordinate;
+		VectorToByte( Primitive.Vertices[Index].Normal, VertexData.Vertices[Index].Normal );
+		VectorToByte( Primitive.Vertices[Index].Tangent, VertexData.Vertices[Index].Tangent );
 		VertexData.Vertices[Index].Color = Primitive.Vertices[Index].Color;
 		VertexData.Vertices[Index].Bone = Primitive.Vertices[Index].Bone;
 		VertexData.Vertices[Index].Weight = Primitive.Vertices[Index].Weight;
+
+		// Is this a skinned vertex?
+		if( !Math::Equal( Primitive.Vertices[Index].Bone, Vector4D( -1.0f, -1.0f, -1.0f, -1.0f ) ) )
+		{
+			assert( !Math::Equal( Primitive.Vertices[Index].Weight, Vector4D( 0.0f, 0.0f, 0.0f, 0.0f ) ) );
+		}
 	}
 
 	VertexBufferData.VertexCount = Primitive.VertexCount;
@@ -266,7 +291,7 @@ bool CMesh::CreateVertexBuffer()
 	return true;
 }
 
-bool CMesh::CreateIndexBuffer()
+bool CMesh::CreateIndexBuffer( const FPrimitive& Primitive )
 {
 	const auto CanCreateIndexBuffer = VertexBufferData.VertexBufferObject != 0 && VertexBufferData.IndexBufferObject == 0 && Primitive.IndexCount > 0;
 	if( !CanCreateIndexBuffer )
@@ -304,7 +329,7 @@ bool CMesh::CreateIndexBuffer()
 	return true;
 }
 
-void CMesh::GenerateAABB()
+void CMesh::ComputeAABB( const FPrimitive& Primitive )
 {
 	for( uint32_t VertexIndex = 0; VertexIndex < Primitive.VertexCount; VertexIndex++ )
 	{
@@ -348,7 +373,7 @@ void CMesh::GenerateAABB()
 	}
 }
 
-void CMesh::GenerateNormals()
+void CMesh::ComputeNormals( const FPrimitive& Primitive )
 {
 	const uint32_t Size = sizeof( VertexFormat ) * Primitive.VertexCount;
 
@@ -467,4 +492,45 @@ void CMesh::GenerateNormals()
 	HasNormals = true;
 
 	glBufferSubData( GL_ARRAY_BUFFER, 0, Size, VertexData.Vertices );
+}
+
+void CMesh::ComputeTangents()
+{
+	if( !HasIndexBuffer )
+		return; // Only for indexed meshes.
+
+	Vector3D Tangent;
+	for( uint32_t Index = 0; Index < VertexBufferData.IndexCount; Index += 3 )
+	{
+		glm::uint Index0 = IndexData.Indices[Index];
+		glm::uint Index1 = IndexData.Indices[Index + 1];
+		glm::uint Index2 = IndexData.Indices[Index + 2];
+
+		CompactVertex& Vertex0 = VertexData.Vertices[Index0];
+		CompactVertex& Vertex1 = VertexData.Vertices[Index1];
+		CompactVertex& Vertex2 = VertexData.Vertices[Index2];
+
+		const Vector3D Edge0 = Vertex2.Position - Vertex0.Position;
+		const Vector3D Edge1 = Vertex1.Position - Vertex0.Position;
+
+		const Vector2D UV0 = Vertex2.TextureCoordinate - Vertex0.TextureCoordinate;
+		const Vector2D UV1 = Vertex1.TextureCoordinate - Vertex0.TextureCoordinate;
+
+		float Inverse = 1.0f / ( UV0.X * UV1.Y - UV1.X * UV0.Y );
+		Tangent.X = Inverse * ( UV1.Y * Edge0.X - UV0.Y * Edge1.X );
+		Tangent.Y = Inverse * ( UV1.Y * Edge0.Y - UV0.Y * Edge1.Y );
+		Tangent.Z = Inverse * ( UV1.Y * Edge0.Z - UV0.Y * Edge1.Z );
+
+		VectorToByte( Tangent, Vertex0.Tangent );
+		VectorToByte( Tangent, Vertex1.Tangent );
+		VectorToByte( Tangent, Vertex2.Tangent );
+	}
+
+	for( uint32_t Index = 0; Index < VertexBufferData.VertexCount; Index++ )
+	{
+		CompactVertex& Vertex = VertexData.Vertices[Index];
+		ByteToVector( Vertex.Tangent, Tangent );
+		Tangent.Normalize();
+		VectorToByte( Tangent, Vertex.Tangent );
+	}
 }

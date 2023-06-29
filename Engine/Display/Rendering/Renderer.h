@@ -14,7 +14,7 @@ class CMesh;
 class CShader;
 class CRenderable;
 
-namespace ERenderPassLocation
+namespace RenderPassLocation
 {
 	enum Type
 	{
@@ -28,7 +28,7 @@ namespace ERenderPassLocation
 
 struct FRenderPass
 {
-	ERenderPassLocation::Type Location;
+	RenderPassLocation::Type Location;
 	CRenderPass* Pass;
 };
 
@@ -92,9 +92,7 @@ public:
 	void QueueDynamicRenderable( CRenderable* Renderable );
 	void DrawQueuedRenderables();
 
-	void SetUniformBuffer( const std::string& Name, const Vector4D& Value );
-	void SetUniformBuffer( const std::string& Name, const Vector3D& Value );
-	void SetUniformBuffer( const std::string& Name, const Matrix4D& Value );
+	void SetUniform( const std::string& Name, const Uniform& Value );
 
 	const CCamera& GetCamera() const;
 	void SetCamera( const CCamera& CameraIn );
@@ -103,7 +101,7 @@ public:
 	Vector3D ScreenPositionToWorld( const Vector2D& ScreenPosition ) const;
 	Vector2D WorldToScreenPosition( const Vector3D& WorldPosition ) const;
 
-	void AddRenderPass( CRenderPass* Pass, ERenderPassLocation::Type Location );
+	void AddRenderPass( CRenderPass* Pass, RenderPassLocation::Type Location );
 	void UpdateRenderableStage( const RenderableStage::Type& Stage );
 
 	const CRenderTexture& GetFramebuffer() const;
@@ -117,7 +115,7 @@ protected:
 	void RefreshShaderHandle( CRenderable* Renderable );
 
 private:
-	void DrawPasses( const ERenderPassLocation::Type& Location, CRenderTexture* Target = nullptr );
+	void DrawPasses( const RenderPassLocation::Type& Location, CRenderTexture* Target = nullptr );
 
 	// Combines all the render queues.
 	void UpdateQueue();

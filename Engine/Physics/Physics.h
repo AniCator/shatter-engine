@@ -32,10 +32,10 @@ public:
 	void Guard() const;
 
 	void Tick( const double& Time );
-	void Destroy() const;
+	void Destroy();
 
-	void Register( CBody* Body ) const;
-	void Unregister( CBody* Body ) const;
+	void Register( CBody* Body );
+	void Unregister( CBody* Body );
 
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const PollType& Type = PollType::All ) const;
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore, const PollType& Type = PollType::All ) const;

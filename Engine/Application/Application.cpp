@@ -631,10 +631,6 @@ void CApplication::InitializeDefaultInputs()
 	Input.AddActionBinding( "TimeScaleEnable", EKey::Enter, EAction::Press, InputScaleTimeEnable );
 	Input.AddActionBinding( "TimeScaleDisable", EKey::Enter, EAction::Release, InputScaleTimeDisable );
 
-	Input.AddActionBinding( "ReloadConfiguration", EKey::H, EAction::Release, InputReloadConfiguration );
-	Input.AddActionBinding( "RestartGameLayers", EKey::G, EAction::Release, [] ( const float& Scale ) {
-		RestartLayers = true;
-	} );
 	Input.AddActionBinding( "ReloadShaders", EKey::J, EAction::Release, InputReloadShaders );
 
 	Input.AddActionBinding( "CameraUp", EKey::W, EAction::Press, InputMoveCameraUp );

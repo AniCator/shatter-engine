@@ -52,7 +52,8 @@ const FTransform& CPointEntity::GetTransform()
 			auto Entity = dynamic_cast<CPointEntity*>( Parent );
 			if( Entity )
 			{
-				auto& ParentTransform = Entity->GetTransform();
+				auto ParentTransform = Entity->GetTransform();
+				WorldTransform = ParentTransform.Transform( WorldTransform );
 			}
 		}
 
@@ -94,7 +95,11 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 
 	for( auto* Property : Objects )
 	{
-		if( Property->Key == "position" )
+		if( Property->Key == "parent" )
+		{
+			ParentName = Property->Value;
+		}
+		else if( Property->Key == "position" )
 		{
 			Extract( Property->Value, Position );
 		}
@@ -147,8 +152,8 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 
 void CPointEntity::Debug()
 {
-	UI::AddCircle( Transform.GetPosition(), 2.0f, Color::White );
-	UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, -1.0f ), Name.String().c_str() );
+	UI::AddCircle( WorldTransform.GetPosition(), 2.0f, Color::White );
+	UI::AddText( WorldTransform.GetPosition() - Vector3D( 0.0, 0.0, -1.0f ), Name.String().c_str() );
 	// UI::AddText( Transform.GetPosition() - Vector3D( 0.0, 0.0, 0.5f ), "Velocity", Velocity, Color::Blue );
 }
 

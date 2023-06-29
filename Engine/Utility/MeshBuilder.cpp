@@ -103,7 +103,99 @@ void MeshBuilder::Circle( FPrimitive& Primitive, const float Radius, const uint3
 
 void MeshBuilder::Sphere( FPrimitive& Primitive, const float Radius, const uint32_t Segments, const uint32_t Rings )
 {
-	Log::Event( Log::Error, "Primitive not supported: Sphere.\n" );
+	Log::Event( "Generating sphere with radius %.2f, %d segments, and %d rings.\n", Radius, Segments, Rings );
+
+	const uint32_t VertexCount = Segments * ( Rings - 1 ) + 2; // Ring strips plus top and bottom vertex.
+	ComplexVertex* Vertices = new ComplexVertex[VertexCount];
+	uint32_t VertexIndex = 0;
+
+	// Configure the vertex at the top of the sphere.
+	uint32_t TopIndex = VertexIndex;
+	auto& Top = Vertices[VertexIndex++];
+	Top.Position = { 0.0f, 0.0f, 1.0f };
+
+	// Generate the rest of the vertices.
+	for( int Ring = 0; Ring < Rings - 1; Ring++ )
+	{
+		float Phi = Math::Pi() * float( Ring + 1 ) / float( Rings );
+		for( int Segment = 0; Segment < Segments; Segment++ )
+		{
+			float Theta = 2.0f * Math::Pi() * float( Segment ) / float( Segments );
+
+			auto& Vertex = Vertices[VertexIndex++];
+			Vertex.Position.X = std::sinf( Phi ) * std::cosf( Theta );
+			Vertex.Position.Y = std::sinf( Phi ) * std::sinf( Theta );
+			Vertex.Position.Z = std::cosf( Phi );
+		}
+	}
+
+	// Configure the vertex at the bottom of the sphere.
+	uint32_t BottomIndex = VertexIndex;
+	auto& Bottom = Vertices[VertexIndex++];
+	Bottom.Position = { 0.0f, 0.0f, -1.0f };
+
+	const uint32_t IndexCount = 3 * Segments * 2 + 3 * Segments * ( Rings - 2 ) * 2;
+	glm::uint* Indices = new glm::uint[IndexCount];
+	uint32_t Index = 0;
+
+	// Connect relevant segments to top and bottom vertex.
+	for( int Segment = 0; Segment < Segments; Segment++ )
+	{
+		int SegmentA = Segment + 1;
+		int SegmentB = SegmentA % Segments + 1;
+
+		Indices[Index++] = SegmentA;
+		Indices[Index++] = SegmentB;
+		Indices[Index++] = TopIndex;
+
+		SegmentA = Segment + Segments * ( Rings - 2 ) + 1;
+		SegmentB = ( Segment + 1 ) % Segments + Segments * ( Rings - 2 ) + 1;
+
+		Indices[Index++] = SegmentB;
+		Indices[Index++] = SegmentA;
+		Indices[Index++] = BottomIndex;
+	}
+
+	for( int Ring = 0; Ring < Rings - 2; Ring++ )
+	{
+		int RingA = Ring * Segments + 1;
+		int RingB = ( Ring + 1 ) * Segments + 1;
+
+		for( int Segment = 0; Segment < Segments; Segment++ )
+		{
+			int SegmentA = RingA + Segment;
+			int SegmentB = RingA + ( Segment + 1 ) % Segments;
+			int SegmentC = RingB + ( Segment + 1 ) % Segments;
+			int SegmentD = RingB + Segment;
+
+			Indices[Index++] = SegmentC;
+			Indices[Index++] = SegmentB;
+			Indices[Index++] = SegmentA;
+
+			Indices[Index++] = SegmentC;
+			Indices[Index++] = SegmentA;
+			Indices[Index++] = SegmentD;
+		}
+	}
+
+	for( VertexIndex = 0; VertexIndex < VertexCount; VertexIndex++ )
+	{
+		// Calculate basic texture coordinates.
+		Vertices[VertexIndex].TextureCoordinate.X = Vertices[VertexIndex].Position.X * 0.5f + 0.5f;
+		Vertices[VertexIndex].TextureCoordinate.Y = Vertices[VertexIndex].Position.Z * 0.5f + 0.5f;
+
+		// Scale to fit the radius.
+		Vertices[VertexIndex].Position = Vertices[VertexIndex].Position * Radius;
+
+		// Calculate the normals.
+		Vertices[VertexIndex].Normal = Vertices[VertexIndex].Position.Normalized();
+	}
+
+	Primitive.HasNormals = true;
+	Primitive.Vertices = Vertices;
+	Primitive.VertexCount = VertexCount;
+	Primitive.Indices = Indices;
+	Primitive.IndexCount = IndexCount;
 }
 
 void MeshBuilder::Cone( FPrimitive& Primitive, const float Radius, const uint32_t Sides )
@@ -180,34 +272,154 @@ void MeshBuilder::Torus( FPrimitive& Primitive, const float Radius, const uint32
 	Log::Event( Log::Error, "Primitive not supported: Torus.\n" );
 }
 
-void MeshBuilder::Grid( FPrimitive& Primitive, const float Radius, const uint32_t SubdivisionsX, const uint32_t SubdivisionsY )
+void MeshBuilder::Grid( FPrimitive& Primitive, const Vector2D& Dimensions, const uint32_t ResolutionX, const uint32_t ResolutionY )
 {
-	Log::Event( Log::Error, "Primitive not supported: Grid.\n" );
+	Log::Event( "Generating grid %dx%d.\n", ResolutionX, ResolutionY );
+
+	const uint32_t VertexCount = ResolutionX * ResolutionY;
+	ComplexVertex* Vertices = new ComplexVertex[VertexCount];
+
+	for( uint32_t Index = 0; Index < VertexCount; Index++ )
+	{
+		uint32_t X = Index % ResolutionX;
+		uint32_t Y = Index / ResolutionX;
+		Vertices[Index].Position.X = static_cast<float>( X ) * Dimensions.X;
+		Vertices[Index].Position.Y = static_cast<float>( Y ) * Dimensions.Y;
+		Vertices[Index].Position.Z = 0.0f;
+
+		Vertices[Index].Normal = { 0.0f, 0.0f, 1.0f };
+
+		Vertices[Index].TextureCoordinate.X = static_cast<float>( X ) / ( ResolutionX + 1 );
+		Vertices[Index].TextureCoordinate.Y = static_cast<float>( Y ) / ( ResolutionY + 1 );
+	}
+
+	const uint32_t IndexCount = VertexCount * 2 + ResolutionX + ResolutionY;
+	glm::uint* Indices = new glm::uint[IndexCount];
+	uint32_t Index = 0;
+	for( uint32_t Vertex = 0; Vertex < VertexCount; Vertex++ )
+	{
+		uint32_t X = Vertex % ResolutionX;
+		if( X == ( ResolutionX - 1 ) )
+			continue;
+
+		uint32_t Y = Vertex / ResolutionX;
+		if( Y == ( ResolutionY - 1 ) )
+			continue;
+
+		uint32_t Offset = Y * ResolutionX;
+		uint32_t V = X + Offset;
+		Indices[Index++] = V;
+		Indices[Index++] = V + 1;
+		Indices[Index++] = V + ResolutionX;
+
+		Indices[Index++] = V + 1;
+		Indices[Index++] = V + ResolutionX + 1;
+		Indices[Index++] = V + ResolutionX;
+	}
+
+	Primitive.HasNormals = true;
+	Primitive.Vertices = Vertices;
+	Primitive.VertexCount = VertexCount;
+	Primitive.Indices = Indices;
+	Primitive.IndexCount = IndexCount;
 }
 
-void MeshBuilder::Monkey( FPrimitive& Primitive, const float Radius )
+void MeshBuilder::Cells( FPrimitive& Primitive, const Vector2D& Dimensions, const uint32_t ResolutionX, const uint32_t ResolutionY )
 {
-	Log::Event( Log::Error, "Primitive not supported: Monkey.\n" );
-}
+	Log::Event( "Generating individual cells %dx%d.\n", ResolutionX, ResolutionY );
 
-void MeshBuilder::Teapot( FPrimitive& Primitive, const float Radius )
-{
-	Log::Event( Log::Error, "Primitive not supported: Teapot.\n" );
-}
+	constexpr int32_t ResX = 3;
+	constexpr int32_t ResY = 3;
+	constexpr int32_t vtx_grid = ResX * ResY;
+	constexpr int32_t vtx = ResX * ResY + ResY;
+	constexpr int32_t idx_grid = vtx_grid * 2 + ResX + ResY;
+	constexpr int32_t idx = vtx_grid * 2 + ResX + ResY;
 
-void MeshBuilder::Bunny( FPrimitive& Primitive, const float Radius )
-{
-	Log::Event( Log::Error, "Primitive not supported: Bunny.\n" );
-}
+	constexpr int32_t i = 1;
+	constexpr int32_t x = i % ResX;
+	constexpr int32_t p = x == 0 || x == ( ResX - 1 ) ? 0 : 1; // 1 when the index is valid.
+	constexpr int32_t y = i / ResX;
+	constexpr int32_t o = y * ResX;
+	constexpr int32_t v = x + o;
 
-void MeshBuilder::Dragon( FPrimitive& Primitive, const float Radius )
-{
-	Log::Event( Log::Error, "Primitive not supported: Dragon.\n" );
-}
+	constexpr int32_t tri0_0_grid = v;
+	constexpr int32_t tri0_1_grid = v + 1;
+	constexpr int32_t tri0_2_grid = v + ResX;
+	constexpr int32_t tri1_0_grid = v + 1;
+	constexpr int32_t tri1_1_grid = v + ResX + 1;
+	constexpr int32_t tri1_2_grid = v + ResX;
 
-void MeshBuilder::Buddha( FPrimitive& Primitive, const float Radius )
-{
-	Log::Event( Log::Error, "Primitive not supported: Buddha.\n" );
+	constexpr int32_t t = x + y;
+	constexpr int32_t tri0_0 = v + t;
+	constexpr int32_t tri0_1 = v + t + 1;
+	constexpr int32_t tri0_2 = v + t + 1 + ResX;
+	constexpr int32_t tri1_0 = v + t + 1;
+	constexpr int32_t tri1_1 = v + t + ResX + 2;
+	constexpr int32_t tri1_2 = v + t + ResX + 1;
+
+	const uint32_t GridCount = ResolutionX * ResolutionY;
+	const uint32_t VertexCount = ResolutionX * ResolutionY + ResolutionY;
+	ComplexVertex* Vertices = new ComplexVertex[VertexCount];
+	uint32_t VertexIndex = 0;
+
+	for( uint32_t Index = 0; Index < GridCount; Index++ )
+	{
+		uint32_t X = Index % ResolutionX;
+		uint32_t Y = Index / ResolutionX;
+		Vertices[VertexIndex].Position.X = static_cast<float>( X ) * Dimensions.X;
+		Vertices[VertexIndex].Position.Y = static_cast<float>( Y ) * Dimensions.Y;
+		Vertices[VertexIndex].Position.Z = 0.0f;
+
+		Vertices[VertexIndex].Normal = { 0.0f, 0.0f, 1.0f };
+
+		float U = ( VertexIndex % 2 ) == 0 ? 0.0f : 1.0f;
+		Vertices[VertexIndex].TextureCoordinate.X = U;
+		Vertices[VertexIndex].TextureCoordinate.Y = U;
+
+		if( X == 0 || X == ( ResolutionX - 1 ) )
+			continue;
+		
+		VertexIndex++;
+		Vertices[VertexIndex].Position.X = static_cast<float>( X ) * Dimensions.X;
+		Vertices[VertexIndex].Position.Y = static_cast<float>( Y ) * Dimensions.Y;
+		Vertices[VertexIndex].Position.Z = 0.0f;
+
+		Vertices[VertexIndex].Normal = { 0.0f, 0.0f, 1.0f };
+
+		Vertices[VertexIndex].TextureCoordinate.X = 1.0f;
+		Vertices[VertexIndex].TextureCoordinate.Y = 1.0f;
+	}
+
+	const uint32_t IndexCount = GridCount * 2 + ResolutionX + ResolutionY;
+	glm::uint* Indices = new glm::uint[IndexCount];
+	uint32_t Index = 0;
+	for( uint32_t Vertex = 0; Vertex < GridCount; Vertex++ )
+	{
+		uint32_t X = Vertex % ResolutionX;
+		if( X == ( ResolutionX - 1 ) )
+			continue;
+
+		uint32_t Y = Vertex / ResolutionX;
+		if( Y == ( ResolutionY - 1 ) )
+			continue;
+
+		uint32_t Offset = Y * ResolutionX;
+		uint32_t V = X + Offset;
+		uint32_t T = X + Y;
+		Indices[Index++] = V + T;
+		Indices[Index++] = V + T + 1;
+		Indices[Index++] = V + T + 1 + ResolutionX;
+
+		Indices[Index++] = V + T + 1;
+		Indices[Index++] = V + T + ResolutionX + 2;
+		Indices[Index++] = V + T + ResolutionX + 1;
+	}
+
+	Primitive.HasNormals = false;
+	Primitive.Vertices = Vertices;
+	Primitive.VertexCount = VertexCount;
+	Primitive.Indices = Indices;
+	Primitive.IndexCount = IndexCount;
 }
 
 bool MeshBuilder::FindVertex( const ComplexVertex& Vertex, const std::map<ComplexVertex, uint32_t>& IndexMap, uint32_t& OutIndex )

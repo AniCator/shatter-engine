@@ -23,7 +23,7 @@ void FEventImage::Execute()
 	ImageEventPass.ViewportHeight = Window.GetHeight();
 	ImageEventPass.SetTexture( Texture );
 
-	Window.GetRenderer().AddRenderPass( &ImageEventPass, ERenderPassLocation::Standard );
+	Window.GetRenderer().AddRenderPass( &ImageEventPass, RenderPassLocation::Standard );
 }
 
 void FEventImage::Context()

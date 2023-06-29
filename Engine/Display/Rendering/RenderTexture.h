@@ -10,16 +10,18 @@
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/Structures/Name.h>
 
+using FramebufferHandle = GLuint;
+
 struct ScreenBuffer
 {
 	// Framebuffer.
-	GLuint Buffer = 0;
+	FramebufferHandle Buffer = 0;
 
 	// Color texture.
-	GLuint Color = 0;
+	TextureHandle Color = 0;
 
 	// Depth texture.
-	GLuint Depth = 0;
+	TextureHandle Depth = 0;
 
 	bool Multisampled = false;
 };
@@ -66,7 +68,7 @@ public:
 
 	NameSymbol Name = NameSymbol::Invalid;
 protected:
-	GLuint GetFramebuffer() const;
+	FramebufferHandle GetFramebuffer() const;
 
 	ScreenBuffer FrameBuffer;
 	bool Multisampled = false;

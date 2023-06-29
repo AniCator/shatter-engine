@@ -14,6 +14,7 @@
 #include <Engine/Display/Rendering/Shader.h>
 #include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Display/Rendering/FramebufferTexture.h>
+#include <Engine/Display/Rendering/Noise.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
 #include <Engine/Display/Rendering/RenderPass.h>
 #include <Engine/Display/UserInterface.h>
@@ -173,12 +174,27 @@ unsigned char* GenerateBlackTexture()
 
 static unsigned char* BlackTextureData = GenerateBlackTexture();
 
+unsigned char* GenerateWhiteTexture()
+{
+	constexpr size_t TextureLength = GeneratedSize * GeneratedSize * GeneratedChannels;
+	auto* TextureData = new unsigned char[TextureLength];
+
+	for( size_t Index = 0; Index < TextureLength; Index++ )
+	{
+		TextureData[Index] = 255;
+	}
+
+	return TextureData;
+}
+
+static unsigned char* WhiteTextureData = GenerateWhiteTexture();
+
 void ConfigureGrade( CRenderer* Renderer )
 {
-	Renderer->SetUniformBuffer( "ColorTint", Renderer->Grade.Tint );
-	Renderer->SetUniformBuffer( "ColorLift", Renderer->Grade.Lift );
-	Renderer->SetUniformBuffer( "ColorGamma", Renderer->Grade.Gamma );
-	Renderer->SetUniformBuffer( "ColorGain", Renderer->Grade.Gain );
+	Renderer->SetUniform( "ColorTint", Renderer->Grade.Tint );
+	Renderer->SetUniform( "ColorLift", Renderer->Grade.Lift );
+	Renderer->SetUniform( "ColorGamma", Renderer->Grade.Gamma );
+	Renderer->SetUniform( "ColorGain", Renderer->Grade.Gain );
 }
 
 void CRenderer::Initialize()
@@ -201,9 +217,9 @@ void CRenderer::Initialize()
 	MeshBuilder::Cube( Cube, 1.0f );
 	Assets.CreateNamedMesh( "primitive_cube", Cube );
 
-	// FPrimitive Sphere;
-	// MeshBuilder::Sphere( Sphere, 1.0f, 4, 4 );
-	// Assets.CreateNamedMesh( "primitive_sphere", Sphere );
+	FPrimitive Sphere;
+	MeshBuilder::Sphere( Sphere, 1.0f, 32, 16 );
+	Assets.CreateNamedMesh( "primitive_sphere", Sphere );
 
 	FPrimitive Pyramid;
 	MeshBuilder::Cone( Pyramid, 1.0f, 4 );
@@ -212,6 +228,17 @@ void CRenderer::Initialize()
 
 	Assets.CreateNamedTexture( "error", ErrorData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
 	Assets.CreateNamedTexture( "black", BlackTextureData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
+	Assets.CreateNamedTexture( "white", WhiteTextureData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
+
+	{
+		_PROFILE_( "Noise::Cellular2D", true );
+		Noise::Cellular2D();
+	}
+
+	{
+		_PROFILE_( "Noise::Cellular3D", true );
+		Noise::Cellular3D();
+	}
 
 	SuperSampleBicubicShader = Assets.CreateNamedShader( "SuperSampleBicubic", "Shaders/FullScreenTriangle", "Shaders/SuperSampleBicubic" );
 	FramebufferRenderable.SetMesh( nullptr ); // No buffer needed for full screen triangles.
@@ -369,7 +396,7 @@ void CRenderer::DrawQueuedRenderables()
 
 	{
 		Profile( "Pre-Scene Passes" );
-		DrawPasses( ERenderPassLocation::PreScene );
+		DrawPasses( RenderPassLocation::PreScene );
 	}
 
 	{
@@ -383,7 +410,7 @@ void CRenderer::DrawQueuedRenderables()
 
 	{
 		Profile( "Scene Passes" );
-		DrawPasses( ERenderPassLocation::Scene );
+		DrawPasses( RenderPassLocation::Scene );
 	}
 
 	{
@@ -393,7 +420,7 @@ void CRenderer::DrawQueuedRenderables()
 
 	{
 		Profile( "Post-Translucent Scene Passes" );
-		DrawPasses( ERenderPassLocation::Translucent );
+		DrawPasses( RenderPassLocation::Translucent );
 	}
 
 	// Resolve the translucent stage.
@@ -447,11 +474,11 @@ void CRenderer::DrawQueuedRenderables()
 				AntiAliasingResolve.Target = &BufferA;
 				AntiAliasingResolve.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 				
-				CopyTexture( &BufferA, MainPass.Target, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
+				CopyTexture( &BufferA, MainPass.Target, GlobalUniformBuffers );
 			}
 			else
 			{
-				CopyTexture( MainPass.Target, &BufferA, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
+				CopyTexture( MainPass.Target, &BufferA, GlobalUniformBuffers );
 			}
 
 			{
@@ -463,13 +490,13 @@ void CRenderer::DrawQueuedRenderables()
 				ImageProcessingPass.Target = &BufferA;
 				ImageProcessingPass.RenderRenderable( &FramebufferRenderable, GlobalUniformBuffers );
 
-				CopyTexture( &BufferA, MainPass.Target, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
+				CopyTexture( &BufferA, MainPass.Target, GlobalUniformBuffers );
 			}
 			
 			if( BufferA.Ready() && BufferB.Ready() )
 			{			
-				DrawPasses( ERenderPassLocation::PostProcess, &BufferA );
-				CopyTexture( &BufferA, &BufferB, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
+				DrawPasses( RenderPassLocation::PostProcess, &BufferA );
+				CopyTexture( &BufferA, &BufferB, GlobalUniformBuffers );
 			}
 
 			if( !BufferPrevious.Ready() || !FramebufferReady )
@@ -483,7 +510,7 @@ void CRenderer::DrawQueuedRenderables()
 
 			if( BufferPrevious.Ready() && BufferB.Ready() )
 			{
-				CopyTexture( &BufferB, &BufferPrevious, ViewportWidth, ViewportHeight, Camera, false, GlobalUniformBuffers );
+				CopyTexture( &BufferB, &BufferPrevious, GlobalUniformBuffers );
 			}
 
 			if( BufferB.Ready() && BufferA.Ready() )
@@ -523,7 +550,7 @@ void CRenderer::DrawQueuedRenderables()
 
 	{
 		Profile( "Standard Passes" );
-		DrawPasses( ERenderPassLocation::Standard );
+		DrawPasses( RenderPassLocation::Standard );
 	}
 
 	CProfiler& Profiler = CProfiler::Get();
@@ -551,22 +578,9 @@ void CRenderer::DrawQueuedRenderables()
 	RenderablesPerFrame.clear();
 }
 
-void CRenderer::SetUniformBuffer( const std::string& Name, const Vector4D& Value )
+void CRenderer::SetUniform( const std::string& Name, const Uniform& Value )
 {
-	Uniform Uniform( Value );
-	GlobalUniformBuffers.insert_or_assign( Name, Uniform );
-}
-
-void CRenderer::SetUniformBuffer( const std::string& Name, const Vector3D& Value )
-{
-	Uniform Uniform( Value );
-	GlobalUniformBuffers.insert_or_assign( Name, Uniform );
-}
-
-void CRenderer::SetUniformBuffer( const std::string& Name, const Matrix4D& Value )
-{
-	Uniform Uniform( Value );
-	GlobalUniformBuffers.insert_or_assign( Name, Uniform );
+	GlobalUniformBuffers.insert_or_assign( Name, Value );
 }
 
 const CCamera& CRenderer::GetCamera() const
@@ -643,7 +657,7 @@ Vector2D CRenderer::WorldToScreenPosition( const Vector3D& WorldPosition ) const
 	return ScreenPosition;
 }
 
-void CRenderer::AddRenderPass( CRenderPass* Pass, ERenderPassLocation::Type Location )
+void CRenderer::AddRenderPass( CRenderPass* Pass, RenderPassLocation::Type Location )
 {
 	FRenderPass RenderPass;
 	RenderPass.Location = Location;
@@ -676,7 +690,7 @@ void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 	}
 }
 
-void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location, CRenderTexture* Target )
+void CRenderer::DrawPasses( const RenderPassLocation::Type& Location, CRenderTexture* Target )
 {
 	OptickEvent();
 	CRenderTexture* PassTarget = Target ? Target : &Framebuffer;
@@ -692,7 +706,7 @@ void CRenderer::DrawPasses( const ERenderPassLocation::Type& Location, CRenderTe
 			}
 
 			// Standard passes should be rendered directly to the window buffer.
-			if( Location == ERenderPassLocation::Standard )
+			if( Location == RenderPassLocation::Standard )
 			{
 				Pass.Pass->Target = nullptr;
 			}

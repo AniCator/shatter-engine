@@ -8,8 +8,6 @@
 #include <Engine/Utility/Math/BoundingBox.h>
 #include <Engine/Utility/Math/Plane.h>
 
-OptimizeOff;
-
 CollisionResponse Response::SphereSphere( const BoundingSphere& A, const BoundingSphere& B )
 {
 	const float RadiusSquaredTotal = A.GetRadiusSquared() + B.GetRadiusSquared();
@@ -46,7 +44,7 @@ CollisionResponse Response::SphereSphere( const BoundingSphere& A, const Boundin
 	// UI::AddSphere( A.Origin(), A.GetRadius(), Color::Green, 1.0f );
 	// UI::AddCircle( Response.Point, 5.0f );
 	// UI::AddLine( Response.Point, Response.Point + Response.Normal, Response.Distance > 0.0f ? Color::Blue : Color::Purple );
-	UI::AddLine( Response.Point, Response.Point + Response.Normal * Response.Distance, Color::Yellow );
+	// UI::AddLine( Response.Point, Response.Point + Response.Normal * Response.Distance, Color::Yellow );
 
 	return Response;
 }
@@ -340,7 +338,7 @@ CollisionResponse Response::TriangleAABB( const VertexFormat& A, const VertexFor
 		return Response;
 	}
 
-	Response.Normal = EdgeA.Cross( EdgeB );
+	Response.Normal = EdgeB.Cross( EdgeA );
 	Response.Distance = Response.Normal.Dot( VertexA );
 	ByteToVector( A.Normal, Response.Normal );
 

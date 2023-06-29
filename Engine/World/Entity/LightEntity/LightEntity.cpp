@@ -31,7 +31,7 @@ void LightEntity::Construct()
 	if( Information.Color.w < 400.0f )
 		return;
 
-	CMesh* Mesh = CAssets::Get().Meshes.Find( "primitive_cube" );
+	CMesh* Mesh = CAssets::Get().Meshes.Find( "primitive_sphere" );
 	if( !Mesh )
 		return;
 

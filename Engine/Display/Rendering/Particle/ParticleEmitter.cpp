@@ -7,6 +7,7 @@
 #include <Engine/Display/Window.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Utility/Math.h>
+#include <Engine/World/World.h>
 
 #include <ThirdParty/glad/include/glad/glad.h>
 
@@ -188,6 +189,33 @@ void ParticleEmitter::Destroy()
 	delete Renderable;
 }
 
+void SetCameraUniform( GLuint Program )
+{
+	auto* World = CWorld::GetPrimaryWorld();
+	if( !World )
+		return;
+
+	auto* Camera = World->GetActiveCamera();
+	if( !Camera )
+		return;
+
+	auto CameraPosition = Uniform( Camera->GetCameraPosition() );
+	CameraPosition.Bind( Program, "CameraPosition" );
+}
+
+void SetBoundsUniform( GLuint Program, CRenderable* Renderable )
+{
+	if( !Renderable )
+		return;
+
+	const auto& Bounds = Renderable->GetRenderData().WorldBounds;
+	auto Minimum = Uniform( Bounds.Minimum );
+	Minimum.Bind( Program, "Minimum" );
+
+	auto Maximum = Uniform( Bounds.Maximum );
+	Maximum.Bind( Program, "Maximum" );
+}
+
 void ParticleEmitter::Tick()
 {
 	if( Count == 0 || !Compute || !Render )
@@ -231,6 +259,9 @@ void ParticleEmitter::Tick()
 	Time.W = StaticCast<float>( GameLayersInstance->GetTimeScale() );
 	auto TimeUniform = Uniform( Time );
 	TimeUniform.Bind( Program, "Time" );
+	
+	SetCameraUniform( Program );
+	SetBoundsUniform( Program, Renderable );
 	
 	glDispatchCompute( Count / WorkSize + 1, 1, 1 );
 }

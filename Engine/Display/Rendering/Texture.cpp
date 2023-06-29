@@ -332,6 +332,20 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	return Supported;
 }
 
+bool CTexture::Load( unsigned char* Data, const int Width, const int Height, const int Depth, const int Channels, const EFilteringMode Mode, const EImageFormat PreferredFormat, const bool& GenerateMipMaps )
+{
+	this->Depth = Depth;
+	return Load(
+		Data,
+		Width,
+		Height,
+		Channels,
+		Mode,
+		PreferredFormat,
+		GenerateMipMaps
+	);
+}
+
 void CTexture::Save( const char* FileLocation )
 {
 	auto Data = GetImageData();
@@ -350,7 +364,15 @@ void CTexture::Bind( ETextureSlot Slot ) const
 	{
 		const auto Index = static_cast<std::underlying_type<ETextureSlot>::type>( Slot );
 		glActiveTexture( GetTextureSlot( Index ) );
-		glBindTexture( GL_TEXTURE_2D, Handle );
+
+		if( Depth > 1 )
+		{
+			glBindTexture( GL_TEXTURE_3D, Handle );
+		}
+		else
+		{
+			glBindTexture( GL_TEXTURE_2D, Handle );
+		}
 	}
 }
 
@@ -409,13 +431,34 @@ void CTexture::SetAnisotropicSamples( const uint8_t Samples )
 	if( !Handle )
 		return;
 
-	glBindTexture( GL_TEXTURE_2D, Handle );
+	if( Depth > 1 )
+	{
+		glBindTexture( GL_TEXTURE_3D, Handle );
+	}
+	else
+	{
+		glBindTexture( GL_TEXTURE_2D, Handle );
+	}
 
 	if( !!GLAD_GL_ARB_texture_filter_anisotropic )
 	{
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
+		if( Depth > 1 )
+		{
+			glTexParameteri( GL_TEXTURE_3D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
+		}
+		else
+		{
+			glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
+		}
 	}
 
-	glBindTexture( GL_TEXTURE_2D, 0 );
+	if( Depth > 1 )
+	{
+		glBindTexture( GL_TEXTURE_3D, 0 );
+	}
+	else
+	{
+		glBindTexture( GL_TEXTURE_2D, 0 );
+	}
 #endif
 }

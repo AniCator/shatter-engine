@@ -98,22 +98,22 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 	BlurPass( BlurX, TinySizeX, TinySizeY );
 	BlurPass( BlurY, TinySizeY, TinySizeX );
 
-	Calls += CopyTexture( TinySizeX, EigthSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
+	Calls += CopyTexture( TinySizeX, EigthSizeX, Uniforms );
 
 	BlurPass( BlurX, EigthSizeX, EigthSizeY );
 	BlurPass( BlurY, EigthSizeY, EigthSizeX );
 
-	Calls += CopyTexture( EigthSizeX, QuarterSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
+	Calls += CopyTexture( EigthSizeX, QuarterSizeX, Uniforms );
 
 	BlurPass( BlurX, QuarterSizeX, QuarterSizeY );
 	BlurPass( BlurY, QuarterSizeY, QuarterSizeX );
 
-	Calls += CopyTexture( QuarterSizeX, HalfSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
+	Calls += CopyTexture( QuarterSizeX, HalfSizeX, Uniforms );
 
 	BlurPass( BlurX, HalfSizeX, HalfSizeY );
 	BlurPass( BlurY, HalfSizeY, HalfSizeX );
 
-	Calls += CopyTexture( HalfSizeX, BloomA, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
+	Calls += CopyTexture( HalfSizeX, BloomA, Uniforms );
 
 	CRenderable Composite;
 	Composite.SetMesh( nullptr ); // No buffer needed.
@@ -126,7 +126,7 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 	Target = BloomB;
 	Calls += RenderRenderable( &Composite, Uniforms );
 
-	Calls += CopyTexture( Target, Framebuffer, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
+	Calls += CopyTexture( Target, Framebuffer, Uniforms );
 
 	SetPreviousCamera( Camera );
 

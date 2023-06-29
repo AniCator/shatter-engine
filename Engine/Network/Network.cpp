@@ -38,13 +38,17 @@ void Network::HTTPRequest::Execute()
 
 	Log::Event( "Connecting to %s:%s...\n", HostName.c_str(), Port.c_str() );
 
-	// asio::ssl::context ContextSSL( asio::ssl::context::sslv23 );
-	// ContextSSL.set_default_verify_paths();
-
 	asio::io_context Context;
 	asio::ip::tcp::socket Socket( Context );
 
 	asio::ip::tcp::resolver::iterator End;
+
+	// asio::ssl::context ContextSSL( asio::ssl::context::sslv23 );
+	// ContextSSL.set_default_verify_paths();
+	//
+	// asio::ssl::stream<asio::ip::tcp::socket> SocketSSL( Context, ContextSSL );
+	// asio::connect( SocketSSL.lowest_layer(), Iterator, End, ErrorCode );
+	// SocketSSL.handshake( asio::ssl::stream_base::client );
 
 	size_t Bytes = 0;
 	for( ; Iterator != End; ++Iterator )

@@ -27,6 +27,7 @@ struct ComplexVertex
 	Vector3D Position = Vector3D::Zero;
 	Vector2D TextureCoordinate = Vector2D( 0.0f, 0.0f );
 	Vector3D Normal = Vector3D( 0.0f, 0.0f, 1.0f );
+	Vector3D Tangent = Vector3D( 0.0f, 1.0f, 0.0f );
 	Vector3D Color = Vector3D::One;
 
 	Vector4D Bone = Vector4D( -1.0f, -1.0f, -1.0f, -1.0f );

@@ -9,6 +9,8 @@
 #include <Engine/Display/Rendering/TextureEnumerators.h>
 #include <Engine/Utility/Data.h>
 
+using TextureHandle = GLuint;
+
 class CTexture
 {
 public:
@@ -17,12 +19,35 @@ public:
 	virtual ~CTexture();
 
 	virtual bool Load( const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
-	bool Load( unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
+	
+	// Load a 2D texture.
+	bool Load( 
+		unsigned char* Data, 
+		const int Width, 
+		const int Height, 
+		const int Channels, 
+		const EFilteringMode Mode = EFilteringMode::Trilinear, 
+		const EImageFormat PreferredFormat = EImageFormat::RGB8, 
+		const bool& GenerateMipMaps = true 
+	);
+
+	// Load a 3D texture.
+	bool Load(
+		unsigned char* Data,
+		const int Width,
+		const int Height,
+		const int Depth,
+		const int Channels,
+		const EFilteringMode Mode = EFilteringMode::Trilinear,
+		const EImageFormat PreferredFormat = EImageFormat::RGB8,
+		const bool& GenerateMipMaps = true
+	);
+
 	void Save( const char* FileLocation = nullptr );
 	virtual void Bind( ETextureSlot Slot ) const;
 
 	const std::string& GetLocation() const;
-	GLuint GetHandle() const;
+	TextureHandle GetHandle() const;
 	int GetWidth() const;
 	int GetHeight() const;
 	EImageFormat GetImageFormat() const;
@@ -33,7 +58,7 @@ public:
 	void SetAnisotropicSamples( const uint8_t Samples );
 
 	EFilteringMode FilteringMode;
-	GLuint Handle;
+	TextureHandle Handle;
 protected:
 	EImageFormat Format;
 

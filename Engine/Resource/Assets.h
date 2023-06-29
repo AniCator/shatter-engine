@@ -52,6 +52,20 @@ struct FGenericAssetPayload
 
 typedef const std::vector<std::string> AssetParameters;
 
+struct TextureContext
+{
+	std::string Name;
+	unsigned char* Data = nullptr;
+	int Width = 1;
+	int Height = 1;
+	int Depth = 1;
+	int Channels = 3;
+	EFilteringMode Mode = EFilteringMode::Trilinear;
+	EImageFormat Format = EImageFormat::RGB8;
+	bool GenerateMipMaps = true;
+	uint8_t AnisotropicSamples = 0;
+};
+
 class CAssets : public Singleton<CAssets>
 {
 public:
@@ -59,11 +73,15 @@ public:
 
 	CMesh* CreateNamedMesh( const char* Name, const char* FileLocation, const bool ForceLoad = false );
 	CMesh* CreateNamedMesh( const char* Name, const FPrimitive& Primitive );
+
 	CShader* CreateNamedShader( const char* Name, const char* FileLocation, const EShaderType& Type = EShaderType::Fragment );
 	CShader* CreateNamedShader( const char* Name, const char* VertexLocation, const char* FragmentLocation );
+
 	CTexture* CreateNamedTexture( const char* Name, const char* FileLocation, const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat Format = EImageFormat::RGB8, const bool& GenerateMipMaps = true, const uint8_t AnisotropicSamples = 0 );
 	CTexture* CreateNamedTexture( const char* Name, unsigned char* Data, const int Width, const int Height, const int Channels, const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat Format = EImageFormat::RGB8, const bool& GenerateMipMaps = true, const uint8_t AnisotropicSamples = 0 );
 	CTexture* CreateNamedTexture( const char* Name, CTexture* Texture );
+	CTexture* CreateNamedTexture( const TextureContext& Context );
+
 	CSound* CreateNamedSound( const char* Name, const char* FileLocation );
 	CSound* CreateNamedSound( const char* Name );
 

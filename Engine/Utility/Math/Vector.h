@@ -79,6 +79,14 @@ public:
 		);
 	}
 
+	Vector2D operator/( const Vector2D& Vector ) const
+	{
+		return Vector2D(
+			X / Vector.X,
+			Y / Vector.Y
+		);
+	}
+
 	Vector2D operator+( const float& Scalar ) const
 	{
 		return Vector2D(
@@ -129,6 +137,13 @@ public:
 	{
 		X *= Vector.X;
 		Y *= Vector.Y;
+		return *this;
+	}
+
+	Vector2D operator/=( const Vector2D& Vector )
+	{
+		X /= Vector.X;
+		Y /= Vector.Y;
 		return *this;
 	}
 

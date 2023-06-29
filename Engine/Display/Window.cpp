@@ -46,7 +46,7 @@ static const auto GLSeverityTable = Translate<GLenum, std::string>( {
 
 static void DebugCallbackOpenGL( GLenum source, GLenum type, GLuint id, GLenum severity, GLsizei length, const GLchar *message, const void *userParam )
 {
-	if( severity != GL_DEBUG_SEVERITY_HIGH )
+	if( severity < GL_DEBUG_SEVERITY_NOTIFICATION )
 		return;
 
 	const auto Source = GLSourceTable.To( source );
@@ -118,22 +118,6 @@ void CWindow::Create( const char* Title )
 	glfwWindowHint( GLFW_RESIZABLE, false );
 	glfwWindowHint( GLFW_DECORATED, EnableBorder );
 
-	glfwWindowHint( GLFW_SAMPLES, 0 );
-	const bool DebugContext = config.IsEnabled( "OpenGL.DebugContext", false );
-	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, DebugContext ? 1 : 0 );
-
-	const int MajorVersion = 4;
-	const int MinorVersion = 3;
-
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, MajorVersion );
-	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, MinorVersion );
-
-	if( config.IsEnabled( "OpenGL.Compatibility", false ) )
-	{
-		glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
-		glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
-	}
-
 	const bool FullScreen = EnableBorder && config.IsEnabled( "window.Fullscreen", false );
 
 	if( FullScreen )
@@ -155,6 +139,38 @@ void CWindow::Create( const char* Title )
 	if( !EnableBorder )
 	{
 		ActualDimensions.Height += 1;
+	}
+
+	glfwWindowHint( GLFW_SAMPLES, 0 );
+	const bool DebugContext = config.IsEnabled( "OpenGL.DebugContext", false );
+	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, DebugContext ? 1 : 0 );
+
+	// Check supported version using a temporary window.
+	glfwWindowHint( GLFW_VISIBLE, GL_FALSE );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, 1 );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, 1 );
+	WindowHandle = glfwCreateWindow( 1, 1, "Shatter OpenGL Check", nullptr, nullptr );
+	glfwMakeContextCurrent( WindowHandle );
+	gladLoadGLLoader( (GLADloadproc)glfwGetProcAddress );
+
+	// Retrieve the version information.
+	Log::Event( "OpenGL Version Information: %s\n", glGetString( GL_VERSION ) );
+
+	glfwDestroyWindow( WindowHandle ); // Destroy the temporary window.
+
+	constexpr int MajorVersion = 4;
+	constexpr int MinorVersion = 3;
+
+	Log::Event( "Creating context for version %i.%i\n", MajorVersion, MinorVersion );
+
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MAJOR, MajorVersion );
+	glfwWindowHint( GLFW_CONTEXT_VERSION_MINOR, MinorVersion );
+
+	if( !config.IsEnabled( "OpenGL.Compatibility", false ) )
+	{
+		Log::Event( "Using core profile with forward compatibility.\n" );
+		glfwWindowHint( GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE );
+		glfwWindowHint( GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE );
 	}
 
 	glfwWindowHint( GLFW_VISIBLE, GL_TRUE );
@@ -196,12 +212,8 @@ void CWindow::Create( const char* Title )
 	}
 
 	glfwSetInputMode( WindowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
-
 	glfwMakeContextCurrent( WindowHandle );
-	
 	gladLoadGLLoader( (GLADloadproc) glfwGetProcAddress );
-
-	Log::Event( "OpenGL %s\n", glGetString( GL_VERSION ) );
 
 #if defined(KHRDebug)
 	if( DebugContext && GLAD_GL_KHR_debug )

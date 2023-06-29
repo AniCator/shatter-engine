@@ -56,7 +56,7 @@ struct TriangleTree
 	CMesh* Source = nullptr;
 };
 
-void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBounds, TriangleTree*& Tree, CBody* Body );
+void CreateTriangleTree( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBounds, TriangleTree*& Tree, CBody* Body );
 
 void EnsureVolume( BoundingBox& Bounds )
 {
@@ -349,7 +349,7 @@ void ProcessLeafTriangles(
 		// if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
 		if( TriangleResponse.Distance < Response.Distance )
 		{
-			Response.Normal += TriangleResponse.Normal;
+			Response.Normal = TriangleResponse.Normal;
 			Response.Distance = TriangleResponse.Distance;
 
 #if DrawDebugTriangleCollisions == 1
@@ -390,7 +390,7 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 	FBounds TreeBounds = Math::AABB( Tree->Bounds, Transform );
 	UI::AddAABB( TreeBounds.Minimum, TreeBounds.Maximum, Color( 255, 255, 0 ) );*/
 
-	if( !Math::BoundingBoxIntersection( LocalBounds.Minimum * 1.5f, LocalBounds.Maximum * 1.5f, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
+	if( !Math::BoundingBoxIntersection( LocalBounds.Minimum, LocalBounds.Maximum, Tree->Bounds.Minimum, Tree->Bounds.Maximum ) )
 		return Response;
 	
 	// Prime the response's starting distance.
@@ -404,10 +404,9 @@ CollisionResponse CollisionResponseTreeAABB( TriangleTree* Tree, const BoundingB
 		ProcessLeafTriangles( Tree, Transform, Center, Extent, Response );
 	}
 
-	Response.Normal = Transform.GetRotationMatrix().Transform( Response.Normal );
-	Response.Normal *= -1.0f; // Flip the normal.
+	Response.Normal = Transform.GetRotationMatrix().Transform( Response.Normal ) * -1.0f;
 	const float Size = Response.Normal.Normalize();
-	Response.Distance *= Size; // Scale the penetration distance.
+	Response.Distance *= Size * -1.0f; // Scale the penetration distance.
 
 	// const Vector3D WorldCenter = Transform.Transform( Center );
 	// UI::AddLine( WorldCenter, WorldCenter - Response.Normal, Color::Yellow, 1.0f );
@@ -454,11 +453,12 @@ void CBody::Construct( CPhysics* Physics )
 
 	if( !Physics )
 		return;
-	
-	this->Physics = Physics;
-	Physics->Register( this );
-	CalculateBounds();
 
+	this->Physics = Physics;
+
+	// Calculate the initial bounds before registering.
+	CalculateBounds();
+	
 	PreviousTransform = GetTransform();
 
 	auto Transform = GetTransform();
@@ -467,8 +467,10 @@ void CBody::Construct( CPhysics* Physics )
 		auto* Mesh = Owner->CollisionMesh ? Owner->CollisionMesh : Owner->Mesh;
 
 		// TODO: Fix triangle tree and triangle collisions.
-		CreateBVH( Mesh, Transform, LocalBounds, Tree, this );
+		CreateTriangleTree( Mesh, Transform, LocalBounds, Tree, this );
 	}
+
+	Physics->Register( this );
 }
 
 void ApplyLinearVelocity( CBody* Body )
@@ -732,6 +734,9 @@ void Detect( CBody* A, CBody* B, const Geometry::Result& SweptResult )
 
 void Interpenetration( CBody* A, const ContactManifold& Manifold )
 {
+	if( A->Surface == PhysicalSurface::Water || Manifold.Other->Surface == PhysicalSurface::Water )
+		return; // Ignore water penetration.
+
 	// Are the bodies penetrating?
 	if( Manifold.Response.Distance <= 0.0f )
 		return;
@@ -740,7 +745,7 @@ void Interpenetration( CBody* A, const ContactManifold& Manifold )
 	const float InverseMassTotal = A->InverseMass + Manifold.Other->InverseMass;
 	const auto Offset = 0.5f * Manifold.Response.Normal * Manifold.Response.Distance / InverseMassTotal;
 	A->Depenetration += Offset * A->InverseMass;
-	Manifold.Other->Depenetration += Offset * Manifold.Other->InverseMass;
+	Manifold.Other->Depenetration -= Offset * Manifold.Other->InverseMass;
 }
 
 void Integrate( CBody* A, const ContactManifold& Manifold )
@@ -770,24 +775,26 @@ void Integrate( CBody* A, const ContactManifold& Manifold )
 
 	// ResponseForce = ResponseForce + SeparatingVelocity;
 
+	Manifold.Other->ContactEntity = A->Owner;
+	A->ContactEntity = Manifold.Other->Owner;
+
+	if( A->Surface == PhysicalSurface::Water )
+	{
+		// Manifold.Other->Acceleration -= Manifold.Other->InverseMass * Manifold.Other->Gravity * 0.314;
+		return; // TODO: Buoyancy.
+	}
+
+	if( Manifold.Other->Surface == PhysicalSurface::Water )
+	{
+		// A->Acceleration -= A->InverseMass * A->Gravity * 0.314;
+		return; // TODO: Buoyancy.
+	}
+	
 	const float ImpulseScale = ResponseForce / InverseMassTotal;
 	const Vector3D Impulse = Manifold.Response.Normal * ImpulseScale;
 
 	A->Velocity -= A->InverseMass * Impulse;
 	Manifold.Other->Velocity += Manifold.Other->InverseMass * Impulse;
-
-	Manifold.Other->ContactEntity = Manifold.Other->Owner;
-	Manifold.Other->ContactEntity = A->Owner;
-
-	/*if( A->IsKinetic() )
-	{
-		UI::AddLine( A->WorldBounds.Center(), A->WorldBounds.Center() + A->InverseMass * Impulse, Color::Red );
-	}
-
-	if( B->IsKinetic() )
-	{
-		UI::AddLine( B->WorldBounds.Center(), B->WorldBounds.Center() + B->InverseMass * Impulse, Color::Blue );
-	}*/
 
 	Friction( A, Manifold.Other, Manifold.Response, RelativeVelocity, InverseMassTotal, ImpulseScale );
 }
@@ -1121,49 +1128,33 @@ void VisualizeBounds( TriangleTree* Tree, const FTransform* Transform, const Col
 	}
 }
 
-void CreateBVH( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBounds, TriangleTree*& Tree, CBody* Body )
+void CreateTriangleTree( CMesh* Mesh, FTransform& Transform, const BoundingBox& WorldBounds, TriangleTree*& Tree, CBody* Body )
 {
-	if( !Tree )
+	if( Tree )
+		return;
+	
+	ProfileMemory( "Physics Triangle Trees" );
+
+	Tree = new TriangleTree();
+	Tree->Source = Mesh;
+
+	const auto& IndexData = Mesh->GetIndexData();
+	const auto& VertexBufferData = Mesh->GetVertexBufferData();
+
+	std::vector<glm::uint>& Indices = Tree->Indices;
+	Indices.reserve( VertexBufferData.IndexCount );
+
+	for( unsigned int Index = 0; Index < VertexBufferData.IndexCount; )
 	{
-		ProfileMemory( "Physics Triangle Trees" );
+		Indices.emplace_back( IndexData.Indices[Index] );
+		Indices.emplace_back( IndexData.Indices[Index + 1] );
+		Indices.emplace_back( IndexData.Indices[Index + 2] );
 
-		Tree = new TriangleTree();
-		Tree->Source = Mesh;
-
-		const auto& IndexData = Mesh->GetIndexData();
-		const auto& VertexBufferData = Mesh->GetVertexBufferData();
-
-		std::vector<glm::uint>& Indices = Tree->Indices;
-		Indices.reserve( VertexBufferData.IndexCount );
-
-		for( unsigned int Index = 0; Index < VertexBufferData.IndexCount; )
-		{
-			Indices.emplace_back( IndexData.Indices[Index] );
-			Indices.emplace_back( IndexData.Indices[Index + 1] );
-			Indices.emplace_back( IndexData.Indices[Index + 2] );
-
-			Index += 3;
-		}
-
-		/*for( unsigned int Index = 0; Index < Vertices.size(); )
-		{
-			DrawTriangle( Transform,
-				Vertices[Index],
-				Vertices[Index + 1],
-				Vertices[Index + 2],
-				{},
-				Color::Yellow,
-				9001.0f
-			);
-
-			Index += 3;
-		}*/
-
-		// TODO: Fix transformation issues with a depth greater than 0.
-		BuildMedian( Tree, Transform, Mesh->GetBounds(), 0 );
+		Index += 3;
 	}
 
-	// VisualizeBounds( Tree );
+	// TODO: Fix transformation issues with a depth greater than 0.
+	BuildMedian( Tree, Transform, Mesh->GetBounds(), 0 );
 }
 
 // Constraint that stops a body from moving below the specified value, on the Z-axis.
@@ -1346,7 +1337,7 @@ void CBody::Tick()
 		constexpr float MinimumHeight = -200.0f;
 		if( Type == BodyType::Sphere )
 		{
-			ConstrainBox( this, NewPosition, Vector3D::Zero, MinimumHeight * -1.0f );
+			// ConstrainBox( this, NewPosition, Vector3D::Zero, MinimumHeight * -1.0f );
 			// BoundingSphere Border( Vector3D::Zero, MinimumHeight * -1.0f );
 			// ConstrainSphere( this, NewPosition, Border );
 		}
@@ -1523,7 +1514,7 @@ void CBody::Debug() const
 	}
 
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
-	PointInTriangle( { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { sinf( Physics->CurrentTime ) * 2.0f, 0.5f, 0.0f } );
+	// PointInTriangle( { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { sinf( Physics->CurrentTime ) * 2.0f, 0.5f, 0.0f } );
 
 	if( DisplaySphereBounds )
 		UI::AddSphere( WorldSphere.Origin(), WorldSphere.GetRadius(), BoundsColor );
@@ -1538,6 +1529,8 @@ void CBody::Debug() const
 	UI::AddText( WorldBounds.Minimum, "Mass", Mass, Color::White, Offset );
 	Offset.Y += 20.0f;
 	UI::AddText( WorldBounds.Minimum, "Restitution", Restitution, Color::White, Offset );
+	Offset.Y += 20.0f;
+	UI::AddText( WorldBounds.Minimum, "Friction", Friction, Color::White, Offset );
 	Offset.Y += 20.0f;
 	UI::AddText( WorldBounds.Minimum, "Damping", Damping, Color::White, Offset );
 	Offset.Y += 20.0f;

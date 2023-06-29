@@ -503,6 +503,12 @@
     <ClCompile Include="Engine\Physics\Response.cpp">
       <Filter>Source Files\Engine\Physics</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Sequencer\Events\LightEvent.cpp">
+      <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Noise.cpp">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -1002,6 +1008,15 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Math\Plane.h">
       <Filter>Source Files\Engine\Utility\Math</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sequencer\Events\LightEvent.h">
+      <Filter>Source Files\Engine\Sequencer\Events</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Noise.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\UniformBuffer.h">
+      <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

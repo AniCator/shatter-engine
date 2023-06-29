@@ -10,19 +10,6 @@
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/Primitive.h>
 
-namespace EVertexAttribute
-{
-	enum Type
-	{
-		Position = 0,
-		TextureCoordinate,
-		Normal,
-		Color,
-		Bone,
-		Weight
-	};
-}
-
 enum EMeshType
 {
 	Static = GL_STATIC_DRAW,
@@ -105,11 +92,12 @@ public:
 	void SetAnimationSet( const AnimationSet& Set );
 private:
 	bool CreateVertexArrayObject();
-	bool CreateVertexBuffer();
-	bool CreateIndexBuffer();
+	bool CreateVertexBuffer( const FPrimitive& Primitive );
+	bool CreateIndexBuffer( const FPrimitive& Primitive );
 
-	void GenerateAABB();
-	void GenerateNormals();
+	void ComputeAABB( const FPrimitive& Primitive );
+	void ComputeNormals( const FPrimitive& Primitive );
+	void ComputeTangents();
 
 	FVertexBufferData VertexBufferData;
 	FVertexData VertexData;
@@ -124,7 +112,6 @@ private:
 	bool HasNormals;
 
 	BoundingBox AABB;
-	FPrimitive Primitive;
 	AnimationSet Set;
 
 	std::string Location;

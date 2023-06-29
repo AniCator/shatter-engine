@@ -67,7 +67,7 @@ void CGameLayers::Frame()
 	Time.W = static_cast<float>( GetRealTime() );
 
 	CWindow& Window = CWindow::Get();
-	Window.GetRenderer().SetUniformBuffer( "Time", Time );
+	Window.GetRenderer().SetUniform( "Time", Time );
 
 	for( auto* GameLayer : GameLayers )
 	{

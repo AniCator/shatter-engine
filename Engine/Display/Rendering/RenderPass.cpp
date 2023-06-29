@@ -333,6 +333,44 @@ void CRenderPass::SetPreviousCamera( const CCamera& CameraIn )
 	PreviousCamera = CameraIn;
 }
 
+void CRenderPass::UpdateUniformBufferObject()
+{
+	const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
+	const auto& ViewMatrix = Camera.GetViewMatrix();
+	Block.Data.View = ViewMatrix;
+
+	const auto& ProjectionMatrix = Camera.GetProjectionMatrix();
+	Block.Data.Projection = ProjectionMatrix;
+
+	Block.Data.CameraPosition = CameraSetup.CameraPosition;
+	Block.Data.CameraDirection = CameraSetup.CameraDirection;
+
+	Block.Data.CameraNear = CameraSetup.NearPlaneDistance;
+	Block.Data.CameraFar = CameraSetup.FarPlaneDistance;
+
+	const FCameraSetup& PreviousCameraSetup = PreviousCamera.GetCameraSetup();
+	Block.Data.PreviousCameraPosition = PreviousCameraSetup.CameraPosition;
+	Block.Data.PreviousCameraDirection = PreviousCameraSetup.CameraDirection;
+
+	// Viewport coordinates
+	Vector4D Viewport;
+	if( Target )
+	{
+		const float Width = Target->GetWidth();
+		const float Height = Target->GetHeight();
+		Viewport = Vector4D( Width, Height, 1.0f / Width, 1.0f / Height );
+	}
+	else
+	{
+		Viewport = Vector4D( ViewportWidth, ViewportHeight, 1.0f / ViewportWidth, 1.0f / ViewportHeight );
+	}
+
+	Block.Data.Viewport = Viewport;
+
+	// Send updated data to the GPU.
+	Block.Upload();
+}
+
 void CRenderPass::ConfigureBlendMode( CShader* Shader )
 {
 	auto NextBlendMode = Shader->GetBlendMode();
@@ -464,12 +502,11 @@ void CRenderPass::FrustumCull( const CCamera& Camera, const std::vector<CRendera
 	CRenderable::FrustumCull( Camera, Renderables );
 }
 
-uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, int Width, int Height, const CCamera& Camera, const bool AlwaysClear, UniformMap& Uniforms )
+uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, UniformMap& Uniforms )
 {
-	static CRenderPassCopy Copy( Width, Height, Camera, AlwaysClear );
-	Copy.ViewportWidth = Width;
-	Copy.ViewportHeight = Height;
-	Copy.AlwaysClear = AlwaysClear;
+	static CRenderPassCopy Copy( 1280, 720, {}, false );
+	Copy.ViewportWidth = Target->GetHeight();
+	Copy.ViewportHeight = Target->GetWidth();
 	Copy.Source = Source;
 	Copy.Target = Target;
 	return Copy.Render( Uniforms );

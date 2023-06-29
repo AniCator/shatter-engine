@@ -102,6 +102,277 @@ void BoundingVolumeHierarchy::Node::Destroy()
 	}
 }
 
+void BoundingVolumeHierarchy::Node::Insert( RawObject Object )
+{
+	const auto Box = Object->GetBounds();
+	std::vector<RawObject> Parents;
+	std::vector<RawObject> Candidates;
+	Candidates.emplace_back( this );
+	while( !Candidates.empty() )
+	{
+		auto* Current = Candidates.back();
+		Candidates.pop_back();
+
+		auto* Leaf = dynamic_cast<Node*>( Current );
+		if( Leaf )
+		{
+			if( Leaf->Left && Leaf->Left->GetBounds().Intersects( Box ) )
+			{
+				Parents.emplace_back( Current );
+				Candidates.emplace_back( Leaf->Left );
+			}
+			else if( Leaf->Right && Leaf->Right->GetBounds().Intersects( Box ) )
+			{
+				Parents.emplace_back( Current );
+				Candidates.emplace_back( Current = Leaf->Right );
+			}
+			else
+			{
+				Parents.emplace_back( Current );
+
+				// Check if there's a free spot.
+				if( !Leaf->Right )
+				{
+					Leaf->Right = Object;
+				}
+				else if( !Leaf->Left )
+				{
+					Leaf->Left = Object;
+				}
+				else
+				{
+					// Both spots are filled.
+					Candidates.emplace_back( Leaf->Right );
+				}
+			}
+		}
+		else // Not a leaf node.
+		{
+			// Create a new node.
+			auto* New = new Node();
+			New->Left = Current; // Move the current node to this new node.
+			New->Right = Object; // Insert the new object.
+
+			// Swap the node in the parent.
+			auto* ParentLeaf = dynamic_cast<Node*>( Parents.back() );
+			if( ParentLeaf->Left == Current )
+			{
+				ParentLeaf->Left = New;
+			}
+			else if( ParentLeaf->Right == Current )
+			{
+				ParentLeaf->Right = New;
+			}
+
+			// Re-calculate bounds.
+			New->Bounds = BoundingBox::Combine( New->Left->GetBounds().Fetch(), New->Right->GetBounds().Fetch() );
+
+			Parents.emplace_back( Current );
+		}
+	}
+
+	// Recalculate the bounds.
+	std::reverse( Parents.begin(), Parents.end() );
+	for( auto* Parent : Parents )
+	{
+		auto* Leaf = dynamic_cast<Node*>( Parent );
+		if( !Leaf )
+			continue;
+
+		Leaf->Recalculate();
+	}
+}
+
+void BoundingVolumeHierarchy::Node::Remove( RawObject Object )
+{
+	const auto Box = Object->GetBounds();
+	std::vector<RawObject> Parents;
+	std::vector<RawObject> Candidates;
+	Candidates.emplace_back( this );
+	while( !Candidates.empty() )
+	{
+		auto* Current = Candidates.back();
+		Candidates.pop_back();
+
+		auto* Leaf = dynamic_cast<Node*>( Current );
+		if( Leaf )
+		{
+			if( Leaf->Left == Object )
+			{
+				Leaf->Left = nullptr;
+
+				if( Leaf->Right )
+				{
+					Leaf->Bounds = Leaf->Right->GetBounds();
+				}
+			}
+			else if( Leaf->Right == Object )
+			{
+				Leaf->Right = nullptr;
+
+				if( Leaf->Left )
+				{
+					Leaf->Bounds = Leaf->Left->GetBounds();
+				}
+			}
+			else
+			{
+				if( Leaf->Left && Leaf->Left->GetBounds().Intersects( Box ) )
+				{
+					Parents.emplace_back( Current );
+					Candidates.emplace_back( Leaf->Left );
+				}
+				else if( Leaf->Right && Leaf->Right->GetBounds().Intersects( Box ) )
+				{
+					Parents.emplace_back( Current );
+					Candidates.emplace_back( Leaf->Right );
+				}
+			}
+
+			// Parents.emplace_back( Current );
+			
+		}
+		else if( Current == Object ) // We've found the object.
+		{
+			// Detach the node.
+			auto* ParentLeaf = dynamic_cast<Node*>( Parents.back() );
+			if( ParentLeaf->Left == Current )
+			{
+				ParentLeaf->Left = nullptr;
+			}
+			else if( ParentLeaf->Right == Current )
+			{
+				ParentLeaf->Right = nullptr;
+			}
+		}
+		else
+		{
+			// The object isn't present in this BVH.
+		}
+	}
+
+	// Recalculate the bounds.
+	std::reverse( Parents.begin(), Parents.end() );
+	for( auto* Parent : Parents )
+	{
+		auto* Leaf = dynamic_cast<Node*>( Parent );
+		if( !Leaf )
+			continue;
+
+		Leaf->Recalculate();
+	}
+
+	Clean();
+}
+
+void BoundingVolumeHierarchy::Node::Update( RawObject Object )
+{
+	// Remove and re-insert.
+	Remove( Object );
+	Insert( Object );
+}
+
+void BoundingVolumeHierarchy::Node::Recalculate()
+{
+	if( Left && Right )
+	{
+		Bounds = BoundingBox::Combine( Left->GetBounds().Fetch(), Right->GetBounds().Fetch() );
+	}
+	else if( Left )
+	{
+		Bounds = Left->GetBounds();
+	}
+	else if( Right )
+	{
+		Bounds = Right->GetBounds();
+	}
+}
+
+bool HasActiveLeaves( BoundingVolumeHierarchy::Node* Leaf )
+{
+	return Leaf->Left || Leaf->Right;
+}
+
+void ProcessLeaf( BoundingVolumeHierarchy::Node* Parent, BoundingVolumeHierarchy::Node* Leaf )
+{
+	if( !Leaf )
+		return;
+
+	auto* Node = Leaf->Left ? Leaf->Left : Leaf->Right;
+	if( !Parent->Left && Node )
+	{
+		Parent->Left = Node;
+
+		const auto DebugBounds = Node->GetBounds().Fetch();
+		UI::AddAABB( DebugBounds.Minimum, DebugBounds.Maximum, Color::Red );
+
+		return;
+	}
+
+	if( !Parent->Right && Node )
+	{
+		Parent->Right = Node;
+
+		const auto DebugBounds = Node->GetBounds().Fetch();
+		UI::AddAABB( DebugBounds.Minimum, DebugBounds.Maximum, Color::Red );
+
+		return;
+	}
+
+	if( Node )
+		return;
+
+	const auto DebugBounds = Leaf->GetBounds().Fetch();
+	UI::AddAABB( DebugBounds.Minimum, DebugBounds.Maximum, Color::Green );
+
+	if( Parent->Left == Leaf )
+	{
+		delete Leaf;
+		Parent->Left = nullptr;
+	}
+	else if( Parent->Right == Leaf )
+	{
+		delete Leaf;
+		Parent->Right = nullptr;
+	}
+}
+
+void CleanLeaf( BoundingVolumeHierarchy::Node* Leaf )
+{
+	ProcessLeaf( Leaf, dynamic_cast<BoundingVolumeHierarchy::Node*>( Leaf->Left ) );
+	ProcessLeaf( Leaf, dynamic_cast<BoundingVolumeHierarchy::Node*>( Leaf->Right ) );
+}
+
+void BoundingVolumeHierarchy::Node::Clean()
+{
+	std::vector<RawObject> Candidates;
+	Candidates.emplace_back( this );
+	while( !Candidates.empty() )
+	{
+		auto* Current = Candidates.back();
+		Candidates.pop_back();
+
+		auto* Leaf = dynamic_cast<Node*>( Current );
+		if( !Leaf )
+			continue; // This isn't a leaf node.
+
+		CleanLeaf( Leaf );
+
+		if( !HasActiveLeaves( Leaf ) )
+			return;
+
+		if( Leaf->Left )
+		{
+			Candidates.emplace_back( Leaf->Left );
+		}
+
+		if( Leaf->Right )
+		{
+			Candidates.emplace_back( Leaf->Right );
+		}
+	}
+}
+
 void BoundingVolumeHierarchy::Node::Query( const BoundingBoxSIMD& Box, QueryResult& Result )
 {
 	if( !Box.Intersects( Bounds ) )
@@ -142,7 +413,7 @@ Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, con
 	return Result;
 }
 
-Color DebugColors[6] = {
+const Color DebugColors[6] = {
 	Color( 255, 0, 0 ),
 	Color( 255, 255, 0 ),
 	Color( 0, 255, 0 ),
@@ -151,19 +422,47 @@ Color DebugColors[6] = {
 	Color( 255, 0, 255 )
 };
 
+constexpr size_t DebugTableSize = 9;
+const Color DebugTable[] = {
+	Color( 0, 0, 255 ),
+	Color( 0, 64, 191 ),
+	Color( 0, 127, 127 ),
+	Color( 0, 191, 64 ),
+	Color( 0, 255, 0 ),
+	Color( 64, 191, 0 ),
+	Color( 127, 127, 0 ),
+	Color( 191, 64, 0 ),
+	Color( 255, 0, 0 ),
+};
+
+static size_t DebugIndex = 0;
+
 void BoundingVolumeHierarchy::Node::Debug() const
 {
 	if( DrawBVHBounds )
 	{
-		const auto DebugBounds = this->Bounds.Fetch();
-		UI::AddAABB( DebugBounds.Minimum, DebugBounds.Maximum, Color::Purple );
+		const auto DebugBounds = Bounds.Fetch();
+		UI::AddAABB( DebugBounds.Minimum, DebugBounds.Maximum, DebugTable[DebugIndex++] );
+		DebugIndex = DebugIndex % DebugTableSize;
 	}
 
-	if( Left )
+	bool Recursed = false;
+	if( auto* Leaf = dynamic_cast<Node*>( Left ) )
+	{
+		Recursed = true;
 		Left->Debug();
+	}
 
-	if( Right )
+	if( auto* Leaf = dynamic_cast<Node*>( Right ) )
+	{
+		Recursed = true;
 		Right->Debug();
+	}
+
+	if( !Recursed )
+	{
+		DebugIndex = 0;
+	}
 }
 
 BoundingBoxSIMD BoundingVolumeHierarchy::Node::GetBounds() const
