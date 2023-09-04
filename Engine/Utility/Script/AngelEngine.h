@@ -3,6 +3,7 @@
 
 #include <cstdint>
 #include <string>
+#include <vector>
 
 class CFile;
 
@@ -18,6 +19,7 @@ enum class AngelResult : uint8_t
 };
 
 struct asSFuncPtr;
+enum asEBehaviours;
 
 namespace ScriptEngine
 {
@@ -56,10 +58,16 @@ namespace ScriptEngine
 	template<typename C, typename T>
 	AngelResult AddTypeProperty( const char* Type, const char* Signature, T C::* Property );
 
+	AngelResult AddTypeConstructor( const char* Type, void* Function );
+	AngelResult AddTypeCopyConstructor( const char* Type, const char* CopyType, void* Function );
+	AngelResult AddTypeDestructor( const char* Type, void* Function );
+
 	AngelResult AddObjectMethod( const char* Type, const char* Signature, const asSFuncPtr& Pointer );
 	AngelResult AddObjectProperty( const char* Type, const char* Signature, int Offset );
+	AngelResult AddObjectBehavior( const char* Type, const char* Signature, const asSFuncPtr& Pointer, const asEBehaviours& Behavior );
 
 	AngelResult AddProperty( const char* Signature, void* Property );
+	AngelResult AddEnum( const char* Type, const std::vector<std::pair<std::string, int>>& Values );
 
 	AngelResult Execute( const char* Name, const char* EntryPoint = nullptr, void* Object = nullptr );
 	bool HasFunction( const char* Name, const char* EntryPoint );

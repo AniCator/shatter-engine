@@ -75,7 +75,7 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 	Threshold.SetShader( BloomThreshold );
 	Threshold.SetTexture( Framebuffer, ETextureSlot::Slot0 );
 	Threshold.GetRenderData().DrawMode = FullScreenTriangle;
-	Calls += RenderRenderable( &Threshold, Uniforms );
+	RenderRenderable( &Threshold, Uniforms );
 
 	Calls += DownsampleTexture( Target, HalfSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
 	Calls += DownsampleTexture( HalfSizeX, QuarterSizeX, ViewportWidth, ViewportHeight, Camera, false, Uniforms );
@@ -92,7 +92,7 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 
 		Blur.SetTexture( SourceTarget, ETextureSlot::Slot0 );
 		Target = RenderTarget;
-		Calls += RenderRenderable( &Blur, Uniforms );
+		RenderRenderable( &Blur, Uniforms );
 	};
 
 	BlurPass( BlurX, TinySizeX, TinySizeY );
@@ -124,7 +124,7 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 	Composite.GetRenderData().DrawMode = FullScreenTriangle;
 
 	Target = BloomB;
-	Calls += RenderRenderable( &Composite, Uniforms );
+	RenderRenderable( &Composite, Uniforms );
 
 	Calls += CopyTexture( Target, Framebuffer, Uniforms );
 

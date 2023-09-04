@@ -32,10 +32,8 @@ void CGameLayers::Add( IGameLayer* GameLayer )
 
 void CGameLayers::Initialize()
 {
+	ProfileScope();
 	Log::Event( "Initializing game layers.\n" );
-
-	// Configure the thread pool.
-	ThreadPool::Initialize();
 
 	SoLoudSound::StopStreams();
 
@@ -96,6 +94,7 @@ void CGameLayers::Tick()
 
 void CGameLayers::Shutdown()
 {
+	ProfileScope();
 	SoLoudSound::StopAll();
 
 	for( auto* GameLayer : GameLayers )
@@ -105,8 +104,6 @@ void CGameLayers::Shutdown()
 			GameLayer->Shutdown();
 		}
 	}
-
-	ThreadPool::Shutdown();
 }
 
 void CGameLayers::Time( const double& Time )

@@ -742,7 +742,7 @@ TimerScope::~TimerScope()
 	const auto DeltaTime = std::chrono::duration_cast<std::chrono::nanoseconds>( EndTime - StartTime ).count();
 	if( TextOnly )
 	{
-		Log::Event( "Scope %s took %ims\n", ScopeName.String().c_str(), 
+		Log::Event( "%s took %ims\n", ScopeName.String().c_str(), 
 			std::chrono::duration_cast<std::chrono::milliseconds>( EndTime - StartTime ).count()
 		);
 	}

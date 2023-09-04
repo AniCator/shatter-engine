@@ -12,6 +12,7 @@
 
 #include <Engine/Utility/Locator/InputLocator.h>
 
+#include <Engine/Utility/ThreadPool.h>
 #include <Engine/Utility/TranslationTable.h>
 
 #if defined( IMGUI_ENABLED )
@@ -81,7 +82,7 @@ CRenderer& GetRenderer()
 
 void CWindow::Create( const char* Title )
 {
-	ProfileBare( __FUNCTION__ );
+	ProfileScope();
 
 	// Load configuration data
 	CConfiguration& config = CConfiguration::Get();
@@ -250,6 +251,18 @@ void CWindow::Create( const char* Title )
 
 	Initialized = true;
 	Log::Event( "Initialized window.\n" );
+
+	// Create thread context on the loading thread before we initialize the renderer.
+	ThreadPool::Add( Thread::Loading, []
+	{
+		CWindow::ThreadContext();
+	}
+	);
+
+	while( ThreadPool::IsBusy( Thread::Loading ) )
+	{
+		// Wait until the thread context task is completed.
+	}
 
 	Renderer.Initialize();
 }

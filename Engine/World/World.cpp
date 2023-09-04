@@ -170,10 +170,14 @@ void CWorld::Destroy()
 
 void CWorld::Reload()
 {
+	LightEntity::Initialize();
+
 	for( auto& Level : Levels )
 	{
 		Level.Reload();
 	}
+
+	LightEntity::UploadToGPU();
 }
 
 CLevel& CWorld::Add()

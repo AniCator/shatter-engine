@@ -27,6 +27,7 @@
 #include <Engine/Utility/Primitive.h>
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/Utility/Math.h>
+#include <Engine/Utility/ThreadPool.h>
 
 #include <Game/Game.h>
 
@@ -199,6 +200,8 @@ void ConfigureGrade( CRenderer* Renderer )
 
 void CRenderer::Initialize()
 {
+	ProfileScope();
+
 	CAssets& Assets = CAssets::Get();
 	DefaultShader = Assets.CreateNamedShader( "Default", "Shaders/Default" );
 	Assets.CreateNamedShader( "textured", "Shaders/DefaultTextured" );
@@ -230,15 +233,22 @@ void CRenderer::Initialize()
 	Assets.CreateNamedTexture( "black", BlackTextureData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
 	Assets.CreateNamedTexture( "white", WhiteTextureData, GeneratedSize, GeneratedSize, GeneratedChannels, EFilteringMode::Nearest );
 
+	// Generate the noise textures on a separate thread.
+	ThreadPool::Add( []()
 	{
-		_PROFILE_( "Noise::Cellular2D", true );
-		Noise::Cellular2D();
-	}
+		{
+			_PROFILE_( "Noise::Cellular2D", true );
+			Noise::Cellular2D();
+		}
+	} );
 
+	ThreadPool::Add( []()
 	{
-		_PROFILE_( "Noise::Cellular3D", true );
-		Noise::Cellular3D();
-	}
+		{
+			_PROFILE_( "Noise::Cellular3D", true );
+			Noise::Cellular3D();
+		}
+	} );
 
 	SuperSampleBicubicShader = Assets.CreateNamedShader( "SuperSampleBicubic", "Shaders/FullScreenTriangle", "Shaders/SuperSampleBicubic" );
 	FramebufferRenderable.SetMesh( nullptr ); // No buffer needed for full screen triangles.

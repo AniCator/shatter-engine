@@ -17,6 +17,7 @@ void ThreadPool::Initialize()
 	Pool[Thread::Loading]->SetName( "Loading" );
 	Pool[Thread::WorkerA]->SetName( "WorkerA" );
 	Pool[Thread::WorkerB]->SetName( "WorkerB" );
+	Pool[Thread::WorkerC]->SetName( "WorkerC" );
 }
 
 void ThreadPool::Shutdown()
@@ -40,18 +41,26 @@ std::future<void> ThreadPool::Add( const Thread::Type& Thread, const std::functi
 		} 
 	);
 
-	return Pool[Thread]->Add( Task );
+	return ThreadPool::Add( Thread, Task );
 }
 
 // Determines which worker is used next for a generic task.
-std::atomic<bool> Selector;
+std::atomic<int> Selector = Thread::WorkerA;
+constexpr int LastWorker = ( Thread::Maximum - 1 );
+inline int GetWorkerIndex()
+{
+	if( Selector > LastWorker )
+	{
+		Selector = Thread::WorkerA;
+	}
+
+	return Selector++;
+}
 
 std::future<void> ThreadPool::Add( const std::shared_ptr<Task>& ToExecute )
 {
-	const auto Worker = Selector ? Thread::WorkerA : Thread::WorkerB;
-	Selector = !Selector;
-
-	return Pool[Worker]->Add( ToExecute );
+	const auto Index = GetWorkerIndex();
+	return Pool[Index]->Add( ToExecute );
 }
 
 std::future<void> ThreadPool::Add( const std::function<void()>& ToExecute )
@@ -62,16 +71,15 @@ std::future<void> ThreadPool::Add( const std::function<void()>& ToExecute )
 		}
 	);
 
-	const auto Worker = Selector ? Thread::WorkerA : Thread::WorkerB;
-	Selector = !Selector;
-
-	return Pool[Worker]->Add( Task );
+	const auto Index = GetWorkerIndex();
+	return Pool[Index]->Add( Task );
 }
 
 void ThreadPool::Flush()
 {
 	Pool[Thread::WorkerA]->Flush();
 	Pool[Thread::WorkerB]->Flush();
+	Pool[Thread::WorkerC]->Flush();
 }
 
 bool ThreadPool::IsBusy( const Thread::Type& Thread )

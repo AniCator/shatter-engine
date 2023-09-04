@@ -280,7 +280,15 @@ bool CMesh::CreateVertexBuffer( const FPrimitive& Primitive )
 		// Is this a skinned vertex?
 		if( !Math::Equal( Primitive.Vertices[Index].Bone, Vector4D( -1.0f, -1.0f, -1.0f, -1.0f ) ) )
 		{
+#if defined(_DEBUG)
 			assert( !Math::Equal( Primitive.Vertices[Index].Weight, Vector4D( 0.0f, 0.0f, 0.0f, 0.0f ) ) );
+#endif
+			// Override the values if they're bad.
+			if( Math::Equal( Primitive.Vertices[Index].Weight, Vector4D( 0.0f, 0.0f, 0.0f, 0.0f ) ) )
+			{
+				Primitive.Vertices[Index].Bone = Vector4D( -1.0f, -1.0f, -1.0f, -1.0f );
+				Primitive.Vertices[Index].Weight = Vector4D( 0.0f, 0.0f, 0.0f, 0.0f );
+			}
 		}
 	}
 

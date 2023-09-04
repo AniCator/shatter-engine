@@ -26,7 +26,7 @@ ConfigurationVariable<bool> AlwaysUpdateStaticScene( "debug.Physics.AlwaysUpdate
 ConfigurationVariable<bool> DrawDebugStaticQueries( "debug.Physics.DrawDebugStaticQueries", false );
 ConfigurationVariable<bool> DrawDebugDynamicQueries( "debug.Physics.DrawDebugDynamicQueries", false );
 
-ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", false );
+ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", true ); // Set to true because the other solution tends to crash.
 ConfigurationVariable<bool> SynchronousBodyUpdate( "physics.SynchronousBodyUpdate", false );
 ConfigurationVariable<bool> SynchronousQuery( "physics.SynchronousQuery", false );
 
@@ -63,7 +63,8 @@ struct QueryTask : public Task
 		auto* Testable = Scene.get();
 		for( auto& Request : *Requests )
 		{
-			Testable->Query( Request.Body->GetBounds(), Request.Result );
+			const auto& Bounds = Request.Body->Continuous ? Request.Body->WorldBoundsSweptSIMD : Request.Body->InflatedBoundsSIMD;
+			Testable->Query( Bounds, Request.Result );
 		}
 
 		if( !SynchronousQuery && !Synchronous )
@@ -346,7 +347,7 @@ public:
 	{
 		if( IsSimulating )
 			return;
-
+#if 1
 		for( const auto& Request : *StaticQueryRequests )
 		{
 			ResolveCollisions( Request.Body, Request.Result );
@@ -356,8 +357,8 @@ public:
 		{
 			ResolveCollisions( Request.Body, Request.Result );
 		}
-
-#if 0 // O(n^2) zone
+#else
+		// O(n^2) zone
 		for( auto* A : Bodies )
 		{
 			for( auto* B : Bodies )

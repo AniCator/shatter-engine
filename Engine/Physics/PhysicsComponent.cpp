@@ -877,7 +877,7 @@ void CBody::Collision( CBody* Body )
 		}
 		else
 		{
-			if( !WorldBoundsSIMD.Intersects( Body->WorldBoundsSIMD ) )
+			if( !InflatedBoundsSIMD.Intersects( Body->InflatedBoundsSIMD ) )
 				return;
 		}
 	}
@@ -1409,13 +1409,14 @@ void CBody::CalculateBounds()
 	// Ensure we have at least some volume.
 	EnsureVolume( WorldBounds );
 
+	WorldBoundsSIMD = WorldBounds;
+	WorldSphere = WorldBounds;
+
 	// Use larger bounds for the SIMD query.
 	auto InflatedBounds = WorldBounds;
-	// InflatedBounds.Minimum -= {0.01f, 0.01f, 0.01f};
-	// InflatedBounds.Maximum += {0.01f, 0.01f, 0.01f};
-
-	WorldBoundsSIMD = InflatedBounds;
-	WorldSphere = WorldBounds;
+	InflatedBounds.Minimum -= {0.02f, 0.02f, 0.02f};
+	InflatedBounds.Maximum += {0.02f, 0.02f, 0.02f};
+	InflatedBoundsSIMD = InflatedBounds;
 
 	// Update the inverse mass once.
 	if( InverseMass < 0.0f )
@@ -1483,7 +1484,7 @@ void CBody::SetTransform( const FTransform& NewTransform ) const
 
 ConfigurationVariable<bool> DisplayBodyInfo( "debug.Physics.DisplayBodyInfo", false );
 ConfigurationVariable<bool> DisplayTriangleTree( "debug.Physics.DisplayTriangleTree", false );
-ConfigurationVariable<bool> DisplaySphereBounds( "debug.Physics.DisplaySphereBounds", true );
+ConfigurationVariable<bool> DisplaySphereBounds( "debug.Physics.DisplaySphereBounds", false );
 void CBody::Debug() const
 {
 	if( !Owner && !Ghost )
@@ -1605,7 +1606,7 @@ void CBody::Query( const BoundingBoxSIMD& Box, QueryResult& Result )
 	}
 	else
 	{
-		if( !Box.Intersects( GetBounds() ) )
+		if( !Box.Intersects( InflatedBoundsSIMD ) )
 			return;
 	}
 	

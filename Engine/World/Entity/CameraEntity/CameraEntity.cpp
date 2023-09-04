@@ -41,12 +41,10 @@ void CCameraEntity::Tick()
 	FCameraSetup& CameraSetup = Camera.GetCameraSetup();
 	CameraSetup.CameraPosition = Transform.GetPosition();
 	auto Orientation = Transform.GetOrientation();
-	auto Time = static_cast<float>( GetCurrentTime() );
-	auto Rotation = fmod( Time * 0.1f, 1.0f ) * 360.0f;
 	Vector3D CameraOrientation = Vector3D::Zero;
 	CameraOrientation.X = Orientation.Y - 90.0f;
-	CameraOrientation.Y = Orientation.Z;
-	CameraOrientation.Z = 0.0f; // Orientation.X;
+	CameraOrientation.Y = -Orientation.Z;
+	CameraOrientation.Z = Orientation.X;
 	Camera.SetCameraOrientation( CameraOrientation );
 
 	World->SetActiveCamera( &Camera, Priority );

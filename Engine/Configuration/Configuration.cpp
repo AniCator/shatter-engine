@@ -6,8 +6,15 @@
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
 
+#include <filesystem>
 #include <fstream>
 #include <sstream>
+
+// Version of the configuration file,
+// if this is present in the configuration file, but differs from the value defined here, 
+// we wipe the configuration file as it is considered out-of-date.
+constexpr int ConfigurationVersion = 1;
+constexpr const char* VersionKey = "configuration.Version";
 
 time_t GetModificationTime( const std::wstring& FilePath )
 {
@@ -148,15 +155,9 @@ void CConfiguration::Reload()
 			if( IsFirstFile )
 			{
 				configurationFileStream.open( DefaultEngineConfigurationFile );
-				if( configurationFileStream.fail() )
+				if( !configurationFileStream.fail() )
 				{
-					Log::Event( Log::Warning, "Cannot restore engine configuration file because \"%S\" is missing.\n", DefaultEngineConfigurationFile.c_str() );
-				}
-				else
-				{
-					std::ofstream defaultConfigurationStream( FilePathCharacterString );
-					defaultConfigurationStream << configurationFileStream.rdbuf();
-					defaultConfigurationStream.close();
+					Log::Event( "Restoring engine configuration file using \"%S\".\n", DefaultEngineConfigurationFile.c_str() );
 				}
 			}
 		}
@@ -224,6 +225,33 @@ void CConfiguration::Reload()
 	if( !Initialized )
 	{
 		Initialized = true;
+
+		// Check if the version key has been set.
+		if( IsValidKey( VersionKey ) )
+		{
+			if( GetInteger( VersionKey, ConfigurationVersion ) != ConfigurationVersion )
+			{
+				// Remove the configuration file.
+				remove( std::experimental::filesystem::path( GetFile() ) );
+
+				// Reset state.
+				StoredSettings = PreviousSettings;
+				Initialized = false;
+
+				// Reload defaults.
+				Reload();
+
+				// Assign the new configuration version.
+				Store( VersionKey, ConfigurationVersion );
+				Save();
+			}
+		}
+		else
+		{
+			// Assign the configuration version.
+			Store( VersionKey, ConfigurationVersion );
+			Save();
+		}
 	}
 }
 

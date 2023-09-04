@@ -99,6 +99,21 @@ public:
 		return RotationMatrix;
 	}
 
+	// Calculates the rotation between two vectors.
+	static Matrix3D RotationBetween( const Vector3D& Source, const Vector3D& Target )
+	{
+		const Vector3D Axis = Target.Cross( Source );
+		const float Cosine = Target.Dot( Source );
+		const float K = 1.0f / ( 1.0f + Cosine );
+
+		Matrix3D RotationMatrix;
+		RotationMatrix[X] = Vector3D( K * Axis.X * Axis.X + Cosine, K * Axis.Y * Axis.X - Axis.Z, K * Axis.Z * Axis.X + Axis.Y );
+		RotationMatrix[Y] = Vector3D( K * Axis.X * Axis.Y + Axis.Z, K * Axis.Y * Axis.Y + Cosine, K * Axis.Z * Axis.Y - Axis.X );
+		RotationMatrix[Z] = Vector3D( K * Axis.X * Axis.Z - Axis.Y, K * Axis.Y * Axis.Z + Axis.X, K * Axis.Z * Axis.Z + Cosine );
+
+		return RotationMatrix;
+	}
+
 	// Rotation around the X-axis (angle is in radians, clockwise).
 	static Matrix3D RotationX( const float& Angle )
 	{
@@ -582,6 +597,21 @@ public:
 		RotationMatrix[X] = Vector4D( InvertedCosine * Axis.X * Axis.X + Cosine, InvertedCosine * Axis.X * Axis.Y - Axis.Z * Sine, InvertedCosine * Axis.X * Axis.Z + Axis.Y * Sine, 0.0f );
 		RotationMatrix[Y] = Vector4D( InvertedCosine * Axis.X * Axis.Y + Axis.Z * Sine, InvertedCosine * Axis.Y * Axis.Y + Cosine, InvertedCosine * Axis.Y * Axis.Z - Axis.X * Sine, 0.0f );
 		RotationMatrix[Z] = Vector4D( InvertedCosine * Axis.X * Axis.Z - Axis.Y * Sine, InvertedCosine * Axis.Y * Axis.Z + Axis.X * Sine, InvertedCosine * Axis.Z * Axis.Z + Cosine, 0.0f );
+
+		return RotationMatrix;
+	}
+
+	// Calculates the rotation between two vectors.
+	static Matrix4D RotationBetween( const Vector3D& Source, const Vector3D& Target )
+	{
+		const Vector3D Axis = Target.Cross( Source );
+		const float Cosine = Target.Dot( Source );
+		const float K = 1.0f / ( 1.0f + Cosine );
+
+		Matrix4D RotationMatrix;
+		RotationMatrix[X] = Vector4D( K * Axis.X * Axis.X + Cosine, K * Axis.Y * Axis.X - Axis.Z, K * Axis.Z * Axis.X + Axis.Y, 0.0f );
+		RotationMatrix[Y] = Vector4D( K * Axis.X * Axis.Y + Axis.Z, K * Axis.Y * Axis.Y + Cosine, K * Axis.Z * Axis.Y - Axis.X, 0.0f );
+		RotationMatrix[Z] = Vector4D( K * Axis.X * Axis.Z - Axis.Y, K * Axis.Y * Axis.Z + Axis.X, K * Axis.Z * Axis.Z + Cosine, 0.0f );
 
 		return RotationMatrix;
 	}

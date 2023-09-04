@@ -473,14 +473,12 @@ BoundingBoxSIMD BoundingVolumeHierarchy::Node::GetBounds() const
 bool BoundingVolumeHierarchy::Node::Cast( const RawObject& Node, const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore,
 	Geometry::Result& Result )
 {
-	if( Node )
-	{
-		Result = Node->Cast( Start, End, Ignore );
-		if( Result.Hit )
-			return true;
-	}
-
-	return false;
+	if( !Node )
+		return false;
+	
+	Result = Node->Cast( Start, End, Ignore );
+	if( Result.Hit )
+		return true;
 }
 
 bool BoundingVolumeHierarchy::Node::Compare( const RawObject& A, const RawObject& B, const int32_t& Axis )

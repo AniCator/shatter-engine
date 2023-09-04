@@ -2,6 +2,7 @@
 #include "Noise.h"
 
 #include <Engine/Resource/Assets.h>
+#include <Engine/Utility/ThreadPool.h>
 
 Vector2D RandomCellular2D( Vector2D Hash ) {
 	// Use the hash to generate the coordinates.
@@ -118,7 +119,11 @@ CTexture* Noise::Cellular2D()
 	Context.Mode = EFilteringMode::Bilinear;
 	Context.Format = EImageFormat::R8;
 	Context.GenerateMipMaps = true;
-	TextureCellular2D = CAssets::Get().CreateNamedTexture( Context );
+
+	ThreadPool::Add( Thread::Loading, [Context]()
+	{
+		TextureCellular2D = CAssets::Get().CreateNamedTexture( Context );
+	} );
 
 	return TextureCellular2D;
 }
@@ -179,9 +184,58 @@ CTexture* Noise::Cellular3D()
 			}
 		}
 
-		MaximumDistance = Math::Max( MinimumDistance, MaximumDistance );
 		Distances[Index] = MinimumDistance;
 	}
+
+	// Calculate the maximum distance.
+	for( size_t Index = 0; Index < Length; Index++ )
+	{
+		MaximumDistance = Math::Max( Distances[Index], MaximumDistance );
+	}
+
+	//for( size_t Index = 0; Index < Length; Index++ )
+	//{
+	//	// Calculate our X, Y and Z position.
+	//	const size_t X = Index % Size;
+	//	const size_t Y = ( Index / Size ) % Size;
+	//	const size_t Z = ( Index / Size ) / Size;
+
+	//	// Convert to a coordinate in the range of [0-1].
+	//	const Vector3D Coordinate = Vector3D(
+	//		static_cast<float>( X ) / static_cast<float>( Size ),
+	//		static_cast<float>( Y ) / static_cast<float>( Size ),
+	//		static_cast<float>( Z ) / static_cast<float>( Size )
+	//	);
+
+	//	float MinimumDistance = 1.0f;
+	//	Vector3D Scaled = Coordinate * Scale;
+	//	Vector3D Tile = { std::floor( Scaled.X ), std::floor( Scaled.Y ), std::floor( Scaled.Z ) };
+	//	Vector3D Fraction = { Scaled.X - Tile.X, Scaled.Y - Tile.Y, Scaled.Z - Tile.Z };
+
+	//	for( int OffsetZ = -1; OffsetZ <= 1; OffsetZ++ )
+	//	{
+	//		for( int OffsetY = -1; OffsetY <= 1; OffsetY++ )
+	//		{
+	//			for( int OffsetX = -1; OffsetX <= 1; OffsetX++ )
+	//			{
+	//				Vector3D Offset = Vector3D( OffsetX, OffsetY, OffsetZ );
+	//				Vector3D Cell = Tile + Offset;
+
+	//				// Wrap-around.
+	//				Cell.X = std::fmod( Cell.X + Scale, Scale );
+	//				Cell.Y = std::fmod( Cell.Y + Scale, Scale );
+	//				Cell.Z = std::fmod( Cell.Z + Scale, Scale );
+
+	//				Vector3D Point = RandomCellular3D( Cell );
+	//				Vector3D Difference = Offset + Point - Fraction;
+	//				MinimumDistance = Math::Min( MinimumDistance, Difference.Length() );
+	//			}
+	//		}
+	//	}
+
+	//	MaximumDistance = Math::Max( MinimumDistance, MaximumDistance );
+	//	Distances[Index] = MinimumDistance;
+	//}
 
 	// Correct the brightness.
 	for( size_t Index = 0; Index < Length; Index++ )
@@ -199,7 +253,11 @@ CTexture* Noise::Cellular3D()
 	Context.Mode = EFilteringMode::Bilinear;
 	Context.Format = EImageFormat::R8;
 	Context.GenerateMipMaps = true;
-	TextureCellular3D = CAssets::Get().CreateNamedTexture( Context );
+
+	ThreadPool::Add( Thread::Loading, [Context]()
+	{
+		TextureCellular3D = CAssets::Get().CreateNamedTexture( Context );
+	} );
 
 	return TextureCellular3D;
 }

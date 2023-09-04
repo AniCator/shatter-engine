@@ -14,7 +14,10 @@ namespace Thread
 		Loading,
 		WorkerA,
 		WorkerB,
-		Maximum
+		WorkerC,
+		Maximum,
+
+		Main = Maximum
 	};
 };
 

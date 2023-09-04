@@ -32,6 +32,7 @@
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Configuration/Configuration.h>
 
+#include <Engine/Profiling/Profiling.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Sequencer/Sequencer.h> // TODO: Move sequencer updating somewhere else (see Frame call below)
 #include <Engine/Utility/Locator/InputLocator.h>
@@ -40,6 +41,7 @@
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/Utility/Script/AngelEngine.h>
 #include <Engine/Utility/Thread.h>
+#include <Engine/Utility/ThreadPool.h>
 #include <Engine/World/World.h>
 
 #include <Game/Game.h>
@@ -583,10 +585,10 @@ void PollInput()
 
 void CApplication::Run()
 {
-	auto& Renderer = MainWindow.GetRenderer();
 	Initialize();
 
 	Setup.AspectRatio = static_cast<float>( MainWindow.GetWidth() ) / static_cast<float>( MainWindow.GetHeight() );
+	auto& Renderer = MainWindow.GetRenderer();
 	Renderer.SetCamera( DefaultCamera );
 
 	InputTimer.Start();
@@ -603,7 +605,7 @@ void CApplication::Run()
 
 	while( !MainWindow.ShouldClose() )
 	{
-		ProfileFrame( "Main Thread" );
+		ProfileFrame( "MainThread" );
 		Update();
 	}
 
@@ -613,8 +615,8 @@ void CApplication::Run()
 	delete GameLayersInstance;
 
 	MainWindow.Terminate();
-
 	SoLoudSound::Shutdown();
+	ThreadPool::Shutdown();
 }
 
 void CApplication::Close()
@@ -1164,6 +1166,7 @@ void SetupUserDirectories()
 
 void CApplication::Initialize()
 {
+	ProfileScope();
 #if defined(_WIN32)
 	// Attach an exception handler.
 	::SetUnhandledExceptionFilter( ExceptionHandler );
@@ -1202,8 +1205,11 @@ void CApplication::Initialize()
 
 	ServiceRegistry.CreateStandardServices();
 
-	// Initialize the pool.
+	// Initialize the symbol pool.
 	NamePool::Get().Pool();
+
+	// Configure the thread pool.
+	ThreadPool::Initialize();
 
 	// Calling Get creates the instance and initializes the class.
 	CConfiguration& Configuration = CConfiguration::Get();

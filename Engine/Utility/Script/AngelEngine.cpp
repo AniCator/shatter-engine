@@ -250,6 +250,22 @@ AngelResult ScriptEngine::AddTypePOD( const char* Name, const size_t Size, const
 	return AngelResult::Success;
 }
 
+AngelResult ScriptEngine::AddTypeConstructor( const char* Type, void* Function )
+{
+	return AddObjectBehavior( Type, "void f()", asFUNCTION( Function ), asBEHAVE_CONSTRUCT );
+}
+
+AngelResult ScriptEngine::AddTypeCopyConstructor( const char* Type, const char* CopyType, void* Function )
+{
+	std::string Signature = "void f( const " + std::string( CopyType ) + " &in )";
+	return AddObjectBehavior( Type, Signature.c_str(), asFUNCTION( Function ), asBEHAVE_CONSTRUCT );
+}
+
+AngelResult ScriptEngine::AddTypeDestructor( const char* Type, void* Function )
+{
+	return AddObjectBehavior( Type, "void f()", asFUNCTION( Function ), asBEHAVE_DESTRUCT );
+}
+
 AngelResult ScriptEngine::AddObjectMethod( const char* Type, const char* Signature, const asSFuncPtr& Pointer )
 {
 	if( !Engine )
@@ -280,6 +296,21 @@ AngelResult ScriptEngine::AddObjectProperty( const char* Type, const char* Signa
 	return AngelResult::Success;
 }
 
+AngelResult ScriptEngine::AddObjectBehavior( const char* Type, const char* Signature, const asSFuncPtr& Pointer, const asEBehaviours& Behavior )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterObjectBehaviour( Type, Behavior, Signature, Pointer, asCALL_CDECL_OBJFIRST );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register object behavior \"%s\" for type \"%s\".\n", Signature, Type );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
 AngelResult ScriptEngine::AddProperty( const char* Signature, void* Property )
 {
 	if( !Engine )
@@ -290,6 +321,31 @@ AngelResult ScriptEngine::AddProperty( const char* Signature, void* Property )
 	{
 		Log::Event( Log::Error, "Failed to register global property \"%s\".\n", Signature );
 		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::AddEnum( const char* Type, const std::vector<std::pair<std::string, int>>& Values )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterEnum( Type );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register enum \"%s\".\n", Type );
+		return AngelResult::Engine;
+	}
+
+	for( const auto& Value : Values )
+	{
+		const int Result = Engine->RegisterEnumValue( Type, Value.first.c_str(), Value.second );
+		if( Result < 0 )
+		{
+			Log::Event( Log::Error, "Failed to register enum value \"%s\".\n", Value.first.c_str() );
+			continue;
+		}
 	}
 
 	return AngelResult::Success;

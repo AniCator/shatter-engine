@@ -226,6 +226,60 @@ Property::Property( const CData& Value )
 	Type = PropertyType::Data;
 }
 
+std::string Property::ToString() const
+{
+	switch( Type )
+	{
+	case PropertyType::String:
+		return GetString();
+		break;
+	case PropertyType::Float:
+		return std::to_string( GetFloat() );
+		break;
+	case PropertyType::Vector3D:
+	{
+		const auto& Vector = GetVector3D();
+		return std::to_string( Vector.X ) + ", " + std::to_string( Vector.Y ) + ", " + std::to_string( Vector.Z );
+		break;
+	}
+	case PropertyType::U64:
+		return std::to_string( GetU64() );
+		break;
+	case PropertyType::U32:
+		return std::to_string( GetU32() );
+		break;
+	case PropertyType::U16:
+		return std::to_string( GetU16() );
+		break;
+	case PropertyType::U8:
+		return std::to_string( GetU8() );
+		break;
+	case PropertyType::I64:
+		return std::to_string( GetI64() );
+		break;
+	case PropertyType::I32:
+		return std::to_string( GetI32() );
+		break;
+	case PropertyType::I16:
+		return std::to_string( GetI16() );
+		break;
+	case PropertyType::I8:
+		return std::to_string( GetI8() );
+		break;
+	case PropertyType::Boolean:
+		return std::to_string( GetBoolean() );
+		break;
+	case PropertyType::Pointer:
+		return std::string( "pointer" );
+		break;
+	case PropertyType::Data:
+		return std::string( "data" );
+		break;
+	default:
+		return {};
+	}
+}
+
 const static std::string Empty;
 const std::string& Property::GetString() const
 {

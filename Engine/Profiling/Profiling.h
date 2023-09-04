@@ -142,8 +142,8 @@ private:
 #include <ThirdParty/Optick/optick.h>
 #define ProfileScope() OPTICK_EVENT()
 #define Profile( Name ) OPTICK_EVENT( Name )
-#define ProfileBareScope() OPTICK_EVENT()
-#define ProfileBare( Name ) OPTICK_EVENT()
+#define ProfileBareScope() _PROFILE_( __FUNCTION__, true )
+#define ProfileBare( Name ) _PROFILE_( Name, true )
 #define ProfileThread( Name ) OPTICK_THREAD( Name )
 #define ProfileFrame( Name ) OPTICK_FRAME( Name )
 

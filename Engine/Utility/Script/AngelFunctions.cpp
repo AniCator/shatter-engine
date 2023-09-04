@@ -556,6 +556,70 @@ void RegisterMath()
 	ScriptEngine::AddFunction( "float ToDegrees( float &in )", static_cast<float( * )( const float& )>( Math::ToDegrees ) );
 }
 
+static void ConstructProperty( Property* This )
+{
+	// Allocate a new property using placement-new.
+	new ( This ) Property();
+}
+
+template<typename T>
+static void CopyConstructProperty( Property* This, const T& Other )
+{
+	new ( This ) Property( Other );
+}
+
+static void DestructProperty( Property* This )
+{
+	This->~Property();
+}
+
+void RegisterProperty()
+{
+	ScriptEngine::AddEnum( "PropertyType", {
+		{ "Unknown", static_cast<int>( PropertyType::Unknown ) },
+		{ "String", static_cast<int>( PropertyType::String ) },
+		{ "Float", static_cast<int>( PropertyType::Float ) },
+		{ "Vector3D", static_cast<int>( PropertyType::Vector3D ) },
+		{ "U64", static_cast<int>( PropertyType::U64 ) },
+		{ "U32", static_cast<int>( PropertyType::U32 ) },
+		{ "U16", static_cast<int>( PropertyType::U16 ) },
+		{ "U8", static_cast<int>( PropertyType::U8 ) },
+		{ "I64", static_cast<int>( PropertyType::I64 ) },
+		{ "I32", static_cast<int>( PropertyType::I32 ) },
+		{ "I16", static_cast<int>( PropertyType::I16 ) },
+		{ "I8", static_cast<int>( PropertyType::I8 ) },
+		{ "Boolean", static_cast<int>( PropertyType::Boolean ) },
+		{ "Pointer", static_cast<int>( PropertyType::Pointer ) },
+		{ "Data", static_cast<int>( PropertyType::Data ) }
+		}
+	);
+
+	ScriptEngine::AddTypeValue<Property>( "Property" );
+	ScriptEngine::AddTypeConstructor( "Property", ConstructProperty );
+	ScriptEngine::AddTypeDestructor( "Property", DestructProperty );
+
+	ScriptEngine::AddTypeCopyConstructor( "Property", "Property", CopyConstructProperty<Property> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "string", CopyConstructProperty<std::string> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "float", CopyConstructProperty<float> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "Vector3D", CopyConstructProperty<Vector3D> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "uint64", CopyConstructProperty<uint64_t> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "uint", CopyConstructProperty<uint32_t> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "uint16", CopyConstructProperty<uint16_t> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "uint8", CopyConstructProperty<uint8_t> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "int64", CopyConstructProperty<int64_t> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "int", CopyConstructProperty<int32_t> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "int16", CopyConstructProperty<int16_t> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "int8", CopyConstructProperty<int8_t> );
+	ScriptEngine::AddTypeCopyConstructor( "Property", "bool", CopyConstructProperty<bool> );
+
+	ScriptEngine::AddTypeMethod( "Property", "PropertyType GetType()", &Property::GetType );
+	ScriptEngine::AddTypeMethod( "Property", "string ToString()", &Property::ToString );
+	ScriptEngine::AddTypeMethod( "Property", "const string GetString()", &Property::GetString );
+	ScriptEngine::AddTypeMethod( "Property", "const float GetFloat()", &Property::GetFloat );
+	ScriptEngine::AddTypeMethod( "Property", "const Vector3D GetVector3D()", &Property::GetVector3D );
+	ScriptEngine::AddTypeMethod( "Property", "const int GetI32()", &Property::GetI32 );
+}
+
 void RegisterScriptFunctions()
 {
 	RegisterVector3Type();
@@ -566,6 +630,7 @@ void RegisterScriptFunctions()
 	RegisterEntity();
 	RegisterScriptEntity();
 	RegisterTime();
+	RegisterProperty();
 }
 
 void RegisterShatterEngine()

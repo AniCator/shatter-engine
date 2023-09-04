@@ -104,6 +104,7 @@ public:
 	BoundingBoxSIMD WorldBoundsSweptSIMD;
 	BoundingSphere WorldSphere;
 	BoundingBoxSIMD WorldBoundsSIMD;
+	BoundingBoxSIMD InflatedBoundsSIMD;
 
 	// Generates the inner spherical bounds, based on the world bounds.
 	BoundingSphere InnerSphere() const;

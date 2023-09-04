@@ -55,12 +55,13 @@ std::vector<ParticleSystem> ParticleSystem::LoadDefinitions( const std::string& 
 {
 	std::vector<ParticleSystem> Systems;
 
-	const auto DefinitionFile = CFile( Location );
+	auto DefinitionFile = CFile( Location );
 	if( !DefinitionFile.Exists() )
 		return Systems;
 
 	Log::Event( "Parsing particle system \"%s\".\n", Location.c_str() );
 
+	DefinitionFile.Load();
 	const auto Definitions = JSON::Tree( DefinitionFile );
 
 	for( auto& Object : Definitions.Objects )

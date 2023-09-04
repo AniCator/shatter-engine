@@ -54,6 +54,7 @@ struct Property
 	Property( void* Value );
 	Property( const CData& Value );
 
+	std::string ToString() const;
 	const std::string& GetString() const;
 	const float& GetFloat() const;
 	const Vector3D& GetVector3D() const;
