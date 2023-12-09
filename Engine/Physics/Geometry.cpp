@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Geometry.h"
 
-float Geometry::RayInBoundingBox(const Vector3D& Origin, const Vector3D& Direction, const BoundingBox& Bounds)
+float Geometry::RayInBoundingBox( const Vector3D& Origin, const Vector3D& Direction, const BoundingBox& Bounds )
 {
 	const auto InverseDirection = 1.0f / Direction;
 		
@@ -42,7 +42,7 @@ float Geometry::RayInBoundingBox(const Vector3D& Origin, const Vector3D& Directi
 	return Minimum;
 }
 
-Geometry::Result Geometry::LineInBoundingBox(const Vector3D& Start, const Vector3D& End, const BoundingBox& Bounds)
+Geometry::Result Geometry::LineInBoundingBox( const Vector3D& Start, const Vector3D& End, const BoundingBox& Bounds )
 {
 	Result Result;
 	const auto Direction = End - Start;

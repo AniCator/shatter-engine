@@ -255,6 +255,7 @@ namespace Log
 #ifdef _WIN32
 			if( IsDebuggerPresent() )
 			{
+				// Hi, welcome, don't panic, you're here because a log message indicated it was an error.
 				__debugbreak();
 			}
 #endif

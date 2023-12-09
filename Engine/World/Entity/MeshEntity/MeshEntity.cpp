@@ -115,6 +115,9 @@ void CMeshEntity::Construct()
 	{
 		ConstructRenderable();
 		ConstructPhysics();
+
+		// Ensure at least one tick is performed.
+		TickAnimation();
 	}
 
 	CPointEntity::Construct();
