@@ -14,6 +14,7 @@ namespace Response
 	CollisionResponse SpherePlane( const BoundingSphere& Sphere, const Plane& Plane );
 	CollisionResponse SphereAABB( const BoundingSphere& Sphere, const BoundingBox& Box );
 
+	CollisionResponse AABBPlane( const BoundingBox& Box, const Plane& Plane );
 	CollisionResponse AABBAABB( const BoundingBox& A, const BoundingBox& B );
 
 	CollisionResponse TriangleAABB( 

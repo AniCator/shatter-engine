@@ -52,6 +52,10 @@ CollisionResponse Response::SphereSphere( const BoundingSphere& A, const Boundin
 CollisionResponse Response::SpherePlane( const BoundingSphere& Sphere, const Plane& Plane )
 {
 	const Vector3D Origin = Sphere.Origin();
+
+	if( Origin.Dot( Plane.Normal ) - Plane.Distance != 0.0f )
+		return {}; // We're not on the plane.
+
 	const Vector3D PointOnPlane = Math::ProjectOnPlane( Origin, Plane );
 	const Vector3D Direction = Origin - PointOnPlane;
 
@@ -67,12 +71,13 @@ CollisionResponse Response::SpherePlane( const BoundingSphere& Sphere, const Pla
 	Response.Normal = PointOnPlane - Origin;
 	Response.Distance = Response.Normal.Normalize();
 
-	const Vector3D PointOnSphere = Origin - Response.Normal * Sphere.GetRadius();
+	const Vector3D PointOnSphere = Response.Normal * Sphere.GetRadius() + Origin;
 	Response.Distance = PointOnPlane.Distance( PointOnSphere );
 	Response.Point = PointOnPlane + ( PointOnSphere - PointOnPlane ) * 0.5f;
 
 	UI::AddSphere( Origin, Sphere.GetRadius(), Color::Cyan );
 	UI::AddCircle( PointOnPlane, 5.0f, Color::Green );
+	UI::AddCircle( PointOnSphere, 5.0f, Color::Blue );
 
 	return Response;
 }
@@ -131,6 +136,29 @@ CollisionResponse Response::SphereAABB( const BoundingSphere& Sphere, const Boun
 	// UI::AddLine( PointOnBox, PointOnBox + Response.Normal, Response.Distance > 0.0f ? Color::Blue : Color::Purple );
 	// UI::AddSphere( Origin, Sphere.GetRadius(), Color::Cyan );
 	// UI::AddAABB( Box.Minimum, Box.Maximum, Color::Cyan );
+
+	return Response;
+}
+
+CollisionResponse Response::AABBPlane( const BoundingBox& Box, const Plane& Plane )
+{
+	const Vector3D Center = Box.Center();
+	if( Math::Equal( Center.Dot( Plane.Normal ) - Plane.Distance, 0.0f ) )
+		return {}; // We're not on the plane.
+
+	const Vector3D Size = Box.Size() * 0.5f;
+	Vector3D AbsoluteNormal = Math::Abs( Plane.Normal );
+	const float ProjectionDistance = Size.Dot( AbsoluteNormal );
+	const float CosineAngle = Plane.Normal.Dot( Center );
+	const float DistanceToCenter = CosineAngle - Plane.Distance;
+
+	if( DistanceToCenter > ProjectionDistance )
+		return {}; // The bounding box is not intersecting with the plane.
+
+	CollisionResponse Response;
+
+	Response.Normal = Plane.Normal * -1.0f;
+	Response.Distance = fabs( ProjectionDistance - DistanceToCenter );
 
 	return Response;
 }
@@ -338,8 +366,9 @@ CollisionResponse Response::TriangleAABB( const VertexFormat& A, const VertexFor
 		return Response;
 	}
 
-	Response.Normal = EdgeB.Cross( EdgeA );
-	Response.Distance = Response.Normal.Dot( VertexA );
+	Plane TrianglePlane = { VertexA, VertexB, VertexC };
+	Response.Normal = TrianglePlane.Normal;
+	Response.Distance = Response.Normal.Dot( VertexA ) + TrianglePlane.Distance * 0.986f;
 	ByteToVector( A.Normal, Response.Normal );
 
 	// const float Radius = Extent.X * Math::Abs( Response.Normal.X ) + Extent.Y * Math::Abs( Response.Normal.Y ) + Extent.Z * Math::Abs( Response.Normal.Z );

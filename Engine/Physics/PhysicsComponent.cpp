@@ -180,13 +180,7 @@ CollisionResponse CollisionResponseAABBAABBSwept( const BoundingBox& A, const Ve
 
 void DrawVertex( FTransform& Transform, const VertexFormat& Vertex, const CollisionResponse& Response, const Color& Color )
 {
-	auto WorldSpacePosition = Transform.Transform( Vertex.Position );
-	auto WorldSpaceNormal = Transform.Rotate( Response.Normal );
-	UI::AddLine(
-		WorldSpacePosition,
-		WorldSpacePosition + WorldSpaceNormal,
-		Color
-	);
+	const auto WorldSpacePosition = Transform.Transform( Vertex.Position );
 
 	Vector3D VertexNormal;
 	ByteToVector( Vertex.Normal, VertexNormal );
@@ -347,7 +341,7 @@ void ProcessLeafTriangles(
 
 		CollisionResponse TriangleResponse = Response::TriangleAABB( VertexA, VertexB, VertexC, Center, Extent );
 		// if( Math::Abs( TriangleResponse.Distance ) < Math::Abs( Response.Distance ) || Response.Distance < 0.0001f )
-		if( TriangleResponse.Distance < Response.Distance )
+		if( TriangleResponse.Distance < 0.0f )
 		{
 			Response.Normal = TriangleResponse.Normal;
 			Response.Distance = TriangleResponse.Distance;
@@ -356,7 +350,7 @@ void ProcessLeafTriangles(
 			// DrawVertex( Transform, VertexA, TriangleResponse, Color( 255, 0, 0 ) );
 			// DrawVertex( Transform, VertexB, TriangleResponse, Color( 0, 255, 0 ) );
 			// DrawVertex( Transform, VertexC, TriangleResponse, Color( 0, 0, 255 ) );
-			DrawTriangle( Transform, VertexA, VertexB, VertexC, TriangleResponse, Color::White );
+			DrawTriangle( Transform, VertexA, VertexB, VertexC, TriangleResponse, Color::White, 0.5f );
 #endif
 		}
 #if DrawDebugTriangleCollisions == 1
@@ -366,6 +360,16 @@ void ProcessLeafTriangles(
 			DrawVertex( Transform, VertexB, TriangleResponse, Color( 0, 127, 0 ) );
 			DrawVertex( Transform, VertexC, TriangleResponse, Color( 0, 0, 127 ) );
 		}
+
+		const auto TriangleCenter = ( VertexA.Position + VertexB.Position + VertexC.Position ) / 3.0f;
+		const auto WorldSpacePosition = Transform.Transform( TriangleCenter );
+		const auto WorldSpaceNormal = Transform.Rotate( TriangleResponse.Normal );
+		UI::AddLine(
+			WorldSpacePosition,
+			WorldSpacePosition + WorldSpaceNormal * TriangleResponse.Distance,
+			Color::Purple,
+			0.5f
+		);
 #endif
 
 		Index += 3;
@@ -587,12 +591,12 @@ CollisionResponse CalculateResponsePlane( CBody* A, CBody* B, const Geometry::Re
 	case BodyType::AABB:
 	{
 		// TODO: Plane v. AABB. (interpret as sphere for now)
-		return Response::SpherePlane( B->WorldSphere, { A->PreviousTransform.GetPosition(), A->PreviousTransform.Rotate( WorldUp ) } );
+		break;// return Response::SpherePlane( B->WorldSphere, { A->PreviousTransform.GetPosition(), A->PreviousTransform.Rotate( WorldUp ) } );
 	}
 	case BodyType::Sphere:
 	{
-		auto InnerSphereB = B->InnerSphere();
-		return Response::SpherePlane( InnerSphereB, { A->PreviousTransform.GetPosition(), A->PreviousTransform.Rotate( WorldUp ) } );
+		// auto InnerSphereB = B->InnerSphere();
+		break;// return Response::SpherePlane( InnerSphereB, { A->PreviousTransform.GetPosition(), A->PreviousTransform.Rotate( WorldUp ) } );
 	}
 	default:
 		break;
@@ -619,7 +623,7 @@ CollisionResponse CalculateResponseAABB( CBody* A, CBody* B, const Geometry::Res
 	case BodyType::Plane:
 	{
 		// TODO: AABB v. Plane. (using sphere v. AABB here temporarily)
-		return Response::SpherePlane( A->WorldSphere, { B->PreviousTransform.GetPosition(), B->PreviousTransform.Rotate( WorldUp ) } );
+		return Response::AABBPlane( A->WorldBounds, { B->PreviousTransform.GetPosition(), B->PreviousTransform.Rotate( WorldUp ) } );
 	}
 	case BodyType::AABB:
 		if( A->Continuous )
@@ -885,9 +889,10 @@ void CBody::Collision( CBody* Body )
 	Detect( this, Body, SweptResult );
 }
 
-std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, std::vector<glm::uint>& Indices, const Vector3D& Median, const bool Direction, const size_t Axis )
+std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, const std::vector<glm::uint>& Indices, const Vector3D& Median, const bool Direction, const size_t Axis )
 {
-	std::vector<glm::uint> GatheredIndices;
+	static std::vector<glm::uint> GatheredIndices;
+	GatheredIndices.clear();
 	GatheredIndices.reserve( Indices.size() );
 
 	for( unsigned int Index = 0; Index < Indices.size(); )
@@ -962,18 +967,20 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 		Tree = new TriangleTree();
 	}
 
-	std::vector<glm::uint>& Indices = Tree->Indices;
+	const std::vector<glm::uint>& Indices = Tree->Indices;
 
+	// TODO: This is actually the average right now.
 	Vector3D LocalMedian = Vector3D( 0.0f, 0.0f, 0.0f );
 	for( size_t Index = 0; Index < Indices.size(); Index++ )
 	{
-		LocalMedian += Tree->Get( Indices[Index] ).Position;
+		const auto& Vertex = Tree->Get( Indices[Index] );
+		LocalMedian += Vertex.Position;
 	}
 
 	LocalMedian /= static_cast<float>( Indices.size() );
 	Vector3D Median = LocalMedian; // Transform.Transform( LocalMedian );
 
-	Median = ( WorldBounds.Minimum + WorldBounds.Maximum ) * 0.5f;
+	// Median = ( WorldBounds.Minimum + WorldBounds.Maximum ) * 0.5f;
 
 	BoundingBox UpperBounds = WorldBounds;
 	BoundingBox LowerBounds = UpperBounds;
@@ -1026,11 +1033,13 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 		if( !Tree->Upper )
 		{
 			Tree->Upper = new TriangleTree();
+			Tree->Upper->Source = Tree->Source;
 		}
 
 		if( !Tree->Lower )
 		{
 			Tree->Lower = new TriangleTree();
+			Tree->Lower->Source = Tree->Source;
 		}
 
 		Tree->Upper->Indices = GatherVertices( Tree, Indices, Median, true, Axis );
@@ -1343,7 +1352,7 @@ void CBody::Tick()
 		}
 		else
 		{
-			ConstrainZ( this, NewPosition, MinimumHeight );
+			// ConstrainZ( this, NewPosition, MinimumHeight );
 		}
 	}
 
