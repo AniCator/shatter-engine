@@ -43,6 +43,7 @@ void CWorld::Construct()
 	OptickEvent();
 
 	Camera = nullptr;
+	Tags.clear();
 
 	if( Physics )
 	{
@@ -68,6 +69,9 @@ void CWorld::Frame()
 
 	for( auto& Level : Levels )
 	{
+		if( !Level.IsVisible() )
+			continue;
+
 		Level.Frame();
 	}
 
@@ -166,6 +170,8 @@ void CWorld::Destroy()
 	{
 		Level.Destroy();
 	}
+
+	Tags.clear();
 }
 
 void CWorld::Reload()
