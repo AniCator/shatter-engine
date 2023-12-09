@@ -47,34 +47,35 @@ namespace Culling
 		}
 	}
 
-	void SphereCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
+	void CombinedCull( const CCamera& Camera, CRenderable* Renderable )
 	{
-		for( auto* Renderable : Renderables )
-		{
-			SphereCull( Camera, Renderable );
-		}
-	}
+		auto& RenderData = Renderable->GetRenderData();
+		RenderData.ShouldRender = false;
 
-	void BoxCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
-	{
-		for( auto* Renderable : Renderables )
+		if( RenderData.DisableRender )
+			return;
+
+		if( SphereCull( Camera, RenderData.WorldBounds ) && BoxCull( Camera, RenderData.WorldBounds ) )
 		{
-			BoxCull( Camera, Renderable );
+			RenderData.ShouldRender = true;
 		}
 	}
 
 	bool Frustum( const CCamera& Camera, const BoundingBox& Bounds )
 	{
-		return SphereCull( Camera, Bounds );
+		return SphereCull( Camera, Bounds ) && BoxCull( Camera, Bounds );
 	}
 
 	void Frustum( const CCamera& Camera, CRenderable* Renderable )
 	{
-		SphereCull( Camera, Renderable );
+		CombinedCull( Camera, Renderable );
 	}
 
 	void Frustum( const CCamera& Camera, const std::vector<CRenderable*>& Renderables )
 	{
-		SphereCull( Camera, Renderables );
+		for( auto* Renderable : Renderables )
+		{
+			CombinedCull( Camera, Renderable );
+		}
 	}
 }
