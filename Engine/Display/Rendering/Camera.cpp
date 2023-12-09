@@ -94,20 +94,25 @@ bool Frustum::Contains( const BoundingSphere& Sphere ) const
 	return true;
 }
 
-bool BoxTest( const Plane& Plane, const BoundingBox& Box )
+float DistanceToBox( const Plane& Plane, const BoundingBox& Box )
 {
-	const float Radius = Math::Abs( Box.Size().Dot( Plane.Normal ) );
+	const float Radius = Box.Size().Dot( Math::Abs( Plane.Normal ) );
 	const float Distance = Plane.Normal.Dot( Box.Center() ) + Plane.Distance;
 	if( Math::Abs( Distance ) < Radius )
 	{
-		return false; // Intersecting with plane.
+		return 0.0f; // Intersecting with plane.
 	}
 	else if( Distance < 0.0f )
 	{
-		return Distance + Radius > 0.0f;
+		return Distance + Radius;
 	}
 
-	return Distance - Radius > 0.0f;
+	return Distance - Radius;
+}
+
+bool BoxTest( const Plane& Plane, const BoundingBox& Box )
+{
+	return DistanceToBox( Plane, Box ) > 0.0f;
 }
 
 bool Frustum::Contains( const BoundingBox& Box ) const
@@ -165,8 +170,8 @@ Frustum::Frustum( FCameraSetup& Setup )
 	BottomRightFar = FarCenter - Setup.CameraUpVector * FarOffset.Y - Setup.CameraRightVector * FarOffset.X;
 
 	// Calculate the plane vectors.
-	Plane[Top] = ::Plane(TopLeftNear, TopRightFar, TopLeftFar );
-	Plane[Bottom] = ::Plane(BottomLeftNear, BottomRightFar, BottomRightNear );
+	Plane[Top] = ::Plane( TopLeftNear, TopRightFar, TopLeftFar );
+	Plane[Bottom] = ::Plane( BottomLeftNear, BottomRightFar, BottomRightNear );
 
 	Plane[Left] = ::Plane( BottomLeftNear, TopLeftFar, BottomLeftFar );
 	Plane[Right] = ::Plane( BottomRightNear, TopRightFar, TopRightNear );
