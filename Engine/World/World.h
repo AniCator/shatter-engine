@@ -135,10 +135,9 @@ public:
 	/// <typeparam name="T">Enum class derived from EventType</typeparam>
 	/// <param name="ID">Event type the listener is unsubscribing from.</param>
 	/// <param name="Listener">Listener to be added.</param>
-	template<typename T>
-	void Unsubscribe( const T& ID, Event::Listener*& Listener )
+	void Unsubscribe( Event::Listener*& Listener )
 	{
-		EventQueue.Unsubscribe( static_cast<EventType>( ID ), Listener );
+		EventQueue.Unsubscribe( Listener );
 	}
 
 	/// <summary>

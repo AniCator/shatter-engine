@@ -42,6 +42,7 @@ namespace Event
 			Execute( Payload );
 		}
 	
+		EventType ID = NoneEventType;
 	protected:
 		std::function<void( PayloadData )> Execute;
 	};
@@ -61,6 +62,9 @@ namespace Event
 			auto* AllocatedListener = new Listener( Notify );
 			Listeners[ID].emplace_back( AllocatedListener );
 
+			// Assign the ID of the event type, so it can be read when the listener unsubscribes.
+			AllocatedListener->ID = ID;
+
 			return AllocatedListener;
 		}
 
@@ -69,11 +73,12 @@ namespace Event
 		/// </summary>
 		/// <param name="Listener">Listener to be added.</param>
 		/// <param name="ID">Event type the listener is unsubscribing from.</param>
-		void Unsubscribe( const EventType& ID, Listener*& Listener )
+		void Unsubscribe( Listener*& Listener )
 		{
 			if( !Listener )
 				return;
 
+			const auto ID = Listener->ID;
 			const auto Iterator = std::find( Listeners[ID].begin(), Listeners[ID].end(), Listener );
 
 			// Only erase them if they have been subscribed to this list.
