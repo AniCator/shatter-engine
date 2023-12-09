@@ -202,7 +202,12 @@ struct Bone
 		Disable = 0,
 		Replace, // Replace the local transformation.
 		Add, // Apply the transformation on top of existing ones.
-		Direct // Apply the transformation directly to the bone transform, with no regard of its hierarchy.
+		Direct, // Apply the transformation directly to the bone transform, with no regard of its hierarchy.
+		Global, // Replace the global transformation.
+
+		ReplaceTranslation, // Exclusively replace the local translation.
+		ReplaceRotation, // Exclusively replace the local rotation.
+		ReplaceScale // Exclusively replace the local scale.
 	} Override = Disable;
 	Matrix4D OverrideTransform;
 };

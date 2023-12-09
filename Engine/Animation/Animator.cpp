@@ -884,42 +884,79 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 
 	// Copy the bone data from the skeleton.
 	Data.Bones[Bone->Index] = *Bone;
+	auto& CurrentBone = Data.Bones[Bone->Index];
+
+	// Re-apply the override data.
+	CurrentBone.Override = Override;
+	CurrentBone.OverrideTransform = OverrideTransform;
 
 	// Concatenate all the keyframe transformations.
-	auto LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
+	Matrix4D LocalTransform;
 
 	// Handle bone transform overrides.
 	if( Override != Bone::Disable )
 	{
-		if( Override == Bone::Replace )
+		switch( Override )
 		{
+		case Bone::Replace:
 			// TODO: If we're replacing we shouldn't need to look up any keyframe information above.
 			LocalTransform = OverrideTransform;
-		}
-		else
-		{
-			LocalTransform = OverrideTransform * LocalTransform;
+			break;
+		case Bone::Add:
+			LocalTransform = OverrideTransform * Matrices.Translation * Matrices.Rotation * Matrices.Scale;
+			break;
+		case Bone::ReplaceTranslation:
+			LocalTransform = OverrideTransform * Matrices.Rotation * Matrices.Scale;
+			break;
+		case Bone::ReplaceRotation:
+			LocalTransform = Matrices.Translation * OverrideTransform * Matrices.Scale;
+			break;
+		case Bone::ReplaceScale:
+			LocalTransform = Matrices.Translation * Matrices.Rotation * OverrideTransform;
+			break;
+		default:
+			LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
+			break;
 		}
 	}
+	else
+	{
+		LocalTransform = Matrices.Translation * Matrices.Rotation * Matrices.Scale;
+	}
 
-	Data.Bones[Bone->Index].LocalTransform = LocalTransform;
+	CurrentBone.LocalTransform = LocalTransform;
 
 	// Look up the parent matrix.
 	if( Parent )
 	{
-		Data.Bones[Bone->Index].GlobalTransform = Parent->GlobalTransform * LocalTransform;
+		if( Parent->Override == Bone::Global )
+		{
+			CurrentBone.GlobalTransform = Parent->OverrideTransform * LocalTransform;
+		}
+		else
+		{
+			CurrentBone.GlobalTransform = Parent->GlobalTransform * LocalTransform;
+		}
 	}
 	else
 	{
 		// Set the global transform to just the local transform if no parent is found.
-		Data.Bones[Bone->Index].GlobalTransform = LocalTransform;
+		CurrentBone.GlobalTransform = LocalTransform;
 
 		// Scale the root motion vector.
 		Data.RootMotion = Matrices.Scale.Transform( Data.RootMotion );
 	}
 
-	Data.Bones[Bone->Index].BoneTransform = Data.Bones[Bone->Index].GlobalTransform * Bone->ModelToBone;
-	Data.Bones[Bone->Index].Evaluated = true;
+	if( Override == Bone::Global )
+	{
+		CurrentBone.BoneTransform = OverrideTransform * Bone->ModelToBone;
+	}
+	else
+	{
+		CurrentBone.BoneTransform = CurrentBone.GlobalTransform * Bone->ModelToBone;
+	}
+
+	CurrentBone.Evaluated = true;
 	EvaluateChildren( Data, Skeleton, Bone );
 }
 
