@@ -50,12 +50,23 @@ struct State
 
 	bool Set( std::underlying_type_t<T> Underlying )
 	{
-		Set( Convert( Underlying ) );
+		return Set( Convert( Underlying ) );
 	}
 
 	double TimeSinceTransition() const
 	{
 		return GameLayersInstance->GetCurrentTime() - LastTransitionTime;
+	}
+
+	operator std::underlying_type_t<T>() const
+	{
+		return Current;
+	}
+
+	State<T, Default>& operator=( const std::underlying_type_t<T>& B )
+	{
+		Set( B );
+		return *this;
 	}
 
 private:
