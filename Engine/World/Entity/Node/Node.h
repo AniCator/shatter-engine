@@ -1,7 +1,7 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <Engine/World/Entity/Entity.h>
+#include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math/Vector.h>
 
 #include <unordered_set>
@@ -40,7 +40,7 @@ namespace Node
 		std::vector<Data*> Nodes;
 	};
 
-	class Entity : public CEntity
+	class Entity : public CPointEntity
 	{
 	public:
 		Entity() = default;
@@ -58,8 +58,10 @@ namespace Node
 
 		static Route Path( const Vector3D& Start, const Vector3D& End );
 
-	protected:
 		Data NodeData;
+
+		// Cached link names.
+		std::vector<std::string> LinkNames;
 	};
 
 	struct Network

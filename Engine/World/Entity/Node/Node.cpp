@@ -14,17 +14,21 @@ static Network GlobalNetwork;
 void Entity::Construct()
 {
 	Tag( "node" );
+
+	CPointEntity::Construct();
 }
 
 void Entity::Destroy()
 {
 	GlobalNetwork.Remove( &NodeData );
 
-	CEntity::Destroy();
+	CPointEntity::Destroy();
 }
 
 void Entity::Load( const JSON::Vector& Objects )
-{
+{	
+	CPointEntity::Load( Objects );
+
 	auto* Level = GetLevel();
 	if( !Level )
 		return;
@@ -39,11 +43,7 @@ void Entity::Load( const JSON::Vector& Objects )
 		{
 			for( auto* Link : Property->Objects )
 			{
-				auto* Node = Cast<Entity>( Level->Find( Link->Key ) );
-				if( Node )
-				{
-					NodeData.Neighbors.emplace( &Node->NodeData );
-				}
+				LinkNames.emplace_back( Link->Key );
 			}
 		}
 	}
@@ -52,6 +52,15 @@ void Entity::Load( const JSON::Vector& Objects )
 void Entity::Reload()
 {
 	GlobalNetwork.Add( &NodeData );
+
+	for( const auto& Link : LinkNames )
+	{
+		auto* Node = Cast<Entity>( Level->Find( Link ) );
+		if( Node )
+		{
+			NodeData.Neighbors.emplace( &Node->NodeData );
+		}
+	}
 }
 
 void Entity::Debug()
@@ -75,14 +84,20 @@ void Entity::Debug()
 
 void Entity::Import( CData& Data )
 {
+	CPointEntity::Import( Data );
 	Data >> NodeData.Position;
 	Data >> NodeData.IsBlocked;
+
+	Serialize::Import( Data, "ln", LinkNames );
 }
 
 void Entity::Export( CData& Data )
 {
+	CPointEntity::Export( Data );
 	Data << NodeData.Position;
 	Data << NodeData.IsBlocked;
+
+	Serialize::Export( Data, "ln", LinkNames );
 }
 
 Route Entity::Path( const Vector3D& Start, const Vector3D& End )
