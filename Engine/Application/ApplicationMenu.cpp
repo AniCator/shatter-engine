@@ -1764,6 +1764,33 @@ void TagListUI()
 			if( ImGui::TreeNode( NodeName.c_str() ) )
 			{
 				ImGui::NextColumn();
+				ImGui::Text( "Debug" );
+
+				ImGui::SameLine();
+
+				int ForceDebug = 0;
+				if( ImGui::Button( "Enable" ) )
+				{
+					ForceDebug = 1;
+				}
+
+				ImGui::SameLine();
+
+				if( ImGui::Button( "Disable" ) )
+				{
+					ForceDebug = 2;
+				}
+
+				if( ForceDebug > 0 )
+				{
+					for( auto* Entity : Pair.second )
+					{
+						if( !Entity )
+							continue;
+
+						Entity->EnableDebug( ForceDebug == 1 );
+					}
+				}
 				ImGui::NextColumn();
 
 				for( auto* Entity : Pair.second )
