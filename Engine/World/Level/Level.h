@@ -127,6 +127,8 @@ public:
 		return !DisableSerialization;
 	}
 
+	bool IsVisible() const;
+
 	// Used to indicate if the level was loaded as a sub-level in a level script.
 	bool Prefab = false;
 
@@ -147,6 +149,9 @@ private:
 
 	// Migrate entities that have just been spawned to the main list.
 	void MigrateSpawned();
+
+	// Checks all the mesh entities, and calculates the level's bounds.
+	void CalculateBounds();
 
 	bool DisableSerialization = false;
 

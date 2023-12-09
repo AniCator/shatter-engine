@@ -121,6 +121,9 @@ void CLevel::PostTick()
 		Entity->PostTick();
 	}
 
+	// Re-calculate the level bounds.
+	CalculateBounds();
+
 	// Migrate entities that have just been spawned over to the main list.
 	MigrateSpawned();
 }
@@ -372,7 +375,7 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 									CLevel& SubLevel = World->Add();
 									SubLevel.Prefab = true;
 									SubLevel.Transform = FTransform( Level.Position, Level.Orientation, Level.Size );
-									SubLevel.Transform = SubLevel.Transform * GetTransform();
+									SubLevel.Transform = GetTransform() * SubLevel.Transform;
 									SubLevel.Load( SubLevelFile );
 								}
 							}
@@ -592,6 +595,24 @@ void CLevel::SetName( const std::string& NameIn )
 	Name = NameIn;
 }
 
+bool CLevel::IsVisible() const
+{
+	if( !World )
+		return false;
+
+	auto* Camera = World->GetActiveCamera();
+	if( !Camera )
+		return false;
+
+	/*constexpr float MinimumSize = 20.0f;
+	const Vector3D Size = ( Bounds.Maximum - Bounds.Minimum );
+	if( Size.LengthSquared() > ( MinimumSize * MinimumSize ) )
+		return true;*/
+
+	const auto Visible = Culling::Frustum( *Camera, Bounds );
+	return Visible;
+}
+
 void CLevel::MigrateSpawned()
 {
 	if( Spawned.empty() )
@@ -600,6 +621,29 @@ void CLevel::MigrateSpawned()
 	// Insert the spawned entities into the main list.
 	Entities.insert( Entities.end(), Spawned.begin(), Spawned.end() );
 	Spawned.clear();
+}
+
+void CLevel::CalculateBounds()
+{
+	bool FirstBox = true;
+	for( auto* Entity : Entities )
+	{
+		// Combine the bounding boxes of all the static meshes.
+		if( const auto* MeshEntity = dynamic_cast<CMeshEntity*>( Entity ) )
+		{
+			if( FirstBox )
+			{
+				// Overwrite the initial bounds.
+				Bounds = MeshEntity->GetWorldBounds();
+				FirstBox = false;
+			}
+			else
+			{
+				// After the first box is set, we combine the rest.
+				Bounds = Bounds.Combine( MeshEntity->GetWorldBounds() );
+			}
+		}
+	}
 }
 
 bool IsSerializable( const CEntity* Entity )
