@@ -88,7 +88,8 @@ struct FEventAudio : TrackEvent
 				}
 				else
 				{
-					if( Frozen() && Sound->Playing() )
+					// Don't stop the sound if we're just starting.
+					if( Timeline->Stopped() && Sound->Playing() ) // && Frozen()
 					{
 						Sound->Stop();
 					}
@@ -1202,6 +1203,7 @@ void CTimeline::Feed()
 void CTimeline::Frame()
 {
 	// Clear the active timeline camera.
+	CCamera* PreviousActiveCamera = ActiveCamera;
 	ActiveCamera = nullptr;
 
 	ConfigureEvents();
@@ -1221,7 +1223,7 @@ void CTimeline::Frame()
 	if( !ActiveCamera && Playing() )
 	{
 		auto* World = CWorld::GetPrimaryWorld();
-		if( World && World->GetActiveCamera() == ActiveCamera )
+		if( World && PreviousActiveCamera )
 		{
 			World->SetActiveCamera( nullptr );
 		}
