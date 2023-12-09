@@ -412,6 +412,20 @@ public:
 	double TimeStep = 1.0 / 60.0;
 	double Accumulator = 0.0;
 
+	bool ShouldUpdate()
+	{
+		// TODO: It's busted, man.
+		return true;
+
+		// Bias the accumulator value slightly to prevent underruns.
+		const float Biased = Accumulator + 0.0001f;
+		if( Biased < TimeStep )
+			return false;
+
+		Accumulator = 0.0;
+		return true;
+	}
+
 	void ScheduleBodyUpdate( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
 	{
 		const auto BodyUpdate = std::make_shared<LambdaTask>( [this, StaticBodiesToQuery, DynamicBodiesToQuery] ()
@@ -598,6 +612,18 @@ public:
 					}
 				}
 
+				if( Type != PollType::All )
+				{
+					if( ( PollStaticScene && !Body->Static ) )
+					{
+						Skip = true;
+					}
+					else if( ( PollDynamicScene && Body->Static ) )
+					{
+						Skip = true;
+					}
+				}
+
 				// Don't test ignored bodies.
 				if( Skip )
 					continue;
@@ -775,7 +801,10 @@ void CPhysics::Tick( const double& Time )
 	Scene->Accumulator += Math::Min( ActualDeltaTime, PeakTime );
 	Scene->TimeStep = TimeStep;
 
-	Scene->Tick();
+	if( Scene->ShouldUpdate() )
+	{
+		Scene->Tick();
+	}
 }
 
 void CPhysics::Destroy()
@@ -795,7 +824,7 @@ void CPhysics::Unregister( CBody* Body )
 
 Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const PollType& Type ) const
 {
-	return Scene->Cast( Start, End );
+	return Scene->Cast( Start, End, {}, Type );
 }
 
 Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<CBody*>& Ignore, const PollType& Type ) const
@@ -806,7 +835,7 @@ Geometry::Result CPhysics::Cast( const Vector3D& Start, const Vector3D& End, con
 std::vector<CBody*> CPhysics::Query( const BoundingBox& AABB, const PollType& Type ) const
 {
 	OptickEvent(); // For profiling external queries.
-	return Scene->Query( AABB );
+	return Scene->Query( AABB, Type );
 }
 
 bool CPhysics::IsSynchronous() const
