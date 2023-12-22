@@ -11,6 +11,28 @@
 
 using TextureHandle = GLuint;
 
+struct ImageData
+{
+	unsigned char* Data8 = nullptr;
+	unsigned short* Data16 = nullptr;
+	unsigned int* Data32 = nullptr;
+	float* Data32F = nullptr;
+
+	void* Get() const
+	{
+		if( Data8 )
+			return Data8;
+		else if( Data16 )
+			return Data16;
+		else if( Data32 )
+			return Data32;
+		else if( Data32F )
+			return Data32F;
+
+		return nullptr;
+	};
+};
+
 class CTexture
 {
 public:
@@ -18,7 +40,7 @@ public:
 	CTexture( const char* FileLocation );
 	virtual ~CTexture();
 
-	virtual bool Load( const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool& GenerateMipMaps = true );
+	virtual bool Load( const EFilteringMode Mode = EFilteringMode::Trilinear, const EImageFormat PreferredFormat = EImageFormat::RGB8, const bool GenerateMipMaps = true );
 	
 	// Load a 2D texture.
 	bool Load( 
@@ -28,7 +50,7 @@ public:
 		const int Channels, 
 		const EFilteringMode Mode = EFilteringMode::Trilinear, 
 		const EImageFormat PreferredFormat = EImageFormat::RGB8, 
-		const bool& GenerateMipMaps = true 
+		const bool GenerateMipMaps = true 
 	);
 
 	// Load a 3D texture.
@@ -40,7 +62,7 @@ public:
 		const int Channels,
 		const EFilteringMode Mode = EFilteringMode::Trilinear,
 		const EImageFormat PreferredFormat = EImageFormat::RGB8,
-		const bool& GenerateMipMaps = true
+		const bool GenerateMipMaps = true
 	);
 
 	void Save( const char* FileLocation = nullptr );
@@ -72,8 +94,5 @@ protected:
 	int Depth = 0;
 	int Channels;
 
-	unsigned char* ImageData8;
-	unsigned short* ImageData16;
-	unsigned int* ImageData32;
-	float* ImageData32F;
+	ImageData Image;
 };

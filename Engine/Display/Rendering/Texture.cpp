@@ -25,11 +25,6 @@ CTexture::CTexture()
 
 	Format = EImageFormat::Unknown;
 
-	ImageData8 = nullptr;
-	ImageData16 = nullptr;
-	ImageData32 = nullptr;
-	ImageData32F = nullptr;
-
 	FilteringMode = EFilteringMode::Trilinear;
 }
 
@@ -49,51 +44,74 @@ CTexture::~CTexture()
 	glDeleteTextures( 1, &Handle );
 }
 
-bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredFormat, const bool& GenerateMipMaps )
+bool Load( 
+	ImageData& Output, 
+	const std::string& Location, 
+	const EFilteringMode Mode, 
+	const EImageFormat PreferredFormat, 
+	const bool GenerateMipMaps,
+	int* Width,
+	int* Height,
+	int* Channels
+)
 {
-	CFile TextureSource( Location );
-	const std::string Extension = TextureSource.Extension();
+	CFile Source( Location );
+	const std::string Extension = Source.Extension();
 
 	// The STB header supports more than these types but we want to refrain from loading them since they're generally inefficient to load.
-	const bool Supported = Extension == "jpg" || Extension == "png" || Extension == "tga" || Extension == "hdr";
-
-	if( Supported && TextureSource.Load( true ) )
+	const bool Supported = Extension == "jpg" || Extension == "jpeg" || Extension == "png" || Extension == "tga" || Extension == "hdr";
+	if( !Supported )
 	{
-		stbi_set_flip_vertically_on_load( 1 );
+		Log::Event( Log::Warning, "Failed to load texture (\"%s\"), unsupported extension.\n", Location.c_str() );
+		return false;
+	}
 
-		if( PreferredFormat > EImageFormat::RGBA16 )
-		{
-			ImageData32F = stbi_loadf_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
-		}
-		else if( PreferredFormat > EImageFormat::SRGBA8 )
-		{
-			ImageData16 = stbi_load_16_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
-		}
-		else
-		{
-			ImageData8 = stbi_load_from_memory( TextureSource.Fetch<stbi_uc>(), static_cast<int>( TextureSource.Size() ), &Width, &Height, &Channels, 0 );
-		}
+	if( !Source.Load( true ) )
+	{
+		Log::Event( Log::Warning, "Failed to load texture (\"%s\"), couldn't load file.\n", Location.c_str() );
+		return false;
+	}
 
-		FilteringMode = Mode;
+	stbi_set_flip_vertically_on_load( 1 );
 
-		if( Load( nullptr, Width, Height, Channels, FilteringMode, PreferredFormat ) )
-		{
-			return true;
-		}
-		else
-		{
-			Log::Event( Log::Warning, "Invalid image data (\"%s\") (\"%s\").\n", Location.c_str(), stbi_failure_reason() );
-		}
+	if( PreferredFormat > EImageFormat::RGBA16 )
+	{
+		Output.Data32F = stbi_loadf_from_memory( Source.Fetch<stbi_uc>(), static_cast<int>( Source.Size() ), Width, Height, Channels, 0 );
+	}
+	else if( PreferredFormat > EImageFormat::SRGBA8 )
+	{
+		Output.Data16 = stbi_load_16_from_memory( Source.Fetch<stbi_uc>(), static_cast<int>( Source.Size() ), Width, Height, Channels, 0 );
 	}
 	else
 	{
-		Log::Event( Log::Warning, "Failed to load texture (\"%s\").\n", Location.c_str() );
+		Output.Data8 = stbi_load_from_memory( Source.Fetch<stbi_uc>(), static_cast<int>( Source.Size() ), Width, Height, Channels, 0 );
 	}
 
-	return false;
+	return true;
 }
 
+bool CTexture::Load( const EFilteringMode Mode, const EImageFormat PreferredFormat, const bool GenerateMipMaps )
+{
+	if( !::Load( Image, Location, Mode, PreferredFormat, GenerateMipMaps, &Width, &Height, &Channels ) )
+		return false;
+
+	FilteringMode = Mode;
+
+	if( !Load( nullptr, Width, Height, Channels, FilteringMode, PreferredFormat ) )
+	{
+		Log::Event( Log::Warning, "Invalid image data (\"%s\") (\"%s\").\n", Location.c_str(), stbi_failure_reason() );
+		return false;
+	}
+}
+
+struct Cubemap
+{
+	const void* Pixels[6] = {};
+};
+
 bool CreateTexture2D( 
+	int DataType,
+	int Target,
 	GLuint& Handle, 
 	const int Width,
 	const int Height,
@@ -102,26 +120,26 @@ bool CreateTexture2D(
 	const EFilteringMode FilteringMode,
 	const int AnisotropicSamples,
 	const bool GenerateMipMaps,
-	const void* Pixels
+	const Cubemap& Cubemap
 
 )
 {
-	glBindTexture( GL_TEXTURE_2D, Handle );
+	glBindTexture( DataType, Handle );
 
 	// Wrapping parameters
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT );
+	glTexParameteri( DataType, GL_TEXTURE_WRAP_S, GL_REPEAT );
+	glTexParameteri( DataType, GL_TEXTURE_WRAP_T, GL_REPEAT );
 
 	// Filtering parameters
 	const auto Mode = static_cast<EFilteringModeType>( FilteringMode );
 	const auto MinFilter = GenerateMipMaps ? GetFilteringMipMapMode( Mode ) : GetFilteringMode( Mode );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, MinFilter );
-	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
+	glTexParameteri( DataType, GL_TEXTURE_MIN_FILTER, MinFilter );
+	glTexParameteri( DataType, GL_TEXTURE_MAG_FILTER, GetFilteringMode( Mode ) );
 
 #ifdef GL_ARB_texture_filter_anisotropic
 	if( !!GLAD_GL_ARB_texture_filter_anisotropic )
 	{
-		glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
+		glTexParameteri( DataType, GL_TEXTURE_MAX_ANISOTROPY, AnisotropicSamples );
 	}
 #endif
 
@@ -135,19 +153,19 @@ bool CreateTexture2D(
 	{
 		if( Channels == 1 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RED, Type, Pixels );
+			glTexImage2D( Target, 0, InternalFormat, Width, Height, 0, GL_RED, Type, Cubemap.Pixels[0] );
 		}
 		else if( Channels == 2 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RG, Type, Pixels );
+			glTexImage2D( Target, 0, InternalFormat, Width, Height, 0, GL_RG, Type, Cubemap.Pixels[0] );
 		}
 		else if( Channels == 3 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RGB, Type, Pixels );
+			glTexImage2D( Target, 0, InternalFormat, Width, Height, 0, GL_RGB, Type, Cubemap.Pixels[0] );
 		}
 		else if( Channels == 4 )
 		{
-			glTexImage2D( GL_TEXTURE_2D, 0, InternalFormat, Width, Height, 0, GL_RGBA, Type, Pixels );
+			glTexImage2D( Target, 0, InternalFormat, Width, Height, 0, GL_RGBA, Type, Cubemap.Pixels[0] );
 		}
 		else
 		{
@@ -169,6 +187,38 @@ bool CreateTexture2D(
 	}
 
 	return true;
+}
+
+bool CreateTexture2D(
+	GLuint& Handle,
+	const int Width,
+	const int Height,
+	const int Channels,
+	const EImageFormat Format,
+	const EFilteringMode FilteringMode,
+	const int AnisotropicSamples,
+	const bool GenerateMipMaps,
+	const void* Pixels
+)
+{
+	Cubemap Cubemap;
+	Cubemap.Pixels[0] = Pixels;
+	return CreateTexture2D( GL_TEXTURE_2D, GL_TEXTURE_2D, Handle, Width, Height, Channels, Format, FilteringMode, AnisotropicSamples, GenerateMipMaps, Cubemap );
+}
+
+bool CreateTextureCubemap(
+	GLuint& Handle,
+	const int Width,
+	const int Height,
+	const int Channels,
+	const EImageFormat Format,
+	const EFilteringMode FilteringMode,
+	const int AnisotropicSamples,
+	const bool GenerateMipMaps,
+	const Cubemap& Cubemap
+)
+{
+	return CreateTexture2D( GL_TEXTURE_CUBE_MAP, GL_TEXTURE_CUBE_MAP_POSITIVE_X, Handle, Width, Height, Channels, Format, FilteringMode, AnisotropicSamples, GenerateMipMaps, Cubemap );
 }
 
 bool CreateTexture3D(
@@ -250,7 +300,7 @@ bool CreateTexture3D(
 	return true;
 }
 
-bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn, const int ChannelsIn, const EFilteringMode ModeIn, const EImageFormat PreferredFormatIn, const bool& GenerateMipMaps )
+bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn, const int ChannelsIn, const EFilteringMode ModeIn, const EImageFormat PreferredFormatIn, const bool GenerateMipMaps )
 {
 	bool Supported = false;
 
@@ -266,7 +316,7 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 		}
 
 		// Assume input data is 8-bit.
-		ImageData8 = Data;
+		Image.Data8 = Data;
 	}
 
 	if( !Pixels )
@@ -332,7 +382,7 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 	return Supported;
 }
 
-bool CTexture::Load( unsigned char* Data, const int Width, const int Height, const int Depth, const int Channels, const EFilteringMode Mode, const EImageFormat PreferredFormat, const bool& GenerateMipMaps )
+bool CTexture::Load( unsigned char* Data, const int Width, const int Height, const int Depth, const int Channels, const EFilteringMode Mode, const EImageFormat PreferredFormat, const bool GenerateMipMaps )
 {
 	this->Depth = Depth;
 	return Load(
@@ -403,16 +453,7 @@ EImageFormat CTexture::GetImageFormat() const
 
 void* CTexture::GetImageData() const
 {
-	if( ImageData8 )
-		return ImageData8;
-	else if( ImageData16 )
-		return ImageData16;
-	else if( ImageData32 )
-		return ImageData32;
-	else if( ImageData32F )
-		return ImageData32F;
-
-	return nullptr;
+	return Image.Get();
 }
 
 uint8_t CTexture::GetAnisotropicSamples() const
