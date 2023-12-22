@@ -10,6 +10,7 @@ struct UniqueIdentifier
 
 	void Random();
 	void Set( const char* Identifier );
+	void Set( const std::string& Identifier );
 	bool Valid() const;
 
 	bool operator==( const UniqueIdentifier& B ) const;

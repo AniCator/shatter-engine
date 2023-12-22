@@ -555,7 +555,7 @@ void UniqueIdentifier::Random()
 	Hex += "-";
 	Hex += GenerateHex( 6 );
 
-	Set( Hex.c_str() );
+	Set( Hex );
 }
 
 void UniqueIdentifier::Set( const char* Identifier )
@@ -567,8 +567,13 @@ void UniqueIdentifier::Set( const char* Identifier )
 	}
 	else
 	{
-		Log::Event( Log::Warning, "Invalid unique identifier value.\n" );
+		Log::Event( Log::Error, "Invalid unique identifier value.\n" );
 	}
+}
+
+void UniqueIdentifier::Set( const std::string& Identifier )
+{
+	Set( Identifier.c_str() );
 }
 
 bool UniqueIdentifier::Valid() const
