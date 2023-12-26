@@ -657,10 +657,12 @@ struct FEventRenderable : TrackEvent
 
 			Animator::Update( Animation, 0.0, true );
 			Animator::Submit( Animation, &Renderable );
+
+			Transform.Update();
 		}
 
 		auto& RenderData = Renderable.GetRenderData();
-		RenderData.Transform = Timeline->Transform.Transform( Transform );
+		RenderData.Transform = Transform;
 
 		if( IsAnimating )
 		{
@@ -733,13 +735,13 @@ struct FEventRenderable : TrackEvent
 		}
 
 		auto Position = Transform.GetPosition();
-		if( ImGui::DragFloat3( "##mp", &Position.X, 0.1f ) ) //
+		if( ImGui::DragFloat3( "Postion##mp", &Position.X, 0.1f ) ) //
 		{
 			Transform.SetPosition( Position );
 		}
 
 		auto Orientation = Transform.GetOrientation();
-		if( ImGui::DragFloat3( "##mo", &Orientation.X ) )
+		if( ImGui::DragFloat3( "Orientation##mo", &Orientation.X ) )
 		{
 			Transform.SetOrientation( Orientation );
 		}
@@ -787,6 +789,12 @@ struct FEventRenderable : TrackEvent
 		auto& RenderData = Renderable.GetRenderData();
 		UI::AddAABB( RenderData.WorldBounds.Minimum, RenderData.WorldBounds.Maximum );
 		Animation.Debug( RenderData.Transform );
+
+		Vector3D Position = Transform.GetPosition();
+		if( PointGizmo( &Position, Gizmo ) )
+		{
+			Transform.SetPosition( Position );
+		}
 	}
 
 	const char* GetName() override
@@ -808,6 +816,8 @@ struct FEventRenderable : TrackEvent
 	std::string MeshName = std::string();
 	std::string ShaderName = std::string();
 	std::string TextureName = std::string();
+
+	DragVector Gizmo;
 
 	void Export( CData& Data ) const override
 	{
@@ -992,6 +1002,7 @@ CTimeline::CTimeline( Timecode Start, Timecode End )
 	EndMarker = End;
 	Marker = 0;
 	Status = SequenceStatus::Stopped;
+	Transform = {};
 
 	DrawTimeline = false;
 }
