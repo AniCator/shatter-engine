@@ -430,6 +430,27 @@ void SetEntityPosition( CEntity* Object, const Vector3D& Position )
 	Point->SetTransform( Transform );
 }
 
+void SetEntityOrientation( CEntity* Object, const Vector3D& Orientation )
+{
+	if( !Object )
+	{
+		Log::Event( Log::Warning, "SetEntityOrientation: Entity invalid.\n" );
+		return;
+	}
+
+	auto* Point = dynamic_cast<CPointEntity*>( Object );
+	if( !Point )
+	{
+		Log::Event( Log::Warning, "SetEntityOrientation: Entity is not a point entity.\n" );
+		return;
+	}
+
+	// Override the orientation.
+	auto Transform = Point->GetTransform();
+	Transform.SetOrientation( Orientation );
+	Point->SetTransform( Transform );
+}
+
 void SetEntitySize( CEntity* Object, const Vector3D& Size )
 {
 	if( !Object )
@@ -508,6 +529,7 @@ void RegisterEntity()
 	ScriptEngine::AddFunction( "void AddOutput( Entity @, string &in, Entity @, string &in )", AddEntityOutput );
 
 	ScriptEngine::AddFunction( "void SetPosition( Entity @, Vector3D &in )", SetEntityPosition );
+	ScriptEngine::AddFunction( "void SetOrientation( Entity @, Vector3D &in )", SetEntityOrientation );
 	ScriptEngine::AddFunction( "void SetSize( Entity @, Vector3D &in )", SetEntitySize );
 	ScriptEngine::AddFunction( "void SetVelocity( Entity @, Vector3D &in )", SetEntityVelocity );
 	ScriptEngine::AddFunction( "void SetColor( Entity @, Vector4D &in )", SetEntityColor );
