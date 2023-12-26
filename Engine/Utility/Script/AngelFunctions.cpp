@@ -614,10 +614,10 @@ void RegisterProperty()
 
 	ScriptEngine::AddTypeMethod( "Property", "PropertyType GetType()", &Property::GetType );
 	ScriptEngine::AddTypeMethod( "Property", "string ToString()", &Property::ToString );
-	ScriptEngine::AddTypeMethod( "Property", "const string GetString()", &Property::GetString );
-	ScriptEngine::AddTypeMethod( "Property", "const float GetFloat()", &Property::GetFloat );
-	ScriptEngine::AddTypeMethod( "Property", "const Vector3D GetVector3D()", &Property::GetVector3D );
-	ScriptEngine::AddTypeMethod( "Property", "const int GetI32()", &Property::GetI32 );
+	ScriptEngine::AddTypeMethod( "Property", "const string& GetString()", &Property::GetString );
+	ScriptEngine::AddTypeMethod( "Property", "const float& GetFloat()", &Property::GetFloat );
+	ScriptEngine::AddTypeMethod( "Property", "const Vector3D& GetVector3D()", &Property::GetVector3D );
+	ScriptEngine::AddTypeMethod( "Property", "const int& GetI32()", &Property::GetI32 );
 }
 
 void RegisterScriptFunctions()
