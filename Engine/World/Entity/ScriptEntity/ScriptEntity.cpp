@@ -56,6 +56,12 @@ void ScriptEntity::Tick()
 		}
 
 		TransientDeferred.clear();
+
+		if( Deferred.empty() )
+		{
+			// Reset the tick time.
+			NextTickTime = DBL_MAX;
+		}
 	}
 
 	if( TickFunction.empty() )
