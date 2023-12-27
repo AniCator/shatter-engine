@@ -29,9 +29,9 @@ void AddCircle( const Vector3D& Position, const float& Radius, const Color& Colo
 	UI::AddCircle( Position, Radius, Color );
 }
 
-void AddText( const std::string& Text, const Vector3D& Position, const Color& Color )
+void AddText( const Vector3D& Position, const std::string& Text )
 {
-	UI::AddText( Text, Position, Color );
+	UI::AddText( Position, Text.c_str(), nullptr, Color::White );
 }
 
 void AddTextDebug2D( const std::string& Text, const Color& Color )
@@ -43,7 +43,7 @@ void RegisterBasicUI()
 {
 	ScriptEngine::AddFunction( "void AddLine( const Vector3D &in, const Vector3D &in, const Color &in )", AddLine );
 	ScriptEngine::AddFunction( "void AddCircle( const Vector3D &in, const float &in, const Color &in )", AddCircle );
-	ScriptEngine::AddFunction( "void AddText( const string &in, const Vector3D &in, const Color &in )", AddText );
+	ScriptEngine::AddFunction( "void AddText( const Vector3D &in, const string &in )", AddText );
 	ScriptEngine::AddFunction( "void AddText( const string &in, const Color &in )", AddTextDebug2D );
 }
 

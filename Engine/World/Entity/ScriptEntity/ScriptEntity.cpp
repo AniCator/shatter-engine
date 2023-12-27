@@ -4,6 +4,8 @@
 #include <Engine/Utility/Script/AngelEngine.h>
 #include <Engine/Utility/Script/AngelTemplate.h>
 
+OptimizeOff;
+
 static CEntityFactory<ScriptEntity> Factory( "script" );
 
 ScriptEntity::ScriptEntity()
@@ -13,6 +15,9 @@ ScriptEntity::ScriptEntity()
 		LoadScript();
 		return true;
 	};
+
+	Deferred.reserve( 8 );
+	TransientDeferred.reserve( 8 );
 }
 
 void ScriptEntity::Construct()
@@ -39,6 +44,19 @@ void ScriptEntity::Destroy()
 void ScriptEntity::Tick()
 {
 	CPointEntity::Tick();
+
+	if( !Deferred.empty() )
+	{
+		TransientDeferred = Deferred;
+		Deferred.clear();
+
+		for( const auto& Function : TransientDeferred )
+		{
+			Execute( Function );
+		}
+
+		TransientDeferred.clear();
+	}
 
 	if( TickFunction.empty() )
 		return;
@@ -164,6 +182,12 @@ bool ScriptEntity::HasFunction( const std::string& Function ) const
 
 	std::string FunctionDeclaration = "void " + Function + "(Script @self)";
 	return ScriptEngine::HasFunction( Module.ID, FunctionDeclaration.c_str() );
+}
+
+void ScriptEntity::Defer( const std::string& Function )
+{
+	Deferred.emplace_back( Function );
+	NextTickTime = GetCurrentTime() - 1.0;
 }
 
 void ScriptEntity::SetTick( const std::string& Function )
@@ -304,6 +328,7 @@ void RegisterScriptEntity()
 	ScriptEngine::AddTypeMethod( "Script", "void SetStringIfNotSet(string &in, string &in)", &ScriptEntity::SetStringIfNotSet );
 
 	// Script think functionality.
+	ScriptEngine::AddTypeMethod( "Script", "void Defer(string &in)", &ScriptEntity::Defer );
 	ScriptEngine::AddTypeMethod( "Script", "void SetTick(string &in)", &ScriptEntity::SetTick );
 	ScriptEngine::AddTypeMethod( "Script", "void SetInterval(double &in)", &ScriptEntity::SetInterval );
 

@@ -43,6 +43,9 @@ public:
 	bool Execute( const std::string& Function );
 	bool HasFunction( const std::string& Function ) const;
 
+	// Specify a function that should be executed once, on the next tick.
+	void Defer( const std::string& Function );
+
 	// Specify which script function to use for ticks.
 	void SetTick( const std::string& Function );
 
@@ -90,6 +93,12 @@ protected:
 
 	// The identifier of the module the script is compiled in.
 	UniqueIdentifier Module;
+
+	// Functions that should be executed during the next tick.
+	std::vector<std::string> Deferred;
+
+	// Copy of deferred.
+	std::vector<std::string> TransientDeferred;
 
 	// Name of the function that should be called when ticking.
 	std::string TickFunction;
