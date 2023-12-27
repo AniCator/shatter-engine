@@ -5,6 +5,7 @@
 
 #include <Engine/Audio/Sound.h>
 #include <Engine/Audio/SoundInstance.h>
+#include <Engine/Display/UserInterface.h>
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/Resource/Assets.h>
 #include <Engine/Physics/Body/Body.h>
@@ -17,6 +18,34 @@
 #include <Game/Game.h>
 
 void RegisterScriptEntity();
+
+void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color )
+{
+	UI::AddLine( Start, End, Color );
+}
+
+void AddCircle( const Vector3D& Position, const float& Radius, const Color& Color )
+{
+	UI::AddCircle( Position, Radius, Color );
+}
+
+void AddText( const std::string& Text, const Vector3D& Position, const Color& Color )
+{
+	UI::AddText( Text, Position, Color );
+}
+
+void AddTextDebug2D( const std::string& Text, const Color& Color )
+{
+	UI::AddText( Text, Color );
+}
+
+void RegisterBasicUI()
+{
+	ScriptEngine::AddFunction( "void AddLine( const Vector3D &in, const Vector3D &in, const Color &in )", AddLine );
+	ScriptEngine::AddFunction( "void AddCircle( const Vector3D &in, const float &in, const Color &in )", AddCircle );
+	ScriptEngine::AddFunction( "void AddText( const string &in, const Vector3D &in, const Color &in )", AddText );
+	ScriptEngine::AddFunction( "void AddText( const string &in, const Color &in )", AddTextDebug2D );
+}
 
 void RegisterVector3Type()
 {
@@ -109,6 +138,22 @@ void RegisterVector4Type()
 	// ScriptEngine::AddTypeMethod( "Vector4D", "bool IsNaN() const", &Vector4D::IsNaN );
 	// ScriptEngine::AddTypeMethod( "Vector4D", "bool IsInfinite() const", &Vector4D::IsInfinite );
 	// ScriptEngine::AddTypeMethod( "Vector4D", "bool IsValid() const", &Vector4D::IsValid );
+}
+
+void RegisterColorType()
+{
+	ScriptEngine::AddTypePOD<Color>( "Color" );
+	ScriptEngine::AddTypeProperty( "Color", "uint R", &Color::R );
+	ScriptEngine::AddTypeProperty( "Color", "uint G", &Color::G );
+	ScriptEngine::AddTypeProperty( "Color", "uint B", &Color::B );
+	ScriptEngine::AddTypeProperty( "Color", "uint A", &Color::A );
+}
+
+void RegisterTransformType()
+{
+	constexpr const char* Type = "Transform";
+	ScriptEngine::AddTypeReference( Type );
+	ScriptEngine::AddTypeMethod( Type, "const Vector3D& GetPosition() const", &FTransform::GetPosition );
 }
 
 template<typename T>
@@ -517,9 +562,8 @@ void SetEntityColor( CEntity* Object, const Vector4D& Color )
 	Mesh->Color = Color;
 }
 
-void RegisterEntity()
+void RegisterGeneralEntityFunctions()
 {
-	ScriptEngine::AddTypeReference( "Entity" );
 	ScriptEngine::AddFunction( "Entity @ GetEntityByName( string &in )", GetEntityByName );
 	ScriptEngine::AddFunction( "string GetEntityName( Entity @ )", GetEntityName );
 	ScriptEngine::AddFunction( "Entity @ Spawn( string &in, string &in )", SpawnEntity );
@@ -533,19 +577,61 @@ void RegisterEntity()
 	ScriptEngine::AddFunction( "void SetSize( Entity @, Vector3D &in )", SetEntitySize );
 	ScriptEngine::AddFunction( "void SetVelocity( Entity @, Vector3D &in )", SetEntityVelocity );
 	ScriptEngine::AddFunction( "void SetColor( Entity @, Vector4D &in )", SetEntityColor );
+}
 
-	// Entity methods.
-	ScriptEngine::AddTypeMethod( "Entity", "void SetParent(Entity &in)", &CEntity::SetParent );
-	ScriptEngine::AddTypeMethod( "Entity", "Entity @ GetParent() const", &CEntity::GetParent );
+template<class A, class B>
+B* ReferenceCast( A* Object )
+{
+	if( !Object )
+		return nullptr;
 
-	ScriptEngine::AddTypeMethod( "Entity", "void Send(string &in, Entity @)", &CEntity::Send );
-	ScriptEngine::AddTypeMethod( "Entity", "void Receive(string &in, Entity @)", &CEntity::Receive );
-	ScriptEngine::AddTypeMethod( "Entity", "void Tag(string &in)", &CEntity::Tag );
-	ScriptEngine::AddTypeMethod( "Entity", "void Untag(string &in)", &CEntity::Untag );
-	ScriptEngine::AddTypeMethod( "Entity", "bool HasTag(string &in) const", &CEntity::HasTag );
+	return dynamic_cast<B*>( Object );
+}
 
-	ScriptEngine::AddTypeMethod( "Entity", "bool IsDebugEnabled() const", &CEntity::IsDebugEnabled );
-	ScriptEngine::AddTypeMethod( "Entity", "void EnableDebug( const bool )", &CEntity::EnableDebug );
+template<typename T>
+void RegisterEntity( const char* Entity )
+{
+	ScriptEngine::AddTypeReference( Entity );
+
+	// Casting.
+	std::string Signature = Entity;
+	Signature += "@ opCast()";
+	ScriptEngine::AddObjectMethod( "Entity", Signature.c_str(), &ReferenceCast<CEntity, T>);
+	ScriptEngine::AddObjectMethod( Entity, "Entity@ opImplCast()", &ReferenceCast<T, CEntity> );
+
+	// Const casting.
+	Signature += " const";
+	ScriptEngine::AddObjectMethod( "Entity", Signature.c_str(), &ReferenceCast<CEntity, T> );
+	ScriptEngine::AddObjectMethod( Entity, "Entity@ opImplCast() const", &ReferenceCast<T, CEntity> );
+
+	// Standard methods.
+	ScriptEngine::AddTypeMethod( Entity, "void SetParent(Entity &in)", &T::SetParent );
+	ScriptEngine::AddTypeMethod( Entity, "Entity @ GetParent() const", &T::GetParent );
+
+	ScriptEngine::AddTypeMethod( Entity, "void Send(string &in, Entity @)", &T::Send );
+	ScriptEngine::AddTypeMethod( Entity, "void Receive(string &in, Entity @)", &T::Receive );
+	ScriptEngine::AddTypeMethod( Entity, "void Tag(string &in)", &T::Tag );
+	ScriptEngine::AddTypeMethod( Entity, "void Untag(string &in)", &T::Untag );
+	ScriptEngine::AddTypeMethod( Entity, "bool HasTag(string &in) const", &T::HasTag );
+
+	ScriptEngine::AddTypeMethod( Entity, "bool IsDebugEnabled() const", &T::IsDebugEnabled );
+	ScriptEngine::AddTypeMethod( Entity, "void EnableDebug( const bool )", &T::EnableDebug );
+}
+
+void RegisterPointEntity()
+{
+	constexpr const char* Entity = "PointEntity";
+	RegisterEntity<CPointEntity>( Entity );
+	ScriptEngine::AddTypeMethod( Entity, "const Transform& GetTransform()", &CPointEntity::GetTransform );
+}
+
+void RegisterEntities()
+{
+	RegisterEntity<CEntity>( "Entity" );
+	RegisterPointEntity();
+	RegisterScriptEntity();
+
+	RegisterGeneralEntityFunctions();
 }
 
 double GlobalCurrentTime()
@@ -646,13 +732,15 @@ void RegisterScriptFunctions()
 {
 	RegisterVector3Type();
 	RegisterVector4Type();
+	RegisterColorType();
+	RegisterTransformType();
 	RegisterMath();
 	RegisterSound();
 	RegisterSequence();
-	RegisterEntity();
-	RegisterScriptEntity();
+	RegisterEntities();
 	RegisterTime();
 	RegisterProperty();
+	RegisterBasicUI();
 }
 
 void RegisterShatterEngine()
