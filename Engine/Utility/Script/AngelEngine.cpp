@@ -250,8 +250,17 @@ AngelResult ScriptEngine::AddTypePOD( const char* Name, const size_t Size, const
 	return AngelResult::Success;
 }
 
-AngelResult ScriptEngine::AddTypeConstructor( const char* Type, void* Function )
+AngelResult ScriptEngine::AddTypeConstructor( const char* Type, void* Function, const char* Signature )
 {
+	if( Signature )
+	{
+		std::string FullSignature = "void f(";
+		FullSignature += Signature;
+		FullSignature += ")";
+
+		return AddObjectBehavior( Type, FullSignature.c_str(), asFUNCTION( Function ), asBEHAVE_CONSTRUCT );
+	}
+
 	return AddObjectBehavior( Type, "void f()", asFUNCTION( Function ), asBEHAVE_CONSTRUCT );
 }
 
@@ -264,6 +273,21 @@ AngelResult ScriptEngine::AddTypeCopyConstructor( const char* Type, const char* 
 AngelResult ScriptEngine::AddTypeDestructor( const char* Type, void* Function )
 {
 	return AddObjectBehavior( Type, "void f()", asFUNCTION( Function ), asBEHAVE_DESTRUCT );
+}
+
+AngelResult ScriptEngine::AddObjectMethod( const char* Type, const char* Signature, const void* Pointer )
+{
+	if( !Engine )
+		return AngelResult::Unknown;
+
+	const int Result = Engine->RegisterObjectMethod( Type, Signature, asFUNCTION( Pointer ), asCALL_CDECL_OBJLAST );
+	if( Result < 0 )
+	{
+		Log::Event( Log::Error, "Failed to register object method \"%s\" for type \"%s\".\n", Signature, Type );
+		return AngelResult::Engine;
+	}
+
+	return AngelResult::Success;
 }
 
 AngelResult ScriptEngine::AddObjectMethod( const char* Type, const char* Signature, const asSFuncPtr& Pointer )

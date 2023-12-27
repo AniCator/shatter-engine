@@ -58,10 +58,11 @@ namespace ScriptEngine
 	template<typename C, typename T>
 	AngelResult AddTypeProperty( const char* Type, const char* Signature, T C::* Property );
 
-	AngelResult AddTypeConstructor( const char* Type, void* Function );
+	AngelResult AddTypeConstructor( const char* Type, void* Function, const char* Signature = nullptr );
 	AngelResult AddTypeCopyConstructor( const char* Type, const char* CopyType, void* Function );
 	AngelResult AddTypeDestructor( const char* Type, void* Function );
 
+	AngelResult AddObjectMethod( const char* Type, const char* Signature, const void* Pointer );
 	AngelResult AddObjectMethod( const char* Type, const char* Signature, const asSFuncPtr& Pointer );
 	AngelResult AddObjectProperty( const char* Type, const char* Signature, int Offset );
 	AngelResult AddObjectBehavior( const char* Type, const char* Signature, const asSFuncPtr& Pointer, const asEBehaviours& Behavior );
