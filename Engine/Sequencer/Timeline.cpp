@@ -1030,6 +1030,8 @@ bool CTimeline::Load( const char* FileLocation )
 		Location = FileLocation;
 	}
 
+	ConfigureEvents();
+
 	return true;
 }
 
