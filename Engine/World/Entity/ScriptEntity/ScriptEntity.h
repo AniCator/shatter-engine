@@ -94,7 +94,7 @@ protected:
 	// Name of the function that should be called when ticking.
 	std::string TickFunction;
 
-	double Interval = FLT_MAX;
+	double Interval = DBL_MAX;
 
 	// Script-controlled properties.
 	PropertyTable Properties;

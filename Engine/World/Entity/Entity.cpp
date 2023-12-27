@@ -191,7 +191,7 @@ void CEntity::Traverse()
 		if( NextTickTime > 0.0 )
 		{
 			// Invalidate the next tick time when it has previously been set by the user.
-			NextTickTime = FLT_MAX;
+			NextTickTime = DBL_MAX;
 		}
 
 		// Update this entity's delta time.
