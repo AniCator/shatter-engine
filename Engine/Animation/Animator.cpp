@@ -5,13 +5,16 @@
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Utility/Math.h>
 
-bool Animator::Instance::SetLayerAnimation( const size_t Layer, const std::string& Animation )
-{
-	if( Stack.empty() )
-		return false; // Invalid layer.
+#if defined( DevelopmentBuild )
+#include <Engine/Profiling/Profiling.h>
+#endif
 
+bool Animator::Instance::SetLayer( const size_t Layer, const std::string& Animation )
+{
 	if( Layer >= Stack.size() )
-		return false; // Invalid layer.
+	{
+		Stack.resize( Layer + 1 );
+	}
 
 	if( !Mesh )
 		return false; // No mesh is set.
@@ -24,6 +27,16 @@ bool Animator::Instance::SetLayerAnimation( const size_t Layer, const std::strin
 	}
 
 	return false; // Could not assign the animation.
+}
+
+Animator::BlendEntry& Animator::Instance::GetLayer( const size_t Layer )
+{
+	if( Layer >= Stack.size() )
+	{
+		Stack.resize( Layer + 1 );
+	}
+
+	return Stack[Layer];
 }
 
 void Animator::Instance::SetAnimation( const std::string& Name, const bool& Loop )
@@ -261,7 +274,7 @@ void Animator::Instance::Debug( const FTransform& WorldTransform ) const
 
 		if( Mesh )
 		{
-			UI::AddText( PointTarget, Mesh->GetSkeleton().MatrixNames[MatrixIndex].c_str() );
+			UI::AddText( PointTarget, ( Mesh->GetSkeleton().MatrixNames[MatrixIndex] + " ( " + std::to_string( MatrixIndex ) + " ) " ).c_str() );
 		}
 
 		UI::AddCircle( PointParentBind, 3.0f, ::Color( 0, 255, 255 ) );
@@ -303,7 +316,9 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 		return;
 	}
 
-	// Update the animation times of stack entries.
+	// Update the animation times of stack entries, and find the most influencial mix weight.
+	float LargestWeight = 0.0f;
+	BlendEntry* LargestEntry = nullptr;
 	for( auto& Entry : Data.Stack )
 	{
 		// Only update non-fixed entries.
@@ -311,7 +326,36 @@ void Animator::Update( Instance& Data, const double& DeltaTime, const bool& Forc
 			continue;
 
 		Entry.Time += static_cast<float>( DeltaTime ) * Entry.PlayRate * Data.PlayRate;
+
+		if( Entry.Type == BlendEntry::Type::Mix && Entry.Mask == -1 && Entry.Weight > LargestWeight )
+		{
+			LargestWeight = Entry.Weight;
+			LargestEntry = &Entry;
+		}
 	}
+
+	LargestWeight = Math::Saturate( LargestWeight );
+	LargestWeight = 1.0f / LargestWeight;
+
+	// Normalize the mixing weights to reduce the amount of entries we have to evaluate.
+	/*if( LargestWeight > 0.0f )
+	{
+		for( auto& Entry : Data.Stack )
+		{
+			if( Entry.Type != BlendEntry::Type::Mix && Entry.Mask == -1 )
+				continue;
+
+			if( &Entry == LargestEntry )
+				continue;
+
+			Entry.Weight *= LargestWeight;
+
+			if( Entry.Weight < 0.0001f )
+			{
+				Entry.Weight = 0.0f;
+			}
+		}
+	}*/
 
 	auto& FirstEntry = Data.Stack[0];
 	if( FirstEntry.IsFinished() )
@@ -809,7 +853,9 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 	CompoundKey Blend;
 	Blend.Position.BoneIndex = Bone->Index;
 	Blend.Rotation.BoneIndex = Bone->Index;
+
 	Blend.Scale.BoneIndex = Bone->Index;
+	Blend.Scale.Value = Vector4D( 1.0f, 1.0f, 1.0f, 1.0f );
 
 	const auto RootBone = !Parent;
 	if( RootBone )
@@ -825,6 +871,11 @@ void Animator::Traverse( Instance& Data, const Skeleton& Skeleton, const Bone* P
 
 		if( Entry.Mask > -1 && !Data.HasParent( Bone->Index, Entry.Mask ) )
 			continue; // A mask has been specified, but the mask bone is nowhere in the current hierarchy.
+
+#if defined( DevelopmentBuild )
+		CProfiler& Profiler = CProfiler::Get();
+		Profiler.AddCounterEntry( ProfileTimeEntry( "Animation Stack Evaluation", 1 ), true );
+#endif
 
 		float Time = Entry.Time;
 		if( Entry.Loop )

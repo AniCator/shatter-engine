@@ -442,3 +442,25 @@ bool ScriptEngine::HasFunction( const char* Name, const char* EntryPoint )
 
 	return true;
 }
+
+void ScriptEngine::Enumerate()
+{
+	const auto Types = Engine->GetObjectTypeCount();
+	for( asUINT Index = 0; Index < Types; Index++ )
+	{
+		const auto* Info = Engine->GetObjectTypeByIndex( Index );
+		if( !Info )
+			continue;
+		
+		Log::Event( "%s\n", Info->GetName() );
+		const auto Methods = Info->GetMethodCount();
+		for( asUINT MethodIndex = 0; MethodIndex < Methods; MethodIndex++ )
+		{
+			const auto* Method = Info->GetMethodByIndex( MethodIndex );
+			if( !Method )
+				continue;
+
+			Log::Event( "\t%s\n", Method->GetDeclaration( true, true, true ) );
+		}
+	}
+}

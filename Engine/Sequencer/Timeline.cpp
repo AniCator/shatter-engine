@@ -1720,6 +1720,7 @@ void CTimeline::DisplayTimeline()
 					if( ImGui::Button( "D##EventDuplicate", ButtonSize ) )
 					{
 						EventDuplicate( Event );
+						break;
 					}
 
 					if( ImGui::IsItemHovered() )
@@ -1734,6 +1735,7 @@ void CTimeline::DisplayTimeline()
 					if( ImGui::Button( "S##EventSplit", ButtonSize ) )
 					{
 						EventSplit( Event );
+						break;
 					}
 
 					if( ImGui::IsItemHovered() )

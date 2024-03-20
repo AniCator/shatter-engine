@@ -64,7 +64,7 @@ void LoadAnimationMetaData( AnimationSet& Set, const JSON::Container& SetData )
 			if( RootMotion->Value == "additive" )
 			{
 				// Grab the first animation in the list.
-				auto& Bind = Set.Skeleton.Animations.begin()->second;
+				auto Bind = Set.Skeleton.Animations.begin()->second;
 
 				// Check if another base was specified.
 				if( const auto* Base = JSON::Find( Entry->Objects, "base" ) )
@@ -558,7 +558,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 		auto* Mesh = Meshes.Find( Payload.Name );
 		if( !Mesh )
 		{
-			Log::Event( Log::Error, "Unable to append animation. Mesh doesn't exist (yet).\n" );
+			Log::Event( Log::Error, "Unable to append animation.\n\tCheck if the mesh you're trying to append to exists.\n\tIt's also possible you've forgotten to include the mesh with this set of animations." );
 			continue;
 		}
 

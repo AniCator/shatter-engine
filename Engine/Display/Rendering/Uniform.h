@@ -4,7 +4,6 @@
 #include <string>
 #include <unordered_map>
 #include <Engine/Utility/Math.h>
-#include <ThirdParty/glm/glm.hpp>
 
 struct Uniform
 {
@@ -26,8 +25,7 @@ struct Uniform
 	Vector4D Uniform4;
 	Matrix4D Uniform4x4;
 	unsigned int UniformUnsigned;
-	int UniformSigned;
-	int32_t* UniformSigned4 = nullptr;
+	int32_t UniformSigned4[4];
 	float UniformFloat;
 	unsigned int LastProgram = 0;
 	int BufferLocation = -1;
@@ -77,13 +75,16 @@ struct Uniform
 	Uniform( const int& Value )
 	{
 		Type = Signed;
-		UniformSigned = Value;
+		UniformSigned4[0] = Value;
 	}
 
-	Uniform( int32_t* Value )
+	Uniform( const int32_t* Value )
 	{
 		Type = Signed4;
-		UniformSigned4 = Value;
+		UniformSigned4[0] = Value[0];
+		UniformSigned4[1] = Value[1];
+		UniformSigned4[2] = Value[2];
+		UniformSigned4[3] = Value[3];
 	}
 
 	Uniform( const float& Value )
@@ -102,18 +103,22 @@ struct Uniform
 		Uniform4 = B.Uniform4;
 		Uniform4x4 = B.Uniform4x4;
 		UniformUnsigned = B.UniformUnsigned;
-		UniformSigned = B.UniformSigned;
-		UniformSigned4 = B.UniformSigned4;
+		UniformSigned4[0] = B.UniformSigned4[0];
+		UniformSigned4[1] = B.UniformSigned4[1];
+		UniformSigned4[2] = B.UniformSigned4[2];
+		UniformSigned4[3] = B.UniformSigned4[3];
 		UniformFloat = B.UniformFloat;
-		// LastProgram = B.LastProgram;
-		// BufferLocation = B.BufferLocation;
-		// Name = B.Name;
+
+		LastProgram = 0;
+		BufferLocation = -1;
+		Type = B.Type;
 
 		return *this;
 	}
 
 	void Bind( const unsigned int& Program, const std::string& Location );
 	void Bind( const unsigned int& Program );
+	void Reset();
 
 	void Set( const Vector4D& Vector )
 	{
@@ -148,13 +153,17 @@ struct Uniform
 	void Set( const int& Value )
 	{
 		Type = Signed;
-		UniformSigned = Value;
+		UniformSigned4[0] = Value;
 	}
 
-	void Set( int32_t* Value )
+	void Set( const int32_t* Value )
 	{
 		Type = Signed4;
-		UniformSigned4 = Value;
+
+		UniformSigned4[0] = Value[0];
+		UniformSigned4[1] = Value[1];
+		UniformSigned4[2] = Value[2];
+		UniformSigned4[3] = Value[3];
 	}
 
 	void Set( const float& Value )

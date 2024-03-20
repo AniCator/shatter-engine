@@ -14,6 +14,9 @@ public:
 	void Draw( CRenderable* Renderable, CShader* Shader );
 	virtual uint32_t Render( const std::vector<CRenderable*>& Renderables, UniformMap& Uniforms ) override;
 
+	// Render to the main frame buffer instead of a shadow map.
+	bool RenderToFrameBuffer = false;
+
 	class CShader* ShadowShader = nullptr;
 	class CShader* SkinnedShadowShader = nullptr;
 	class CTexture* Noise = nullptr;

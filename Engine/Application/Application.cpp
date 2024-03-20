@@ -694,7 +694,12 @@ void CApplication::ResetImGui()
 		DefaultFontConfig.OversampleV = 2;
 		DefaultFontConfig.SizePixels = CConfiguration::Get().GetFloat( "UI.FontSize", 15.0f );
 
-		RobotoFont = IO.Fonts->AddFontFromFileTTF( FontLocation, DefaultFontConfig.SizePixels, &DefaultFontConfig, IO.Fonts->GetGlyphRangesDefault() );
+		static ImVector<ImWchar> GlyphRange;
+		ImFontGlyphRangesBuilder Builder;
+		Builder.AddRanges( IO.Fonts->GetGlyphRangesDefault() );
+		Builder.BuildRanges( &GlyphRange );
+
+		RobotoFont = IO.Fonts->AddFontFromFileTTF( FontLocation, DefaultFontConfig.SizePixels, &DefaultFontConfig, GlyphRange.Data );
 		IO.FontDefault = RobotoFont;
 	}
 	else

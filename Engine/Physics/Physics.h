@@ -31,6 +31,8 @@ public:
 	// Waits for the workers to finish their tasks.
 	void Guard() const;
 
+	// Simulates the world a little to help things settle.
+	void Warm( const double& StartTime, const uint32_t& Ticks );
 	void Tick( const double& Time );
 	void Destroy();
 
@@ -45,8 +47,7 @@ public:
 	void SetSynchronous( const bool Synchrohous );
 
 	double CurrentTime = -1.0;
-	double TimeStep = 1.0 / 60.0;
-	double ActualDeltaTime = -1.0;
+	double GetTimeStep() const;
 private:
 	CPhysicsScene* Scene;
 };

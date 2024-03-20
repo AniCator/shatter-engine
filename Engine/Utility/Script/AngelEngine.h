@@ -72,4 +72,56 @@ namespace ScriptEngine
 
 	AngelResult Execute( const char* Name, const char* EntryPoint = nullptr, void* Object = nullptr );
 	bool HasFunction( const char* Name, const char* EntryPoint );
+
+	// Logs the registered object types.
+	void Enumerate();
+
+	template<class A, class B>
+	B* ReferenceCast( A* Object )
+	{
+		if( !Object )
+			return nullptr;
+
+		return dynamic_cast<B*>( Object );
+	}
+
+	template<class A, class B>
+	void RegisterCast( const char* EntityA, const char* EntityB )
+	{
+		// Non-const casting.
+		std::string Signature = EntityA;
+		Signature += "@ opCast()";
+		AddObjectMethod( EntityB, Signature.c_str(), &ReferenceCast<B, A> );
+
+		Signature += " const";
+		AddObjectMethod( EntityB, Signature.c_str(), &ReferenceCast<B, A> );
+
+		Signature = EntityB;
+		Signature += "@ opImplCast()";
+		AddObjectMethod( EntityA, Signature.c_str(), &ReferenceCast<A, B>);
+
+		Signature += " const";
+		AddObjectMethod( EntityA, Signature.c_str(), &ReferenceCast<A, B>);
+	}
+
+	template<typename T>
+	void RegisterEntity( const char* Entity )
+	{
+		AddTypeReference( Entity );
+
+		RegisterCast<T, CEntity>( Entity, "Entity" );
+
+		// Standard methods.
+		AddTypeMethod( Entity, "void SetParent(Entity &in)", &T::SetParent );
+		AddTypeMethod( Entity, "Entity @ GetParent() const", &T::GetParent );
+
+		AddTypeMethod( Entity, "void Send(string &in, Entity @)", &T::Send );
+		AddTypeMethod( Entity, "void Receive(string &in, Entity @)", &T::Receive );
+		AddTypeMethod( Entity, "void Tag(string &in)", &T::Tag );
+		AddTypeMethod( Entity, "void Untag(string &in)", &T::Untag );
+		AddTypeMethod( Entity, "bool HasTag(string &in) const", &T::HasTag );
+
+		AddTypeMethod( Entity, "bool IsDebugEnabled() const", &T::IsDebugEnabled );
+		AddTypeMethod( Entity, "void EnableDebug( const bool )", &T::EnableDebug );
+	}
 };

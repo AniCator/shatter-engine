@@ -61,6 +61,13 @@ void CWorld::Construct()
 	}
 
 	LightEntity::UploadToGPU();
+
+	// Warm up the physics simulation.
+	if( Physics )
+	{
+		Physics->Warm( GameLayersInstance->GetCurrentTime(), 10 );
+		WaitingForPhysics = true;
+	}
 }
 
 void CWorld::Frame()
@@ -420,6 +427,16 @@ CEntity* CWorld::Find( const std::string& TagName, const std::string& EntityName
 	}
 
 	return nullptr;
+}
+
+void CWorld::Rebase( const FTransform& Transform )
+{
+	const auto Offset = Transform.GetPosition();
+	for( auto& Level : Levels )
+	{
+		Level.Transform.SetPosition( Level.Transform.GetPosition() - Offset );
+		Level.Transform.Update();
+	}
 }
 
 CData& operator<<( CData& Data, CWorld* World )

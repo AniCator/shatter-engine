@@ -92,10 +92,16 @@ bool UsesDynamicQuery( const CBody* Body )
 	return !Body->Static;
 }
 
+constexpr double DefaultTimeStep = 1 / 60.0;
+
 class CPhysicsScene
 {
 public:
-	CPhysicsScene() = default;
+	CPhysicsScene()
+	{
+		CreateQueryContainers();
+	}
+
 	~CPhysicsScene()
 	{
 		Destroy();
@@ -114,7 +120,10 @@ public:
 		Bodies.emplace_back( Body );
 
 		// Insert the body into the acceleration structure.
-		Insert( Body );		
+		Insert( Body );
+
+		// Add the body to the query list so it can be checked before the next physics body update.
+		AddToQueryList( Body );
 	}
 
 	void Unregister( CBody* Body )
@@ -272,7 +281,23 @@ public:
 		DynamicQueryRequests->reserve( DynamicCandidates );
 	}
 
-	void Tick()
+	void AddToQueryList( CBody* Body )
+	{
+		if( !Body )
+			return;
+
+		if( UsesStaticQuery( Body ) )
+		{
+			StaticQueryRequests->emplace_back( Body );
+		}
+
+		if( UsesDynamicQuery( Body ) )
+		{
+			DynamicQueryRequests->emplace_back( Body );
+		}
+	}
+
+	void SubTick()
 	{
 		Guard();
 		IsSimulating = false;
@@ -307,21 +332,24 @@ public:
 			BodyA->PreCollision();
 		}
 
-		size_t StaticBodiesToQuery = 0;
-		size_t DynamicBodiesToQuery = 0;
-		for( auto* BodyA : Bodies )
+		ScheduleBodyUpdate();
+	}
+
+	void Tick( const double& Time )
+	{
+		double DeltaTime = Time - CurrentTime;
+		constexpr int SubSteps = 1;
+
+		double TotalTimeStep = TimeStep;
+		TimeStep = TimeStep / SubSteps;
+
+		for( int SubStep = 0; SubStep < SubSteps; SubStep++ )
 		{
-			if( !BodyA )
-				continue;
+			SubTick();
+			CurrentTime += TimeStep;
+		};
 
-			if( UsesStaticQuery( BodyA ) )
-				StaticBodiesToQuery++;
-
-			if( UsesDynamicQuery( BodyA ) )
-				DynamicBodiesToQuery++;
-		}
-
-		ScheduleBodyUpdate( StaticBodiesToQuery, DynamicBodiesToQuery );
+		TimeStep = TotalTimeStep;
 	}
 
 	static void ResolveCollisions( CBody* A, const QueryResult& Query )
@@ -409,26 +437,11 @@ public:
 	}
 
 	double CurrentTime = -1.0;
-	double TimeStep = 1.0 / 60.0;
-	double Accumulator = 0.0;
+	double TimeStep = DefaultTimeStep;
 
-	bool ShouldUpdate()
+	void ScheduleBodyUpdate()
 	{
-		// TODO: It's busted, man.
-		return true;
-
-		// Bias the accumulator value slightly to prevent underruns.
-		const float Biased = Accumulator + 0.0001f;
-		if( Biased < TimeStep )
-			return false;
-
-		Accumulator = 0.0;
-		return true;
-	}
-
-	void ScheduleBodyUpdate( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
-	{
-		const auto BodyUpdate = std::make_shared<LambdaTask>( [this, StaticBodiesToQuery, DynamicBodiesToQuery] ()
+		const auto BodyUpdate = std::make_shared<LambdaTask>( [this] ()
 			{
 				OptickCategory( "Physics Body Update", Optick::Category::Physics );
 
@@ -445,7 +458,7 @@ public:
 				}
 
 				UpdateBodies();
-				ScheduleQueries( StaticBodiesToQuery, DynamicBodiesToQuery );
+				ScheduleQueries();
 			}
 		);
 
@@ -461,7 +474,7 @@ public:
 
 	std::shared_ptr<QueryTask> StaticQuery = std::make_shared<QueryTask>();
 	std::shared_ptr<QueryTask> DynamicQuery = std::make_shared<QueryTask>();
-	void ScheduleQueries( size_t StaticBodiesToQuery, size_t DynamicBodiesToQuery )
+	void ScheduleQueries()
 	{
 		IsSimulating = true;
 
@@ -471,23 +484,26 @@ public:
 			DynamicQuery->Mutex.lock();
 		}
 
-		// BUG: This refresh somehow seems to happen while the query workers are still running.
-		RefreshQueryContainers( StaticBodiesToQuery, DynamicBodiesToQuery );
-
+		size_t StaticBodiesToQuery = 0;
+		size_t DynamicBodiesToQuery = 0;
 		for( auto* BodyA : Bodies )
 		{
 			if( !BodyA )
 				continue;
 
 			if( UsesStaticQuery( BodyA ) )
-			{
-				StaticQueryRequests->emplace_back( BodyA );
-			}
+				StaticBodiesToQuery++;
 
 			if( UsesDynamicQuery( BodyA ) )
-			{
-				DynamicQueryRequests->emplace_back( BodyA );
-			}
+				DynamicBodiesToQuery++;
+		}
+
+		// BUG: This refresh somehow seems to happen while the query workers are still running.
+		RefreshQueryContainers( StaticBodiesToQuery, DynamicBodiesToQuery );
+
+		for( auto* Body : Bodies )
+		{
+			AddToQueryList( Body );
 		}
 
 		StaticQuery->Scene = StaticScene;
@@ -548,49 +564,52 @@ public:
 			IgnoreList.emplace_back( Body );
 		}
 
-		Geometry::Result StaticResult;
-		Geometry::Result DynamicResult;
-
-		if( PollStaticScene && StaticScene )
+		if( !AllowFallbackCasting )
 		{
-			StaticResult = StaticScene->Cast( Start, End, IgnoreList );
-		}
+			Geometry::Result StaticResult;
+			Geometry::Result DynamicResult;
 
-		if( PollDynamicScene && DynamicScene )
-		{
-			DynamicResult = DynamicScene->Cast( Start, End, IgnoreList );
-		}
-
-		if( StaticResult.Hit && DynamicResult.Hit && StaticResult.Body && DynamicResult.Body )
-		{
-			if( DynamicResult.Distance < StaticResult.Distance )
+			if( PollStaticScene && StaticScene )
 			{
-				return DynamicResult;
+				StaticResult = StaticScene->Cast( Start, End, IgnoreList );
 			}
-			else
+
+			if( PollDynamicScene && DynamicScene )
 			{
+				DynamicResult = DynamicScene->Cast( Start, End, IgnoreList );
+			}
+
+			if( StaticResult.Hit && DynamicResult.Hit && StaticResult.Body && DynamicResult.Body )
+			{
+				if( DynamicResult.Distance < StaticResult.Distance )
+				{
+					return DynamicResult;
+				}
+				else
+				{
+					return StaticResult;
+				}
+			}
+
+			if( StaticResult.Hit && StaticResult.Body )
+			{
+				if( DisplayCasting )
+				{
+					UI::AddLine( Start, StaticResult.Position, Color::Purple );
+				}
+
 				return StaticResult;
 			}
-		}
 
-		if( StaticResult.Hit && StaticResult.Body )
-		{
-			if( DisplayCasting )
+			if( DynamicResult.Hit && DynamicResult.Body )
 			{
-				UI::AddLine( Start, StaticResult.Position, Color::Purple );
+				if( DisplayCasting )
+				{
+					UI::AddLine( Start, DynamicResult.Position, Color::Yellow );
+				}
+
+				return DynamicResult;
 			}
-
-			return StaticResult;
-		}
-
-		if( DynamicResult.Hit && DynamicResult.Body )
-		{
-			if( DisplayCasting )
-			{
-				UI::AddLine( Start, DynamicResult.Position, Color::Yellow );
-			}
-
-			return DynamicResult;
 		}
 
 		// UI::AddLine( Start, End, Color::Red );
@@ -650,10 +669,8 @@ public:
 
 			return ClosestResult;
 		}
-		else
-		{
-			return Empty;
-		}
+
+		return Empty;
 	}
 
 	std::vector<CBody*> Query( const BoundingBox& AABB, const PollType& Type = PollType::All ) const
@@ -790,21 +807,27 @@ void CPhysics::Guard() const
 	Scene->Guard();
 }
 
+void CPhysics::Warm( const double& StartTime, const uint32_t& Ticks )
+{
+	if( !Scene )
+		return;
+
+	double Time = StartTime - Ticks * Scene->TimeStep;
+
+	// We pre-heat the physics engine to 200 degrees Celsius.
+	while( Time < StartTime )
+	{
+		Tick( Time );
+		Time += Scene->TimeStep;
+	};
+
+	CurrentTime = StartTime;
+}
+
 void CPhysics::Tick( const double& Time )
 {
-	const auto PreviousTime = CurrentTime;
 	CurrentTime = Time;
-	ActualDeltaTime = CurrentTime - PreviousTime;
-
-	const auto PeakTime = TimeStep * 2.0;
-	Scene->CurrentTime = Time;
-	Scene->Accumulator += Math::Min( ActualDeltaTime, PeakTime );
-	Scene->TimeStep = TimeStep;
-
-	if( Scene->ShouldUpdate() )
-	{
-		Scene->Tick();
-	}
+	Scene->Tick( Time );
 }
 
 void CPhysics::Destroy()
@@ -846,4 +869,12 @@ bool CPhysics::IsSynchronous() const
 void CPhysics::SetSynchronous( const bool Synchrohous )
 {
 	Scene->SetSynchronous( Synchrohous );
+}
+
+double CPhysics::GetTimeStep() const
+{
+	if( !Scene )
+		return 0.0;
+
+	return Scene->TimeStep;
 }

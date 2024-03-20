@@ -400,6 +400,28 @@ void SoLoudSound::Stop( StreamHandle Handle, const float FadeOut )
 	}
 }
 
+void SoLoudSound::Pause( SoundHandle Handle )
+{
+	if( Sounds.empty() )
+		return;
+
+	if( Handle.Handle > InvalidHandle )
+	{
+		Engine.setPause( Sounds[Handle.Handle].Voice, true );
+	}
+}
+
+void SoLoudSound::Pause( StreamHandle Handle )
+{
+	if( Sounds.empty() )
+		return;
+
+	if( Handle.Handle > InvalidHandle )
+	{
+		Engine.setPause( Streams[Handle.Handle].Stream, true );
+	}
+}
+
 void SoLoudSound::StopSounds()
 {
 	for( const auto& Sound : Sounds )

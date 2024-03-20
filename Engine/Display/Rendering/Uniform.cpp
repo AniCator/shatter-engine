@@ -23,37 +23,68 @@ void Uniform::Bind( const unsigned int& Program )
 
 	if( BufferLocation > -1 )
 	{
-		if( Type == Component4 )
+		switch( Type )
 		{
+		case Component4:
 			glUniform4fv( BufferLocation, 1, Uniform4.Base() );
-		}
-		else if( Type == Component3 )
-		{
+			break;
+		case Component3:
 			glUniform3fv( BufferLocation, 1, Uniform3.Base() );
-		}
-		else if( Type == Component2 )
-		{
+			break;
+		case Component2:
 			glUniform2fv( BufferLocation, 1, Uniform2.Base() );
-		}
-		else if( Type == Component4x4 )
-		{
+			break;
+		case Component4x4:
 			glUniformMatrix4fv( BufferLocation, 1, GL_FALSE, &Uniform4x4[0][0] );
-		}
-		else if( Type == Unsigned )
-		{
+			break;
+		case Unsigned:
 			glUniform1ui( BufferLocation, UniformUnsigned );
-		}
-		else if( Type == Signed )
-		{
-			glUniform1i( BufferLocation, UniformSigned );
-		}
-		else if( Type == Signed4 && UniformSigned4 )
-		{
+			break;
+		case Signed:
+			glUniform1i( BufferLocation, UniformSigned4[0] );
+			break;
+		case Signed4:
 			glUniform4iv( BufferLocation, 1, UniformSigned4 );
-		}
-		else if( Type == Float )
-		{
+			break;
+		case Float:
 			glUniform1f( BufferLocation, UniformFloat );
+			break;
+		default:
+			break;
 		}
+	}
+}
+
+void Uniform::Reset()
+{
+	switch( Type )
+	{
+	case Component4:
+		Uniform4 = { 0.0f, 0.0f, 0.0f, 0.0f };
+		break;
+	case Component3:
+		Uniform3 = { 0.0f, 0.0f, 0.0f };
+		break;
+	case Component2:
+		Uniform2 = { 0.0f, 0.0f };
+		break;
+	case Component4x4:
+		Uniform4x4 = {};
+		break;
+	case Unsigned:
+		UniformUnsigned = 0;
+		break;
+	case Signed:
+	case Signed4:
+		UniformSigned4[0] = 0;
+		UniformSigned4[1] = 0;
+		UniformSigned4[2] = 0;
+		UniformSigned4[3] = 0;
+		break;
+	case Float:
+		UniformFloat = 0.0f;
+		break;
+	default:
+		break;
 	}
 }

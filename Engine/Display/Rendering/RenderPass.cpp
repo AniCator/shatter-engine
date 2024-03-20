@@ -204,7 +204,7 @@ void CRenderPass::End()
 #endif
 }
 
-void CRenderPass::Setup( CRenderable* Renderable, std::unordered_map<std::string, Uniform>& Uniforms )
+void CRenderPass::Setup( CRenderable* Renderable, UniformMap& Uniforms )
 {
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 	if( !RenderData.ShouldRender )
@@ -218,86 +218,14 @@ void CRenderPass::Setup( CRenderable* Renderable, std::unordered_map<std::string
 	if( Handles.Program != ShaderProgramHandle )
 	{
 		ShaderProgramHandle = Shader->Activate();
+	}
 
+	{
 		Renderable->CheckCachedUniforms();
 		RenderData.ShaderProgram = ShaderProgramHandle;
 
-		for( auto& UniformBuffer : Uniforms )
-		{
-			UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
-		}
-
-		const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
-		const FCameraSetup& PreviousCameraSetup = PreviousCamera.GetCameraSetup();
-
-		const GLint ViewMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "View" );
-		if( ViewMatrixLocation > -1 )
-		{
-			const auto& ViewMatrix = Camera.GetViewMatrix();
-			glUniformMatrix4fv( ViewMatrixLocation, 1, GL_FALSE, &ViewMatrix[0][0] );
-		}
-
-		const GLint ProjectionMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Projection" );
-		if( ProjectionMatrixLocation > -1 )
-		{
-			const auto& ProjectionMatrix = Camera.GetProjectionMatrix();
-			glUniformMatrix4fv( ProjectionMatrixLocation, 1, GL_FALSE, &ProjectionMatrix[0][0] );
-		}
-
-		const GLint CameraPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraPosition" );
-		if( CameraPositionLocation > -1 )
-		{
-			glUniform3fv( CameraPositionLocation, 1, CameraSetup.CameraPosition.Base() );
-		}
-
-		const GLint CameraDirectionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraDirection" );
-		if( CameraDirectionLocation > -1 )
-		{
-			glUniform3fv( CameraDirectionLocation, 1, CameraSetup.CameraDirection.Base() );
-		}
-
-		const GLint PreviousCameraPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "PreviousCameraPosition" );
-		if( PreviousCameraPositionLocation > -1 )
-		{
-			glUniform3fv( PreviousCameraPositionLocation, 1, PreviousCameraSetup.CameraPosition.Base() );
-		}
-
-		const GLint PreviousCameraDirectionLocation = glGetUniformLocation( RenderData.ShaderProgram, "PreviousCameraDirection" );
-		if( PreviousCameraDirectionLocation > -1 )
-		{
-			glUniform3fv( PreviousCameraDirectionLocation, 1, PreviousCameraSetup.CameraDirection.Base() );
-		}
-
-		const GLint CameraNearLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraNear" );
-		if( CameraNearLocation > -1 )
-		{
-			glUniform1fv( CameraNearLocation, 1, &CameraSetup.NearPlaneDistance );
-		}
-
-		const GLint CameraFarLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraFar" );
-		if( CameraFarLocation > -1 )
-		{
-			glUniform1fv( CameraFarLocation, 1, &CameraSetup.FarPlaneDistance );
-		}
-
-		// Viewport coordinates
-		glm::vec4 Viewport;
-		if( Target )
-		{
-			const float Width = Target->GetWidth();
-			const float Height = Target->GetHeight();
-			Viewport = glm::vec4( Width, Height, 1.0f / Width, 1.0f / Height );
-		}
-		else
-		{
-			Viewport = glm::vec4( ViewportWidth, ViewportHeight, 1.0f / ViewportWidth, 1.0f / ViewportHeight );
-		}
-
-		const GLint ViewportLocation = glGetUniformLocation( RenderData.ShaderProgram, "Viewport" );
-		if( ViewportLocation > -1 )
-		{
-			glUniform4fv( ViewportLocation, 1, glm::value_ptr( Viewport ) );
-		}
+		// Bind the renderable's uniforms before applying the global ones.
+		BindUniforms( Renderable, Uniforms );
 	}
 
 	RenderData.ShaderProgram = ShaderProgramHandle;
@@ -310,17 +238,17 @@ void CRenderPass::Draw( CRenderable* Renderable )
 		return;
 
 	CShader* Shader = Renderable->GetShader();
-	if( Shader )
-	{
-		ConfigureBlendMode( Shader );
-		ConfigureDepthMask( Shader );
-		ConfigureDepthTest( Shader );
+	if( !Shader )
+		return;
 
-		Renderable->Draw( RenderData, PreviousRenderable );
-		PreviousRenderable = Renderable;
+	ConfigureBlendMode( Shader );
+	ConfigureDepthMask( Shader );
+	ConfigureDepthTest( Shader );
 
-		Calls++;
-	}
+	Renderable->Draw( RenderData, PreviousRenderable );
+	PreviousRenderable = Renderable;
+
+	Calls++;
 }
 
 void CRenderPass::SetCamera( const CCamera& CameraIn )
@@ -369,6 +297,100 @@ void CRenderPass::UpdateUniformBufferObject()
 
 	// Send updated data to the GPU.
 	Block.Upload();
+}
+
+void CRenderPass::BindUniforms( CRenderable* Renderable, UniformMap& AdditionalUniforms )
+{
+	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
+	if( !RenderData.ShouldRender )
+		return;
+
+	CShader* Shader = Renderable->GetShader();
+	if( !Shader )
+		return;
+
+	Renderable->BindUniforms();
+
+	const FProgramHandles& Handles = Shader->GetHandles();
+	// if( Handles.Program == ShaderProgramHandle )
+	// 	return;
+
+	for( auto& UniformBuffer : AdditionalUniforms )
+	{
+		UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
+	}
+
+	const FCameraSetup& CameraSetup = Camera.GetCameraSetup();
+	const FCameraSetup& PreviousCameraSetup = PreviousCamera.GetCameraSetup();
+
+	const GLint ViewMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "View" );
+	if( ViewMatrixLocation > -1 )
+	{
+		const auto& ViewMatrix = Camera.GetViewMatrix();
+		glUniformMatrix4fv( ViewMatrixLocation, 1, GL_FALSE, &ViewMatrix[0][0] );
+	}
+
+	const GLint ProjectionMatrixLocation = glGetUniformLocation( RenderData.ShaderProgram, "Projection" );
+	if( ProjectionMatrixLocation > -1 )
+	{
+		const auto& ProjectionMatrix = Camera.GetProjectionMatrix();
+		glUniformMatrix4fv( ProjectionMatrixLocation, 1, GL_FALSE, &ProjectionMatrix[0][0] );
+	}
+
+	const GLint CameraPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraPosition" );
+	if( CameraPositionLocation > -1 )
+	{
+		glUniform3fv( CameraPositionLocation, 1, CameraSetup.CameraPosition.Base() );
+	}
+
+	const GLint CameraDirectionLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraDirection" );
+	if( CameraDirectionLocation > -1 )
+	{
+		glUniform3fv( CameraDirectionLocation, 1, CameraSetup.CameraDirection.Base() );
+	}
+
+	const GLint PreviousCameraPositionLocation = glGetUniformLocation( RenderData.ShaderProgram, "PreviousCameraPosition" );
+	if( PreviousCameraPositionLocation > -1 )
+	{
+		glUniform3fv( PreviousCameraPositionLocation, 1, PreviousCameraSetup.CameraPosition.Base() );
+	}
+
+	const GLint PreviousCameraDirectionLocation = glGetUniformLocation( RenderData.ShaderProgram, "PreviousCameraDirection" );
+	if( PreviousCameraDirectionLocation > -1 )
+	{
+		glUniform3fv( PreviousCameraDirectionLocation, 1, PreviousCameraSetup.CameraDirection.Base() );
+	}
+
+	const GLint CameraNearLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraNear" );
+	if( CameraNearLocation > -1 )
+	{
+		glUniform1fv( CameraNearLocation, 1, &CameraSetup.NearPlaneDistance );
+	}
+
+	const GLint CameraFarLocation = glGetUniformLocation( RenderData.ShaderProgram, "CameraFar" );
+	if( CameraFarLocation > -1 )
+	{
+		glUniform1fv( CameraFarLocation, 1, &CameraSetup.FarPlaneDistance );
+	}
+
+	// Viewport coordinates
+	glm::vec4 Viewport;
+	if( Target )
+	{
+		const float Width = Target->GetWidth();
+		const float Height = Target->GetHeight();
+		Viewport = glm::vec4( Width, Height, 1.0f / Width, 1.0f / Height );
+	}
+	else
+	{
+		Viewport = glm::vec4( ViewportWidth, ViewportHeight, 1.0f / ViewportWidth, 1.0f / ViewportHeight );
+	}
+
+	const GLint ViewportLocation = glGetUniformLocation( RenderData.ShaderProgram, "Viewport" );
+	if( ViewportLocation > -1 )
+	{
+		glUniform4fv( ViewportLocation, 1, glm::value_ptr( Viewport ) );
+	}
 }
 
 void CRenderPass::ConfigureBlendMode( CShader* Shader )

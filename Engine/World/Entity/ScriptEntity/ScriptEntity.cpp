@@ -312,7 +312,9 @@ CEntity* ScriptToEntity( ScriptEntity* Script )
 
 void RegisterScriptEntity()
 {
-	ScriptEngine::AddTypeReference( "Script" );
+	ScriptEngine::RegisterEntity<ScriptEntity>( "Script" );
+	ScriptEngine::RegisterCast<ScriptEntity, CPointEntity>( "Script", "PointEntity" );
+
 	ScriptEngine::AddFunction( "Entity @ ToEntity( Script @ )", ScriptToEntity );
 
 	// Floating point script properties.

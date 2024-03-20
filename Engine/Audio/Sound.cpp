@@ -44,6 +44,21 @@ void SoundInstance::Stop( const float& FadeOut ) const
 	}
 }
 
+void SoundInstance::Pause() const
+{
+	if( !Asset )
+		return;
+
+	if( Asset->GetSoundType() == ESoundType::Memory )
+	{
+		SoLoudSound::Pause( SoundHandle );
+	}
+	else
+	{
+		SoLoudSound::Pause( StreamHandle );
+	}
+}
+
 void SoundInstance::Loop( const bool& Loop ) const
 {
 	if( !Asset )

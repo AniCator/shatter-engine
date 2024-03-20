@@ -116,13 +116,12 @@ void CRenderable::CheckCachedUniforms()
 	}
 }
 
-void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride )
+void CRenderable::BindUniforms()
 {
-	if( !RenderData.ShouldRender )
-		return;
-	
-	const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
-	Prepare( RenderData, PreviousRenderable );
+	for( auto& UniformBuffer : Uniforms )
+	{
+		UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
+	}
 
 	ObjectPosition.Set( RenderData.Transform.GetPosition() );
 	ObjectPosition.Bind( RenderData.ShaderProgram );
@@ -146,11 +145,15 @@ void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRend
 
 	ObjectColor.Set( RenderData.Color );
 	ObjectColor.Bind( RenderData.ShaderProgram );
+}
 
-	for( auto& UniformBuffer : Uniforms )
-	{
-		UniformBuffer.second.Bind( RenderData.ShaderProgram, UniformBuffer.first );
-	}
+void CRenderable::Draw( FRenderData& RenderData, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride )
+{
+	if( !RenderData.ShouldRender )
+		return;
+	
+	const EDrawMode DrawMode = DrawModeOverride != None ? DrawModeOverride : RenderData.DrawMode;
+	Prepare( RenderData, PreviousRenderable );
 
 	if( DrawMode == EDrawMode::FullScreenTriangle )
 	{

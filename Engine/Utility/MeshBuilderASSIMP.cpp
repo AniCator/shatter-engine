@@ -189,10 +189,8 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 		return;
 	
 	Skeleton& Skeleton = *MeshData.Skeleton;
-	if( Skeleton.Weights.size() != Mesh->mNumVertices )
-	{
-		Skeleton.Weights.resize( Mesh->mNumVertices );
-	}
+	const size_t StartOffset = Skeleton.Weights.empty() ? 0 : Skeleton.Weights.size() - 1;
+	Skeleton.Weights.resize( Skeleton.Weights.size() + Mesh->mNumVertices );
 
 	// Assign the bone weights for each vertex.
 	for( uint32_t BoneIndex = 0; BoneIndex < Mesh->mNumBones; BoneIndex++ )
@@ -201,7 +199,7 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 		const auto* Bone = Mesh->mBones[BoneIndex];
 		for( uint32_t WeightIndex = 0; WeightIndex < Bone->mNumWeights; WeightIndex++ )
 		{
-			const size_t VertexID = Bone->mWeights[WeightIndex].mVertexId; // Note: Originally IndexOffset was added to this.
+			const size_t VertexID = Bone->mWeights[WeightIndex].mVertexId + StartOffset; // Note: Originally IndexOffset was added to this.
 			VertexWeight& Weight = Skeleton.Weights[VertexID];
 			Weight.Add( BoneIndex, Bone->mWeights[WeightIndex].mWeight );
 			TotalWeight += Bone->mWeights[WeightIndex].mWeight;
@@ -211,13 +209,14 @@ void UpdateSkeleton( const aiMatrix4x4& Transform, const aiScene* Scene, const a
 	// Normalize all of the weights.
 	for( auto& Weight : Skeleton.Weights )
 	{
+		float OldWeight = Weight.Weight[3];
 		float TotalWeight = 0.0f;
 		for( size_t Index = 0; Index < 4; Index++ )
 		{
 			TotalWeight += Weight.Weight[Index];
 		}
 
-		if( TotalWeight < 1.0f )
+		if( TotalWeight > 0.0f )
 		{
 			const float Normalization = 1.0f / TotalWeight;
 			for( size_t Index = 0; Index < 4; Index++ )
@@ -378,6 +377,10 @@ void AddMesh( const aiMatrix4x4& Transform, const aiScene* Scene, const aiMesh* 
 			const auto& Tangent = Mesh->mTangents[VertexIndex];
 			auto TransformedTangent = aiMatrix3x3( NodeTransformation ) * Tangent;
 			NewVertex.Tangent = Vector3D( TransformedTangent.x, TransformedTangent.y, TransformedTangent.z );
+
+			// const auto& Binormal = Mesh->mBitangents[VertexIndex];
+			// auto TransformedBinormal = aiMatrix3x3( NodeTransformation ) * Binormal;
+			// NewVertex.Binormal = Vector3D( TransformedBinormal.x, TransformedBinormal.y, TransformedBinormal.z );
 		}
 
 		if( Mesh->HasTextureCoords( 0 ) )
@@ -428,14 +431,16 @@ void TraverseNodeTree( const aiMatrix4x4& Transform, const aiScene* Scene, const
 		MeshData.Parent = Node->mParent;
 	}
 
+	const auto NodeTransform = Node->mTransformation * Transform;
+
 	// Animation Only assumes the skeleton has already been defined.
 	if( !MeshData.AnimationOnly )
 	{
 		for( size_t MeshIndex = 0; MeshIndex < Node->mNumMeshes; MeshIndex++ )
 		{
 			const auto& Mesh = Scene->mMeshes[Node->mMeshes[MeshIndex]];
-			AddMesh( Transform * Node->mTransformation, Scene, Mesh, Node, MeshData );
-			UpdateSkeleton( Transform, Scene, Mesh, Node, MeshData );
+			AddMesh( NodeTransform, Scene, Mesh, Node, MeshData );
+			UpdateSkeleton( NodeTransform, Scene, Mesh, Node, MeshData );
 		}
 
 		UpdateBoneNode( Node, MeshData );
@@ -444,7 +449,7 @@ void TraverseNodeTree( const aiMatrix4x4& Transform, const aiScene* Scene, const
 	for( size_t ChildIndex = 0; ChildIndex < Node->mNumChildren; ChildIndex++ )
 	{
 		const auto* Child = Node->mChildren[ChildIndex];
-		TraverseNodeTree( Transform, Scene, Child, MeshData );
+		TraverseNodeTree( NodeTransform, Scene, Child, MeshData );
 	}
 }
 
@@ -784,7 +789,8 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 
 	for( size_t Index = 0; Index < MeshData.Indices.size(); Index++ )
 	{
-		ComplexVertex Vertex = MeshData.Vertices[MeshData.Indices[Index]];
+		const uint32_t Lookup = MeshData.Indices[Index];
+		const ComplexVertex& Vertex = MeshData.Vertices[Lookup];
 
 		uint32_t FatIndex = 0;
 		const bool ExistingVertex = FindVertex( Vertex, IndexMap, FatIndex );

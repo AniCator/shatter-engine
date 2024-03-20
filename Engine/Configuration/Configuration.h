@@ -146,7 +146,7 @@ struct ConfigurationVariable
 
 	explicit operator bool() const
 	{
-		return Value;
+		return !!Value;
 	}
 
 protected:

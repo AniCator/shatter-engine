@@ -105,9 +105,11 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 		}
 	};
 
-	CreateRenderTexture( ShadowMap, "ShadowMap", 1.0f, true );
-
-	Target = ShadowMap;
+	if( !RenderToFrameBuffer )
+	{
+		CreateRenderTexture( ShadowMap, "ShadowMap", 1.0f, true );
+		Target = ShadowMap;
+	}
 
 	FrustumCull( Camera, Renderables );
 
@@ -160,6 +162,12 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 	DrawShadowMeshes( Renderables );
 
 	End();
+
+	if( RenderToFrameBuffer )
+	{
+		// Return early, we don't need to bind anything.
+		return Calls;
+	}
 
 	ShadowMap->Bind( ETextureSlot::Slot8 );
 	ShadowMap->Bind( ETextureSlot::Slot9 );

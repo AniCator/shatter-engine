@@ -9,4 +9,10 @@ namespace Geometry
 {	
 	float RayInBoundingBox( const Vector3D& Origin, const Vector3D& Direction, const BoundingBox& Bounds );
 	Result LineInBoundingBox( const Vector3D& Start, const Vector3D& End, const BoundingBox& Bounds );
+
+	float RayInSphere( const Vector3D& Origin, const Vector3D& Direction, const BoundingSphere& Bounds );
+	Result LineInSphere( const Vector3D& Start, const Vector3D& End, const BoundingSphere& Bounds );
+
+	float RayInPlane( const Vector3D& Origin, const Vector3D& Direction, const Plane& Plane );
+	Result LineInPlane( const Vector3D& Start, const Vector3D& End, const Plane& Plane );
 }

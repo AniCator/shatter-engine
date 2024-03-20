@@ -167,6 +167,9 @@ public:
 	static void Stop( SoundHandle Handle );
 	static void Stop( StreamHandle Handle, const float FadeOut = -1.0f );
 
+	static void Pause( SoundHandle Handle );
+	static void Pause( StreamHandle Handle );
+
 	static void StopSounds();
 	static void StopStreams();
 	static void StopAll();

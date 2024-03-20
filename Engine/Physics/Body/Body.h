@@ -63,6 +63,8 @@ public:
 
 	void Query( const BoundingBoxSIMD& Box, QueryResult& Result ) override;
 	Geometry::Result Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore = std::vector<Testable*>() ) const override;
+
+	void SetMass( const float Mass );
 	
 	CMeshEntity* Owner = nullptr;
 
@@ -96,7 +98,7 @@ public:
 	bool Sleeping = false;
 	double LastActivity = -1.0;
 
-	bool Contact = false;
+	bool Contact = true;
 	FTransform PreviousTransform;
 	BoundingBox LocalBounds;
 	BoundingBox WorldBounds;
@@ -118,9 +120,15 @@ public:
 	// Velocity.
 	Vector3D ActualVelocity = Vector3D::Zero;
 	Vector3D Velocity = Vector3D::Zero;
-	float Damping = 0.98f;
+	float Damping = 1.0f;
 	float Restitution = 1.0f;
 	float Friction = 0.05f;
+
+	// 0.47f - Sphere
+	// 0.5f  - Cone
+	// 1.0f  - Humanoid
+	// 1.05f - Cube
+	float DragCoefficient = 1.0f;
 
 	Vector3D Gravity = Vector3D( 0.0f, 0.0f, -9.81f );
 

@@ -85,28 +85,46 @@ CollisionResponse Response::SpherePlane( const BoundingSphere& Sphere, const Pla
 CollisionResponse Response::SphereAABB( const BoundingSphere& Sphere, const BoundingBox& Box )
 {
 	const Vector3D Origin = Sphere.Origin();
+	const Vector3D LocalOrigin = ( Box.Center() - Origin ) / Box.Size();
+
+	// Project the sphere's origin onto the bounding box to calculate the closest point.
 	const Vector3D PointOnBox = Math::ProjectOnAABB( Origin, Box );
-	const Vector3D Direction = Origin - PointOnBox;
+	const Vector3D Direction = ( Origin - PointOnBox );
 
 	const float DistanceSquared = Direction.LengthSquared();
 	if( DistanceSquared > Sphere.GetRadiusSquared() )
 		return {}; // We're not colliding with the bounding box.
 
 	CollisionResponse Response;
-	const bool Inside = DistanceSquared == 0.0f;
-	if( Inside )
-	{
-		// The sphere is inside of the box.
-		Response.Normal = Box.Center() - PointOnBox;
-	}
-	else
-	{
-		// The sphere is touching the box from outside.
-		Response.Normal = PointOnBox - Origin;
-	}
+	Response.Normal = PointOnBox - Origin;
+
+	/*const Vector3D HalfSize = Box.Size() * 0.5f;
+
+	Response.Distance = Response.Normal.X;
+	if( Response.Distance > HalfSize.X )
+		Response.Distance = HalfSize.X;
+	if( Response.Distance < -HalfSize.X )
+		Response.Distance = -HalfSize.X;
+	Response.Point.X = Response.Distance;
+
+	Response.Distance = Response.Normal.Y;
+	if( Response.Distance > HalfSize.Y )
+		Response.Distance = HalfSize.Y;
+	if( Response.Distance < -HalfSize.Y )
+		Response.Distance = -HalfSize.Y;
+	Response.Point.Y = Response.Distance;
+
+	Response.Distance = Response.Normal.Z;
+	if( Response.Distance > HalfSize.Z )
+		Response.Distance = HalfSize.Z;
+	if( Response.Distance < -HalfSize.Z )
+		Response.Distance = -HalfSize.Z;
+	Response.Point.Z = Response.Distance;
+
+	Response.Normal = Origin - Response.Point;*/
 
 	// Find the dominant axis.
-	const Vector3D AbsoluteNormal = Math::Abs( Response.Normal );
+	/*const Vector3D AbsoluteNormal = Math::Abs( Response.Normal );
 	if( AbsoluteNormal.X > AbsoluteNormal.Y && AbsoluteNormal.X > AbsoluteNormal.Z )
 	{
 		Response.Normal.X = Math::Sign( Response.Normal.X );
@@ -124,18 +142,16 @@ CollisionResponse Response::SphereAABB( const BoundingSphere& Sphere, const Boun
 		Response.Normal.X = 0.0f;
 		Response.Normal.Y = 0.0f;
 		Response.Normal.Z = Math::Sign( Response.Normal.Z );
-	}
+	}*/
 
-	const Vector3D PointOnSphere = Origin + Response.Normal * Sphere.GetRadius();
-	Response.Distance = PointOnBox.Distance( PointOnSphere );
-	Response.Point = PointOnBox + ( PointOnSphere - PointOnBox ) * 0.5f;
-
-	// UI::AddCircle( PointOnBox, 5.0f, Color::Red );
-	// UI::AddCircle( PointOnSphere, 5.0f, Color::Green );
-	// UI::AddLine( Origin, Origin + Response.Normal, Color::Blue, 0.1f );
-	// UI::AddLine( PointOnBox, PointOnBox + Response.Normal, Response.Distance > 0.0f ? Color::Blue : Color::Purple );
-	// UI::AddSphere( Origin, Sphere.GetRadius(), Color::Cyan );
-	// UI::AddAABB( Box.Minimum, Box.Maximum, Color::Cyan );
+	Response.Normal.Normalize();
+	// const Vector3D PointOnSphere = Origin + Response.Normal * Sphere.GetRadius();
+	// Response.Distance = PointOnBox.Distance( PointOnSphere );
+	// Response.Point = PointOnBox + ( PointOnSphere - PointOnBox ) * 0.5f;
+	// Response.Point = LocalOrigin.Normalized() * Sphere.GetRadius() + Origin;
+	Response.Point = PointOnBox;
+	// Response.Distance = Sphere.GetRadius() - ( Response.Point - LocalOrigin ).Length();
+	Response.Distance = Sphere.GetRadius() - PointOnBox.Distance( Origin );
 
 	return Response;
 }
@@ -180,7 +196,7 @@ CollisionResponse Response::AABBAABB( const BoundingBox& A, const BoundingBox& B
 	if( Inside )
 	{
 		// The sphere is inside of the box.
-		Response.Normal = B.Center() - PointOnBox;
+		Response.Normal = PointOnBox - B.Center();
 	}
 	else
 	{

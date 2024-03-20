@@ -36,7 +36,7 @@ CMeshEntity::CMeshEntity()
 	PhysicsBody = nullptr;
 	Static = true;
 	Stationary = false;
-	Contact = false;
+	Contact = true;
 	Collision = true;
 	Visible = true;
 
@@ -352,12 +352,12 @@ void CMeshEntity::Debug()
 
 	if( DisplayNormals && Mesh )
 	{
-		const auto& VertexInfo = Mesh->GetVertexBufferData();
+		const auto& BufferData = Mesh->GetVertexBufferData();
 		const auto& VertexData = Mesh->GetVertexData();
 
 		static bool LogVertPos = true;
 		Vector3D Normal, Tangent, Binormal;
-		for( size_t Index = 0; Index < VertexInfo.VertexCount; Index++ )
+		for( size_t Index = 0; Index < BufferData.VertexCount; Index++ )
 		{
 			const auto& Vertex = VertexData.Vertices[Index];
 
@@ -463,6 +463,22 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		else if( Property->Key == "collisiontype" )
 		{
 			CollisionType = ToBodyType( Property->Value );
+		}
+		else if( Property->Key == "damping" )
+		{
+			Extract( Property->Value, CollisionDamping );
+		}
+		else if( Property->Key == "friction" )
+		{
+			Extract( Property->Value, CollisionFriction );
+		}
+		else if( Property->Key == "restitution" )
+		{
+			Extract( Property->Value, CollisionRestitution );
+		}
+		else if( Property->Key == "drag" )
+		{
+			Extract( Property->Value, CollisionDrag );
 		}
 		else if( Property->Key == "project" )
 		{
@@ -638,6 +654,11 @@ void CMeshEntity::Import( CData& Data )
 	DataString::Decode( Data, CollisionTypeString );
 	CollisionType = ToBodyType( CollisionTypeString );
 
+	Data >> CollisionDamping;
+	Data >> CollisionFriction;
+	Data >> CollisionRestitution;
+	Data >> CollisionDrag;
+
 	Data >> Static;
 	Data >> Stationary;
 	Data >> MaximumRenderDistance;
@@ -664,6 +685,11 @@ void CMeshEntity::Export( CData& Data )
 	Data << Collision;
 	Data << Visible;
 	DataString::Encode( Data, FromBodyType( CollisionType ) );
+
+	Data << CollisionDamping;
+	Data << CollisionFriction;
+	Data << CollisionRestitution;
+	Data << CollisionDrag;
 
 	Data << Static;
 	Data << Stationary;
@@ -912,6 +938,26 @@ void CMeshEntity::ConstructPhysics()
 	{
 		PhysicsBody->Restitution = 0.001f;
 		PhysicsBody->Friction = 0.5f;
+	}
+
+	if( CollisionDamping > 0.0f )
+	{
+		PhysicsBody->Damping = CollisionDamping;
+	}
+
+	if( CollisionFriction > 0.0f )
+	{
+		PhysicsBody->Friction = CollisionFriction;
+	}
+
+	if( CollisionRestitution > 0.0f )
+	{
+		PhysicsBody->Restitution = CollisionRestitution;
+	}
+
+	if( CollisionDrag > 0.0f )
+	{
+		PhysicsBody->DragCoefficient = CollisionDrag;
 	}
 
 	PhysicsBody->Owner = this;

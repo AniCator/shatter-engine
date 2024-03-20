@@ -588,6 +588,7 @@ namespace UI
 	void RenderFixedTextOutput()
 	{
 		auto Position = Vector2D( 10.0f, 20.0f );
+		const Vector2D Offset = { 1.0f, 1.0f };
 		for( const auto& Text : FixedTextOutput )
 		{
 			size_t LineBreaks = 0;
@@ -599,6 +600,7 @@ namespace UI
 				}
 			}
 
+			AddText2D( Position + Offset, Text.Text, Text.Text + Text.Length, Color::Black, 16.0f );
 			AddText2D( Position, Text.Text, Text.Text + Text.Length, Text.Color, 16.0f );
 			Position.Y += 16.0f + 16.0f * LineBreaks;
 		}

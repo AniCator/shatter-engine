@@ -6,6 +6,7 @@
 #include <array>
 
 #include <Engine/Utility/File.h>
+#include <Engine/Display/Rendering/Uniform.h>
 
 enum class EShaderType : uint16_t
 {
@@ -96,6 +97,9 @@ public:
 		return ShouldAutoReload;
 	}
 
+	// Returns the default values of non-sampler uniforms.
+	const std::vector<std::pair<std::string, Uniform>>& GetDefaults() const;
+
 private:
 	std::string Process( const CFile& File );
 	std::string Process( const std::string& Data );
@@ -122,4 +126,8 @@ private:
 	time_t ModificationTime;
 	bool ShouldAutoReload = false;
 
+	// Stores the default values of non-sampler uniforms.
+	std::vector<std::pair<std::string, Uniform>> Defaults;
+
+	void GatherDefaults();
 };

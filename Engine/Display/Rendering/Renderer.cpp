@@ -17,6 +17,7 @@
 #include <Engine/Display/Rendering/Noise.h>
 #include <Engine/Display/Rendering/RenderTexture.h>
 #include <Engine/Display/Rendering/RenderPass.h>
+#include <Engine/Display/Rendering/Pass/ShadowPass.h>
 #include <Engine/Display/UserInterface.h>
 
 #include <Engine/Profiling/Logging.h>
@@ -63,6 +64,9 @@ ConfigurationVariable<int> AntiAliasing( "render.AntiAliasing", 2 );
 
 // Flips the view horizontally after rendering, for testing purposes.
 ConfigurationVariable<bool> FlipHorizontal( "render.FlipHorizontal", false );
+
+// Depth pre-pass.
+ConfigurationVariable<bool> UsePrePass( "render.PrePass", false );
 
 int MaximumSamples = -1;
 int GetSampleCount()
@@ -404,6 +408,11 @@ void CRenderer::DrawQueuedRenderables()
 	MainPass.ClearTarget();
 	DrawCalls = 0;
 
+	if( UsePrePass )
+	{
+		DrawDepthPrepass();
+	}
+
 	{
 		Profile( "Pre-Scene Passes" );
 		DrawPasses( RenderPassLocation::PreScene );
@@ -698,6 +707,19 @@ void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 	{
 		ProgramHandle = Shader->Activate();
 	}
+}
+
+void CRenderer::DrawDepthPrepass()
+{
+	OptickEvent();
+
+	static CRenderPassShadow DepthPrePass( Framebuffer.GetWidth(), Framebuffer.GetHeight(), Camera );
+	DepthPrePass.ViewportWidth = Framebuffer.GetWidth();
+	DepthPrePass.ViewportHeight = Framebuffer.GetHeight();
+	DepthPrePass.Target = &Framebuffer;
+	DepthPrePass.RenderToFrameBuffer = true;
+
+	DepthPrePass.Render( RenderQueueOpaque, GlobalUniformBuffers );
 }
 
 void CRenderer::DrawPasses( const RenderPassLocation::Type& Location, CRenderTexture* Target )

@@ -75,6 +75,11 @@ bool CShader::Load( const bool& ShouldLink )
 	
 	if( CanLink && ShouldLink )
 	{
+		if( Handles.Program != 0 )
+		{
+			glDeleteProgram( Handles.Program );
+		}
+
 		Link();
 		return Handles.Program != 0;
 	}
@@ -301,6 +306,11 @@ bool LogProgramCompilationErrors( GLuint v )
 	}
 
 	return false;
+}
+
+const std::vector<std::pair<std::string, Uniform>>& CShader::GetDefaults() const
+{
+	return Defaults;
 }
 
 std::string CShader::Process( const CFile& File )
@@ -593,5 +603,122 @@ GLuint CShader::Link()
 
 	Handles.Program = ProgramHandle;
 
-	return ProgramHandle;
+	GatherDefaults();
+
+	return Handles.Program;
+}
+
+void CShader::GatherDefaults()
+{
+	Uniform Uniform;
+
+	GLint Size = 0;
+	GLenum Type = 0;
+
+	constexpr GLsizei BufferSize = 256;
+	GLchar Name[BufferSize] = {};
+	GLsizei Length = 0;
+
+	GLsizei MaximumLength = 0;
+	glGetProgramiv( Handles.Program, GL_ACTIVE_UNIFORM_MAX_LENGTH, &MaximumLength );
+
+	if( MaximumLength > BufferSize )
+	{
+		Log::Event( Log::Error, "Can't poll defaults.\n" );
+		return;
+	}
+
+	// Extract the default values.
+	GLint ActiveUniforms = 0;
+	glGetProgramiv( Handles.Program, GL_ACTIVE_UNIFORMS, &ActiveUniforms );
+	for( GLint Index = 0; Index < ActiveUniforms; Index++ )
+	{
+		glGetActiveUniform( Handles.Program, Index, BufferSize, &Length, &Size, &Type, Name );
+
+		Log::Event( "Uniform: %s ", Name );
+
+		bool Handled = true;
+
+		switch( Type )
+		{
+		case GL_FLOAT_VEC4:
+		{
+			// glUniform4fv
+			glGetUniformfv( Handles.Program, Index, &Uniform.Uniform4.X );
+			Uniform.Set( Uniform.Uniform4 );
+
+			Log::Event( "Value: %.3f %.3f %.3f %.3f\n", Uniform.Uniform4.X, Uniform.Uniform4.Y, Uniform.Uniform4.Z, Uniform.Uniform4.W );
+			break;
+		}
+		case GL_FLOAT_VEC3:
+		{
+			// glUniform3fv
+			glGetUniformfv( Handles.Program, Index, &Uniform.Uniform3.X );
+			Uniform.Set( Uniform.Uniform3 );
+			Log::Event( "Value: %.3f %.3f %.3f\n", Uniform.Uniform3.X, Uniform.Uniform3.Y, Uniform.Uniform3.Z );
+			break;
+		}
+		case GL_FLOAT_VEC2:
+		{
+			// glUniform2fv
+			glGetUniformfv( Handles.Program, Index, &Uniform.Uniform2.X );
+			Uniform.Set( Uniform.Uniform2 );
+			Log::Event( "Value: %.3f %.3f\n", Uniform.Uniform2.X, Uniform.Uniform2.Y );
+			break;
+		}
+		// case GL_FLOAT_MAT4:
+		// {
+		// 	// glUniformMatrix4fv
+		// 	// TODO: 
+		// 	break;
+		// }
+		case GL_UNSIGNED_INT:
+		{
+			// glUniform1ui
+			glGetUniformuiv( Handles.Program, Index, &Uniform.UniformUnsigned );
+			Uniform.Set( Uniform.UniformUnsigned );
+			Log::Event( "Value: %u\n", Uniform.UniformUnsigned );
+			break;
+		}
+		case GL_BOOL:
+		case GL_INT:
+		{
+			// glUniform1i
+			glGetUniformiv( Handles.Program, Index, &Uniform.UniformSigned4[0] );
+			Uniform.Set( Uniform.UniformSigned4[0] );
+			Log::Event( "Value: %i\n", Uniform.UniformSigned4[0] );
+			break;
+		}
+		case GL_INT_VEC4:
+		{
+			// glUniform4iv
+			glGetUniformiv( Handles.Program, Index, Uniform.UniformSigned4 );
+			Uniform.Set( Uniform.UniformSigned4 );
+			Log::Event( "Value: %i %i %i %i\n", Uniform.UniformSigned4[0], Uniform.UniformSigned4[1], Uniform.UniformSigned4[2], Uniform.UniformSigned4[3] );
+			break;
+		}
+		case GL_FLOAT:
+		{
+			// glUniform1f
+			glGetUniformfv( Handles.Program, Index, &Uniform.UniformFloat );
+			Uniform.Set( Uniform.UniformFloat );
+			Log::Event( "Value: %f\n", Uniform.UniformFloat );
+			break;
+		}
+		default:
+		{
+			Log::Event( "\n" );
+			Handled = false;
+			break;
+		}
+		}
+
+		if( Handled )
+		{
+			Defaults.emplace_back();
+			auto& Default = Defaults.back();
+			Default.first = Name;
+			Default.second = Uniform;
+		}
+	}
 }

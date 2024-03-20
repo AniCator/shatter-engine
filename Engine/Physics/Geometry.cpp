@@ -47,12 +47,110 @@ Geometry::Result Geometry::LineInBoundingBox( const Vector3D& Start, const Vecto
 	Result Result;
 	const auto Direction = End - Start;
 	auto Normalized = Direction;
-	const auto Length = Normalized.Normalize();
+	float Length = Normalized.Normalize();
 
 	const auto Distance = RayInBoundingBox( Start, Normalized, Bounds );
 	Result.Hit = Distance >= 0.0f && Distance <= Length;
 	Result.Distance = Result.Hit ? Distance : -1.0f;
 	Result.Position = Result.Hit ? Start + Normalized * Distance : End;
+
+	// Find the dominant axis.
+	Result.Normal = ( Result.Position - Bounds.Center() ) / Bounds.Size();
+	const Vector3D AbsoluteNormal = Math::Abs( Result.Normal );
+	if( AbsoluteNormal.X > AbsoluteNormal.Y && AbsoluteNormal.X > AbsoluteNormal.Z )
+	{
+		Result.Normal.X = Math::Sign( Result.Normal.X );
+		Result.Normal.Y = 0.0f;
+		Result.Normal.Z = 0.0f;
+	}
+	else if( AbsoluteNormal.Y > AbsoluteNormal.Z )
+	{
+		Result.Normal.X = 0.0f;
+		Result.Normal.Y = Math::Sign( Result.Normal.Y );
+		Result.Normal.Z = 0.0f;
+	}
+	else
+	{
+		Result.Normal.X = 0.0f;
+		Result.Normal.Y = 0.0f;
+		Result.Normal.Z = Math::Sign( Result.Normal.Z );
+	}
+
+	return Result;
+}
+
+float Geometry::RayInSphere( const Vector3D& Origin, const Vector3D& Direction, const BoundingSphere& Bounds )
+{
+	const auto LocalOrigin = Bounds.Origin() - Origin;
+	const auto Radius = Bounds.GetRadiusSquared();
+	const auto DistanceToOrigin = LocalOrigin.LengthSquared();
+	const auto Cosine = LocalOrigin.Dot( Direction );
+	const auto Bias = DistanceToOrigin - Cosine * Cosine;
+	const auto DistanceToSurface = sqrt( Radius - Bias );
+
+	if( ( Radius - Bias ) < 0.0f )
+	{
+		// Ray did not intersect with the sphere.
+		return -1.0f;
+	}
+	else if( DistanceToOrigin < Radius )
+	{
+		return Cosine + DistanceToSurface;
+	}
+
+	return Cosine - DistanceToSurface;
+}
+
+Geometry::Result Geometry::LineInSphere( const Vector3D& Start, const Vector3D& End, const BoundingSphere& Bounds )
+{
+	Result Result;
+	const auto Direction = End - Start;
+	auto Normalized = Direction;
+	float Length = Normalized.Normalize();
+
+	const auto Distance = RayInSphere( Start, Normalized, Bounds );
+	Result.Hit = Distance >= 0.0f && Distance <= Length;
+	Result.Distance = Result.Hit ? Distance : -1.0f;
+	Result.Position = Result.Hit ? Start + Normalized * Distance : End;
+
+	Result.Normal = Result.Position - Bounds.Origin();
+	Result.Normal.Normalize();
+
+	return Result;
+}
+
+float Geometry::RayInPlane( const Vector3D& Origin, const Vector3D& Direction, const Plane& Plane )
+{
+	float DdotN = Direction.Dot( Plane.Normal );
+	float OdotN = Origin.Dot( Plane.Normal );
+
+	if( DdotN >= 0.0f )
+	{
+		return -1.0f;
+	}
+
+	float Distance = ( Plane.Distance - OdotN ) / DdotN;
+	if( Distance >= 0.0f )
+	{
+		return Distance;
+	}
+
+	return -1.0f;
+}
+
+Geometry::Result Geometry::LineInPlane( const Vector3D& Start, const Vector3D& End, const Plane& Plane )
+{
+	Geometry::Result Result;
+	const auto Direction = End - Start;
+	auto Normalized = Direction;
+	float Length = Normalized.Normalize();
+
+	const auto Distance = RayInPlane( Start, Normalized, Plane );
+	Result.Hit = Distance >= 0.0f && Distance <= Length;
+	Result.Distance = Result.Hit ? Distance : -1.0f;
+	Result.Position = Result.Hit ? Start + Normalized * Distance : End;
+
+	Result.Normal = Plane.Normal;
 
 	return Result;
 }

@@ -525,10 +525,10 @@ void GenerateGravity( CBody* Body )
 	Body->Acceleration += Body->Gravity * Body->Mass;
 }
 
-constexpr float DragCoefficientSphereSmooth = 0.1f;
-constexpr float DragCoefficientSphere = 0.47f;
-constexpr float DragCoefficient = DragCoefficientSphere * 0.01f * 0.01f;
-constexpr float DragCoefficientSquared = DragCoefficient * DragCoefficient;
+// constexpr float DragCoefficientSphereSmooth = 0.1f;
+// constexpr float DragCoefficientSphere = 0.47f;
+// constexpr float DragCoefficient = DragCoefficientSphere * 0.01f * 0.01f;
+// constexpr float DragCoefficientSquared = DragCoefficient * DragCoefficient;
 void GenerateDrag( CBody* Body )
 {
 	float Drag = Body->Velocity.Length();
@@ -538,7 +538,7 @@ void GenerateDrag( CBody* Body )
 		Direction /= Drag;
 	}
 
-	Drag = DragCoefficient * Drag + DragCoefficientSquared * ( Drag * Drag );
+	Drag = Body->DragCoefficient * Drag + ( Body->DragCoefficient * Body->DragCoefficient ) * ( Drag * Drag );
 	Body->Acceleration -= Direction * Drag;
 }
 
@@ -566,7 +566,9 @@ CollisionResponse CalculateResponseSphere( CBody* A, CBody* B, const Geometry::R
 	case BodyType::Plane:
 		return Response::SpherePlane( InnerSphereA, { B->PreviousTransform.GetPosition(), B->PreviousTransform.Rotate( WorldUp )});
 	case BodyType::AABB:
+	{
 		return Response::SphereAABB( InnerSphereA, B->WorldBounds );
+	}
 	case BodyType::Sphere:
 	{
 		auto InnerSphereB = B->InnerSphere();
@@ -637,7 +639,9 @@ CollisionResponse CalculateResponseAABB( CBody* A, CBody* B, const Geometry::Res
 	case BodyType::Sphere:
 	{
 		auto InnerSphereB = B->InnerSphere();
-		return Response::SphereAABB( InnerSphereB, A->WorldBounds );
+		auto Response = Response::SphereAABB( InnerSphereB, A->WorldBounds );
+		Response.Normal *= -1.0f;
+		return Response;
 	}
 	default:
 		break;
@@ -719,21 +723,28 @@ void Friction( CBody* A, CBody* B, const CollisionResponse& Response, const Vect
 	B->Velocity += B->InverseMass * TangentImpulse;
 }
 
-void Detect( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+struct Detection
 {
+	bool Collided = false;
+	ContactManifold Manifold = {};
+};
+
+Detection Detect( CBody* A, CBody* B, const Geometry::Result& SweptResult )
+{
+	Detection Detection;
 	const float InverseMassTotal = A->InverseMass + B->InverseMass;
 	if( InverseMassTotal <= 0.0f )
-		return; // Both objects are of infinite mass and thus considered immovable.
+		return Detection; // Both objects are of infinite mass and thus considered immovable.
 
-	ContactManifold Manifold;
-	Manifold.Response = CalculateResponse( A, B, SweptResult );
-	Manifold.Other = B;
+	Detection.Manifold.Response = CalculateResponse( A, B, SweptResult );
+	Detection.Manifold.Other = B;
 
 	// If the normal is zero, that means we didn't collide.
-	if( Math::Equal( Manifold.Response.Normal, Vector3D::Zero ) )
-		return;
+	if( Math::Equal( Detection.Manifold.Response.Normal, Vector3D::Zero ) )
+		return Detection;
 
-	A->Contacts.emplace_back( Manifold );
+	Detection.Collided = true;
+	return Detection;
 }
 
 void Interpenetration( CBody* A, const ContactManifold& Manifold )
@@ -886,7 +897,11 @@ void CBody::Collision( CBody* Body )
 		}
 	}
 
-	Detect( this, Body, SweptResult );
+	const auto Detection = Detect( this, Body, SweptResult );
+	if( Detection.Collided )
+	{
+		Contacts.emplace_back( Detection.Manifold );
+	}
 }
 
 std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, const std::vector<glm::uint>& Indices, const Vector3D& Median, const bool Direction, const size_t Axis )
@@ -899,8 +914,8 @@ std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, const std::vect
 	{
 		bool InsideBounds = false;
 
-		Vector3D TriangleCenter = Tree->Get( Indices[Index] ).Position + Tree->Get( Indices[Index + 1] ).Position + Tree->Get( Indices[Index + 2] ).Position;
-		TriangleCenter /= 3.0f;
+		// Vector3D TriangleCenter = Tree->Get( Indices[Index] ).Position + Tree->Get( Indices[Index + 1] ).Position + Tree->Get( Indices[Index + 2] ).Position;
+		// TriangleCenter /= 3.0f;
 
 		for( unsigned int TriangleIndex = 0; TriangleIndex < 3; TriangleIndex++ )
 		{
@@ -922,15 +937,15 @@ std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, const std::vect
 			}
 			else
 			{
-				if( Axis == 0 && Vertex.Position.X < Median.X )
+				if( Axis == 0 && Vertex.Position.X <= Median.X )
 				{
 					InsideBounds = true;
 				}
-				else if( Axis == 1 && Vertex.Position.Y < Median.Y )
+				else if( Axis == 1 && Vertex.Position.Y <= Median.Y )
 				{
 					InsideBounds = true;
 				}
-				else if( Axis == 2 && Vertex.Position.Z < Median.Z )
+				else if( Axis == 2 && Vertex.Position.Z <= Median.Z )
 				{
 					InsideBounds = true;
 				}
@@ -942,9 +957,9 @@ std::vector<glm::uint> GatherVertices( const TriangleTree* Tree, const std::vect
 		
 		if( InsideBounds )
 		{
-			GatheredIndices.emplace_back( Index );
-			GatheredIndices.emplace_back( Index + 1 );
-			GatheredIndices.emplace_back( Index + 2 );
+			GatheredIndices.emplace_back( Indices[Index] );
+			GatheredIndices.emplace_back( Indices[Index + 1] );
+			GatheredIndices.emplace_back( Indices[Index + 2] );
 		}
 
 		Index += 3;
@@ -967,21 +982,7 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 		Tree = new TriangleTree();
 	}
 
-	const std::vector<glm::uint>& Indices = Tree->Indices;
-
-	// TODO: This is actually the average right now.
-	Vector3D LocalMedian = Vector3D( 0.0f, 0.0f, 0.0f );
-	for( size_t Index = 0; Index < Indices.size(); Index++ )
-	{
-		const auto& Vertex = Tree->Get( Indices[Index] );
-		LocalMedian += Vertex.Position;
-	}
-
-	LocalMedian /= static_cast<float>( Indices.size() );
-	Vector3D Median = LocalMedian; // Transform.Transform( LocalMedian );
-
-	// Median = ( WorldBounds.Minimum + WorldBounds.Maximum ) * 0.5f;
-
+	std::vector<glm::uint>& Indices = Tree->Indices;
 	BoundingBox UpperBounds = WorldBounds;
 	BoundingBox LowerBounds = UpperBounds;
 
@@ -1001,28 +1002,49 @@ void BuildMedian( TriangleTree*& Tree, FTransform& Transform, const BoundingBox&
 		Axis = 2;
 	}
 
-	if( Axis == 0 )
+	Vector3D Median;
+	size_t Index;
+	switch( Axis )
 	{
+	case 0:
+		std::sort( Indices.begin(), Indices.end(), [&Tree]( const glm::uint& A, const glm::uint& B ) {
+			return Tree->Get( A ).Position.X < Tree->Get( B ).Position.X;
+		} );
+
+		Index = Indices.size() / 2;
+		Median = Tree->Get( Indices[Index] ).Position;
 		UpperBounds.Minimum.X = Math::Max( Median.X, UpperBounds.Minimum.X );
 		UpperBounds.Maximum.X = Math::Max( Median.X, UpperBounds.Maximum.X );
 		LowerBounds.Minimum.X = Math::Min( Median.X, LowerBounds.Minimum.X );
 		LowerBounds.Maximum.X = Math::Min( Median.X, LowerBounds.Maximum.X );
-	}
-	else if( Axis == 1 )
-	{
+		break;
+	case 1:
+		std::sort( Indices.begin(), Indices.end(), [&Tree]( const glm::uint& A, const glm::uint& B ) {
+			return Tree->Get( A ).Position.Y < Tree->Get( B ).Position.Y;
+		} );
+
+		Index = Indices.size() / 2;
+		Median = Tree->Get( Indices[Index] ).Position;
 		UpperBounds.Minimum.Y = Math::Max( Median.Y, UpperBounds.Minimum.Y );
 		UpperBounds.Maximum.Y = Math::Max( Median.Y, UpperBounds.Maximum.Y );
 		LowerBounds.Minimum.Y = Math::Min( Median.Y, LowerBounds.Minimum.Y );
 		LowerBounds.Maximum.Y = Math::Min( Median.Y, LowerBounds.Maximum.Y );
-	}
-	else if( Axis == 2 )
-	{
+		break;
+	default:
+		std::sort( Indices.begin(), Indices.end(), [&Tree]( const glm::uint& A, const glm::uint& B ) {
+			return Tree->Get( A ).Position.Z < Tree->Get( B ).Position.Z;
+		} );
+
+		Index = Indices.size() / 2;
+		Median = Tree->Get( Indices[Index] ).Position;
 		UpperBounds.Minimum.Z = Math::Max( Median.Z, UpperBounds.Minimum.Z );
 		UpperBounds.Maximum.Z = Math::Max( Median.Z, UpperBounds.Maximum.Z );
 		LowerBounds.Minimum.Z = Math::Min( Median.Z, LowerBounds.Minimum.Z );
 		LowerBounds.Maximum.Z = Math::Min( Median.Z, LowerBounds.Maximum.Z );
+		break;
 	}
 
+	// Median = ( WorldBounds.Minimum + WorldBounds.Maximum ) * 0.5f;
 	Tree->Bounds = WorldBounds;
 
 	// Ensure we have at least some volume.
@@ -1163,6 +1185,7 @@ void CreateTriangleTree( CMesh* Mesh, FTransform& Transform, const BoundingBox& 
 	}
 
 	// TODO: Fix transformation issues with a depth greater than 0.
+	const uint16_t Depth = WorldBounds.Size().Length() * 2.0f;
 	BuildMedian( Tree, Transform, Mesh->GetBounds(), 0 );
 }
 
@@ -1300,6 +1323,32 @@ void ConstrainSphere( CBody* Body, Vector3D& Position, const BoundingSphere& Sph
 	// Position = Sphere.Origin() + SphereNormal * ( AdjustedRadius - Radius );
 }
 
+void EvaluateContacts( CBody* A )
+{
+	// Recalculate the bounds of the body as they may have changed.
+	A->CalculateBounds();
+
+	if( A->Contacts.empty() )
+		return; // We have no contacts to evaluate.
+
+	Geometry::Result Dummy;
+	for( auto Iterator = A->Contacts.begin(); Iterator != A->Contacts.end(); )
+	{
+		auto& Manifold = *Iterator;
+		auto Detection = Detect( A, Manifold.Other, Dummy );
+		if( !Detection.Collided )
+		{
+			Iterator = A->Contacts.erase( Iterator );
+		}
+		else
+		{
+			++Iterator;
+		}
+	}
+
+	A->Contact = !A->Contacts.empty();
+}
+
 void CBody::Tick()
 {
 	auto Transform = GetTransform();	
@@ -1311,19 +1360,33 @@ void CBody::Tick()
 
 	bool TriedToMove = false;
 
-	// Update contact boolean.
-	Contact = Contacts.size() > 0;
+	Contact = !Contacts.empty();
 
 	if( IsKinetic() )
 	{
 		// Resolve contact manifolds.
 		Resolve( this );
 
-		const auto DeltaTime = static_cast<float>( Physics->TimeStep );
+		const auto DeltaTime = static_cast<float>( Physics->GetTimeStep() );
 
 		// Apply depenetration.
 		NewPosition -= Depenetration;
-		Normal = Depenetration * -1.0f;
+		Normal = -Depenetration;
+
+		if( Contact )
+		{
+			float Distance = Contacts[0].Response.Distance;
+			Normal = -Contacts[0].Response.Normal;
+			for( const auto& Contact : Contacts )
+			{
+				if( Contact.Response.Distance > Distance )
+				{
+					Distance = Contact.Response.Distance;
+					Normal = -Contact.Response.Normal;
+				}
+			}
+		}
+
 		Depenetration = { 0.0f, 0.0f, 0.0f };
 
 		// Semi-implicit Euler integration.
@@ -1334,9 +1397,14 @@ void CBody::Tick()
 		// Velocity -= LinearVelocity;
 
 		// Damping is used to simulate drag.
-		// Velocity *= powf( Damping, DeltaTime );
+		Velocity *= powf( Damping, DeltaTime );
 
 		TriedToMove = !Math::Equal( Transform.GetPosition(), NewPosition, 0.001f );
+
+		if( TriedToMove )
+		{
+			EvaluateContacts( this );
+		}
 
 		// Clear the acceleration and linear velocity.
 		Acceleration = { 0.0f, 0.0f, 0.0f };
@@ -1373,6 +1441,9 @@ void CBody::Tick()
 	Normal.Normalize();
 	Transform.SetPosition( NewPosition );
 
+	// Update contact boolean.
+	// EvaluateContacts( this );
+
 	if( Owner )
 	{
 		Owner->SetTransform( Transform );
@@ -1400,7 +1471,7 @@ void CBody::CalculateBounds()
 
 	if( Continuous )
 	{
-		const auto DeltaTime = static_cast<float>( Physics->TimeStep );
+		const auto DeltaTime = static_cast<float>( Physics->GetTimeStep() );
 
 		WorldBoundsSwept = WorldBounds;
 		WorldBoundsSwept.Minimum += Velocity * DeltaTime;
@@ -1431,7 +1502,7 @@ void CBody::CalculateBounds()
 	if( InverseMass < 0.0f )
 	{
 		constexpr float DefaultDensity = 40.0f;
-		const float Diameter = InnerSphere().GetRadius() * 2.0f;
+		const float Diameter = WorldSphere.GetRadius() * 0.5f;
 		Mass = Diameter * DefaultDensity;
 		const bool Unmoving = Static || Stationary || Mass == 0.0f;
 		InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
@@ -1523,11 +1594,25 @@ void CBody::Debug() const
 		BoundsColor = Color( 0, 0, 0 );
 	}
 
+	Vector3D RandomColor = Math::HSVToRGB( { Math::Random() * 360.0f, 1.0f, 1.0f } );
+	::Color DebugColor;
+	DebugColor.R = RandomColor.R * 255.0f;
+	DebugColor.G = RandomColor.G * 255.0f;
+	DebugColor.B = RandomColor.B * 255.0f;
+
+	auto Transform = GetTransform();
+	UI::AddLine( Transform.GetPosition(), Transform.GetPosition() + Velocity * Physics->GetTimeStep(), DebugColor, 10.0f );
+
 	UI::AddAABB( WorldBounds.Minimum, WorldBounds.Maximum, BoundsColor );
 	// PointInTriangle( { -1.0f, 0.0f, 0.0f }, { 0.0f, 1.0f, 0.0f }, { 1.0f, 0.0f, 0.0f }, { sinf( Physics->CurrentTime ) * 2.0f, 0.5f, 0.0f } );
 
 	if( DisplaySphereBounds )
+	{
 		UI::AddSphere( WorldSphere.Origin(), WorldSphere.GetRadius(), BoundsColor );
+
+		const auto Sphere = InnerSphere();
+		UI::AddSphere( Sphere.Origin(), Sphere.GetRadius(), Color::Cyan );
+	}
 
 	if( DisplayTriangleTree )
 		VisualizeBounds( Tree, &PreviousTransform );
@@ -1543,6 +1628,8 @@ void CBody::Debug() const
 	UI::AddText( WorldBounds.Minimum, "Friction", Friction, Color::White, Offset );
 	Offset.Y += 20.0f;
 	UI::AddText( WorldBounds.Minimum, "Damping", Damping, Color::White, Offset );
+	Offset.Y += 20.0f;
+	UI::AddText( WorldBounds.Minimum, "DragCoefficient", DragCoefficient, Color::White, Offset );
 	Offset.Y += 20.0f;
 	UI::AddText( WorldBounds.Minimum, "Acceleration", Acceleration, Color::White, Offset );
 	Offset.Y += 20.0f;
@@ -1629,6 +1716,9 @@ Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const 
 	if( !Block || Type == BodyType::TriangleMesh ) // TODO: Triangle mesh support
 		return Empty;
 
+	if( Surface == PhysicalSurface::Water )
+		return Empty;
+
 	for( auto* Ignored : Ignore )
 	{
 		if( this == Ignored )
@@ -1637,7 +1727,26 @@ Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const 
 		}
 	}
 
-	Geometry::Result Result = Geometry::LineInBoundingBox( Start, End, WorldBounds );
+	Geometry::Result Result;
+	switch( Type )
+	{
+	case BodyType::Sphere:
+		Result = Geometry::LineInSphere( Start, End, InnerSphere() );
+		break;
+	case BodyType::Plane:
+	{
+		const auto Box = Geometry::LineInBoundingBox( Start, End, WorldBounds );
+		if( Box.Hit )
+		{
+			Result = Geometry::LineInPlane( Start, End, { PreviousTransform.GetPosition(), PreviousTransform.GetRotationMatrix().Transform( WorldUp ) } );
+		}
+		break;
+	}
+	default:
+		Result = Geometry::LineInBoundingBox( Start, End, WorldBounds );
+		break;
+	}
+	
 	Result.Body = const_cast<CBody*>( this );
 
 	// if( Result.Hit )
@@ -1648,6 +1757,14 @@ Geometry::Result CBody::Cast( const Vector3D& Start, const Vector3D& End, const 
 	// }
 
 	return Result;
+}
+
+void CBody::SetMass( const float Mass )
+{
+	this->Mass = Mass;
+
+	const bool Unmoving = Static || Stationary || Mass == 0.0f;
+	InverseMass = Unmoving ? 0.0f : 1.0f / Mass;
 }
 
 BoundingSphere CBody::InnerSphere() const

@@ -12,6 +12,7 @@ public:
 
 	void Start( const Spatial& Information = Spatial() );
 	void Stop( const float& FadeOut = -1.0f ) const;
+	void Pause() const;
 	void Loop( const bool& Loop ) const;
 	void Rate( const float& Rate ) const;
 	double Time() const;

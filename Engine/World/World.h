@@ -113,6 +113,8 @@ public:
 	// Find an entity in a specific tag category.
 	CEntity* Find( const std::string& TagName, const std::string& EntityName ) const;
 
+	void Rebase( const FTransform& Transform );
+
 	/// <summary>
 	/// Subscribes a listener to an event.
 	/// </summary>

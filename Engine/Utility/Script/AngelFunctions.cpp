@@ -579,55 +579,16 @@ void RegisterGeneralEntityFunctions()
 	ScriptEngine::AddFunction( "void SetColor( Entity @, Vector4D &in )", SetEntityColor );
 }
 
-template<class A, class B>
-B* ReferenceCast( A* Object )
-{
-	if( !Object )
-		return nullptr;
-
-	return dynamic_cast<B*>( Object );
-}
-
-template<typename T>
-void RegisterEntity( const char* Entity )
-{
-	ScriptEngine::AddTypeReference( Entity );
-
-	// Casting.
-	std::string Signature = Entity;
-	Signature += "@ opCast()";
-	ScriptEngine::AddObjectMethod( "Entity", Signature.c_str(), &ReferenceCast<CEntity, T>);
-	ScriptEngine::AddObjectMethod( Entity, "Entity@ opImplCast()", &ReferenceCast<T, CEntity> );
-
-	// Const casting.
-	Signature += " const";
-	ScriptEngine::AddObjectMethod( "Entity", Signature.c_str(), &ReferenceCast<CEntity, T> );
-	ScriptEngine::AddObjectMethod( Entity, "Entity@ opImplCast() const", &ReferenceCast<T, CEntity> );
-
-	// Standard methods.
-	ScriptEngine::AddTypeMethod( Entity, "void SetParent(Entity &in)", &T::SetParent );
-	ScriptEngine::AddTypeMethod( Entity, "Entity @ GetParent() const", &T::GetParent );
-
-	ScriptEngine::AddTypeMethod( Entity, "void Send(string &in, Entity @)", &T::Send );
-	ScriptEngine::AddTypeMethod( Entity, "void Receive(string &in, Entity @)", &T::Receive );
-	ScriptEngine::AddTypeMethod( Entity, "void Tag(string &in)", &T::Tag );
-	ScriptEngine::AddTypeMethod( Entity, "void Untag(string &in)", &T::Untag );
-	ScriptEngine::AddTypeMethod( Entity, "bool HasTag(string &in) const", &T::HasTag );
-
-	ScriptEngine::AddTypeMethod( Entity, "bool IsDebugEnabled() const", &T::IsDebugEnabled );
-	ScriptEngine::AddTypeMethod( Entity, "void EnableDebug( const bool )", &T::EnableDebug );
-}
-
 void RegisterPointEntity()
 {
 	constexpr const char* Entity = "PointEntity";
-	RegisterEntity<CPointEntity>( Entity );
+	ScriptEngine::RegisterEntity<CPointEntity>( Entity );
 	ScriptEngine::AddTypeMethod( Entity, "const Transform& GetTransform()", &CPointEntity::GetTransform );
 }
 
 void RegisterEntities()
 {
-	RegisterEntity<CEntity>( "Entity" );
+	ScriptEngine::RegisterEntity<CEntity>( "Entity" );
 	RegisterPointEntity();
 	RegisterScriptEntity();
 

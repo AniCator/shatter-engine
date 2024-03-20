@@ -391,13 +391,7 @@ void BoundingVolumeHierarchy::Node::Query( const BoundingBoxSIMD& Box, QueryResu
 
 Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const
 {
-	Geometry::Result Result = Geometry::LineInBoundingBox( Start, End, Bounds.Fetch() );
-
-	// Check if the bounds of this node were hit.
-	if( !Result.Hit )
-		return Result;
-
-	const float& Distance = Result.Distance;
+	Geometry::Result Result;
 
 	// If our bounds were hit, check if our children got hit.
 	Geometry::Result SplitResultA;
@@ -406,9 +400,25 @@ Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, con
 	Geometry::Result SplitResultB;
 	const auto HitB = Cast( Right, Start, End, Ignore, SplitResultB );
 
-	auto& Closest = SplitResultA.Distance < SplitResultB.Distance ? SplitResultA : SplitResultB;
-	if( Closest.Distance < Distance )
-		return Closest;
+	if( !HitA && !HitB )
+		return {};
+
+	if( SplitResultA.Hit && SplitResultB.Hit )
+	{
+		auto& Closest = SplitResultA.Distance < SplitResultB.Distance ? SplitResultA : SplitResultB;
+		if( Closest.Distance < Result.Distance )
+		{
+			Result = Closest;
+		}
+	}
+	else if( SplitResultA.Hit )
+	{
+		Result = SplitResultA;
+	}
+	else
+	{
+		Result = SplitResultB;
+	}
 	
 	return Result;
 }
@@ -479,6 +489,8 @@ bool BoundingVolumeHierarchy::Node::Cast( const RawObject& Node, const Vector3D&
 	Result = Node->Cast( Start, End, Ignore );
 	if( Result.Hit )
 		return true;
+
+	return false;
 }
 
 bool BoundingVolumeHierarchy::Node::Compare( const RawObject& A, const RawObject& B, const int32_t& Axis )

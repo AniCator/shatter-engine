@@ -61,6 +61,11 @@ public:
 		return AnimationInstance;
 	}
 
+	Animator::Instance& GetAnimationInstance()
+	{
+		return AnimationInstance;
+	}
+
 	bool IsAnimationFinished() const;
 
 	float GetPlayRate() const;
@@ -96,13 +101,18 @@ public:
 	std::string MeshName;
 	std::string CollisionMeshName;
 	BodyType CollisionType = BodyType::AABB;
+	float CollisionDamping = -1.0f;
+	float CollisionFriction = -1.0f;
+	float CollisionRestitution = -1.0f;
+	float CollisionDrag = -1.0f;
+
 	bool ShouldProject = false;
 	std::string ShaderName;
 	std::vector<std::string> TextureNames;
 	std::string MaterialName;
 
-	bool Contact;
-	bool Visible;
+	bool Contact = true;
+	bool Visible = true;
 
 	// Set to true when the sequencer is making use of this entity.
 	bool UsedBySequence = false;

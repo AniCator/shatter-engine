@@ -19,7 +19,7 @@ struct VertexWeight
 {
 	int32_t Index[MaximumInfluences]
 	{
-		0, -1, -1, -1
+		-1, -1, -1, -1
 	};
 
 	float Weight[MaximumInfluences]

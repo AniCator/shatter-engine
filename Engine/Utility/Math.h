@@ -15,9 +15,9 @@
 #include <ThirdParty/glm/gtc/matrix_transform.hpp>
 #include <ThirdParty/glm/gtx/quaternion.hpp>
 
-static const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
-static const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
-static const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };
+const Vector3D WorldRight = { 1.0f, 0.0f, 0.0f };
+const Vector3D WorldForward = { 0.0f, 1.0f, 0.0f };
+const Vector3D WorldUp = { 0.0f, 0.0f, 1.0f };
 
 template<typename NewType, typename OldType>
 NewType* Cast( OldType* Object )
@@ -355,14 +355,10 @@ namespace Math
 		return Min( Max( Minimum, X ), Maximum );
 	}
 
-	inline float Saturate( const float& X )
+	template<typename T>
+	inline float Saturate( const T& X )
 	{
 		return Clamp( X, 0.0f, 1.0f );
-	}
-
-	inline double Saturate( const double& X )
-	{
-		return Clamp( X, 0.0, 1.0 );
 	}
 
 	inline float Sign( const float& Input )
@@ -421,6 +417,68 @@ namespace Math
 	{
 		return A + Vector4D( Alpha, Alpha, Alpha, Alpha ) * ( B - A );
 	}
+
+	inline Vector3D Bezier( const Vector3D& A, const Vector3D& B, const Vector3D& C, const Vector3D& D, const float Factor )
+	{
+		// De Casteljau blending.
+		const auto BlendA = Math::Lerp( A, B, Factor );
+		const auto BlendB = Math::Lerp( B, C, Factor );
+		const auto BlendC = Math::Lerp( C, D, Factor );
+
+		const auto BlendD = Math::Lerp( BlendA, BlendB, Factor );
+		const auto BlendE = Math::Lerp( BlendB, BlendC, Factor );
+
+		return Math::Lerp( BlendD, BlendE, Factor );
+	}
+
+	struct Bezier
+	{
+		Vector3D PointA;
+		Vector3D DirectionA;
+		Vector3D PointB;
+		Vector3D DirectionB;
+
+		Vector3D ControlPointA;
+		Vector3D ControlPointB;
+
+		Bezier() = delete;
+
+		// Assumes the direction has been scaled by the tangent vector.
+		Bezier( const Vector3D& PointA, const Vector3D& DirectionA, const Vector3D& PointB, const Vector3D& DirectionB )
+		{
+			this->PointA = PointA;
+			this->DirectionA = DirectionA;
+			this->PointB = PointB;
+			this->DirectionB = DirectionB;
+
+			ControlPointA = PointA + DirectionA;
+			ControlPointB = PointB + DirectionB;
+		}
+
+		Bezier( const Vector3D& PointA, const Vector3D& DirectionA, const float TangentA, const Vector3D& PointB, const Vector3D& DirectionB, const float TangentB )
+		{
+			this->PointA = PointA;
+			this->DirectionA = DirectionA;
+			this->PointB = PointB;
+			this->DirectionB = DirectionB;
+
+			ControlPointA = PointA + DirectionA * TangentA;
+			ControlPointB = PointB + DirectionB * TangentB;
+		}
+
+		Vector3D Lerp( const float Factor )
+		{
+			// De Casteljau blending.
+			// const auto BlendA = Math::Lerp( PointA, ControlPointA, Factor );
+			// const auto BlendB = Math::Lerp( ControlPointA, ControlPointB, Factor );
+			// const auto BlendC = Math::Lerp( ControlPointB, PointB, Factor );
+
+			// const auto BlendD = Math::Lerp( BlendA, BlendB, Factor );
+			// const auto BlendE = Math::Lerp( BlendB, BlendC, Factor );
+
+			return Math::Bezier( PointA, ControlPointA, ControlPointB, PointB, Factor );
+		}
+	};
 
 	template<typename T>
 	T Map( const T& X, const T& Minimum, const T& Maximum, const T& NewMinimum, const T& NewMaximum )
@@ -690,13 +748,8 @@ namespace Math
 
 	inline Vector3D ProjectOnAABB( Vector3D Point, const BoundingBox& Box )
 	{
-		Point.X = Math::Max( Point.X, Box.Minimum.X );
-		Point.Y = Math::Max( Point.Y, Box.Minimum.Y );
-		Point.Z = Math::Max( Point.Z, Box.Minimum.Z );
-
-		Point.X = Math::Min( Point.X, Box.Maximum.X );
-		Point.Y = Math::Min( Point.Y, Box.Maximum.Y );
-		Point.Z = Math::Min( Point.Z, Box.Maximum.Z );
+		Point = Math::Max( Point, Box.Minimum );
+		Point = Math::Min( Point, Box.Maximum );
 
 		return Point;
 	}

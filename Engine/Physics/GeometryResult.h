@@ -11,6 +11,7 @@ namespace Geometry
 	{
 		bool Hit = false;
 		Vector3D Position = Vector3D::Zero;
+		Vector3D Normal = { 0.0f, 0.0f, 1.0f };
 		float Distance = 0.0f;
 
 		// This value is only set when using the physics engine to cast rays. It will remain null if nothing was hit.

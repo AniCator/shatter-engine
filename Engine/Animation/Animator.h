@@ -24,7 +24,7 @@ struct Animator
 		}
 
 		Animation Animation{};
-		float Weight = 1.0f;
+		float Weight = 0.0f;
 
 		// Only affect the specified bone index and its children. (-1 to affect all bones)
 		int32_t Mask = -1;
@@ -76,7 +76,8 @@ struct Animator
 		Vector3D RootMotion = Vector3D::Zero;
 
 		// Utility function that set the animation of a stack layer, returns false if it failed to assign the animation.
-		bool SetLayerAnimation( const size_t Layer, const std::string& Animation );
+		bool SetLayer( const size_t Layer, const std::string& Animation );
+		BlendEntry& GetLayer( const size_t Layer );
 
 		void SetAnimation( const std::string& Name, const bool& Loop = false );
 		const std::string& GetAnimation() const;

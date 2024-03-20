@@ -115,6 +115,8 @@ protected:
 	void RefreshShaderHandle( CRenderable* Renderable );
 
 private:
+	void DrawDepthPrepass();
+
 	void DrawPasses( const RenderPassLocation::Type& Location, CRenderTexture* Target = nullptr );
 
 	// Combines all the render queues.

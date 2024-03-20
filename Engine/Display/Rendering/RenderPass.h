@@ -56,6 +56,7 @@ public:
 	void SetPreviousCamera( const CCamera& Camera );
 
 	void UpdateUniformBufferObject();
+	void BindUniforms( CRenderable* Renderable, UniformMap& AdditionalUniforms );
 
 	static void FrustumCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables );
 

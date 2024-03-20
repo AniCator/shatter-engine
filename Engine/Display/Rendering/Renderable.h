@@ -71,13 +71,14 @@ public:
 	CTexture* GetTexture( ETextureSlot Slot );
 	void SetTexture( CTexture* Texture, ETextureSlot Slot );
 
-	UniformMap GetUniforms() const
+	UniformMap& GetUniforms()
 	{
 		return Uniforms;
 	}
 	void SetUniform( const std::string& Name, const Uniform& Uniform );
 	void CheckCachedUniforms();
 
+	void BindUniforms();
 	virtual void Draw( FRenderData& RenderData, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride = None );
 
 	FRenderDataInstanced& GetRenderData();

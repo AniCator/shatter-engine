@@ -10,6 +10,7 @@
 #include <Engine/Configuration/Configuration.h>
 #include <Engine/Display/Window.h>
 #include <Engine/Display/Rendering/Camera.h>
+#include <Engine/Display/Rendering/Material.h>
 #include <Engine/Display/Rendering/Renderable.h>
 #include <Engine/Display/Rendering/Texture.h>
 #include <Engine/Display/Rendering/RenderPass.h>
@@ -26,6 +27,7 @@
 #endif
 
 CMesh* PreviewMesh = nullptr;
+MaterialAsset* PreviewMaterial = nullptr;
 CRenderTexture* PreviewRenderTexture;
 class CModelPass : public CRenderPass
 {
@@ -38,14 +40,13 @@ public:
 
 	uint32_t Render( UniformMap& Uniforms ) override
 	{
+		auto* Mesh = Model.GetMesh();
 		if( !Mesh )
 			return 0;
 		
-		auto& Assets = CAssets::Get();
-
 		const auto Bounds = Mesh->GetBounds();
-		const auto Center = ( Bounds.Maximum + Bounds.Minimum ) * 0.5f;
-		const auto Extent = ( Bounds.Maximum - Bounds.Minimum ) * 0.5f;
+		const auto Center = Bounds.Center();
+		const auto Extent = Bounds.Size() * 0.85f;
 		const auto MaximumDistance = Math::Max( Extent );
 
 		const auto Time = StaticCast<float>( GameLayersInstance->GetRealTime() );
@@ -60,10 +61,6 @@ public:
 		Setup.AspectRatio = 1.1f;
 		Camera.Update();
 
-		CRenderable Model;
-		Model.SetMesh( Mesh );
-		Model.SetShader( Assets.Shaders.Find( "default" ) );
-		Model.SetTexture( Assets.FindTexture( "error" ), ETextureSlot::Slot0 );
 		auto& RenderData = Model.GetRenderData();
 		RenderData.Transform = FTransform();
 
@@ -72,7 +69,16 @@ public:
 		return RenderRenderable( &Model, Uniforms );
 	}
 
-	CMesh* Mesh = nullptr;
+	void Reset()
+	{
+		auto& Assets = CAssets::Get();
+
+		Model = {};
+		Model.SetShader( Assets.Shaders.Find( "default" ) );
+		Model.SetTexture( Assets.FindTexture( "error" ), ETextureSlot::Slot0 );
+	}
+
+	CRenderable Model;
 };
 
 bool MenuItem( const char* Label, bool* Selected )
@@ -107,7 +113,7 @@ CTexture* GetThumbnail( const std::string& Name )
 	return nullptr;
 }
 
-CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh )
+CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh, MaterialAsset* Material = nullptr )
 {
 	RenderTextureConfiguration Configuration;
 	Configuration.Width = 64;
@@ -128,8 +134,14 @@ CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh )
 	}
 
 	static CModelPass ModelPass;
+	ModelPass.Reset();
 	ModelPass.Target = ThumbnailTexture;
-	ModelPass.Mesh = Mesh;
+	ModelPass.Model.SetMesh( Mesh );
+
+	if( Material )
+	{
+		Material->Material.Apply( &ModelPass.Model );
+	}
 
 	auto& Window = CWindow::Get();
 	CRenderer& Renderer = Window.GetRenderer();
@@ -158,8 +170,15 @@ void ShowTexture( CTexture* Texture )
 		CRenderer& Renderer = Window.GetRenderer();
 
 		static CModelPass ModelPass;
+		ModelPass.Reset();
 		ModelPass.Target = PreviewRenderTexture;
-		ModelPass.Mesh = PreviewMesh;
+		ModelPass.Model.SetMesh( PreviewMesh );
+
+		if( PreviewMaterial )
+		{
+			PreviewMaterial->Material.Apply( &ModelPass.Model );
+		}
+
 		PreviewTexture = PreviewRenderTexture;
 		Renderer.AddRenderPass( &ModelPass, RenderPassLocation::PreScene );
 	}
@@ -350,6 +369,7 @@ void ContentBrowserUI()
 				PreviewName = Pair.first;
 				PreviewTexture = Texture;
 				PreviewMesh = nullptr;
+				PreviewMaterial = nullptr;
 				ShowPreview = true;
 			}
 
@@ -408,6 +428,7 @@ void ContentBrowserUI()
 				PreviewName = Pair.first;
 				PreviewTexture = nullptr;
 				PreviewMesh = Mesh;
+				PreviewMaterial = nullptr;
 				ShowPreview = true;
 			}
 
@@ -468,6 +489,7 @@ void ContentBrowserUI()
 		}
 	}
 
+	auto* PrimitiveCube = Assets.Meshes.Find( "cube" );
 	for( const auto& Pair : Assets.Assets.Get() )
 	{
 		if( ValidFilter && !MatchFilter( Pair.first.c_str() ) )
@@ -477,11 +499,33 @@ void ContentBrowserUI()
 		if( !Asset )
 			continue;
 
-		auto ImageSize = ImVec2( 64, 64 );
+		bool ShouldGenerateThumbnail = false;
+		CTexture* Thumbnail = nullptr;
 
-		auto* TextureID = reinterpret_cast<ImTextureID>( UIFileGeneric->GetHandle() );
+		MaterialAsset* Material = nullptr;
+		if( Material = dynamic_cast<MaterialAsset*>( Asset ) )
+		{
+			Thumbnail = GetThumbnail( Pair.first );
+			if( !Thumbnail )
+			{
+				ShouldGenerateThumbnail = true;
+			}
+
+			if( !Thumbnail )
+			{
+				Thumbnail = UIFileGeneric;
+			}
+		}
+		else
+		{
+			Thumbnail = UIFileGeneric;
+		}
+
+		const bool IconOnly = Thumbnail == UIFileGeneric;
+		auto ImageSize = ImVec2( 64, 64 );
+		ImTextureID TextureID = reinterpret_cast<ImTextureID>( Thumbnail->GetHandle() );
 		const ImVec4 Background = ImVec4( 0, 0, 0, 0 );
-		const ImVec4 Tint = ImVec4( 0.25f, 0.5f, 1.0f, 1.0f );
+		const ImVec4 Tint = Thumbnail == UIFileGeneric ? ImVec4( 0.25f, 0.5f, 1.0f, 1.0f ) : ImVec4( 1.0f, 1.0f, 1.0f, 1.0f );
 
 		ImGui::PushID( Pair.first.c_str() );
 		if( ImGui::ImageButton(
@@ -490,8 +534,9 @@ void ContentBrowserUI()
 			Tint ) )
 		{
 			PreviewName = Pair.first;
-			PreviewTexture = UIFileGeneric;
-			PreviewMesh = nullptr;
+			PreviewTexture = IconOnly ? nullptr : Thumbnail;
+			PreviewMesh = IconOnly ? nullptr : PrimitiveCube;
+			PreviewMaterial = Material;
 			ShowPreview = true;
 		}
 
@@ -505,6 +550,8 @@ void ContentBrowserUI()
 			ImGui::Text( "Type: %s", Asset->GetType().c_str() );
 
 			ImGui::EndTooltip();
+
+			GenerateThumbnail( Pair.first, PrimitiveCube, Material );
 		}
 
 		ImGui::PopID();

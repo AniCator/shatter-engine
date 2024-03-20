@@ -15,6 +15,8 @@ void Material::Apply( CRenderable* Renderable ) const
 	CShader* ShaderObject = Assets.Shaders.Find( Shader );
 	Renderable->SetShader( ShaderObject );
 
+	ApplyUniforms( Renderable );
+
 	// Fetch the renderer in case we have to bind frame buffers.
 	auto& Window = CWindow::Get();
 	CRenderer& Renderer = Window.GetRenderer();
@@ -31,8 +33,6 @@ void Material::Apply( CRenderable* Renderable ) const
 
 		Renderable->SetTexture( TextureObject, Slot );
 	}
-
-	ApplyUniforms( Renderable );
 
 	if( DoubleSided )
 	{
@@ -342,6 +342,19 @@ Material ConfigureMaterial( const JSON::Container& Container )
 
 	JSON::Assign( Container.Tree, "name", Material.Name );
 	JSON::Assign( Container.Tree, "shader", Material.Shader );
+
+	// Append the defaults of the shader.
+	CShader* ShaderObject = CAssets::Get().Shaders.Find( Material.Shader );
+	if( ShaderObject )
+	{
+		for( const auto& Default : ShaderObject->GetDefaults() )
+		{
+			Material.Uniforms.emplace_back();
+			auto& Uniform = Material.Uniforms.back();
+			Uniform.first = Default.first;
+			Uniform.second = Default.second;
+		}
+	}
 
 	// Check if the material wants to be double sided.
 	JSON::Assign( Container.Tree, "twoside", Material.DoubleSided );
