@@ -509,6 +509,9 @@
     <ClCompile Include="Engine\Display\Rendering\Noise.cpp">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Sequencer\Recording.cpp">
+      <Filter>Source Files\Engine\Sequencer</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -1017,6 +1020,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Display\Rendering\UniformBuffer.h">
       <Filter>Source Files\Engine\Display\Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Sequencer\Recording.h">
+      <Filter>Source Files\Engine\Sequencer</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

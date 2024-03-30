@@ -1,29 +1,9 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #pragma once
 
-#include <Engine/Animation/Animator.h>
 #include <Engine/Sequencer/Sequencer.h>
+#include <Engine/Sequencer/Recording.h>
 #include <Engine/Utility/Math/Transform.h>
-
-constexpr uint8_t MaximumRecordingStackSize = 64;
-struct Recording
-{
-	struct Sample
-	{
-		double Time = -1.0;
-		FTransform Transform;
-		Animator::BlendEntry Stack[MaximumRecordingStackSize];
-		uint8_t Entries = 0;
-	};
-
-	// Recorded samples.
-	std::vector<Sample> Samples;
-
-	void Wipe()
-	{
-		Samples.clear();
-	}
-};
 
 struct EventEntity : TrackEvent
 {
@@ -38,6 +18,8 @@ struct EventEntity : TrackEvent
 
 	void Export( CData& Data ) const override;
 	void Import( CData& Data ) override;
+
+	const Recording& GetRecording() const;
 
 protected:
 	void FindEntities();
@@ -76,4 +58,7 @@ protected:
 
 	// Recording data.
 	Recording Recording;
+
+	// Look up animations for the playback stack.
+	bool LookupAnimationStack = false;
 };

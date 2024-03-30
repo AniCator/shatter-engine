@@ -153,7 +153,7 @@ void EventEntity::Context()
 	ImGui::Checkbox( "Replay", &UseRecording );
 	ImGui::SameLine();
 
-	if( !Recording.Samples.empty() )
+	if( Recording.Taped() )
 	{
 		ImGui::Text( "(%u samples)", Recording.Samples.size() );
 	}
@@ -222,7 +222,7 @@ void EventEntity::Export( CData& Data ) const
 	Serialize::Export( Data, "alp", LoopAnimation );
 	Serialize::Export( Data, "rec", UseRecording );
 
-	// DataVector::Encode( Data, Samples );
+	Serialize::Export( Data, "smp", Recording );
 }
 
 void EventEntity::Import( CData& Data )
@@ -248,7 +248,15 @@ void EventEntity::Import( CData& Data )
 	Serialize::Import( Data, "alp", LoopAnimation );
 	Serialize::Import( Data, "rec", UseRecording );
 
-	// DataVector::Decode( Data, Samples );
+	if( Serialize::Import( Data, "smp", Recording ) )
+	{
+		LookupAnimationStack = true;
+	}
+}
+
+const Recording& EventEntity::GetRecording() const
+{
+	return Recording;
 }
 
 void EventEntity::FindEntities()
@@ -487,38 +495,8 @@ void EventEntity::PlayRecording()
 	const auto Time = MarkerToTime( MarkerTime );
 	const auto Duration = MarkerToTime( Length );
 
-	if( Recording.Samples.size() <= 1 )
-		return; // Not enough samples to play back.
-
-	const auto ReplayStart = Recording.Samples[0].Time;
-	size_t Index = 0;
-	for( const auto& Sample : Recording.Samples )
-	{
-		const auto ReplayTime = Sample.Time - ReplayStart;
-		if( ReplayTime > Time )
-			break; // We've found our current sample.
-
-		Index++;
-	}
-
 	// Apply the sample.
-	const auto& Sample = Recording.Samples[Index];
-	Entity->SetTransform( Sample.Transform );
-
-	// Update the physics data.
-	if( auto* Body = Entity->GetBody() )
-	{
-		Body->PreviousTransform = Sample.Transform;
-		Body->Acceleration = Vector3D::Zero;
-		Body->Velocity = Vector3D::Zero;
-	}
-
-	auto& Instance = Entity->GetAnimationInstance();
-	Instance.Stack.resize( Sample.Entries );
-	for( size_t Index = 0; Index < Sample.Entries; Index++ )
-	{
-		Instance.Stack[Index] = Sample.Stack[Index];
-	}
+	Recording.Apply( Entity, Time );
 }
 
 void EventEntity::PerformRecording()

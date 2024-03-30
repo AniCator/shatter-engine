@@ -626,6 +626,39 @@ struct FEventRenderable : TrackEvent
 {
 	void Execute() override
 	{
+		if( Recording.Taped() )
+		{
+			PlaybackRecording();
+		}
+		else
+		{
+			ExecuteAnimation();
+		}
+
+		auto& RenderData = Renderable.GetRenderData();
+		const auto LightOrigin = RenderData.WorldBounds.Center();
+		RenderData.LightIndex = LightEntity::Fetch( LightOrigin );
+
+		CWindow::Get().GetRenderer().QueueRenderable( &Renderable );
+	}
+
+	void PlaybackRecording()
+	{
+		const auto MarkerTime = StoredMarker - Start;
+		const auto Time = MarkerToTime( MarkerTime );
+		const auto Duration = MarkerToTime( Length );
+
+		Recording.Apply( Renderable, Animation, Time );
+
+		Animator::Update( Animation, 0.0, true );
+		Animator::Submit( Animation, &Renderable );
+
+		auto& RenderData = Renderable.GetRenderData();
+		RenderData.WorldBounds = Animation.CalculateBounds( RenderData.Transform );
+	}
+
+	void ExecuteAnimation()
+	{
 		auto* Mesh = Renderable.GetMesh();
 		if( !Mesh )
 			return;
@@ -672,11 +705,6 @@ struct FEventRenderable : TrackEvent
 		{
 			RenderData.WorldBounds = Math::AABB( Mesh->GetBounds(), RenderData.Transform );
 		}
-
-		const auto LightOrigin = RenderData.WorldBounds.Center();
-		RenderData.LightIndex = LightEntity::Fetch( LightOrigin );
-
-		CWindow::Get().GetRenderer().QueueRenderable( &Renderable );
 	}
 
 	void Reset() override
@@ -782,6 +810,29 @@ struct FEventRenderable : TrackEvent
 
 		ImGui::Checkbox( "Loop##LoopAnimation", &LoopAnimation );
 		ImGui::DragFloat( "Play Rate", &PlayRate, 0.01f );
+
+		if( ImGui::Button( "Copy recording" ) )
+		{
+			CopyRecording();
+		}
+
+		if( ImGui::IsItemHovered() )
+		{
+			ImGui::BeginTooltip();
+			ImGui::Text( "Take a recording from one of the selected entity events." );
+			ImGui::EndTooltip();
+		}
+
+		if( Recording.Taped() )
+		{
+			ImGui::SameLine();
+			if( ImGui::Button( "Clear" ) )
+			{
+				Recording.Wipe();
+			}
+
+			ImGui::Text( "(%u samples)", Recording.Samples.size() );
+		}
 	}
 
 	void Visualize() override
@@ -813,6 +864,30 @@ struct FEventRenderable : TrackEvent
 	bool LoopAnimation = false;
 	float PlayRate = 1.0f;
 
+	bool UseRecording = false;
+	Recording Recording;
+	void CopyRecording()
+	{
+		if( !Timeline )
+			return;
+
+		// Grab the an entity event.
+		EventEntity* EntityEvent = nullptr;
+		for( auto* Event : Timeline->ActiveEvents )
+		{
+			EntityEvent = dynamic_cast<EventEntity*>( Event );
+			if( EntityEvent )
+				break;
+		}
+
+		if( !EntityEvent )
+			return; // No entity found.
+
+		CData Data;
+		Data << EntityEvent->GetRecording();
+		Data >> Recording;
+	}
+
 	std::string MeshName = std::string();
 	std::string ShaderName = std::string();
 	std::string TextureName = std::string();
@@ -830,6 +905,7 @@ struct FEventRenderable : TrackEvent
 		Serialize::Export( Data, "prt", PlayRate );
 		Serialize::Export( Data, "anm", Animation.CurrentAnimation );
 		Serialize::Export( Data, "tfm", Transform );
+		Serialize::Export( Data, "rec", Recording );
 	}
 
 	void Import( CData& Data ) override
@@ -843,6 +919,7 @@ struct FEventRenderable : TrackEvent
 		Serialize::Import( Data, "prt", PlayRate );
 		Serialize::Import( Data, "anm", Animation.CurrentAnimation );
 		Serialize::Import( Data, "tfm", Transform );
+		Serialize::Import( Data, "rec", Recording );
 
 		const auto& Assets = CAssets::Get();
 		Renderable.SetMesh( Assets.Meshes.Find( MeshName ) );
@@ -1690,12 +1767,26 @@ void CTimeline::DisplayTimeline()
 					}
 				}
 
-				const float Brightness = SelectedEvent ? 0.75f : 0.4f;
-				ImGui::PushStyleColor( ImGuiCol_Button, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, Brightness ) ) );
-				ImGui::PushStyleColor( ImGuiCol_ButtonHovered, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, 0.9f ) ) );
-				ImGui::PushStyleColor( ImGuiCol_ButtonActive, static_cast<ImVec4>( ImColor::HSV( Hue, 0.4f, 0.9f ) ) );
-				ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 0.0f );
-				ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0.0f, 0.0f ) );
+				const float Brightness = SelectedEvent ? 0.75f : 0.4f;		
+				struct StyleSet {
+					StyleSet( const float Hue, const float Brightness )
+					{
+						ImGui::PushStyleColor( ImGuiCol_Button, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, Brightness ) ) );
+						ImGui::PushStyleColor( ImGuiCol_ButtonHovered, static_cast<ImVec4>( ImColor::HSV( Hue, 0.6f, 0.9f ) ) );
+						ImGui::PushStyleColor( ImGuiCol_ButtonActive, static_cast<ImVec4>( ImColor::HSV( Hue, 0.4f, 0.9f ) ) );
+						ImGui::PushStyleVar( ImGuiStyleVar_FrameRounding, 0.0f );
+						ImGui::PushStyleVar( ImGuiStyleVar_FramePadding, ImVec2( 0.0f, 0.0f ) );
+					}
+
+					~StyleSet()
+					{
+						ImGui::PopStyleVar();
+						ImGui::PopStyleVar();
+						ImGui::PopStyleColor();
+						ImGui::PopStyleColor();
+						ImGui::PopStyleColor();
+					}
+				} StyleSet( Hue, Brightness );
 
 				std::string EventName = std::string( Event->GetName() ) +
 					" (Length: " +
@@ -1720,6 +1811,9 @@ void CTimeline::DisplayTimeline()
 					if( ImGui::Button( "D##EventDuplicate", ButtonSize ) )
 					{
 						EventDuplicate( Event );
+
+						// New events may have been added to this track, making the iterator invalid.
+						ImGui::EndPopup();
 						break;
 					}
 
@@ -1735,6 +1829,9 @@ void CTimeline::DisplayTimeline()
 					if( ImGui::Button( "S##EventSplit", ButtonSize ) )
 					{
 						EventSplit( Event );
+
+						// New events may have been added to this track, making the iterator invalid.
+						ImGui::EndPopup();
 						break;
 					}
 
@@ -1936,12 +2033,6 @@ void CTimeline::DisplayTimeline()
 
 				//	DragEvents.emplace_back( DragEvent );
 				//}
-
-				ImGui::PopStyleVar();
-				ImGui::PopStyleVar();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
-				ImGui::PopStyleColor();
 
 				EventIndex++;
 				GlobalIndex++;

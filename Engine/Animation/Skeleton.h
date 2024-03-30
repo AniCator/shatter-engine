@@ -84,6 +84,11 @@ struct FixedVector
 		return Size;
 	}
 
+	bool empty() const
+	{
+		return Size == 0;
+	}
+
 	// Copy
 	FixedVector( FixedVector const& Vector )
 	{

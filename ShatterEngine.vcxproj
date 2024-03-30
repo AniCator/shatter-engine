@@ -221,6 +221,7 @@
     <ClCompile Include="Engine\Sequencer\Events\GradeEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Events\ImageEvent.cpp" />
     <ClCompile Include="Engine\Sequencer\Events\LightEvent.cpp" />
+    <ClCompile Include="Engine\Sequencer\Recording.cpp" />
     <ClCompile Include="Engine\Sequencer\Sequencer.cpp" />
     <ClCompile Include="Engine\Sequencer\Timeline.cpp" />
     <ClCompile Include="Engine\Utility\Chunk.cpp" />
@@ -356,6 +357,7 @@
     <ClInclude Include="Engine\Sequencer\Events\GradeEvent.h" />
     <ClInclude Include="Engine\Sequencer\Events\ImageEvent.h" />
     <ClInclude Include="Engine\Sequencer\Events\LightEvent.h" />
+    <ClInclude Include="Engine\Sequencer\Recording.h" />
     <ClInclude Include="Engine\Sequencer\Sequencer.h" />
     <ClInclude Include="Engine\Sequencer\Timeline.h" />
     <ClInclude Include="Engine\Utility\BuildTime.h" />
