@@ -35,6 +35,7 @@ void BoundingVolumeHierarchy::Node::Build( RawObjectList& Source, const size_t& 
 		Left = Source[Start];
 
 		Bounds = Left->GetBounds();
+		BoundsExpensive = Bounds.Fetch();
 	}
 	else if( Span == 2 )
 	{
@@ -51,6 +52,7 @@ void BoundingVolumeHierarchy::Node::Build( RawObjectList& Source, const size_t& 
 		}
 
 		Bounds = BoundingBox::Combine( Left->GetBounds().Fetch(), Right->GetBounds().Fetch() );
+		BoundsExpensive = Bounds.Fetch();
 	}
 	else
 	{
@@ -77,6 +79,7 @@ void BoundingVolumeHierarchy::Node::Build( RawObjectList& Source, const size_t& 
 		Right = RightNode;
 
 		Bounds = BoundingBox::Combine( Left->GetBounds().Fetch(), Right->GetBounds().Fetch() );
+		BoundsExpensive = Bounds.Fetch();
 	}
 }
 
@@ -166,6 +169,7 @@ void BoundingVolumeHierarchy::Node::Insert( RawObject Object )
 
 			// Re-calculate bounds.
 			New->Bounds = BoundingBox::Combine( New->Left->GetBounds().Fetch(), New->Right->GetBounds().Fetch() );
+			New->BoundsExpensive = New->Bounds.Fetch();
 
 			Parents.emplace_back( Current );
 		}
@@ -204,6 +208,7 @@ void BoundingVolumeHierarchy::Node::Remove( RawObject Object )
 				if( Leaf->Right )
 				{
 					Leaf->Bounds = Leaf->Right->GetBounds();
+					Leaf->BoundsExpensive = Leaf->Bounds.Fetch();
 				}
 			}
 			else if( Leaf->Right == Object )
@@ -213,6 +218,7 @@ void BoundingVolumeHierarchy::Node::Remove( RawObject Object )
 				if( Leaf->Left )
 				{
 					Leaf->Bounds = Leaf->Left->GetBounds();
+					Leaf->BoundsExpensive = Leaf->Bounds.Fetch();
 				}
 			}
 			else
@@ -286,6 +292,8 @@ void BoundingVolumeHierarchy::Node::Recalculate()
 	{
 		Bounds = Right->GetBounds();
 	}
+
+	BoundsExpensive = Bounds.Fetch();
 }
 
 bool HasActiveLeaves( BoundingVolumeHierarchy::Node* Leaf )
@@ -391,7 +399,9 @@ void BoundingVolumeHierarchy::Node::Query( const BoundingBoxSIMD& Box, QueryResu
 
 Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, const Vector3D& End, const std::vector<Testable*>& Ignore ) const
 {
-	Geometry::Result Result;
+	Geometry::Result Result = Geometry::LineInBoundingBox( Start, End, BoundsExpensive );
+	if( !Result.Hit )
+		return Result;
 
 	// If our bounds were hit, check if our children got hit.
 	Geometry::Result SplitResultA;
@@ -406,18 +416,18 @@ Geometry::Result BoundingVolumeHierarchy::Node::Cast( const Vector3D& Start, con
 	if( SplitResultA.Hit && SplitResultB.Hit )
 	{
 		auto& Closest = SplitResultA.Distance < SplitResultB.Distance ? SplitResultA : SplitResultB;
-		if( Closest.Distance < Result.Distance )
+		if( Result.Distance == 0.0f || Closest.Distance < Result.Distance )
 		{
-			Result = Closest;
+			return Closest;
 		}
 	}
 	else if( SplitResultA.Hit )
 	{
-		Result = SplitResultA;
+		return SplitResultA;
 	}
 	else
 	{
-		Result = SplitResultB;
+		return SplitResultB;
 	}
 	
 	return Result;
@@ -451,8 +461,7 @@ void BoundingVolumeHierarchy::Node::Debug() const
 {
 	if( DrawBVHBounds )
 	{
-		const auto DebugBounds = Bounds.Fetch();
-		UI::AddAABB( DebugBounds.Minimum, DebugBounds.Maximum, DebugTable[DebugIndex++] );
+		UI::AddAABB( BoundsExpensive.Minimum, BoundsExpensive.Maximum, DebugTable[DebugIndex++] );
 		DebugIndex = DebugIndex % DebugTableSize;
 	}
 

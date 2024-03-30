@@ -30,7 +30,7 @@ ConfigurationVariable<bool> UpdateDynamicScene( "physics.UpdateDynamicScene", tr
 ConfigurationVariable<bool> SynchronousBodyUpdate( "physics.SynchronousBodyUpdate", false );
 ConfigurationVariable<bool> SynchronousQuery( "physics.SynchronousQuery", false );
 
-ConfigurationVariable<bool> AllowFallbackCasting( "physics.AllowFallbackCasting", true );
+ConfigurationVariable<bool> AllowFallbackCasting( "physics.AllowFallbackCasting", false );
 ConfigurationVariable<bool> DrawFallbackCasting( "debug.Physics.DrawFallbackCasting", false );
 ConfigurationVariable<bool> DisplayCasting( "debug.Physics.DisplayCasting", false );
 
@@ -595,7 +595,7 @@ public:
 			{
 				if( DisplayCasting )
 				{
-					UI::AddLine( Start, StaticResult.Position, Color::Purple );
+					UI::AddLine( Start, StaticResult.Position, Color::Purple, 0.5f );
 				}
 
 				return StaticResult;
@@ -605,10 +605,15 @@ public:
 			{
 				if( DisplayCasting )
 				{
-					UI::AddLine( Start, DynamicResult.Position, Color::Yellow );
+					UI::AddLine( Start, DynamicResult.Position, Color::Yellow, 0.5f );
 				}
 
 				return DynamicResult;
+			}
+
+			if( DisplayCasting )
+			{
+				UI::AddLine( Start, End, Color::Red, 0.5f );
 			}
 		}
 

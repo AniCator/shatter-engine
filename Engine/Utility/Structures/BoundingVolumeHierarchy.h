@@ -42,6 +42,7 @@ public:
 		void Debug() const override;
 
 		BoundingBoxSIMD Bounds;
+		BoundingBox BoundsExpensive;
 		RawObject Left = nullptr;
 		RawObject Right = nullptr;
 

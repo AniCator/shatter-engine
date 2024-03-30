@@ -1,6 +1,12 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Geometry.h"
 
+// #define PerformanceCounter
+
+#ifdef PerformanceCounter
+#include <Engine/Profiling/Profiling.h>
+#endif
+
 float Geometry::RayInBoundingBox( const Vector3D& Origin, const Vector3D& Direction, const BoundingBox& Bounds )
 {
 	const auto InverseDirection = 1.0f / Direction;
@@ -37,7 +43,11 @@ float Geometry::RayInBoundingBox( const Vector3D& Origin, const Vector3D& Direct
 		return -1.0f;
 
 	if( Minimum < 0.0f )
-		return Maximum;
+		return 0.0f; // We're inside of the box.
+
+	// NOTE: This is the old code for being inside the box returned the other side of the box.
+	/*if( Minimum < 0.0f )
+		return Maximum;*/
 
 	return Minimum;
 }
@@ -75,6 +85,10 @@ Geometry::Result Geometry::LineInBoundingBox( const Vector3D& Start, const Vecto
 		Result.Normal.Y = 0.0f;
 		Result.Normal.Z = Math::Sign( Result.Normal.Z );
 	}
+
+#ifdef PerformanceCounter
+	CProfiler::Get().AddCounterEntry( ProfileTimeEntry( "LineInBoundingBox", 1 ), true, false );
+#endif
 
 	return Result;
 }
@@ -116,6 +130,10 @@ Geometry::Result Geometry::LineInSphere( const Vector3D& Start, const Vector3D& 
 	Result.Normal = Result.Position - Bounds.Origin();
 	Result.Normal.Normalize();
 
+#ifdef PerformanceCounter
+	CProfiler::Get().AddCounterEntry( ProfileTimeEntry( "LineInSphere", 1 ), true, false );
+#endif
+
 	return Result;
 }
 
@@ -151,6 +169,10 @@ Geometry::Result Geometry::LineInPlane( const Vector3D& Start, const Vector3D& E
 	Result.Position = Result.Hit ? Start + Normalized * Distance : End;
 
 	Result.Normal = Plane.Normal;
+
+#ifdef PerformanceCounter
+	CProfiler::Get().AddCounterEntry( ProfileTimeEntry( "LineInPlane", 1 ), true, false );
+#endif
 
 	return Result;
 }
