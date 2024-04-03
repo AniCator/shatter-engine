@@ -54,6 +54,8 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 		{
 			delete Texture;
 			Texture = new CRenderTexture( Name, Width, Height );
+
+			CAssets::Get().CreateNamedTexture( ( "rt_" + Name ).c_str(), Texture );
 		}
 	};
 
