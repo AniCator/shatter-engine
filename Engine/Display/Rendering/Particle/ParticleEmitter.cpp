@@ -259,6 +259,9 @@ void ParticleEmitter::Tick()
 	Time.W = StaticCast<float>( GameLayersInstance->GetTimeScale() );
 	auto TimeUniform = Uniform( Time );
 	TimeUniform.Bind( Program, "Time" );
+
+	// Bind the global uniforms to the compute shader.
+	CWindow::Get().GetRenderer().BindGlobalUniformsToProgram( Program );
 	
 	SetCameraUniform( Program );
 	SetBoundsUniform( Program, Renderable );
