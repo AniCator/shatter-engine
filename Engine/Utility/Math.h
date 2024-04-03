@@ -431,6 +431,13 @@ namespace Math
 		return Math::Lerp( BlendD, BlendE, Factor );
 	}
 
+	// Sigmoid-like Hermite interpolation.
+	inline float Smoothstep( float Lower, float Upper, float Alpha )
+	{
+		Alpha = Math::Saturate( ( Alpha - Lower ) / ( Upper - Lower ) );
+		return Alpha * Alpha * ( 3.0f - 2.0f * Alpha );
+	}
+
 	struct Bezier
 	{
 		Vector3D PointA;
