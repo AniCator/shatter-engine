@@ -145,7 +145,7 @@ struct String
         while( Iterator != Input.rend() )
         {
             const char Character = *Iterator;
-            Iterator--;
+            Iterator++;
 
             if( Character != Trim )
                 Active = false; // We've hit a character we don't want to trim, deactivate the trimmer.
@@ -157,6 +157,27 @@ struct String
             Output += Character;
         }
 
+        // Flip the string back around.
+        std::reverse( Output.begin(), Output.end() );
+
         return Output;
+    }
+
+    static std::string LowerCase(
+        const std::string& Input
+    )
+    {
+        std::string Lower = Input;
+        std::transform( Lower.begin(), Lower.end(), Lower.begin(), ::tolower );
+        return Lower;
+    }
+
+    static std::string UpperCase(
+        const std::string& Input
+    )
+    {
+        std::string Upper = Input;
+        std::transform( Upper.begin(), Upper.end(), Upper.begin(), ::toupper );
+        return Upper;
     }
 };
