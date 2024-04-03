@@ -873,19 +873,26 @@ struct FEventRenderable : TrackEvent
 
 		// Grab the an entity event.
 		EventEntity* EntityEvent = nullptr;
+		FEventRenderable* RenderableEvent = nullptr;
 		for( auto* Event : Timeline->ActiveEvents )
 		{
+			RenderableEvent = dynamic_cast<FEventRenderable*>( Event );
 			EntityEvent = dynamic_cast<EventEntity*>( Event );
 			if( EntityEvent )
 				break;
+
+			if( RenderableEvent )
+				break;
 		}
 
-		if( !EntityEvent )
-			return; // No entity found.
+		if( !EntityEvent && !RenderableEvent )
+			return; // No entity or renderable found.
+
+		const auto& ExternalRecording = RenderableEvent ? RenderableEvent->Recording : EntityEvent->GetRecording();
 
 		CData Data;
-		Data << EntityEvent->GetRecording();
-		Data >> Recording;
+		Data << ExternalRecording; // Serialize the external recording.
+		Data >> Recording; // Import it into the local one.
 	}
 
 	std::string MeshName = std::string();
@@ -1355,13 +1362,29 @@ void CTimeline::Draw()
 	DrawTimeline = true;
 }
 
+bool WrapIfNeeded()
+{
+	ImGuiStyle& style = ImGui::GetStyle();
+	float window_visible_x2 = ImGui::GetWindowPos().x + ImGui::GetWindowContentRegionMax().x;
+	float last_button_x2 = ImGui::GetItemRectMax().x;
+	float next_button_x2 = last_button_x2 + style.ItemSpacing.x + Math::Min( 100.0f, last_button_x2 ); // Expected position if next button was on same line
+	if( next_button_x2 < window_visible_x2 )
+	{
+		ImGui::SameLine();
+		return false;
+	}
+
+	return true;
+}
+
 void CTimeline::DisplayTimeline()
 {
 	const auto TimelineName = "Timeline: " + Location;
 	if( ImGui::Begin(
 		TimelineName.c_str(),
 		&DrawTimeline,
-		ImVec2( 1000.0f, 500.0f ), 0.45f
+		ImVec2( 1000.0f, 500.0f ), 0.45f,
+		ImGuiWindowFlags_MenuBar
 	) )
 	{
 		static int SequenceLengthSeconds = 2;
@@ -1380,45 +1403,40 @@ void CTimeline::DisplayTimeline()
 				}
 			}*/
 
-		if( ImGui::Button( "Play" ) )
+		if( ImGui::BeginMenuBar() )
 		{
-			Play();
-		}
+			if( ImGui::MenuItem( "Play" ) )
+			{
+				Play();
+			}
 
-		ImGui::SameLine();
+			if( ImGui::MenuItem( "Pause" ) )
+			{
+				Pause();
+			}
 
-		if( ImGui::Button( "Pause" ) )
-		{
-			Pause();
-		}
+			if( ImGui::MenuItem( "Stop" ) )
+			{
+				Stop();
+			}
 
-		ImGui::SameLine();
+			if( ImGui::MenuItem( "Step" ) )
+			{
+				// Increment the timeline step.
+				Marker++;
+			}
 
-		if( ImGui::Button( "Stop" ) )
-		{
-			Stop();
-		}
+			if( ImGui::MenuItem( "Reload" ) )
+			{
+				Load();
+			}
 
-		ImGui::SameLine();
+			if( ImGui::MenuItem( "Save" ) )
+			{
+				Save();
+			}
 
-		if( ImGui::Button( "Step" ) )
-		{
-			// Increment the timeline step.
-			Marker++;
-		}
-
-		ImGui::SameLine();
-
-		if( ImGui::Button( "Reload" ) )
-		{
-			Load();
-		}
-
-		ImGui::SameLine();
-
-		if( ImGui::Button( "Save" ) )
-		{
-			Save();
+			ImGui::EndMenuBar();
 		}
 
 		if( ImGui::Button( "Create Track" ) )
@@ -1428,7 +1446,7 @@ void CTimeline::DisplayTimeline()
 			ActiveTrackIndex = InvalidTrackIndex;
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 
 		static std::string EventType = ( *EventTypes.find( "Audio" ) ).first;
 
@@ -1460,7 +1478,7 @@ void CTimeline::DisplayTimeline()
 			}
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 
 		if( ImGui::BeginCombo( "##EventTypes", EventType.c_str() ) )
 		{
@@ -1483,7 +1501,7 @@ void CTimeline::DisplayTimeline()
 			Stretch( StretchFactor );
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 
 		ImGui::InputFloat( "##StretchFloat", &StretchFactor, 0.1f, 1.0f, "%.1f" );
 
@@ -1496,7 +1514,7 @@ void CTimeline::DisplayTimeline()
 			ImGui::EndTooltip();
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 
 		ImGui::Checkbox( "Visualize All", &Visualize );
 
@@ -1507,19 +1525,19 @@ void CTimeline::DisplayTimeline()
 			ImGui::EndTooltip();
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 		ImGui::Checkbox( "Snap when Stretching", &SnapToHandles );
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 		ImGui::Checkbox( "Auto Scroll", &AutoScroll );
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 		if( ImGui::Button( "Scroll to Marker" ) )
 		{
 			ScrollMarker = InvalidTimecode;
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 		if( ImGui::Button( "Set Loop Start" ) )
 		{
 			PlaybackMode = Repeat;
@@ -1531,7 +1549,7 @@ void CTimeline::DisplayTimeline()
 			}
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 		if( ImGui::Button( "Set Loop End" ) )
 		{
 			PlaybackMode = Repeat;
@@ -1543,7 +1561,7 @@ void CTimeline::DisplayTimeline()
 			}
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 		if( ImGui::Button( "Clear Loop" ) )
 		{
 			LoopStart = InvalidTimecode;
@@ -1551,7 +1569,7 @@ void CTimeline::DisplayTimeline()
 			PlaybackMode = Once;
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 		ImGui::SetNextItemWidth( 100.0f );
 
 		int StartLocation = StartMarker / Timebase;
@@ -1578,7 +1596,7 @@ void CTimeline::DisplayTimeline()
 			WidthScale = Math::Max( 0.1f, WidthScale + ImGui::GetIO().MouseWheel * 0.33f );
 		}
 
-		ImGui::SameLine();
+		WrapIfNeeded();
 		if( ImGui::Checkbox( "Use Timeline Cameras", &EnableCamera ) )
 		{
 			if( !EnableCamera )
@@ -2647,6 +2665,11 @@ CData& operator<<( CData& Data, const CTimeline& Timeline )
 	Data << Timeline.StartMarker;
 	Data << Timeline.EndMarker;
 
+	DataMarker::Mark( Data, "v3" );
+	Data << Timeline.PlaybackMode;
+	Data << Timeline.LoopStart;
+	Data << Timeline.LoopEnd;
+
 	DataVector::Encode( Data, Timeline.Tracks );
 
 	return Data;
@@ -2658,6 +2681,13 @@ CData& operator>>( CData& Data, CTimeline& Timeline )
 
 	Data >> Timeline.StartMarker;
 	Data >> Timeline.EndMarker;
+
+	if( DataMarker::Check( Data, "v3" ) )
+	{
+		Data >> Timeline.PlaybackMode;
+		Data >> Timeline.LoopStart;
+		Data >> Timeline.LoopEnd;
+	}
 
 	Timeline.Tracks.clear();
 
