@@ -30,8 +30,16 @@ void ParticleSystem::Load()
 	{
 		if( TexturePath[Index].length() > 0 )
 		{
-			const auto TextureName = Name + "_texture" + std::to_string( Index );
-			Texture[Index] = Assets.CreateNamedTexture( TextureName.c_str(), TexturePath[Index].c_str() );
+			if( CFile::Exists( TexturePath[Index] ) )
+			{
+				const auto TextureName = Name + "_texture" + std::to_string( Index );
+				Texture[Index] = Assets.CreateNamedTexture( TextureName.c_str(), TexturePath[Index].c_str() );
+			}
+			else
+			{
+				// Look for existing assets.
+				Texture[Index] = Assets.FindTexture( TexturePath[Index] );
+			}
 		}
 	}
 }
