@@ -93,6 +93,7 @@ public:
 	void DrawQueuedRenderables();
 
 	void SetUniform( const std::string& Name, const Uniform& Value );
+	void BindGlobalUniformsToProgram( uint32_t Program );
 
 	const CCamera& GetCamera() const;
 	void SetCamera( const CCamera& CameraIn );

@@ -602,6 +602,14 @@ void CRenderer::SetUniform( const std::string& Name, const Uniform& Value )
 	GlobalUniformBuffers.insert_or_assign( Name, Value );
 }
 
+void CRenderer::BindGlobalUniformsToProgram( uint32_t Program )
+{
+	for( auto& UniformBuffer : GlobalUniformBuffers )
+	{
+		UniformBuffer.second.Bind( Program, UniformBuffer.first );
+	}
+}
+
 const CCamera& CRenderer::GetCamera() const
 {
 	return Camera;
