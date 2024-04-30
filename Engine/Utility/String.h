@@ -106,6 +106,46 @@ struct String
         return std::make_pair( Left, Right );
     }
 
+    static std::vector<std::string> Segment(
+        const std::string& Input,
+        const char Delimiter
+    )
+    {
+        size_t StartIndex = 0;
+        size_t Index = Input.find( Delimiter );
+
+        // Delimiter wasn't found.
+        if( Index == std::string::npos )
+            return { Input };
+
+        // Check if the index isn't at the end of the line.
+        const auto Length = Input.length();
+        if( Index >= Length )
+            return { Input };
+
+        std::vector<std::string> Entries;
+
+        while( Index != std::string::npos && StartIndex != Index )
+        {
+            std::string Entry = Input.substr( StartIndex, Index );
+            Entries.emplace_back( Entry );
+
+            StartIndex = Index + 1;
+            Index = Input.find( Delimiter, StartIndex );
+        }
+
+        if( Index < Length )
+        {
+            std::string Remainder = Input.substr( Index + 1, Length - Index );
+            if( !Remainder.empty() )
+            {
+                Entries.emplace_back( Remainder );
+            }
+        }
+
+        return Entries;
+    }
+
     static std::string TrimL(
         const std::string& Input,
         const char Trim
