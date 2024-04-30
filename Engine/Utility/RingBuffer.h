@@ -7,18 +7,10 @@ class RingBuffer
 public:
 	RingBuffer()
 	{
-		WritePosition = 0;
-
 		for( size_t i = 0; i < BufferSize; i++ )
 		{
 			Buffer[i] = T();
 		}
-
-	}
-
-	~RingBuffer()
-	{
-
 	}
 
 	void Insert( const T& Value )
@@ -26,6 +18,11 @@ public:
 		Buffer[WritePosition] = Value;
 
 		WritePosition++;
+		if( WritePosition > FillCount )
+		{
+			FillCount = WritePosition;
+		}
+
 		WritePosition = WritePosition % BufferSize;
 	}
 
@@ -41,9 +38,16 @@ public:
 		}
 	}
 
+	// Total size of the buffer.
 	size_t Size() const
 	{
 		return BufferSize;
+	}
+
+	// Amount of the buffer that has been filled.
+	size_t Count() const
+	{
+		return FillCount;
 	}
 
 	size_t Offset( int Bias = 0 ) const
@@ -75,6 +79,7 @@ public:
 	}
 
 private:
-	size_t WritePosition;
+	size_t WritePosition = 0;
 	T Buffer[BufferSize];
+	size_t FillCount = 0;
 };
