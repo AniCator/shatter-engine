@@ -43,7 +43,7 @@ void CWorld::Construct()
 	OptickEvent();
 
 	Camera = nullptr;
-	Tags.clear();
+	// Tags.clear();
 
 	if( Physics )
 	{
