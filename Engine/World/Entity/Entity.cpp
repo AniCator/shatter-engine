@@ -156,7 +156,7 @@ void CEntity::Destroy()
 	}
 
 	// Delete the entity from the level.
-	Level->Remove( this );
+	Level->MarkForRemoval( this );
 }
 
 void CEntity::Traverse()

@@ -126,6 +126,7 @@ void CLevel::PostTick()
 
 	// Migrate entities that have just been spawned over to the main list.
 	MigrateSpawned();
+	MigrateRemoved();
 }
 
 void CLevel::Destroy()
@@ -143,6 +144,7 @@ void CLevel::Destroy()
 		Entity->Destroy();
 	}
 
+	Entities.clear();
 	World = nullptr;
 }
 
@@ -436,6 +438,11 @@ void CLevel::Load( const CFile& File, const bool AssetsOnly )
 	}
 }
 
+void CLevel::MarkForRemoval( CEntity* Entity )
+{
+	Removed.insert( Entity );
+}
+
 void CLevel::Remove( CEntity* MarkEntity )
 {
 	if( !MarkEntity )
@@ -513,6 +520,19 @@ bool CLevel::Transfer( CEntity* Entity )
 	}
 
 	return true;
+}
+
+CEntity* SearchForEntity( const std::unordered_set<CEntity*>& Entities, const NameSymbol Name )
+{
+	for( CEntity* Entity : Entities )
+	{
+		if( Entity && Entity->Name == Name )
+		{
+			return Entity;
+		}
+	}
+
+	return nullptr;
 }
 
 CEntity* SearchForEntity( const std::vector<CEntity*>& Entities, const NameSymbol Name )
@@ -616,11 +636,24 @@ bool CLevel::IsVisible() const
 void CLevel::MigrateSpawned()
 {
 	if( Spawned.empty() )
-		return; // No new entities to add.
+		return;
 
 	// Insert the spawned entities into the main list.
 	Entities.insert( Entities.end(), Spawned.begin(), Spawned.end() );
 	Spawned.clear();
+}
+
+void CLevel::MigrateRemoved()
+{
+	if( Removed.empty() )
+		return;
+
+	for( auto* Entity : Removed )
+	{
+		Remove( Entity );
+	}
+
+	Removed.clear();
 }
 
 void CLevel::CalculateBounds()

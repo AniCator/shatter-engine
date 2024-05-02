@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vector>
+#include <unordered_set>
 
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/Utility/Data.h>
@@ -62,7 +63,7 @@ public:
 			Entity->SetEntityID( EntityUID::Create() );
 			Entity->SetLevelID( LevelUID( Entities.size() + Spawned.size() ) );
 			Entity->SetLevel( this );
-			Spawned.push_back( Entity );
+			Spawned.insert( Entity );
 		}
 		else
 		{
@@ -83,6 +84,7 @@ public:
 		return Entities;
 	}
 
+	void MarkForRemoval( CEntity* Entity );
 	void Remove( CEntity* Entity );
 
 	// Moves an entity from their original level to this level.
@@ -145,10 +147,16 @@ private:
 	std::vector<CEntity*> Entities;
 
 	// Entities that have just been spawned.
-	std::vector<CEntity*> Spawned;
+	std::unordered_set<CEntity*> Spawned;
+
+	// Entities that have just been removed.
+	std::unordered_set<CEntity*> Removed;
 
 	// Migrate entities that have just been spawned to the main list.
 	void MigrateSpawned();
+
+	// Remove entities that have just been deleted.
+	void MigrateRemoved();
 
 	// Checks all the mesh entities, and calculates the level's bounds.
 	void CalculateBounds();
