@@ -589,7 +589,7 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		TextureNames.emplace_back( "error" );
 	}
 
-	Reload();
+	// Reload();
 }
 
 void CMeshEntity::Reload()

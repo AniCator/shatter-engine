@@ -89,9 +89,7 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 {
 	CAssets& Assets = CAssets::Get();
 
-	Vector3D Position( 0.0f, 0.0f, 0.0f );
-	Vector3D Orientation( 0.0f, 0.0f, 0.0f );
-	Vector3D Size( 1.0f, 1.0f, 1.0f );
+	Transform.Update();
 
 	for( auto* Property : Objects )
 	{
@@ -101,15 +99,21 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "position" )
 		{
+			Vector3D Position( 0.0f, 0.0f, 0.0f );
 			Extract( Property->Value, Position );
+			Transform.SetPosition( Position );
 		}
 		else if( Property->Key == "rotation" )
 		{
+			Vector3D Orientation( 0.0f, 0.0f, 0.0f );
 			Extract( Property->Value, Orientation );
+			Transform.SetOrientation( Orientation );
 		}
 		else if( Property->Key == "scale" )
 		{
+			Vector3D Size( 1.0f, 1.0f, 1.0f );
 			Extract( Property->Value, Size );
+			Transform.SetSize( Size );
 		}
 		else if( Property->Key == "tags" )
 		{
@@ -140,9 +144,7 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 
 	ShouldUpdateTransform = true;
 
-	Transform.SetTransform( Position, Orientation, Size );
-
-	if( Level )
+	if( Level && Transform.IsDirty() )
 	{
 		Transform = Level->GetTransform().Transform( Transform );
 	}
