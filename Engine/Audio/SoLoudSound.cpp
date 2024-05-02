@@ -69,6 +69,20 @@ void FilterStack::Add( SoLoud::Filter* Filter, const std::vector<float>& Paramet
 	Stack.emplace_back( NewEffect );
 }
 
+void FilterStack::Remove( const std::string& Name )
+{
+	// Look for the effect.
+	const auto Iterator = std::find_if( Stack.begin(), Stack.end(), [&]( const Effect& Effect ) {
+		return Effect.Name == Name;
+	} );
+
+	// Delete it, if it exists.
+	if( Iterator != Stack.end() )
+	{
+		Stack.erase( Iterator );
+	}
+}
+
 void FilterStack::Toggle( const Effect* Marked )
 {
 	if( !Marked )
