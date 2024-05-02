@@ -62,6 +62,22 @@ namespace UI
 
 	std::vector<DrawLine> Lines;
 
+	struct DrawLineScreen
+	{
+		DrawLineScreen( const Vector2D& Start, const Vector2D& End, const Color& Color )
+		{
+			this->Start = Start;
+			this->End = End;
+			this->Color = Color;
+		}
+
+		Vector2D Start = { 0.0f, 0.0f };
+		Vector2D End = { 1.0f, 1.0f };
+		Color Color = Color::White;
+	};
+
+	std::vector<DrawLineScreen> LinesScreen;
+
 	struct DrawCircle
 	{
 		DrawCircle( const Vector3D& Position, const float& Radius, const Color& Color )
@@ -387,7 +403,7 @@ namespace UI
 		return ScreenPositionB;
 	}
 
-	void AddLine( const Vector2D& Start, const Vector2D& End, const Color& Color )
+	void AddLine2D( const Vector2D& Start, const Vector2D& End, const Color& Color )
 	{	
 		if( DrawList )
 		{
@@ -408,16 +424,25 @@ namespace UI
 
 		if( ( StartIsInFront || EndIsInFront ) && Valid )
 		{
-			AddLine( DrawPositionA, DrawPositionB, Color );
+			AddLine2D( DrawPositionA, DrawPositionB, Color );
 		}
+	}
+
+	void AddLine( const Vector2D& Start, const Vector2D& End, const Color& Color )
+	{
+		if( CApplication::IsPaused() )
+			return;
+
+		std::unique_lock<std::mutex> Lock( LineMutex );
+
+		DrawLineScreen Line( Start, End, Color );
+		LinesScreen.emplace_back( Line );
 	}
 
 	void AddLine( const Vector3D& Start, const Vector3D& End, const Color& Color, const double& Duration )
 	{
 		if( CApplication::IsPaused() )
 			return;
-
-		std::unique_lock<std::mutex> Lock( LineMutex );
 		
 		DrawLine Line( Start, End, Color, Duration );
 		Lines.emplace_back( Line );
@@ -777,6 +802,7 @@ namespace UI
 			}
 		}
 		
+		LinesScreen.clear();
 		Circles.clear();
 		CirclesScreen.clear();
 		Images.clear();
@@ -1007,6 +1033,11 @@ namespace UI
 			{
 				Window.GetRenderer().AddRenderPass( &LinePass, RenderPassLocation::Standard );
 			}
+		}
+
+		for( const auto& Line : LinesScreen )
+		{
+			AddLine2D( Line.Start, Line.End, Line.Color );
 		}
 
 		for( const auto& Circle : Circles )
