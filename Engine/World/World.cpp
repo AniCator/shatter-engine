@@ -10,13 +10,28 @@
 #include <Engine/Sequencer/Sequencer.h>
 #include <Engine/World/Entity/Entity.h>
 #include <Engine/World/Entity/LightEntity/LightEntity.h>
+#include <Engine/World/Entity/Node/Node.h>
 #include <Engine/Utility/Chunk.h>
 #include <Engine/Utility/ThreadPool.h>
 
 #include <Game/Game.h>
 
+ConfigurationVariable<bool> DisplayNetworks( "debug.Navigation.Show", false );
+
 static const char WorldIdentifier[5] = "LLWF"; // Lofty Lagoon World Format
 static const size_t WorldVersion = 0;
+
+// Deletes the previous instance if it exists, and creates a new one.
+template<typename T>
+void Create( T*& X )
+{
+	if( X )
+	{
+		delete X;
+	}
+
+	X = new T();
+}
 
 CWorld* CWorld::PrimaryWorld = nullptr;
 
@@ -35,7 +50,7 @@ CWorld::~CWorld()
 		Physics->Destroy();
 
 	delete Physics;
-	Physics = nullptr;
+	delete Navigation;
 }
 
 void CWorld::Construct()
@@ -45,13 +60,8 @@ void CWorld::Construct()
 	Camera = nullptr;
 	// Tags.clear();
 
-	if( Physics )
-	{
-		delete Physics;
-		Physics = nullptr;
-	}
-
-	Physics = new CPhysics();
+	Create( Physics );
+	Create( Navigation );
 
 	LightEntity::Initialize();
 
@@ -98,6 +108,11 @@ void CWorld::Tick()
 	}
 
 	WaitingForPhysics = false;
+
+	if( DisplayNetworks )
+	{
+		Navigation->Debug();
+	}
 
 	EventQueue.Poll();
 
@@ -343,6 +358,11 @@ CPhysics* CWorld::GetPhysics() const
 	return Physics;
 }
 
+Navigation* CWorld::GetNavigation() const
+{
+	return Navigation;
+}
+
 void CWorld::MakePrimary()
 {
 	PrimaryWorld = this;
@@ -500,8 +520,8 @@ CData& operator>>( CData& Data, CWorld* World )
 		for( size_t Index = 0; Index < Count; Index++ )
 		{
 			CLevel Level( World );
-			Chunk.Data >> Level;
 			World->Levels.push_back( Level );
+			Chunk.Data >> World->Levels.back();
 		}
 
 		if( !World->Levels.empty() )

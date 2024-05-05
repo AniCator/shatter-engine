@@ -4,27 +4,19 @@
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math/Vector.h>
 
+#include <set>
 #include <unordered_set>
 
 namespace Node
 {
-	struct State
-	{
-		// Has this node been evaluated.
-		bool Visited = false;
-
-		// Overall distance to target
-		float Global = 0;
-
-		// Distance to start node.
-		float Local = 0;
-
-		// The node's most recent parent.
-		struct Data* Parent = nullptr;
-	};
+	using NodeID = size_t;
+	constexpr NodeID InvalidID = -1;
 	
 	struct Data
 	{
+		// Identifier for this node.
+		NodeID ID = InvalidID;
+
 		// The location of the node.
 		Vector3D Position = Vector3D::Zero;
 
@@ -32,13 +24,20 @@ namespace Node
 		bool IsBlocked = false;
 
 		// Nodes that this one is linked to.
-		std::unordered_set<Data*> Neighbors;
+		std::set<NodeID> Neighbors;
+
+		bool operator==( const Data& Other ) const
+		{
+			return ID == Other.ID;
+		}
+
+		bool operator<( const Data& Other ) const
+		{
+			return ID < Other.ID;
+		}
 	};
 
-	struct Route
-	{
-		std::vector<Data*> Nodes;
-	};
+	using Route = std::vector<NodeID>;
 
 	class Entity : public CPointEntity
 	{
@@ -56,22 +55,36 @@ namespace Node
 		void Import( CData& Data ) override;
 		void Export( CData& Data ) override;
 
-		static Route Path( const Vector3D& Start, const Vector3D& End );
-
 		Data NodeData;
 
 		// Cached link names.
-		std::vector<std::string> LinkNames;
+		std::vector<std::string> Links;
 	};
 
 	struct Network
 	{
-		void Add( Data* Node );
-		void Remove( Data* Node );
+		void Add( const Data& Node );
+		void Remove( const Data& Node );
 
-		std::unordered_set<Data*> Nodes;
-		std::unordered_map<Data*, State> States;
-		
-		Route Path( const Vector3D& Start, const Vector3D& End );
+		Data* Get( const NodeID ID );
+
+		// Returns the closest node on the graph.
+		Data* Get( const Vector3D& Position );
+
+		Route Path( const Vector3D& From, const Vector3D& To );
+
+		void Debug();
+
+	protected:
+		std::unordered_map<NodeID, Data> Nodes;
 	};
 }
+
+struct Navigation
+{
+	Node::Network& Get( const NameSymbol& Network );
+
+	void Debug();
+protected:
+	std::unordered_map<NameSymbol, Node::Network> Networks;
+};

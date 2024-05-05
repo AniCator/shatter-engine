@@ -94,6 +94,8 @@ public:
 
 	CPhysics* GetPhysics() const;
 
+	struct Navigation* GetNavigation() const;
+
 	void MakePrimary();
 	static CWorld* GetPrimaryWorld();
 
@@ -190,7 +192,8 @@ private:
 	CCamera* Camera = nullptr;
 	uint32_t CameraPriority;
 
-	CPhysics* Physics;
+	CPhysics* Physics = nullptr;
+	struct Navigation* Navigation = nullptr;
 
 	// Used to store tagged/registered entities.
 	std::unordered_map<std::string, std::vector<CEntity*>> Tags;

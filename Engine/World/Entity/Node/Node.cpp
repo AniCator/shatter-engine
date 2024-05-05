@@ -1,26 +1,41 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Node.h"
 
-#include <Engine/World/World.h>
+#include <unordered_map>
+#include <queue>
 
+#include <Engine/World/World.h>
 #include <Engine/Display/UserInterface.h>
 
 using namespace Node;
 
 static CEntityFactory<Entity> Factory( "node" );
 
-static Network GlobalNetwork;
-
 void Entity::Construct()
 {
-	Tag( "node" );
+	Tag( ClassName );
+
+	NodeData.Neighbors.clear();
+
+	for( const auto& Link : Links )
+	{
+		auto* Node = Cast<Entity>( Level->Find( Link ) );
+		if( Node )
+		{
+			NodeData.Neighbors.emplace( Node->NodeData.ID );
+		}
+	}
+
+	auto& Network = GetWorld()->GetNavigation()->Get( ClassName );
+	Network.Add( NodeData );
 
 	CPointEntity::Construct();
 }
 
 void Entity::Destroy()
 {
-	GlobalNetwork.Remove( &NodeData );
+	auto& Network = GetWorld()->GetNavigation()->Get( ClassName );
+	Network.Remove( NodeData );
 
 	CPointEntity::Destroy();
 }
@@ -43,7 +58,7 @@ void Entity::Load( const JSON::Vector& Objects )
 		{
 			for( auto* Link : Property->Objects )
 			{
-				LinkNames.emplace_back( Link->Key );
+				Links.emplace_back( Link->Key );
 			}
 		}
 	}
@@ -51,16 +66,7 @@ void Entity::Load( const JSON::Vector& Objects )
 
 void Entity::Reload()
 {
-	GlobalNetwork.Add( &NodeData );
-
-	for( const auto& Link : LinkNames )
-	{
-		auto* Node = Cast<Entity>( Level->Find( Link ) );
-		if( Node )
-		{
-			NodeData.Neighbors.emplace( &Node->NodeData );
-		}
-	}
+	NodeData.ID = GetEntityID().ID;
 }
 
 void Entity::Debug()
@@ -76,9 +82,14 @@ void Entity::Debug()
 	
 	UI::AddAABB( Minimum, Maximum, State );
 
-	for( auto* Neighbor : NodeData.Neighbors )
+	auto& Network = GetWorld()->GetNavigation()->Get( ClassName );
+	for( const auto ID : NodeData.Neighbors )
 	{
-		UI::AddLine( NodeData.Position, Neighbor->Position, Color::Green );
+		auto* Data = Network.Get( ID );
+		if( Data )
+		{
+			UI::AddLine( NodeData.Position, Data->Position, Color( 128, 64, 0, 255 ) );
+		}		
 	}
 }
 
@@ -88,7 +99,7 @@ void Entity::Import( CData& Data )
 	Data >> NodeData.Position;
 	Data >> NodeData.IsBlocked;
 
-	Serialize::Import( Data, "ln", LinkNames );
+	Serialize::Import( Data, "ln", Links );
 }
 
 void Entity::Export( CData& Data )
@@ -97,125 +108,185 @@ void Entity::Export( CData& Data )
 	Data << NodeData.Position;
 	Data << NodeData.IsBlocked;
 
-	Serialize::Export( Data, "ln", LinkNames );
+	Serialize::Export( Data, "ln", Links );
 }
 
-Route Entity::Path( const Vector3D& Start, const Vector3D& End )
+void Network::Add( const Data& Node )
 {
-	return GlobalNetwork.Path( Start, End );
+	Nodes.insert_or_assign( Node.ID, Node );
 }
 
-void Network::Add( Data* Node )
+void Network::Remove( const Data& Node )
 {
-	Nodes.insert( Node );
-}
-
-void Network::Remove( Data* Node )
-{
-	auto Iterator = Nodes.find( Node );
+	auto Iterator = Nodes.find( Node.ID );
 	if( Iterator == Nodes.end() )
 		return;
 
 	// Remove the node from the network.
 	Nodes.erase( Iterator );
 
-	// Remove the node from its neighbors.
-	for( auto* Neighbor : Node->Neighbors )
-	{
-		Iterator = Neighbor->Neighbors.find( Node );
-		if( Iterator == Neighbor->Neighbors.end() )
-			continue;
-
-		Neighbor->Neighbors.erase( Iterator );
-	}
+	// TODO: Remove the node from its neighbors.
 }
 
-Route Network::Path( const Vector3D& Start, const Vector3D& End )
+Data* Network::Get( const NodeID ID )
+{
+	auto Iterator = Nodes.find( ID );
+	if( Iterator == Nodes.end() )
+		return nullptr;
+
+	return &Iterator->second;
+}
+
+Data* Network::Get( const Vector3D& Position )
+{
+	Data* Result = nullptr;
+	float PreviousDistance = FLT_MAX;
+	for( auto& Node : Nodes )
+	{
+		if( !Result )
+		{
+			Result = &Node.second;
+			continue;
+		}
+
+		const auto Distance = Node.second.Position.DistanceSquared( Position );
+		if( Distance < PreviousDistance )
+		{
+			PreviousDistance = Distance;
+			Result = &Node.second;
+		}
+	}
+
+	return Result;
+}
+
+Route Network::Path( const Vector3D& From, const Vector3D& To )
 {
 	Route Route;
 
-	// Clear our previous states.
-	States.clear();
+	if( Nodes.empty() )
+		return Route; // This network doesn't contain any nodes.
 
-	// Find the closest node to the start position.
-	Data* ClosestNodeStart = nullptr;
-	float ClosestDistance = INFINITY;
-	for( auto* Node : Nodes )
+	auto* Start = Get( From );
+	auto* Goal = Get( To );
+
+	// Create a struct for tracking edges in the node graph.
+	struct Connection
 	{
-		const auto Distance = Node->Position.DistanceSquared( Start );
-		if( Distance < ClosestDistance )
+		Data* Node = nullptr;
+		float Cost = FLT_MAX;
+		Data* Previous = nullptr;
+	};
+
+	auto Comparator = []( const Connection& Left, const Connection& Right )
+	{
+		return Left.Cost > Right.Cost;
+	};
+
+	// Create a priority queue.
+	std::priority_queue<Connection, std::vector<Connection>, decltype( Comparator )> PriorityQueue( Comparator );
+	std::unordered_map<NodeID, Connection> Connections;
+
+	// Configure and add the first node to the graph.
+	Connection First;
+	First.Cost = 0.0f;
+	First.Node = Start;
+	Connections.insert_or_assign( Start->ID, First );
+
+	// Push the first node.
+	PriorityQueue.push( First );
+
+	std::set<NodeID> Visited;
+	while( !PriorityQueue.empty() )
+	{
+		const auto Entry = PriorityQueue.top();
+		PriorityQueue.pop();
+
+		// TODO: Do we have to check if the node in the connection is valid?
+		//		 The music graph does this but maybe it's overkill.
+
+		Visited.insert( Entry.Node->ID );
+
+		for( const auto Neighbor : Entry.Node->Neighbors )
 		{
-			ClosestNodeStart = Node;
-			ClosestDistance = Distance;
-		}
+			if( Visited.find( Neighbor ) != Visited.end() )
+				continue; // We've already evaluated this neighbor.
 
-		// Also initialize the state.
-		States[Node] = State();
-	}
+			auto* Node = Get( Neighbor );
+			if( !Node )
+				continue; // The specified neighbor is not a part of the network.
 
-	// Find the node closest to the end position.
-	Data* ClosestNodeEnd = nullptr;
-	ClosestDistance = INFINITY;
-	for( auto* Node : Nodes )
-	{
-		const auto Distance = Node->Position.DistanceSquared( End );
-		if( Distance < ClosestDistance )
-		{
-			ClosestNodeEnd = Node;
-			ClosestDistance = Distance;
-		}
-	}
-
-	return Route; // TODO: This stuff is broken.
-
-	std::list<Data*> Untested;
-	Untested.emplace_back( ClosestNodeStart );
-
-	Data* CurrentNode = ClosestNodeStart;
-
-	while( !Untested.empty() )
-	{
-		Untested.sort( [this] ( Data* A, Data* B )
+			float NeighborCost = FLT_MAX;
+			auto Iterator = Connections.find( Neighbor );
+			if( Iterator != Connections.end() )
 			{
-				return States[A].Global < States[B].Global;
-			} );
+				NeighborCost = Iterator->second.Cost;
+			}
 
-		while( ( !Untested.empty() && States[Untested.front()].Visited && Untested.front() != nullptr ) )
-			Untested.pop_front();
+			const float DistanceToNode = Node->Position.DistanceSquared( Entry.Node->Position );
+			const float DistanceToGoal = Node->Position.DistanceSquared( To );
+			const float Cost = Entry.Cost + DistanceToNode;
+			if( ( Cost + DistanceToGoal ) < NeighborCost )
+			{
+				Connection Edge;
+				Edge.Cost = Cost;
+				Edge.Previous = Entry.Node;
+				Edge.Node = Node;
 
-		if( Untested.empty() )
+				Connections.insert_or_assign( Neighbor, Edge );
+				PriorityQueue.push( Edge );
+			}
+		}
+
+		if( Entry.Node->ID == Goal->ID )
 			break;
-
-		CurrentNode = Untested.front();
-		auto& CurrentState = States[CurrentNode];
-		CurrentState.Visited = true;
-
-		for( auto* Neighbor : CurrentNode->Neighbors )
-		{
-			auto& NeighborState = States[Neighbor];
-			if( !NeighborState.Visited && !Neighbor->IsBlocked )
-			{
-				Untested.emplace_back( Neighbor );
-			}
-
-			const auto LocalDistance = CurrentState.Local + CurrentNode->Position.DistanceSquared( Neighbor->Position );
-			if( LocalDistance < NeighborState.Local )
-			{
-				NeighborState.Parent = CurrentNode;
-				NeighborState.Local = LocalDistance;
-				NeighborState.Global = LocalDistance + Neighbor->Position.DistanceSquared( ClosestNodeEnd->Position );
-			}
-		}
 	}
 
-	auto& PathState = States[ClosestNodeEnd];
-	while( PathState.Parent )
+	Route.reserve( Connections.size() );
+
+	// Traverse through the connections and assemble the route.
+	auto* Node = Goal;
+	while( Node )
 	{
-		Route.Nodes.emplace_back( PathState.Parent );
-		PathState = States[PathState.Parent];
+		Route.emplace_back( Node->ID );
+
+		const auto Iterator = Connections.find( Node->ID );
+		if( Iterator == Connections.end() )
+			break; // Node is not in the edge list.
+
+		if( Iterator->second.Previous )
+		{
+			const auto PreviousIterator = Connections.find( Node->ID );
+			if( PreviousIterator == Connections.end() )
+				break;
+
+			if( PreviousIterator->second.Cost < 0.0f )
+				break;
+		}
+
+		Node = Iterator->second.Previous;
 	}
+
+	std::reverse( Route.begin(), Route.end() );
 
 	return Route;
+}
+
+void Network::Debug()
+{
+	for( const auto& Pair : Nodes )
+	{
+		for( const auto ID : Pair.second.Neighbors )
+		{
+			auto* Data = Get( ID );
+			if( Data )
+			{
+				UI::AddLine( Pair.second.Position, Data->Position, Color( 128, 64, 64, 255 ) );
+			}
+		}
+
+		UI::AddAABB( Pair.second.Position - Vector3D( 0.05f ), Pair.second.Position + Vector3D( 0.05f ) );
+	}
 }
 
 class GroundNode : public Entity
@@ -231,3 +302,16 @@ class AirNode : public Entity
 };
 
 static CEntityFactory<AirNode> FactoryAir( "node_air" );
+
+Node::Network& Navigation::Get( const NameSymbol& Network )
+{
+	return Networks[Network];
+}
+
+void Navigation::Debug()
+{
+	for( auto& Network : Networks )
+	{
+		Network.second.Debug();
+	}
+}
