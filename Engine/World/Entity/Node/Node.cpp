@@ -27,7 +27,14 @@ void Entity::Construct()
 	}
 
 	auto& Network = GetWorld()->GetNavigation()->Get( ClassName );
-	Network.Add( NodeData );
+
+	if( Nodes.empty() )
+		Network.Add( NodeData );
+
+	for( const auto& Node : Nodes )
+	{
+		Network.Add( Node );
+	}
 
 	CPointEntity::Construct();
 }
@@ -35,7 +42,14 @@ void Entity::Construct()
 void Entity::Destroy()
 {
 	auto& Network = GetWorld()->GetNavigation()->Get( ClassName );
-	Network.Remove( NodeData );
+
+	if( Nodes.empty() )
+		Network.Remove( NodeData );
+
+	for( const auto& Node : Nodes )
+	{
+		Network.Remove( Node );
+	}
 
 	CPointEntity::Destroy();
 }
@@ -61,12 +75,57 @@ void Entity::Load( const JSON::Vector& Objects )
 				Links.emplace_back( Link->Key );
 			}
 		}
+		else if( Property->Key == "nodes" )
+		{
+			StringNodes = Property->Value;
+		}
+		else if( Property->Key == "edges" )
+		{
+			StringEdges = Property->Value;
+		}
 	}
 }
 
 void Entity::Reload()
 {
 	NodeData.ID = GetEntityID().ID;
+
+	if( StringNodes.empty() )
+		return;
+
+	const auto RandomOffset = NodeData.ID + Math::RandomRangeInteger( INT32_MAX / 2, INT32_MAX );
+
+	auto Segments = String::Segment( StringNodes, ';' );
+	for( const auto& Segment : Segments )
+	{
+		Node::Data Node;
+		auto Pair = String::Split( Segment, ',' );
+		uint32_t ID = -1;
+		Extract( Pair.first, ID );
+		Node.ID = RandomOffset + ID;
+		Extract( Pair.second, Node.Position );
+		Nodes.emplace_back( Node );
+	}
+
+	std::sort( Nodes.begin(), Nodes.end() );
+
+	if( StringEdges.empty() )
+		return;
+
+	Segments = String::Segment( StringEdges, ';' );
+	for( const auto& Segment : Segments )
+	{
+		auto Pair = String::Split( Segment, ',' );
+		uint32_t A = -1;
+		uint32_t B = -1;
+		Extract( Pair.first, A );
+		Extract( Pair.second, B );
+
+		auto& NodeA = Nodes[A];
+		NodeA.Neighbors.insert( RandomOffset + B );
+		auto& NodeB = Nodes[B];
+		NodeB.Neighbors.insert( RandomOffset + A );
+	}
 }
 
 void Entity::Debug()
@@ -100,6 +159,8 @@ void Entity::Import( CData& Data )
 	Data >> NodeData.IsBlocked;
 
 	Serialize::Import( Data, "ln", Links );
+	Serialize::Import( Data, "sn", StringNodes );
+	Serialize::Import( Data, "se", StringEdges );
 }
 
 void Entity::Export( CData& Data )
@@ -109,6 +170,8 @@ void Entity::Export( CData& Data )
 	Data << NodeData.IsBlocked;
 
 	Serialize::Export( Data, "ln", Links );
+	Serialize::Export( Data, "sn", StringNodes );
+	Serialize::Export( Data, "se", StringEdges );
 }
 
 void Network::Add( const Data& Node )
@@ -176,15 +239,15 @@ Route Network::Path( const Vector3D& From, const Vector3D& To )
 		Data* Node = nullptr;
 		float Cost = FLT_MAX;
 		Data* Previous = nullptr;
-	};
 
-	auto Comparator = []( const Connection& Left, const Connection& Right )
-	{
-		return Left.Cost > Right.Cost;
+		constexpr bool operator<( const Connection& Right ) const
+		{
+			return Cost > Right.Cost;
+		}
 	};
 
 	// Create a priority queue.
-	std::priority_queue<Connection, std::vector<Connection>, decltype( Comparator )> PriorityQueue( Comparator );
+	std::priority_queue<Connection> PriorityQueue;
 	std::unordered_map<NodeID, Connection> Connections;
 
 	// Configure and add the first node to the graph.
@@ -281,20 +344,13 @@ void Network::Debug()
 			auto* Data = Get( ID );
 			if( Data )
 			{
-				UI::AddLine( Pair.second.Position, Data->Position, Color( 128, 64, 64, 255 ) );
+				UI::AddLine( Pair.second.Position, Data->Position, Color( 96, 128, 32, 255 ) );
 			}
 		}
 
-		UI::AddAABB( Pair.second.Position - Vector3D( 0.05f ), Pair.second.Position + Vector3D( 0.05f ) );
+		// UI::AddAABB( Pair.second.Position - Vector3D( 0.05f ), Pair.second.Position + Vector3D( 0.05f ) );
 	}
 }
-
-class GroundNode : public Entity
-{
-
-};
-
-static CEntityFactory<GroundNode> FactoryGround( "node_ground" );
 
 class AirNode : public Entity
 {

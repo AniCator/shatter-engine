@@ -56,9 +56,13 @@ namespace Node
 		void Export( CData& Data ) override;
 
 		Data NodeData;
+		std::vector<Data> Nodes;
 
 		// Cached link names.
 		std::vector<std::string> Links;
+
+		std::string StringNodes;
+		std::string StringEdges;
 	};
 
 	struct Network
