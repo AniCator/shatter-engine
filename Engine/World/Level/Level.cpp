@@ -686,6 +686,10 @@ bool IsSerializable( const CEntity* Entity )
 
 CData& operator<<( CData& Data, CLevel& Level )
 {
+	// Ensure spawned and removed entities have been transferred properly.
+	Level.MigrateSpawned();
+	Level.MigrateRemoved();
+
 	Chunk Chunk( "LEVEL" );
 	Chunk.Data << LevelVersion;
 
