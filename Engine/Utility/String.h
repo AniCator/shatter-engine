@@ -127,7 +127,7 @@ struct String
 
         while( Index != std::string::npos && StartIndex != Index )
         {
-            std::string Entry = Input.substr( StartIndex, Index );
+            std::string Entry = Input.substr( StartIndex, Index - StartIndex );
             Entries.emplace_back( Entry );
 
             StartIndex = Index + 1;
