@@ -80,11 +80,11 @@ struct DataString
 			return Data;
 		}
 
-		if( String.Size > 100000 )
+		/*if( String.Size > 100000 )
 		{
 			Data.Invalidate();
 			return Data;
-		}
+		}*/
 
 		String.Address = new char[String.Size + 1];
 		Data >> String.Address;
