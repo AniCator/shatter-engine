@@ -1024,6 +1024,12 @@
     <ClInclude Include="Engine\Sequencer\Recording.h">
       <Filter>Source Files\Engine\Sequencer</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\Utility\Defer.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Utility\Macro.h">
+      <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini">

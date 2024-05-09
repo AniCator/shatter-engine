@@ -6,6 +6,7 @@
 #include <map>
 #include <atomic>
 
+#include <Engine/Utility/Macro.h>
 #include <Engine/Utility/RingBuffer.h>
 #include <Engine/Utility/Structures/Name.h>
 #include <Engine/Utility/Singleton.h>
@@ -129,12 +130,9 @@ private:
 	bool Clear = false;
 };
 
-#define CONCAT_(x,y) x##y
-#define CONCAT(x,y) CONCAT_(x,y)
-#define _PROFILENAME_(x) CONCAT(x, __LINE__)
-#define _PROFILE_(Name, Bare) static NameSymbol _PROFILENAME_(ScopeName_)( Name ); TimerScope _PROFILENAME_(Scope_)( Name, Bare )
+#define _PROFILE_(Name, Bare) static NameSymbol MacroName(ScopeName_)( Name ); TimerScope MacroName(Scope_)( Name, Bare )
 
-#define _PROFILEMEMORY_( Name, Clear ) static NameSymbol _PROFILENAME_(ScopeName_)( Name ); ProfileMemory _PROFILENAME_(Scope_)( Name, Clear )
+#define _PROFILEMEMORY_( Name, Clear ) static NameSymbol MacroName(ScopeName_)( Name ); ProfileMemory MacroName(Scope_)( Name, Clear )
 
 #define ProfileAlways( Name ) _PROFILE_( Name, false )
 
