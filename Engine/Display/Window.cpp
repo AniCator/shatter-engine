@@ -142,7 +142,7 @@ void CWindow::Create( const char* Title )
 		ActualDimensions.Height += 1;
 	}
 
-	glfwWindowHint( GLFW_SAMPLES, 0 );
+	glfwWindowHint( GLFW_SAMPLES, 4 );
 	const bool DebugContext = config.IsEnabled( "OpenGL.DebugContext", false );
 	glfwWindowHint( GLFW_OPENGL_DEBUG_CONTEXT, DebugContext ? 1 : 0 );
 
