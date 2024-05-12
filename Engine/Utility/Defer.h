@@ -21,4 +21,4 @@ struct Defer
 };
 
 // Defers execution of given code to the end of scope in which it is created.
-#define defer(Function) Defer MacroName(Defer_)( [&](){ Function; } )
+#define defer(FunctionBody) Defer MacroName(Defer_)( [&](){ FunctionBody; } )
