@@ -33,7 +33,7 @@ class CModelPass : public CRenderPass
 {
 public:
 	CModelPass()
-		: CRenderPass( "ModelPass", 512, 512, CCamera(), false )
+		: CRenderPass( "ModelPass", 512, 512, {}, false)
 	{
 		
 	}
@@ -57,7 +57,7 @@ public:
 		Setup.NearPlaneDistance = 0.01f;
 		Setup.FarPlaneDistance = Setup.CameraDirection.Length() * 2.0f;
 		Setup.CameraDirection.Normalize();
-		Setup.FieldOfView = 55.0f;
+		Setup.FieldOfView = FieldOfView;
 		Setup.AspectRatio = 1.1f;
 		Camera.Update();
 
@@ -66,7 +66,30 @@ public:
 
 		ClearTarget();
 
-		return RenderRenderable( &Model, Uniforms );
+		auto Calls = RenderRenderable( &Model, Uniforms );
+
+		// Resolve the texture if it was using MSAA.
+		if( Target->GetSampleCount() > 1 )
+		{
+			Target->Resolve();
+
+			// We can sneakily apply the tonemapper with MSAA.
+			auto& Assets = CAssets::Get();
+			CRenderable ResolveRenderable;
+			ResolveRenderable.GetRenderData().DrawMode = FullScreenTriangle;
+			ResolveRenderable.SetMesh( nullptr );
+			ResolveRenderable.SetShader( Assets.Shaders.Find( "resolve" ) );
+			ResolveRenderable.SetTexture( Target, ETextureSlot::Slot0 );
+			Calls += RenderRenderable( &ResolveRenderable, Uniforms );
+
+			// Resolve the texture again if it was using MSAA.
+			if( Target->GetSampleCount() > 1 )
+			{
+				Target->Resolve();
+			}
+		}
+
+		return Calls;
 	}
 
 	void Reset()
@@ -79,6 +102,7 @@ public:
 	}
 
 	CRenderable Model;
+	float FieldOfView = 55.0f;
 };
 
 bool MenuItem( const char* Label, bool* Selected )
@@ -113,12 +137,14 @@ CTexture* GetThumbnail( const std::string& Name )
 	return nullptr;
 }
 
-CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh, MaterialAsset* Material = nullptr )
+std::list<CModelPass> GeneratorList;
+CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh, MaterialAsset* Material, const float FieldOfView )
 {
 	RenderTextureConfiguration Configuration;
 	Configuration.Width = 64;
 	Configuration.Height = 64;
 	Configuration.Format = EImageFormat::RGBA8;
+	Configuration.Samples = 4;
 
 	CRenderTexture* ThumbnailTexture = nullptr;
 
@@ -133,10 +159,12 @@ CTexture* GenerateThumbnail( const std::string& Name, CMesh* Mesh, MaterialAsset
 		ThumbnailTexture = dynamic_cast<CRenderTexture*>( Iterator->second );
 	}
 
-	static CModelPass ModelPass;
+	GeneratorList.emplace_back();
+	auto& ModelPass = GeneratorList.back();
 	ModelPass.Reset();
 	ModelPass.Target = ThumbnailTexture;
 	ModelPass.Model.SetMesh( Mesh );
+	ModelPass.FieldOfView = FieldOfView;
 
 	if( Material )
 	{
@@ -408,6 +436,7 @@ void ContentBrowserUI()
 			if( !Thumbnail )
 			{
 				ShouldGenerateThumbnail = true;
+				GenerateThumbnail( Pair.first, Mesh );
 			}
 
 			if( !Thumbnail )
@@ -509,6 +538,7 @@ void ContentBrowserUI()
 			if( !Thumbnail )
 			{
 				ShouldGenerateThumbnail = true;
+				GenerateThumbnail( Pair.first, PrimitiveCube, Material );
 			}
 
 			if( !Thumbnail )
