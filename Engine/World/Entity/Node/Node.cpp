@@ -238,11 +238,12 @@ Route Network::Path( const Vector3D& From, const Vector3D& To )
 	{
 		Data* Node = nullptr;
 		float Cost = FLT_MAX;
+		float Heuristic = FLT_MAX;
 		Data* Previous = nullptr;
 
 		constexpr bool operator<( const Connection& Right ) const
 		{
-			return Cost > Right.Cost;
+			return Heuristic > Right.Heuristic;
 		}
 	};
 
@@ -253,6 +254,7 @@ Route Network::Path( const Vector3D& From, const Vector3D& To )
 	// Configure and add the first node to the graph.
 	Connection First;
 	First.Cost = 0.0f;
+	First.Heuristic = 0.0f;
 	First.Node = Start;
 	Connections.insert_or_assign( Start->ID, First );
 
@@ -289,10 +291,12 @@ Route Network::Path( const Vector3D& From, const Vector3D& To )
 			const float DistanceToNode = Node->Position.DistanceSquared( Entry.Node->Position );
 			const float DistanceToGoal = Node->Position.DistanceSquared( To );
 			const float Cost = Entry.Cost + DistanceToNode;
-			if( ( Cost + DistanceToGoal ) < NeighborCost )
+			const float Heuristic = Cost + DistanceToGoal;
+			if( Heuristic < NeighborCost )
 			{
 				Connection Edge;
 				Edge.Cost = Cost;
+				Edge.Heuristic = Heuristic;
 				Edge.Previous = Entry.Node;
 				Edge.Node = Node;
 
