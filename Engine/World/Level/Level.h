@@ -78,6 +78,15 @@ public:
 		return Spawn( Type, std::to_string( Entities.size() ) );
 	}
 
+	CEntity* Spawn( const std::string& Type, const std::string& Name, const JSON::Container& Data )
+	{
+		CEntity* Entity = Spawn( Type, Name );
+		Entity->Load( Data.Tree );
+		Entity->Reload();
+		Entity->Construct();
+		return Entity;
+	}
+
 	void Load( const CFile& File, const bool AssetsOnly = false );
 	const std::vector<CEntity*>& GetEntities() const
 	{ 
