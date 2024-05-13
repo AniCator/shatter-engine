@@ -267,6 +267,9 @@ Route Network::Path( const Vector3D& From, const Vector3D& To )
 		const auto Entry = PriorityQueue.top();
 		PriorityQueue.pop();
 
+		if( Entry.Node->ID == Goal->ID )
+			break; // We've reached the goal node.
+
 		// TODO: Do we have to check if the node in the connection is valid?
 		//		 The music graph does this but maybe it's overkill.
 
@@ -304,9 +307,6 @@ Route Network::Path( const Vector3D& From, const Vector3D& To )
 				PriorityQueue.push( Edge );
 			}
 		}
-
-		if( Entry.Node->ID == Goal->ID )
-			break;
 	}
 
 	Route.reserve( Connections.size() );
