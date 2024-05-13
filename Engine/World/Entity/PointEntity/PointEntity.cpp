@@ -143,6 +143,7 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 	}
 
 	ShouldUpdateTransform = true;
+	Transform.Update();
 
 	if( Level && Transform.IsDirty() )
 	{

@@ -212,7 +212,8 @@ void CMeshEntity::TickAnimation()
 		return;
 
 	// Update the world bounds based on the bone locations.
-	WorldBounds = AnimationInstance.CalculateBounds( GetTransform() );
+	const auto& TransformReadOnly = Transform;
+	WorldBounds = AnimationInstance.CalculateBounds( TransformReadOnly );
 
 	FRenderDataInstanced& RenderData = Renderable->GetRenderData();
 	RenderData.WorldBounds = WorldBounds;
@@ -235,7 +236,8 @@ void CMeshEntity::Frame()
 		if( const auto* Camera = GetWorld()->GetActiveCamera() )
 		{
 			const auto RenderDistanceSquared = MaximumRenderDistance * MaximumRenderDistance;
-			const auto DistanceSquared = Transform.GetPosition().DistanceSquared( Camera->GetCameraPosition() );
+			const auto& TransformReadOnly = Transform;
+			const auto DistanceSquared = TransformReadOnly.GetPosition().DistanceSquared( Camera->GetCameraPosition() );
 			if( DistanceSquared > RenderDistanceSquared )
 			{
 				IsCulled = true;
@@ -364,7 +366,8 @@ void CMeshEntity::Debug()
 			ByteToVector( Vertex.Normal, Normal );
 			ByteToVector( Vertex.Tangent, Tangent );
 
-			Matrix4D BoneTransform = Transform.GetTransformationMatrix();
+			const auto& TransformReadOnly = Transform;
+			Matrix4D BoneTransform = TransformReadOnly.GetTransformationMatrix();
 			if( !AnimationInstance.Bones.empty() )
 			{
 				BoneTransform = Matrix4D( 0.0f );
@@ -391,7 +394,7 @@ void CMeshEntity::Debug()
 				}
 
 				// Transform to the model location.
-				BoneTransform = Transform.GetTransformationMatrix() * BoneTransform;
+				BoneTransform = TransformReadOnly.GetTransformationMatrix() * BoneTransform;
 			}
 
 			Vector3D Position = BoneTransform.Transform( Vertex.Position );
