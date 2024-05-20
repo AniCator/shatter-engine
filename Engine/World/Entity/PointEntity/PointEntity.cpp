@@ -143,12 +143,13 @@ void CPointEntity::Load( const JSON::Vector& Objects )
 	}
 
 	ShouldUpdateTransform = true;
-	Transform.Update();
 
 	if( Level && Transform.IsDirty() )
 	{
 		Transform = Level->GetTransform().Transform( Transform );
 	}
+
+	GetTransform();
 
 	PreviousWorldTransform = Transform;
 }
