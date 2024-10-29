@@ -375,7 +375,7 @@ AngelResult ScriptEngine::AddEnum( const char* Type, const std::vector<std::pair
 	return AngelResult::Success;
 }
 
-AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint, void* Object )
+AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint, const std::vector<void*>& Objects )
 {
 	if( !Engine )
 		return AngelResult::Unknown;
@@ -397,9 +397,12 @@ AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint, voi
 
 	Context->Prepare( EntryFunction );
 
-	if( Object )
+	if( !Objects.empty() )
 	{
-		Context->SetArgObject( 0, Object );
+		for( size_t Index = 0; Index < Objects.size(); ++Index )
+		{
+			Context->SetArgObject( Index, Objects[Index] );
+		}
 	}
 
 	const int ExecutionResult = Context->Execute();
@@ -423,6 +426,12 @@ AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint, voi
 	}
 
 	return AngelResult::Success;
+}
+
+AngelResult ScriptEngine::Execute( const char* Name, const char* EntryPoint, void* Object )
+{
+	std::vector<void*> Objects = { Object };
+	return Execute( Name, EntryPoint, Objects );
 }
 
 bool ScriptEngine::HasFunction( const char* Name, const char* EntryPoint )

@@ -32,6 +32,9 @@ struct RenderPassUniformBlock
 	Vector4D Viewport;
 };
 
+void PushDebugGroup( const char* Name, const int Length );
+void PopDebugGroup();
+
 class CRenderPass
 {
 public:

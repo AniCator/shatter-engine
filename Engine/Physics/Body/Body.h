@@ -94,6 +94,9 @@ public:
 	// Determines what collision tests should be used for this object.
 	BodyType Type = BodyType::AABB;
 
+	// Determines what integrator to use.
+	Integrator Integrator = Integrator::Euler;
+
 	// This body hasn't moved for a while.
 	bool Sleeping = false;
 	double LastActivity = -1.0;
@@ -148,4 +151,10 @@ public:
 
 	std::vector<CMeshEntity*> IgnoredBodies;
 	class CPhysics* Physics = nullptr;
+
+	struct Constraint
+	{
+		
+	};
+	std::vector<Constraint> Constraints;
 };

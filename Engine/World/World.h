@@ -169,8 +169,8 @@ public:
 	/// <param name="ID">Event identifier that should be broadcasted.</param>
 	/// <param name="Payload">Map of properties.</param>
 	template<class T,
-		class = std::enable_if_t<std::is_same<std::underlying_type<T>::type, EventType>::value>,
-		class = std::enable_if_t<std::is_enum<T>::value>
+		std::enable_if_t<std::is_same<typename std::underlying_type<T>::type, EventType>::value, bool> = true,
+		std::enable_if_t<std::is_enum<T>::value, bool> = true
 	>
 	void Broadcast( const T& ID, Event::PayloadData Payload = {} )
 	{

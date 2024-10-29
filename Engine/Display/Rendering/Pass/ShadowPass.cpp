@@ -113,31 +113,34 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 
 	FrustumCull( Camera, Renderables );
 
-	const auto* World = CWorld::GetPrimaryWorld();
-	if( World )
+	if( DistanceCullSmall )
 	{
-		const auto* ActiveCamera = World->GetActiveCamera();
-		if( ActiveCamera )
+		const auto* World = CWorld::GetPrimaryWorld();
+		if( World )
 		{
-			for( auto* Renderable : Renderables )
+			const auto* ActiveCamera = World->GetActiveCamera();
+			if( ActiveCamera )
 			{
-				auto& RenderData = Renderable->GetRenderData();
-				if( !RenderData.ShouldRender )
-					continue;
-
-				static constexpr float MaximumShadowDistance = 35.0f;
-				static constexpr float MaximumShadowDistanceSquared = MaximumShadowDistance * MaximumShadowDistance;
-				const float DistanceToCamera = RenderData.Transform.GetPosition().DistanceSquared( ActiveCamera->GetCameraPosition() );
-				if( DistanceToCamera > MaximumShadowDistanceSquared )
+				for( auto* Renderable : Renderables )
 				{
-					const auto Size = ( RenderData.WorldBounds.Maximum - RenderData.WorldBounds.Minimum );
+					auto& RenderData = Renderable->GetRenderData();
+					if( !RenderData.ShouldRender )
+						continue;
 
-					static constexpr float MaximumSize = 2.5f;
-					static constexpr float MaximumSizeSquared = MaximumSize * MaximumSize;
-					const auto SizeSquaredScalar = Size.LengthSquared();
-					if( SizeSquaredScalar < MaximumSizeSquared )
+					static constexpr float MaximumShadowDistance = 35.0f;
+					static constexpr float MaximumShadowDistanceSquared = MaximumShadowDistance * MaximumShadowDistance;
+					const float DistanceToCamera = RenderData.Transform.GetPosition().DistanceSquared( ActiveCamera->GetCameraPosition() );
+					if( DistanceToCamera > MaximumShadowDistanceSquared )
 					{
-						RenderData.ShouldRender = false;
+						const auto Size = ( RenderData.WorldBounds.Maximum - RenderData.WorldBounds.Minimum );
+
+						static constexpr float MaximumSize = 2.5f;
+						static constexpr float MaximumSizeSquared = MaximumSize * MaximumSize;
+						const auto SizeSquaredScalar = Size.LengthSquared();
+						if( SizeSquaredScalar < MaximumSizeSquared )
+						{
+							RenderData.ShouldRender = false;
+						}
 					}
 				}
 			}
@@ -145,6 +148,9 @@ uint32_t CRenderPassShadow::Render( const std::vector<CRenderable*>& Renderables
 	}
 
 	ProjectionView = Camera.GetProjectionMatrix() * Camera.GetViewMatrix();
+
+	DepthMask = EDepthMask::Write;
+	DepthTest = EDepthTest::Less;
 
 	Begin();
 
@@ -191,10 +197,34 @@ void CRenderPassShadow::ConfigureShader( CShader* Shader )
 	ConfigureDepthMask( Shader );
 	ConfigureDepthTest( Shader );
 
-	// BUG: For some reason this value isn't updated correctly.
-	if( true || ProjectionViewMatrixLocation < 1 || LastProgram != Shader->GetHandles().Program )
+	const auto Program = Shader->GetHandles().Program;
+	UseProjectionViewLocation = glGetUniformLocation( Program, "UseProjectionView" );
+	if( UseProjectionViewLocation > -1 )
 	{
-		ProjectionViewMatrixLocation = glGetUniformLocation( Shader->GetHandles().Program, "ProjectionView" );
+		glUniform1i( UseProjectionViewLocation, UseProjectionView ? 1 : 0 );
+	}
+
+	if( !UseProjectionView )
+	{
+		const GLint ViewMatrixLocation = glGetUniformLocation( Program, "View" );
+		if( ViewMatrixLocation > -1 )
+		{
+			const auto& ViewMatrix = Camera.GetViewMatrix();
+			glUniformMatrix4fv( ViewMatrixLocation, 1, GL_FALSE, &ViewMatrix[0][0] );
+		}
+
+		const GLint ProjectionMatrixLocation = glGetUniformLocation( Program, "Projection" );
+		if( ProjectionMatrixLocation > -1 )
+		{
+			const auto& ProjectionMatrix = Camera.GetProjectionMatrix();
+			glUniformMatrix4fv( ProjectionMatrixLocation, 1, GL_FALSE, &ProjectionMatrix[0][0] );
+		}
+	}
+
+	// BUG: For some reason this value isn't updated correctly.
+	if( true || ProjectionViewMatrixLocation < 1 || LastProgram != Program )
+	{
+		ProjectionViewMatrixLocation = glGetUniformLocation( Program, "ProjectionView" );
 	}
 
 	if( ProjectionViewMatrixLocation > -1 )

@@ -216,7 +216,8 @@ public:
 	static Bus::Volume GetBusOutput( const Bus::Type& Bus );
 	static float* GetBusFFT( const Bus::Type& Bus );
 	static float Volume( const Bus::Type& Bus );
-	static void Volume( const Bus::Type& Bus, const float& Volume );
+	static void Volume( const Bus::Type& Bus, const float Volume );
+	static void Rate( const Bus::Type& Bus, const float Rate );
 
 	static struct FilterStack& GetBusStack( const Bus::Type& Bus );
 

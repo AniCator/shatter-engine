@@ -18,6 +18,7 @@
 #include <Engine/Display/Rendering/RenderTexture.h>
 #include <Engine/Display/Rendering/RenderPass.h>
 #include <Engine/Display/Rendering/Pass/ShadowPass.h>
+#include <Engine/Display/Window.h>
 #include <Engine/Display/UserInterface.h>
 
 #include <Engine/Profiling/Logging.h>
@@ -66,7 +67,7 @@ ConfigurationVariable<int> AntiAliasing( "render.AntiAliasing", 2 );
 ConfigurationVariable<bool> FlipHorizontal( "render.FlipHorizontal", false );
 
 // Depth pre-pass.
-ConfigurationVariable<bool> UsePrePass( "render.PrePass", false );
+ConfigurationVariable<bool> UsePrePass( "render.PrePass", true );
 
 int MaximumSamples = -1;
 int GetSampleCount()
@@ -200,6 +201,7 @@ void ConfigureGrade( CRenderer* Renderer )
 	Renderer->SetUniform( "ColorLift", Renderer->Grade.Lift );
 	Renderer->SetUniform( "ColorGamma", Renderer->Grade.Gamma );
 	Renderer->SetUniform( "ColorGain", Renderer->Grade.Gain );
+	Renderer->SetUniform( "ColorBSC", Renderer->Grade.BSC );
 }
 
 void CRenderer::Initialize()
@@ -306,6 +308,9 @@ void CRenderer::RefreshFrame()
 
 void CRenderer::QueueRenderable( CRenderable* Renderable )
 {
+	if( CWindow::Get().IsWindowless() )
+		return; // Don't queue renderables if we don't have a window.
+
 	if( Stage == RenderableStage::Tick )
 	{
 		Renderables.emplace_back( Renderable );
@@ -318,6 +323,9 @@ void CRenderer::QueueRenderable( CRenderable* Renderable )
 
 void CRenderer::QueueDynamicRenderable( CRenderable* Renderable )
 {
+	if( CWindow::Get().IsWindowless() )
+		return; // Don't queue renderables if we don't have a window.
+
 	DynamicRenderables.emplace_back( Renderable );
 }
 
@@ -686,6 +694,9 @@ Vector2D CRenderer::WorldToScreenPosition( const Vector3D& WorldPosition ) const
 
 void CRenderer::AddRenderPass( CRenderPass* Pass, RenderPassLocation::Type Location )
 {
+	if( CWindow::Get().IsWindowless() )
+		return; // Don't queue renderables if we don't have a window.
+
 	FRenderPass RenderPass;
 	RenderPass.Location = Location;
 	RenderPass.Pass = Pass;
@@ -720,20 +731,43 @@ void CRenderer::RefreshShaderHandle( CRenderable* Renderable )
 void CRenderer::DrawDepthPrepass()
 {
 	OptickEvent();
+	PushDebugGroup( "Depth Pre-Pass", 16 );
 
 	static CRenderPassShadow DepthPrePass( Framebuffer.GetWidth(), Framebuffer.GetHeight(), Camera );
 	DepthPrePass.ViewportWidth = Framebuffer.GetWidth();
 	DepthPrePass.ViewportHeight = Framebuffer.GetHeight();
 	DepthPrePass.Target = &Framebuffer;
 	DepthPrePass.RenderToFrameBuffer = true;
-
+	DepthPrePass.DistanceCullSmall = false;
+	DepthPrePass.UseProjectionView = false;
+	DepthPrePass.SetCamera( Camera );
 	DepthPrePass.Render( RenderQueueOpaque, GlobalUniformBuffers );
+
+	PopDebugGroup();
 }
 
 void CRenderer::DrawPasses( const RenderPassLocation::Type& Location, CRenderTexture* Target )
 {
 	OptickEvent();
 	CRenderTexture* PassTarget = Target ? Target : &Framebuffer;
+
+	switch( Location )
+	{
+	case RenderPassLocation::PreScene:
+		PushDebugGroup( "Pre-Scene", 11 );
+		break;
+	case RenderPassLocation::Scene:
+		PushDebugGroup( "Post-Scene", 12 );
+		break;
+	case RenderPassLocation::Translucent:
+		PushDebugGroup( "Translucent", 13 );
+		break;
+	case RenderPassLocation::PostProcess:
+		PushDebugGroup( "Post-Process", 14 );
+		break;
+	default:
+		break;
+	}
 	
 	const bool RenderOnlyMainPass = SkipRenderPasses || ForceWireFrame;
 	for( auto& Pass : Passes )
@@ -763,6 +797,18 @@ void CRenderer::DrawPasses( const RenderPassLocation::Type& Location, CRenderTex
 				DrawCalls += Pass.Pass->Render( GlobalUniformBuffers );
 			}
 		}
+	}
+
+	switch( Location )
+	{
+	case RenderPassLocation::PreScene:
+	case RenderPassLocation::Scene:
+	case RenderPassLocation::Translucent:
+	case RenderPassLocation::PostProcess:
+		PopDebugGroup();
+		break;
+	default:
+		break;
 	}
 }
 

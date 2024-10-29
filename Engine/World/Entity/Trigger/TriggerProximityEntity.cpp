@@ -18,14 +18,50 @@ CTriggerProximityEntity::CTriggerProximityEntity()
 
 void CTriggerProximityEntity::Construct()
 {
-	Tag( "trigger" );
+	RadiusSquared = Radius * Radius;
 
 	if( !Volume )
 	{
 		Volume = new CTriggerBody<Interactable*>( this );
 		Volume->Construct();
 		Volume->SetBounds( BoundingBox( Transform.GetPosition() - Radius, Transform.GetPosition() + Radius ) );
+
+		Volume->OnEnter = [this]( Interactable* Interactable )
+		{
+			OnEnter( Interactable );
+		};
+
+		Volume->OnLeave = [this]( Interactable* Interactable )
+		{
+			OnLeave( Interactable );
+		};
+
+		Volume->Condition = [this]( Interactable* Interactable )
+		{
+			if( !IsValidEntity( Interactable ) )
+				return false;
+
+			// Check if we're actuall within the trigger radius, the trigger body volume works like a box by default.
+			if( auto* PointEntity = Cast<CPointEntity>( Interactable ) )
+			{
+				const auto DistanceSquared = PointEntity->GetTransform().GetPosition().DistanceSquared( Transform.GetPosition() );
+				if( DistanceSquared > RadiusSquared )
+				{
+					// This entity is out of range.
+					return false;
+				}
+			}
+
+			return true;
+		};
 	}
+
+	if( const auto* World = GetWorld() )
+	{
+		Filter = World->Find( FilterName );
+	}
+
+	Tag( "trigger" );
 }
 
 void CTriggerProximityEntity::Tick()
@@ -78,7 +114,39 @@ void CTriggerProximityEntity::Load( const JSON::Vector& Objects )
 		{
 			Extract( Property->Value, Frequency );
 		}
+		else if( Property->Key == "filter" )
+		{
+			FilterName = Property->Value;
+		}
 	}
+}
+
+void CTriggerProximityEntity::Debug()
+{
+	CPointEntity::Debug();
+
+	UI::AddSphere( Transform.GetPosition(), Radius, Color::Red );
+
+	std::string EntityString;
+	for( auto* Interactable : Volume->Entities )
+	{
+		EntityString += ( dynamic_cast<CEntity*>( Interactable ) )->Name.String() + "\n";
+	}
+
+	if( Volume->Entities.empty() )
+	{
+		EntityString = "(none)\n";
+	}
+
+	if( FilterName.length() > 0 )
+	{
+		EntityString += "Filter: " + FilterName + "\n";
+	}
+
+	if( !Volume )
+		return;
+
+	UI::AddText( Transform.GetPosition() + Volume->GetWorldBounds().Maximum, EntityString.c_str() );
 }
 
 void CTriggerProximityEntity::Export( CData& Data )
@@ -88,6 +156,8 @@ void CTriggerProximityEntity::Export( CData& Data )
 	Data << Frequency;
 	Data << Latched;
 	Data << Count;
+
+	DataString::Encode( Data, FilterName );
 }
 
 void CTriggerProximityEntity::Import( CData& Data )
@@ -97,37 +167,53 @@ void CTriggerProximityEntity::Import( CData& Data )
 	Data >> Frequency;
 	Data >> Latched;
 	Data >> Count;
+
+	DataString::Decode( Data, FilterName );
 }
 
-void CTriggerProximityEntity::Debug()
+void CTriggerProximityEntity::OnEnter( Interactable* Interactable )
 {
-	CPointEntity::Debug();
+	const auto ShouldTrigger = ( Frequency < 0 || Count < Frequency );
+	if( !ShouldTrigger )
+		return;
 
-	UI::AddSphere( Transform.GetPosition(), Radius, Color::Red );
+	if( IsDebugEnabled() )
+	{
+		Log::Event( "OnEnter\n" );
+	}
+
+	Send( "OnEnter", this );
+}
+
+void CTriggerProximityEntity::OnLeave( Interactable* Interactable )
+{
+	if( IsDebugEnabled() )
+	{
+		Log::Event( "OnLeave\n" );
+	}
+
+	Send( "OnLeave", this );
+}
+
+const std::unordered_set<Interactable*>& CTriggerProximityEntity::Fetch() const
+{
+	return Volume->Entities;
 }
 
 // TODO: Add support for a filter like in trigger_box.
 bool CTriggerProximityEntity::CanTrigger() const
 {
 	// Check if any interactables are within the volume.
-	const bool IsEmpty = Volume->Entities.empty();
-	if( IsEmpty )
-		return false;
+	return !Volume->Entities.empty();
+}
 
-	// Check if any of the entities are within the trigger's actual radius.
-	const auto RadiusSquared = Radius * Radius;
-	for( auto* Entity : Volume->Entities )
+bool CTriggerProximityEntity::IsValidEntity( Interactable* Interactable ) const
+{
+	const auto* Entity = Cast<CEntity>( Interactable );
+	if( Entity && Entity == Filter )
 	{
-		if( auto* PointEntity = Cast<CPointEntity>( Entity ) )
-		{
-			const auto Delta = PointEntity->GetTransform().GetPosition() - Transform.GetPosition();
-			if( Delta.LengthSquared() < RadiusSquared )
-			{
-				// This entity is within range.
-				return true;
-			}
-		}
+		return true;
 	}
 
-	return false;
+	return FilterName.empty();
 }

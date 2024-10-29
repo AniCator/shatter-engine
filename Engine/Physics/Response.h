@@ -24,4 +24,11 @@ namespace Response
 		const Vector3D& Center, 
 		const Vector3D& Extent 
 	);
+
+	CollisionResponse TriangleSphere(
+		const VertexFormat& A,
+		const VertexFormat& B,
+		const VertexFormat& C,
+		const BoundingSphere& Sphere
+	);
 }

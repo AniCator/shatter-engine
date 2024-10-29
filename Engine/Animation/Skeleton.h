@@ -6,6 +6,7 @@
 #include <unordered_map>
 #include <string>
 
+#include <Engine/Utility/Container.h>
 #include <Engine/Utility/DataString.h>
 #include <Engine/Utility/Flag.h>
 #include <Engine/Utility/Math/Matrix.h>
@@ -53,103 +54,6 @@ struct CompoundKey
 	Key Position;
 	Key Rotation;
 	Key Scale;
-};
-
-template<typename T>
-struct FixedVector
-{
-	FixedVector( const size_t& Size )
-	{
-		this->Size = Size;
-		Data = new T[Size];
-	}
-
-	~FixedVector()
-	{
-		delete Data;
-	}
-
-	T& operator[]( const size_t& Index )
-	{
-		return Data[Index];
-	}
-
-	const T& operator[]( const size_t& Index ) const
-	{
-		return Data[Index];
-	}
-
-	size_t size() const
-	{
-		return Size;
-	}
-
-	bool empty() const
-	{
-		return Size == 0;
-	}
-
-	// Copy
-	FixedVector( FixedVector const& Vector )
-	{
-		if( this == &Vector )
-			return;
-
-		delete Data;
-		Size = Vector.Size;
-		Data = new T[Size];
-
-		for( size_t Index = 0; Index < Size; Index++ )
-		{
-			Data[Index] = Vector.Data[Index];
-		}
-	}
-
-	FixedVector& operator=( FixedVector const& Vector )
-	{
-		if( this == &Vector )
-			return *this;
-
-		delete Data;
-		Size = Vector.Size;
-		Data = new T[Size];
-
-		for( size_t Index = 0; Index < Size; Index++ )
-		{
-			Data[Index] = Vector.Data[Index];
-		}
-
-		return *this;
-	}
-
-	// Move.
-	FixedVector( FixedVector&& Vector ) noexcept
-	{
-		Size = Vector.Size;
-		Data = Vector.Data;
-
-		Vector.Size = 0;
-		Vector.Data = nullptr;
-	}
-
-	FixedVector& operator=( FixedVector&& Vector ) noexcept
-	{
-		if( this == &Vector )
-			return *this;
-
-		Size = Vector.Size;
-		Data = Vector.Data;
-
-		Vector.Size = 0;
-		Vector.Data = nullptr;
-
-		return *this;
-	}
-
-	FixedVector() = default;
-protected:
-	size_t Size = 0;
-	T* Data = nullptr;
 };
 
 struct Animation

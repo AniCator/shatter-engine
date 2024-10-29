@@ -676,6 +676,11 @@ struct FEventRenderable : TrackEvent
 		if( Animation.Stack.empty() )
 		{
 			Animation.SetAnimation( Animation.CurrentAnimation, LoopAnimation );
+
+			if( Animation.Stack.empty() )
+			{
+				return; // The stack is still empty.
+			}
 		}
 
 		if( IsAnimating )

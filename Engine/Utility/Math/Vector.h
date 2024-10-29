@@ -326,6 +326,16 @@ public:
 		);
 	}
 
+	Vector3D operator^( const Vector3D& Vector )
+	{
+		return Cross( Vector );
+	}
+
+	float operator|( const Vector3D& Vector )
+	{
+		return Dot( Vector );
+	}
+
 	Vector3D operator+( const float& Scalar ) const
 	{
 		return Vector3D(
@@ -405,6 +415,12 @@ public:
 		X /= Vector.X;
 		Y /= Vector.Y;
 		Z /= Vector.Z;
+		return *this;
+	}
+
+	Vector3D operator^=( const Vector3D& Vector )
+	{
+		*this = Cross( Vector );
 		return *this;
 	}
 

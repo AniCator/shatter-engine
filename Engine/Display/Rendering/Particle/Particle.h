@@ -11,11 +11,11 @@
 
 struct Particle
 {
-	glm::vec4 Position;
-	glm::vec4 PreviousPosition;
-	glm::vec4 Parameters;
-	glm::vec4 ScratchpadA;
-	glm::vec4 ScratchpadB;
+	glm::vec4 Position = glm::vec4( 0.0f, 0.0f, 0.0f, 1.0f );
+	glm::vec4 PreviousPosition = glm::vec4( 0.0f, 0.0f, 0.0f, 1.0f );
+	glm::vec4 Parameters = glm::vec4( -1.0f );
+	glm::vec4 ScratchpadA = glm::vec4( -1.0f );
+	glm::vec4 ScratchpadB = glm::vec4( -1.0f );
 };
 
 constexpr uint32_t MaximumParticleTextures = 8;

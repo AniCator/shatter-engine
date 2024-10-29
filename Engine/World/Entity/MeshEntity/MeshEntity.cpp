@@ -566,7 +566,8 @@ void CMeshEntity::Load( const JSON::Vector& Objects )
 		}
 		else if( Property->Key == "animation" && Property->Value.length() > 0 )
 		{
-			AnimationInstance.CurrentAnimation = Property->Value;
+			// AnimationInstance.CurrentAnimation = Property->Value;
+			SetAnimation( Property->Value );
 		}
 		else if( Property->Key == "playrate" && Property->Value.length() > 0 )
 		{
@@ -866,7 +867,7 @@ void CMeshEntity::ConstructRenderable()
 	// Set up animation data.
 	const auto& Set = Mesh->GetAnimationSet();
 	const auto& Skeleton = Set.Skeleton;
-	if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() )
+	if( !Skeleton.Bones.empty() && !Skeleton.Animations.empty() && GetAnimation().empty() )
 	{
 		const auto FirstAnimation = ( *Skeleton.Animations.begin() ).first;
 		SetAnimation( FirstAnimation, true );

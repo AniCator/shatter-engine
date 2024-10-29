@@ -715,7 +715,7 @@ float SoLoudSound::Volume( const Bus::Type& Bus )
 	return Mixer[Bus].getVolume();
 }
 
-void SoLoudSound::Volume( const Bus::Type& Bus, const float& Volume )
+void SoLoudSound::Volume( const Bus::Type& Bus, const float Volume )
 {
 	if( Bus == Bus::Master )
 	{
@@ -723,6 +723,14 @@ void SoLoudSound::Volume( const Bus::Type& Bus, const float& Volume )
 	}
 	
 	Mixer[Bus].setVolume( Volume );
+}
+
+void SoLoudSound::Rate( const Bus::Type& Bus, const float Rate )
+{
+	if( Mixer[Bus].mChannelHandle == 0 )
+		return;
+	
+	Engine.setRelativePlaySpeed( Mixer[Bus].mChannelHandle, Rate );
 }
 
 FilterStack& SoLoudSound::GetBusStack( const Bus::Type& Bus )

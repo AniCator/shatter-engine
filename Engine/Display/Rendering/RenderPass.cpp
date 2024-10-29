@@ -17,6 +17,12 @@
 #include <ThirdParty/glm/glm.hpp>
 #include <ThirdParty/glm/gtc/type_ptr.hpp>
 
+#ifdef _DEBUG
+#define UseDebugGroup
+#else 
+#define UseDebugGroup
+#endif
+
 GLuint ShaderProgramHandle = -1;
 
 static const GLenum DepthTestToEnum[EDepthTest::Maximum]
@@ -30,6 +36,20 @@ static const GLenum DepthTestToEnum[EDepthTest::Maximum]
 	GL_GEQUAL,
 	GL_ALWAYS
 };
+
+void PushDebugGroup( const char* Name, const int Length )
+{
+#if defined(UseDebugGroup)
+	glPushDebugGroup( GL_DEBUG_SOURCE_APPLICATION, 0, Length, Name );
+#endif
+}
+
+void PopDebugGroup()
+{
+#if defined(UseDebugGroup)
+	glPopDebugGroup();
+#endif
+}
 
 CRenderPass::CRenderPass( const std::string& Name, int Width, int Height, const CCamera& CameraIn, const bool AlwaysClearIn )
 {
@@ -152,9 +172,7 @@ void CRenderPass::Clear()
 
 void CRenderPass::Begin()
 {
-#if defined(_DEBUG)
-	glPushDebugGroup( GL_DEBUG_SOURCE_APPLICATION, 0, PassName.length(), PassName.c_str() );
-#endif
+	PushDebugGroup( PassName.c_str(), PassName.length() );
 	Calls = 0;
 	glViewport( 0, 0, ViewportWidth, ViewportHeight );
 
@@ -199,9 +217,7 @@ void CRenderPass::End()
 		Target->Pop();
 	}
 
-#if defined(_DEBUG)
-	glPopDebugGroup();
-#endif
+	PopDebugGroup();
 }
 
 void CRenderPass::Setup( CRenderable* Renderable, UniformMap& Uniforms )

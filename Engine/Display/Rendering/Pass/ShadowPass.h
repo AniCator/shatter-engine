@@ -26,11 +26,18 @@ public:
 	// Renders everything twice from both sides.
 	bool DoubleSided = false;
 
+	// Don't render smaller objects.
+	bool DistanceCullSmall = true;
+
+	// Use combined projection-view matrix.
+	bool UseProjectionView = true;
+
 protected:
 	void ConfigureShader( CShader* Shader );
 	void DrawShadowMeshes( const std::vector<CRenderable*>& Renderables );
 
 	int ModelMatrixLocation = -1;
 	int ProjectionViewMatrixLocation = -1;
+	int UseProjectionViewLocation = -1;
 	unsigned int LastProgram = 0;
 };

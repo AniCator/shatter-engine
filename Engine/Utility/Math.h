@@ -2,6 +2,7 @@
 #pragma once
 
 #include <math.h>
+#include <cmath>
 #include <algorithm>
 #include <string>
 
@@ -378,6 +379,12 @@ namespace Math
 	}
 
 	template<typename T>
+	inline float Double( const T& X )
+	{
+		return StaticCast<double>( X );
+	}
+
+	template<typename T>
 	inline int Integer( const T& X )
 	{
 		return StaticCast<int>( X );
@@ -391,6 +398,16 @@ namespace Math
 	inline float Float( const std::string& String )
 	{
 		return Float( String.c_str() );
+	}
+
+	inline float Double( const char* X )
+	{
+		return Double( std::strtod( X, nullptr ) );
+	}
+
+	inline float Double( const std::string& String )
+	{
+		return Double( String.c_str() );
 	}
 
 	inline int Integer( const char* X )
@@ -410,12 +427,22 @@ namespace Math
 
 	inline Vector3D Lerp( const Vector3D& A, const Vector3D& B, const float& Alpha )
 	{
-		return A + Vector3D( Alpha, Alpha, Alpha ) * ( B - A );
+		return A + Alpha * ( B - A );
 	}
 
 	inline Vector4D Lerp( const Vector4D& A, const Vector4D& B, const float& Alpha )
 	{
 		return A + Vector4D( Alpha, Alpha, Alpha, Alpha ) * ( B - A );
+	}
+
+	inline float Decay( const float& A, const float& B, const float& Decay, const float& DeltaTime )
+	{
+		return ( A - B ) * exp( -Decay * DeltaTime ) + B;
+	}
+
+	inline Vector3D Decay( const Vector3D& A, const Vector3D& B, const float& Decay, const float& DeltaTime )
+	{
+		return ( A - B ) * exp( -Decay * DeltaTime ) + B;
 	}
 
 	inline Vector3D Bezier( const Vector3D& A, const Vector3D& B, const Vector3D& C, const Vector3D& D, const float Factor )
@@ -883,8 +910,6 @@ namespace Math
 	};
 
 	static PCG Generator;
-	constexpr uint32_t RandomMaximum = -1;
-
 	inline void Seed( uint32_t Value )
 	{
 		// std::srand( Value );
@@ -907,6 +932,52 @@ namespace Math
 	{
 		// return Minimum + ( std::rand() % ( Maximum - Minimum + 1 ) );
 		return Generator.Range( Minimum, Maximum );
+	}
+
+	// Returns a float with a normal distribution using the Marsaglia polar method. (https://en.wikipedia.org/wiki/Marsaglia_polar_method)
+	struct DistributionMarsaglia
+	{
+		std::pair<float, float> operator()( const float Mean = 0.0f, const float StandardDeviation = 1.0f ) const
+		{
+			float X;
+			float Y;
+			float Square;
+
+			do {
+				X = 2.0f * Math::Generator.Float() - 1.0f;
+				Y = 2.0f * Math::Generator.Float() - 1.0f;
+				Square = X * X + Y * Y;
+			} while( Square >= 1.0f || Square == 0.0f );
+
+			Square = std::sqrt( -2.0f * std::log( Square ) / Square );
+			const auto A = Mean + StandardDeviation * X * Square;
+			const auto B = Mean + StandardDeviation * Y * Square;
+
+			return { A, B };
+		}
+	};
+
+	struct DistributionBoxMuller
+	{
+		std::pair<float, float> operator()( const float Mean = 0.0f, const float StandardDeviation = 1.0f ) const
+		{
+			float X = Math::Generator.Float();
+			float Y = Math::Generator.Float();
+
+			float Radius = std::sqrt( -2.0 * std::log( X ) );
+			float Theta = 2.0 * Math::Pi() * Y;
+
+			const auto A = Mean + StandardDeviation * Radius * std::cos( Theta );
+			const auto B = Mean + StandardDeviation * Radius * std::sin( Theta );
+			return { A, B };
+		}
+	};
+
+	using NormalDistribution = DistributionBoxMuller;
+	constexpr NormalDistribution Distribution;
+	inline float RandomNormal( const float Mean = 0.0f, const float StandardDeviation = 1.0f )
+	{
+		return Distribution( Mean, StandardDeviation ).first;
 	}
 
 	inline Vector4D FromGLM( const glm::vec4& Vector )

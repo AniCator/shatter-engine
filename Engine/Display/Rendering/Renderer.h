@@ -49,6 +49,9 @@ struct ColorGrade
 	Vector4D Gamma = { 0.0f, 0.0f, 0.0f, 0.0f };
 	Vector4D Gain = { 1.0f, 1.0f, 1.0f, 1.0f };
 
+	// Brightness, saturation, constrast.
+	Vector4D BSC = { 1.0f, 1.0f, 1.0f, 1.0f };
+
 	// Determines how much this grade should be mixed. (0-1)
 	float Weight = 1.0f;
 
@@ -67,6 +70,8 @@ struct ColorGrade
 		Lift = Math::Lerp( Lift, B.Lift, BlendWeight );
 		Gamma = Math::Lerp( Gamma, B.Gamma, BlendWeight );
 		Gain = Math::Lerp( Gain, B.Gain, BlendWeight );
+
+		Gain = Math::Lerp( BSC, B.BSC, BlendWeight );
 		
 		// Update the priority to that of the grade we're blending with.
 		Priority = B.Priority;

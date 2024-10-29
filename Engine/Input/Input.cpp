@@ -16,10 +16,11 @@ void InputKeyCallback( GLFWwindow* window, int KeyInput, int ScanCode, int Actio
 {
 	const EKey Key = InputGLFW::CodeToKey( KeyInput );
 #if defined( IMGUI_ENABLED )
-	if( ImGui::IsAnyItemActive() || ImGui::IsAnyItemHovered() )
+	const bool Debounce = ( ImGui::IsKeyDown( KeyInput ) && ActionInput == GLFW_RELEASE );
+	if( ImGui::IsAnyItemActive() || ImGui::IsAnyItemHovered() || Debounce )
 	{
 		ImGui_ImplGlfw_KeyCallback( window, KeyInput, ScanCode, ActionInput, Modifiers );
-		if( Key != EKey::NumpadSubtract )
+		if( Key != EKey::NumpadSubtract && !Debounce )
 		{
 			return;
 		}

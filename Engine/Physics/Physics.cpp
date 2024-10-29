@@ -881,5 +881,5 @@ double CPhysics::GetTimeStep() const
 	if( !Scene )
 		return 0.0;
 
-	return Scene->TimeStep;
+	return Scene->TimeStep * GameLayersInstance->GetTimeScale();
 }

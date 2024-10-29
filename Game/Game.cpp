@@ -5,6 +5,8 @@
 
 #include <Engine/Audio/SoLoudSound.h>
 
+#include <Engine/Configuration/Configuration.h>
+
 #include <Engine/Display/Rendering/Renderer.h>
 #include <Engine/Display/Window.h>
 
@@ -14,6 +16,14 @@
 #include <Engine/Utility/ThreadPool.h>
 
 CGameLayers* GameLayersInstance = new CGameLayers();
+
+ConCommand SetTimeScale( "SetTimeScale", []( const std::string& Parameters ) {
+	const float Scale = Math::Float( Parameters );
+	if( Scale == 0.0f )
+		return;
+
+	GameLayersInstance->SetTimeScale( Scale );
+} );
 
 CGameLayers::CGameLayers()
 {
@@ -106,11 +116,11 @@ void CGameLayers::Shutdown()
 	}
 }
 
-void CGameLayers::Time( const double& Time )
+void CGameLayers::Time( const double& RealDeltaTime )
 {
+	DeltaTime = RealDeltaTime * TimeScale;
 	PreviousTime = CurrentTime;
-	CurrentTime = Time;
-	DeltaTime = CurrentTime - PreviousTime;
+	CurrentTime += DeltaTime;
 }
 
 void CGameLayers::FrameTime( const double& FrameTime )

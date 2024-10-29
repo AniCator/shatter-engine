@@ -42,6 +42,8 @@ void* operator new( size_t Size )
 	if( Size > LargestAllocation )
 	{
 		LargestAllocation = Size;
+		// if( IsDebuggerPresent() )
+		//	__debugbreak();
 	}
 
 	if( void* MemoryPointer = std::malloc( Size ) )

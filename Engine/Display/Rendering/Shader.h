@@ -118,10 +118,10 @@ private:
 	EBlendMode::Type BlendMode = EBlendMode::Opaque;
 
 	// glDepthMask
-	EDepthMask::Type DepthMask = EDepthMask::Write;
+	EDepthMask::Type DepthMask = EDepthMask::Ignore;
 
 	// glDepthFunc
-	EDepthTest::Type DepthTest = EDepthTest::Less;
+	EDepthTest::Type DepthTest = EDepthTest::Equal;
 
 	time_t ModificationTime;
 	bool ShouldAutoReload = false;
@@ -130,4 +130,7 @@ private:
 	std::vector<std::pair<std::string, Uniform>> Defaults;
 
 	void GatherDefaults();
+
+	bool LogErrorsShader( GLuint Handle, const EShaderType Type = EShaderType::TesselationEvaluation, const char* Label = nullptr );
+	bool LogErrorsProgram( GLuint Handle );
 };

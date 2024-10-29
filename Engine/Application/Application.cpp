@@ -24,6 +24,7 @@
 #endif
 
 #include <filesystem>
+#include <stack>
 
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
@@ -51,6 +52,8 @@
 #include <Engine/Display/imgui_impl_glfw.h>
 #include <Engine/Display/imgui_impl_opengl3.h>
 #endif
+
+#pragma warning(disable : 4996)
 
 CWindow& MainWindow = CWindow::Get();
 
@@ -92,14 +95,19 @@ size_t Capturing = 0;
 
 double ScaledGameTime = 0.0;
 
+constexpr float SlowMotionTarget = 0.1f;
 void InputScaleTimeEnable( const float& Scale = 1.0f )
 {
 	ScaleTime = true;
+	GameLayersInstance->SetTimeScale( Math::Lerp( GameLayersInstance->GetTimeScale(), SlowMotionTarget, Math::Saturate( GameLayersInstance->GetFrameTime() * 10.0f ) ) );
+	SoLoudSound::Rate( Bus::SFX, Math::Max(0.01f, GameLayersInstance->GetTimeScale() ) );
 }
 
 void InputScaleTimeDisable( const float& Scale = 1.0f )
 {
 	ScaleTime = false;
+	GameLayersInstance->SetTimeScale( 1.0f );
+	SoLoudSound::Rate( Bus::SFX, 1.0f );
 }
 
 void InputPauseGameEnable( const float& Scale = 1.0f )
@@ -203,6 +211,142 @@ void InputMoveCameraHigher( const float& Scale = 1.0f )
 	Setup.CameraPosition[2] += Speed;
 }
 
+std::vector<std::string> AutoCompleteCommand( const std::string& Partial )
+{
+	if( Partial.empty() )
+		return {};
+
+	std::string Query = Partial;
+	std::string Comparison;
+
+	// Transform to lowercase.
+	std::transform( Query.begin(), Query.end(), Query.begin(), ::tolower );
+
+	std::vector<std::string> Result;
+	auto& Configuration = CConfiguration::Get();
+	const auto& Settings = Configuration.GetSettings();
+	for( const auto& Pair : Settings )
+	{
+		// Transform to lowercase.
+		Comparison = Pair.first;
+		std::transform( Comparison.begin(), Comparison.end(), Comparison.begin(), ::tolower );
+
+		// Check if the lowercase characters are present.
+		if( Comparison.find( Query ) != std::string::npos )
+		{
+			Result.emplace_back( Pair.first );
+		}
+	}
+
+	const auto& Commands = Configuration.GetCommands();
+	for( const auto& Pair : Commands )
+	{
+		// Transform to lowercase.
+		Comparison = Pair.first;
+		std::transform( Comparison.begin(), Comparison.end(), Comparison.begin(), ::tolower );
+
+		// Check if the lowercase characters are present.
+		if( Comparison.find( Query ) != std::string::npos )
+		{
+			Result.emplace_back( Pair.first );
+		}
+	}
+
+	std::sort( Result.begin(), Result.end(), []( const std::string& A, const std::string& B ) {
+		return A.length() > B.length();
+	} );
+
+	return Result;
+}
+
+bool ExecuteConsoleCommand( const std::string& Command )
+{
+	Log::Event( "%s\n", Command.c_str() );
+	const auto Pair = String::Split( Command, ' ' );
+	if( Pair.first.empty() )
+		return false; // Invalid data.
+
+	auto& Configuration = CConfiguration::Get();
+
+	if( !Configuration.IsValidKey( Pair.first ) )
+	{
+		// Check if it's a command instead.
+		if( Configuration.IsValidCommand( Pair.first ) )
+		{
+			// Execute the command.
+			Configuration.Execute( Pair.first, Pair.second );
+			return true;
+		}
+
+		Log::Event( "%s is not a valid command.\n", Pair.first );
+		return false;
+	}
+
+	if( Pair.second.empty() )
+	{
+		if( !Configuration.IsValidCommand( Pair.first ) )
+		{
+			Log::Event( "%s = %s\n", Pair.first.c_str(), Configuration.GetValue( Pair.first ).c_str() );
+		}
+
+		return false;
+	}
+
+	Configuration.Store( Pair.first, Pair.second );
+	return true;
+}
+
+const std::string ColorNames[ImGuiCol_::ImGuiCol_COUNT] = {
+	"Text",
+	"TextDisabled",
+	"WindowBg",
+	"ChildBg",
+	"PopupBg",
+	"Border",
+	"BorderShadow",
+	"FrameBg",
+	"FrameBgHovered",
+	"FrameBgActive",
+	"TitleBg",
+	"TitleBgActive",
+	"TitleBgCollapsed",
+	"MenuBarBg",
+	"ScrollbarBg",
+	"ScrollbarGrab",
+	"ScrollbarGrabHovered",
+	"ScrollbarGrabActive",
+	"CheckMark",
+	"SliderGrab",
+	"SliderGrabActive",
+	"Button",
+	"ButtonHovered",
+	"ButtonActive",
+	"Header",
+	"HeaderHovered",
+	"HeaderActive",
+	"Separator",
+	"SeparatorHovered",
+	"SeparatorActive",
+	"ResizeGrip",
+	"ResizeGripHovered",
+	"ResizeGripActive",
+	"Tab",
+	"TabHovered",
+	"TabActive",
+	"TabUnfocused",
+	"TabUnfocusedActive",
+	"PlotLines",
+	"PlotLinesHovered",
+	"PlotHistogram",
+	"PlotHistogramHovered",
+	"TextSelectedBg",
+	"DragDropTarget",
+	"NavHighlight",
+	"NavWindowingHighlight",
+	"NavWindowingDimBg",
+	"ModalWindowDimBg",
+};
+
 std::map<std::string, std::function<void()>> Themes;
 void GenerateThemes()
 {
@@ -236,6 +380,13 @@ void GenerateThemes()
 		// Default to the dark theme.
 		ThemeGruvboxDark();
 	}
+
+	// ThemeGruvboxDark();
+	// const auto& Style = ImGui::GetStyle();
+	// for( size_t Index = 0; Index < ImGuiCol_::ImGuiCol_COUNT; ++Index )
+	// {
+	// 	Log::Event( "#%08x (%s)\n", ImGui::GetColorU32( Style.Colors[Index] ), ColorNames[Index].c_str() );
+	// }
 }
 
 void SetTheme( const std::string& Theme )
@@ -307,6 +458,14 @@ void DebugMenu( CApplication* Application )
 			if( ImGui::MenuItem( "Slow Motion", nullptr, ScaleTime ) )
 			{
 				ScaleTime = !ScaleTime;
+				if( ScaleTime )
+				{
+					GameLayersInstance->SetTimeScale( SlowMotionTarget );
+				}
+				else
+				{
+					GameLayersInstance->SetTimeScale( 1.0f );
+				}
 			}
 
 			if( ImGui::MenuItem( "Simulate Frame Jitter", nullptr, SimulateJitter ) )
@@ -438,7 +597,7 @@ void DebugMenu( CApplication* Application )
 
 		ImGui::PushStyleColor( ImGuiCol_WindowBg, LogBackground ); // Transparent background
 
-		if( ImGui::Begin( "Log", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings ) )
+		if( ImGui::Begin( "Log", 0, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar ) )
 		{
 			static const char* SeverityToString[Log::LogMax] =
 			{
@@ -457,6 +616,9 @@ void DebugMenu( CApplication* Application )
 				ImVec4( 1.0f,0.0f,0.0f,1.0f ),
 				ImVec4( 0.1f,0.4f,1.0f,1.0f ),
 			};
+
+			const auto Region = ImGui::GetContentRegionAvail();
+			ImGui::BeginChild( "LogText", { Region.x, Region.y - 20.0f }, false, ImGuiWindowFlags_NoSavedSettings );
 
 			const auto& LogHistory = Log::History();
 			const size_t Count = LogHistory.size();
@@ -477,9 +639,157 @@ void DebugMenu( CApplication* Application )
 
 			if( PreviousSize != Count )
 			{
-				ImGui::SetScrollHere( 1.0f );
+				ImGui::SetScrollHereY( 1.0f );
 				PreviousSize = Count;
 			}
+
+			ImGui::EndChild();
+			ImGui::BeginChild( "Console", { Region.x, 20.0f }, false, ImGuiWindowFlags_NoSavedSettings );
+
+			constexpr int GraveAccent = 96;
+			const bool ConsoleKey = ImGui::IsKeyDown( GLFW_KEY_GRAVE_ACCENT );
+			if( !ConsoleKey )
+			{
+				ImGui::SetNextItemWidth( -1.0f );
+				ImGui::SetItemDefaultFocus();
+				ImGui::SetKeyboardFocusHere();
+
+				static std::string PreviousCommand;
+				static std::array<char, 2048> ConsoleInput;
+				ImGuiInputTextFlags Flags = 0;
+
+				static int AutoIndex = -1;
+				auto AutoComplete = AutoCompleteCommand( ConsoleInput.data() );
+				if( std::char_traits<char>::length( ConsoleInput.data() ) < 2 )
+				{
+					AutoComplete.clear();
+				}
+
+				if( AutoIndex < 0 )
+				{
+					AutoIndex = AutoComplete.size() - 1;
+				}
+
+				if( AutoIndex >= AutoComplete.size() )
+				{
+					AutoIndex = 0;
+				}
+
+				bool SimulatedInput = false;
+				if( ImGui::IsKeyDown( GLFW_KEY_TAB ) && !AutoComplete.empty() )
+				{
+					std::string Choice = AutoComplete[AutoIndex];
+					Choice += " ";
+					Choice.copy( ConsoleInput.data(), ConsoleInput.size() );
+					Flags |= ImGuiInputTextFlags_ReadOnly;
+
+					// Simulate an end-key press event.
+					ImGui::GetIO().KeysDownDuration[ImGui::GetKeyIndex( ImGuiKey_End )] = 0.0f;
+					SimulatedInput = true;
+				}
+
+				if( ImGui::IsKeyPressed( GLFW_KEY_UP ) )
+				{
+					if( AutoComplete.empty() )
+					{
+						PreviousCommand.copy( ConsoleInput.data(), ConsoleInput.size() );
+
+						// Simulate an end-key press event.
+						ImGui::GetIO().KeysDownDuration[ImGui::GetKeyIndex( ImGuiKey_End )] = 0.0f;
+						SimulatedInput = true;
+					}
+					else
+					{
+						AutoIndex--;
+					}
+
+					Flags |= ImGuiInputTextFlags_ReadOnly;
+				}
+
+				if( ImGui::IsKeyPressed( GLFW_KEY_DOWN ) )
+				{
+					if( AutoComplete.empty() )
+					{
+						PreviousCommand.copy( ConsoleInput.data(), ConsoleInput.size() );
+
+						// Simulate an end-key press event.
+						ImGui::GetIO().KeysDownDuration[ImGui::GetKeyIndex( ImGuiKey_End )] = 0.0f;
+						SimulatedInput = true;
+					}
+					else
+					{
+						AutoIndex++;
+					}
+
+					Flags |= ImGuiInputTextFlags_ReadOnly;
+				}
+
+				if( AutoIndex < 0 )
+				{
+					AutoIndex = AutoComplete.size() - 1;
+				}
+
+				if( AutoIndex >= AutoComplete.size() )
+				{
+					AutoIndex = 0;
+				}
+
+				if( ImGui::InputText( "##ConsoleInput", ConsoleInput.data(), ConsoleInput.size(), Flags ) )
+				{
+					AutoComplete = AutoCompleteCommand( ConsoleInput.data() );
+					AutoIndex = AutoComplete.size() - 1;
+				}
+
+				if( ImGui::IsKeyPressed( GLFW_KEY_ENTER ) || ImGui::IsKeyPressed( GLFW_KEY_KP_ENTER ) )
+				{
+					PreviousCommand = ConsoleInput.data();
+
+					// Clear the input field.
+					ConsoleInput.fill( '\0' );
+
+					if( ExecuteConsoleCommand( PreviousCommand ) )
+					{
+						// Close the logger once a command is executed.
+						DisplayLog = false;
+					}
+				}
+
+				ImGui::ResetNavigationToItem();
+
+				if( SimulatedInput )
+				{
+					// Reset the key state.
+					const auto Key = ImGui::GetKeyIndex( ImGuiKey_End );
+					ImGui::GetIO().KeysDownDuration[Key] = ImGui::GetIO().KeysDownDurationPrev[Key];
+				}
+
+				if( !AutoComplete.empty() && !AutoComplete.back().empty() )
+				{
+					auto Position = ImGui::GetCursorScreenPos();
+					Position.y -= 45.0f + ( AutoComplete.size() - 1) * 18.0f;
+					ImGui::SetNextWindowPos( Position );
+					ImGui::BeginTooltip();
+
+					int Index = 0;
+					for( const auto& String : AutoComplete )
+					{
+						if( Index == AutoIndex )
+						{
+							ImGui::TextColored( ImVec4( 0.33f, 0.75f, 1.0f, 1.0f ), "%s", String.c_str() );
+						}
+						else
+						{
+							ImGui::Text( "%s", String.c_str() );
+						}
+
+						Index++;
+					}
+
+					ImGui::EndTooltip();
+				}
+			}
+
+			ImGui::EndChild();
 		}
 		ImGui::End();
 
@@ -632,6 +942,9 @@ void CApplication::InitializeDefaultInputs()
 
 	Input.AddActionBinding( "TimeScaleEnable", EKey::Enter, EAction::Press, InputScaleTimeEnable );
 	Input.AddActionBinding( "TimeScaleDisable", EKey::Enter, EAction::Release, InputScaleTimeDisable );
+
+	Input.AddActionBinding( "TimeScaleEnable", EMouse::MouseButton5, EAction::Press, InputScaleTimeEnable );
+	Input.AddActionBinding( "TimeScaleDisable", EMouse::MouseButton5, EAction::Release, InputScaleTimeDisable );
 
 	Input.AddActionBinding( "ReloadShaders", EKey::J, EAction::Release, InputReloadShaders );
 
@@ -821,18 +1134,57 @@ const std::wstring& CApplication::GetApplicationDirectory()
 	return Path;
 }
 
+void ReleaseConsole()
+{
+	FILE* Reference;
+
+	// Just to be safe, redirect standard IO to NUL before releasing.
+
+	// Redirect STDIN to NUL
+	if( freopen_s( &Reference, "NUL:", "r", stdin ) == 0 )
+		setvbuf( stdin, NULL, _IONBF, 0 );
+
+	// Redirect STDOUT to NUL
+	if( freopen_s( &Reference, "NUL:", "w", stdout ) == 0 )
+		setvbuf( stdout, NULL, _IONBF, 0 );
+
+	if( freopen_s( &Reference, "NUL:", "w", stderr ) == 0 )
+		setvbuf( stderr, NULL, _IONBF, 0 );
+
+	// Detach from console
+	FreeConsole();
+}
+
+void SetBufferSize( int16_t MinimumLength )
+{
+	CONSOLE_SCREEN_BUFFER_INFO conInfo;
+	GetConsoleScreenBufferInfo( GetStdHandle( STD_OUTPUT_HANDLE ), &conInfo );
+	if( conInfo.dwSize.Y < MinimumLength )
+		conInfo.dwSize.Y = MinimumLength;
+	SetConsoleScreenBufferSize( GetStdHandle( STD_OUTPUT_HANDLE ), conInfo.dwSize );
+}
+
 void CApplication::RedirectLogToConsole()
 {
 #if defined(_WIN32)
-	if( FreeConsole() && AttachConsole( ATTACH_PARENT_PROCESS ) )
+	ReleaseConsole();
+
+	bool Attached = AttachConsole( ATTACH_PARENT_PROCESS );
+	if( !Attached )
 	{
-		Log::CLog::Get().ToStdOut = true;
-
-		FILE* fp;
-		freopen_s( &fp, "CONOUT$", "w", stdout );
-
-		std::ios::sync_with_stdio();
+		Attached = AllocConsole();
 	}
+
+	if( !Attached )
+		return;
+
+	Log::CLog::Get().ToStdOut = true;
+
+	FILE* fp;
+	if( freopen_s( &fp, "CONOUT$", "w", stdout ) == 0 )
+		setvbuf( stdout, NULL, _IONBF, 0 );
+
+	std::ios::sync_with_stdio();
 #endif
 }
 
@@ -916,6 +1268,11 @@ void CApplication::ProcessCommandLine( int argc, char ** argv )
 		else if( strcmp( argv[Index], "-server" ) == 0 )
 		{
 			MainWindow.SetWindowless( true );
+
+			if( !IsDebuggerPresent() )
+			{
+				RedirectLogToConsole();
+			}
 		}
 		else if( strcmp( argv[Index], "-atlas" ) == 0 )
 		{
@@ -1428,20 +1785,18 @@ void CApplication::Update()
 			auto& Renderer = MainWindow.GetRenderer();
 			Renderer.RefreshFrame();
 
-			const auto GameTimeScale = GameLayersInstance->GetTimeScale();
-			const auto TimeScale = ScaleTime ? GameTimeScale * 0.1 : GameTimeScale;
-
+			double PreviousTime = ScaledGameTime;
 			if( UseAccumulator )
 			{
-				ScaledGameTime += MaximumGameTime * TimeScale;
+				ScaledGameTime += MaximumGameTime;
 			}
 			else
 			{
-				ScaledGameTime += GameDeltaTime * TimeScale;
+				ScaledGameTime += GameDeltaTime;
 			}
 
 			// Update game time.
-			GameLayersInstance->Time( ScaledGameTime );
+			GameLayersInstance->Time( ScaledGameTime - PreviousTime );
 
 			// Update the renderable stage for tick functions.
 			Renderer.UpdateRenderableStage( RenderableStage::Tick );
@@ -1601,7 +1956,7 @@ bool CApplication::UpdateFrame()
 	GameLayersInstance->Frame();
 
 	// TODO: Sequence update should happen elsewhere but this is better than having it run via DebugMenu().
-	for( auto* Sequence : CAssets::Get().Sequences.GetAssets() )
+	for( auto& Sequence : CAssets::Get().Sequences.GetAssets() )
 	{
 		Sequence->Frame();
 	}

@@ -155,11 +155,14 @@ void CMesh::SetLocation( const std::string& FileLocation )
 	Location = FileLocation;
 
 #ifndef ReleaseBuild
-	const std::string VertexLabel = "VB" + Location;
-	glObjectLabel( GL_BUFFER, VertexBufferData.VertexBufferObject, -1, VertexLabel.c_str() );
+	if( VertexBufferData.VertexBufferObject && VertexBufferData.IndexBufferObject )
+	{
+		const std::string VertexLabel = "VB" + Location;
+		glObjectLabel( GL_BUFFER, VertexBufferData.VertexBufferObject, -1, VertexLabel.c_str() );
 
-	const std::string IndexLabel = "IB" + Location;
-	glObjectLabel( GL_BUFFER, VertexBufferData.IndexBufferObject, -1, IndexLabel.c_str() );
+		const std::string IndexLabel = "IB" + Location;
+		glObjectLabel( GL_BUFFER, VertexBufferData.IndexBufferObject, -1, IndexLabel.c_str() );
+	}
 #endif
 }
 

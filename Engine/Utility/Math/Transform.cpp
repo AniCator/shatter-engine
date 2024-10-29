@@ -68,6 +68,12 @@ Matrix4D& FTransform::GetRotationMatrix()
 	return RotationMatrix;
 }
 
+Matrix4D& FTransform::GetScaleMatrix()
+{
+	Update();
+	return ScaleMatrix;
+}
+
 Matrix4D& FTransform::GetTransformationMatrix()
 {
 	Update();
@@ -83,6 +89,11 @@ Matrix4D& FTransform::GetTransformationMatrixInverse()
 const Matrix4D& FTransform::GetRotationMatrix() const
 {
 	return RotationMatrix;
+}
+
+const Matrix4D& FTransform::GetScaleMatrix() const
+{
+	return ScaleMatrix;
 }
 
 const Matrix4D& FTransform::GetTransformationMatrix() const

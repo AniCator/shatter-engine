@@ -70,6 +70,7 @@ namespace ScriptEngine
 	AngelResult AddProperty( const char* Signature, void* Property );
 	AngelResult AddEnum( const char* Type, const std::vector<std::pair<std::string, int>>& Values );
 
+	AngelResult Execute( const char* Name, const char* EntryPoint = nullptr, const std::vector<void*>& Objects = {} );
 	AngelResult Execute( const char* Name, const char* EntryPoint = nullptr, void* Object = nullptr );
 	bool HasFunction( const char* Name, const char* EntryPoint );
 

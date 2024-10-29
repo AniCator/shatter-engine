@@ -41,6 +41,9 @@ CTexture::~CTexture()
 		stbi_image_free( ImageData );
 	}
 
+	if( Handle == 0 )
+		return; // No handle to free.
+
 	glDeleteTextures( 1, &Handle );
 }
 
@@ -356,6 +359,8 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 			GenerateMipMaps,
 			Pixels
 		);
+
+		AssignObjectLabelToTexture( Handle, Location.c_str(), GL_TEXTURE_2D );
 	}
 	else
 	{
@@ -371,6 +376,8 @@ bool CTexture::Load( unsigned char* Data, const int WidthIn, const int HeightIn,
 			GenerateMipMaps,
 			Pixels
 		);
+
+		AssignObjectLabelToTexture( Handle, Location.c_str(), GL_TEXTURE_3D );
 	}
 
 	if( !Supported )

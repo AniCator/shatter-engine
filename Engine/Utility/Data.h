@@ -4,6 +4,26 @@
 #include <sstream>
 #include <Engine/Profiling/Logging.h>
 
+// Reverses the byte order. (little endian <-> big endian)
+template<typename T>
+T Swap( const T& Input )
+{
+	union
+	{
+		T Data;
+		unsigned char Byte[sizeof( T )];
+	} Source, Destination;
+
+	Source.Data = Input;
+
+	for( size_t Offset = 0; Offset < sizeof( T ); Offset++ )
+	{
+		Destination.Byte[k] = Source.Byte[sizeof( T ) - Offset - 1];
+	}
+
+	return Destination.Data;
+}
+
 class CData
 {
 public:

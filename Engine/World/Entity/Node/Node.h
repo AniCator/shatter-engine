@@ -3,42 +3,13 @@
 
 #include <Engine/World/Entity/PointEntity/PointEntity.h>
 #include <Engine/Utility/Math/Vector.h>
+#include <Engine/Utility/Graph.h>
 
 #include <set>
 #include <unordered_set>
 
 namespace Node
 {
-	using NodeID = size_t;
-	constexpr NodeID InvalidID = -1;
-	
-	struct Data
-	{
-		// Identifier for this node.
-		NodeID ID = InvalidID;
-
-		// The location of the node.
-		Vector3D Position = Vector3D::Zero;
-
-		// Whether or not this node is traversable.
-		bool IsBlocked = false;
-
-		// Nodes that this one is linked to.
-		std::set<NodeID> Neighbors;
-
-		bool operator==( const Data& Other ) const
-		{
-			return ID == Other.ID;
-		}
-
-		bool operator<( const Data& Other ) const
-		{
-			return ID < Other.ID;
-		}
-	};
-
-	using Route = std::vector<NodeID>;
-
 	class Entity : public CPointEntity
 	{
 	public:
@@ -55,8 +26,8 @@ namespace Node
 		void Import( CData& Data ) override;
 		void Export( CData& Data ) override;
 
-		Data NodeData;
-		std::vector<Data> Nodes;
+		Graph::Type<Vector3D> NodeData;
+		std::vector<Graph::Type<Vector3D>> Nodes;
 
 		// Cached link names.
 		std::vector<std::string> Links;
@@ -64,31 +35,34 @@ namespace Node
 		std::string StringNodes;
 		std::string StringEdges;
 	};
-
-	struct Network
-	{
-		void Add( const Data& Node );
-		void Remove( const Data& Node );
-
-		Data* Get( const NodeID ID );
-
-		// Returns the closest node on the graph.
-		Data* Get( const Vector3D& Position );
-
-		Route Path( const Vector3D& From, const Vector3D& To );
-
-		void Debug();
-
-	protected:
-		std::unordered_map<NodeID, Data> Nodes;
-	};
 }
+
+struct SpatialNetwork
+{
+	struct Cost
+	{
+		float operator()( const Vector3D& A, const Vector3D& B ) const
+		{
+			return A.DistanceSquared( B );
+		}
+	};
+
+	struct Heuristic
+	{
+		float operator()( const Vector3D& A, const Vector3D& B ) const
+		{
+			return A.DistanceSquared( B );
+		}
+	};
+
+	using Type = Graph::Network<Vector3D, Cost, Heuristic>;
+};
 
 struct Navigation
 {
-	Node::Network& Get( const NameSymbol& Network );
+	SpatialNetwork::Type& Get( const NameSymbol& Network );
 
 	void Debug();
 protected:
-	std::unordered_map<NameSymbol, Node::Network> Networks;
+	std::unordered_map<NameSymbol, SpatialNetwork::Type> Networks;
 };

@@ -1928,6 +1928,7 @@ void PopulateGradePanel( ColorGrade& Grade )
 		Grade.Lift = { 0.0f, 0.0f, 0.0f, 0.0f };
 		Grade.Gamma = { 0.0f, 0.0f, 0.0f, 0.0f };
 		Grade.Gain = { 1.0f, 1.0f, 1.0f, 1.0f };
+		Grade.BSC = { 1.0f, 1.0f, 1.0f, 1.0f };
 	}
 
 	ImGui::SameLine();
@@ -1939,6 +1940,7 @@ void PopulateGradePanel( ColorGrade& Grade )
 		Clipboard += ".Lift = {" + VectorToString( Grade.Lift ) + "}\n";
 		Clipboard += ".Gamma = {" + VectorToString( Grade.Gamma ) + "}\n";
 		Clipboard += ".Gain = {" + VectorToString( Grade.Gain ) + "}\n";
+		Clipboard += ".BSC = {" + VectorToString( Grade.BSC ) + "}\n";
 		glfwSetClipboardString( CWindow::Get().Handle(), Clipboard.c_str() );
 	}
 
@@ -1953,6 +1955,10 @@ void PopulateGradePanel( ColorGrade& Grade )
 
 	ImGui::ColorPicker3( "Gain#ColorGain", &Grade.Gain.R, ColorPickerFlags );
 	ImGui::DragFloat( "Gain", &Grade.Gain.A, 0.01f, 0.0f, 16.0f, "%.2f" );
+
+	ImGui::DragFloat( "Brightness", &Grade.BSC.R, 0.01f, 0.0f, 16.0f, "%.2f" );
+	ImGui::DragFloat( "Saturation", &Grade.BSC.G, 0.01f, 0.0f, 16.0f, "%.2f" );
+	ImGui::DragFloat( "Contrast", &Grade.BSC.B, 0.01f, 0.0f, 16.0f, "%.2f" );
 }
 
 static ColorGrade OverrideGrade;

@@ -50,6 +50,11 @@ public:
 
 	void SetShader( class CShader* Compute, class CShader* Render );
 	void SetBounds( const BoundingBox& Bounds );
+	BoundingBox GetBounds() const;
+
+	void SetParticle( size_t Index, const Particle& Particle );
+
+	class CRenderable* GetRenderable() const;
 	
 protected:
 	class CShader* Compute = nullptr;

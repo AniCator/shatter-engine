@@ -689,6 +689,13 @@ void RegisterProperty()
 	ScriptEngine::AddTypeMethod( "Property", "const int& GetI32()", &Property::GetI32 );
 }
 
+void RegisterNameSymbol()
+{
+	ScriptEngine::AddTypePOD<NameIndex>( "NameIndex" );
+	ScriptEngine::AddTypePOD<NameSymbol>( "NameSymbol" );
+	ScriptEngine::AddTypeMethod( "NameSymbol", "NameIndex Get() const", &NameSymbol::Get );
+}
+
 void RegisterScriptFunctions()
 {
 	RegisterVector3Type();
@@ -701,6 +708,7 @@ void RegisterScriptFunctions()
 	RegisterEntities();
 	RegisterTime();
 	RegisterProperty();
+	RegisterNameSymbol();
 	RegisterBasicUI();
 }
 

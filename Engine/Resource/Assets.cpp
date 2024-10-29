@@ -281,6 +281,11 @@ void LoadPrimitive( CompoundPayload* CompoundPayload )
 			File.Load( true );
 			MeshBuilder::LM( Payload->Primitive, File );
 		}
+		else if( File.Extension() == "lmi" )
+		{
+			File.Load( true );
+			MeshBuilder::LMI( Payload->Primitive, CompoundPayload->Set, File );
+		}
 		else
 		{
 			LoadASSIMPMesh( Payload, CompoundPayload->Set, File );
@@ -629,6 +634,13 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			else if ( Extension == "ses" ) // Animation set
 			{
 				LoadAnimationSet( Set, File, SetData );
+			}
+
+			if( Extension == "lmi" )
+			{
+				LoadASSIMP = false;
+				File.Load( true );
+				MeshBuilder::LMI( Primitive, Set, File );
 			}
 
 			if( LoadASSIMP )

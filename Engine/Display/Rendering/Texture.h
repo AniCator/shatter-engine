@@ -11,6 +11,8 @@
 
 using TextureHandle = GLuint;
 
+void AssignObjectLabelToTexture( const GLuint Handle, const char* String, const GLenum Enum );
+
 struct ImageData
 {
 	unsigned char* Data8 = nullptr;

@@ -143,7 +143,7 @@ void Worker::Flush()
 
 void Worker::Work()
 {
-	ProfileThread( "Shatter Engine Worker");
+	ProfileThread( "Shatter Engine Worker" );
 
 	Log::Event( "Thread started.\n" );
 

@@ -37,7 +37,7 @@ public:
 			Entity->SetEntityID( EntityUID::Create() );
 			Entity->SetLevelID( LevelUID( Entities.size() + Spawned.size() ) );
 			Entity->SetLevel( this );
-			Spawned.push_back( Entity );
+			Spawned.insert( Entity );
 		}
 
 		return dynamic_cast<T*>( Entity );

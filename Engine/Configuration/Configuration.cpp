@@ -26,7 +26,7 @@ time_t GetModificationTime( const std::wstring& FilePath )
 	return Buffer.st_mtime;
 }
 
-bool CConfiguration::IsValidKey( const std::string& KeyName )
+bool CConfiguration::IsValidKey( const std::string& KeyName ) const
 {
 	if( StoredSettings.find( KeyName ) == StoredSettings.end() )
 	{
@@ -87,7 +87,7 @@ double CConfiguration::GetDouble( const char* KeyName, const double Default )
 		return Default;
 	}
 
-	return Math::Float( GetValue( KeyName ) );
+	return Math::Double( GetValue( KeyName ) );
 }
 
 float CConfiguration::GetFloat( const char* KeyName, const float Default )
@@ -162,7 +162,10 @@ void CConfiguration::Reload()
 			}
 		}
 
-		Log::Event( "\nSettings:\n" );
+		if( !Initialized )
+		{
+			Log::Event( "\nSettings:\n" );
+		}
 
 		std::regex FilterSettings = ConfigureFilter( "(.*)" );
 
@@ -175,7 +178,12 @@ void CConfiguration::Reload()
 			{
 				const auto& Key = Match[1].str();
 				const auto& Value = Match[2].str();
-				Log::Event( "%s = %s\n", Key.c_str(), Value.c_str() );
+				
+				if( !Initialized )
+				{
+					Log::Event( "%s = %s\n", Key.c_str(), Value.c_str() );
+				}
+
 				StoredSettings.insert_or_assign( Key, Value );
 
 				// Check if any callbacks need to be executed.
@@ -208,7 +216,10 @@ void CConfiguration::Reload()
 			}
 		}
 
-		Log::Event( "\n" );
+		if( !Initialized )
+		{
+			Log::Event( "\n" );
+		}
 
 		configurationFileStream.close();
 
@@ -268,7 +279,36 @@ void CConfiguration::ReloadIfModified()
 void CConfiguration::Store( const std::string& KeyName, const std::string& Value )
 {
 	StoredSettings.insert_or_assign( KeyName, Value );
-	ExecuteCallback( KeyName, Value );
+	ExecuteCallback( KeyName, Value );	
+}
+
+void CConfiguration::Store( const std::string& Command, const std::function<void(const std::string&)>& Function )
+{
+	ConsoleCommands.insert_or_assign( Command, Function );
+}
+
+void CConfiguration::Execute( const std::string& Command, const std::string& Parameters ) const
+{
+	const auto Iterator = ConsoleCommands.find( Command );
+	if( Iterator == ConsoleCommands.end() )
+		return;
+
+	// Execute the function tied to this command.
+	Iterator->second( Parameters );
+}
+
+bool CConfiguration::IsValidCommand( const std::string& Command ) const
+{
+	const auto Iterator = ConsoleCommands.find( Command );
+	if( Iterator == ConsoleCommands.end() )
+		return false;
+
+	return true;
+}
+
+void CConfiguration::MarkAsTemporary( const std::string& Key )
+{
+	ConsoleVariables.insert( Key );
 }
 
 void CConfiguration::Save()
@@ -297,6 +337,9 @@ void CConfiguration::Save()
 
 		for( auto& Setting : SortedSettings )
 		{
+			if( ConsoleVariables.find( Setting.first ) != ConsoleVariables.end() )
+				continue; // Don't save console variables.
+
 			ConfigurationStream << Setting.first << "=" << Setting.second << std::endl;
 		}
 	}
@@ -362,6 +405,47 @@ void CConfiguration::Track( const std::string& Key, float& Target, const float& 
 			Target = Math::Float( Value );
 		}
 	);
+}
+
+void CConfiguration::GetValue( const std::string& Key, bool& Target )
+{
+	if( !IsValidKey( Key ) )
+		return;
+
+	const auto& Value = GetValue( Key );
+	Target = Value == "1" || Value == "true";
+}
+
+void CConfiguration::GetValue( const std::string& Key, std::string& Target )
+{
+	if( !IsValidKey( Key ) )
+		return;
+
+	Target = GetValue( Key );
+}
+
+void CConfiguration::GetValue( const std::string& Key, int& Target )
+{
+	if( !IsValidKey( Key ) )
+		return;
+
+	Target = Math::Integer( GetValue( Key ) );
+}
+
+void CConfiguration::GetValue( const std::string& Key, double& Target )
+{
+	if( !IsValidKey( Key ) )
+		return;
+
+	Target = Math::Double( GetValue( Key ) );
+}
+
+void CConfiguration::GetValue( const std::string& Key, float& Target )
+{
+	if( !IsValidKey( Key ) )
+		return;
+
+	Target = Math::Float( GetValue( Key ) );
 }
 
 bool CConfiguration::HasCallback( const std::string& Key ) const

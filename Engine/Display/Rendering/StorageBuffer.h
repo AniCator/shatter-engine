@@ -16,7 +16,7 @@ public:
 		}
 	}
 
-	void Initialize( T* Data, const size_t& Count, const bool& DeleteExisting = true )
+	void Initialize( const T* Data, const size_t& Count, const bool& DeleteExisting = true )
 	{
 		BufferData = Data;
 		BufferCount = Count;
@@ -51,6 +51,14 @@ public:
 		}
 	}
 
+	void Set( size_t Index, const T* Data )
+	{
+		if( !BufferData )
+			return;
+
+		glBufferSubData( GL_SHADER_STORAGE_BUFFER, Index * sizeof( T ), sizeof( T ), Data );
+	}
+
 	void Bind( const uint32_t& Binding = 0 ) const
 	{
 		glBindBufferBase( GL_SHADER_STORAGE_BUFFER, Binding, BufferHandle );
@@ -74,5 +82,5 @@ public:
 protected:
 	GLuint BufferHandle = 0;
 	size_t BufferCount = 0;
-	T* BufferData = nullptr;
+	const T* BufferData = nullptr;
 };

@@ -20,10 +20,12 @@ public:
 	void SetTransform( const Vector3D& Position, const Vector3D& Orientation );
 
 	Matrix4D& GetRotationMatrix();
+	Matrix4D& GetScaleMatrix();
 	Matrix4D& GetTransformationMatrix();
 	Matrix4D& GetTransformationMatrixInverse();
 
 	const Matrix4D& GetRotationMatrix() const;
+	const Matrix4D& GetScaleMatrix() const;
 	const Matrix4D& GetTransformationMatrix() const;
 	const Matrix4D& GetTransformationMatrixInverse() const;
 

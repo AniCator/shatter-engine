@@ -82,6 +82,11 @@ public:
 
 		glBindVertexArray( 0 );
 	}
+
+	void Set( Particle* Data, const size_t& Count )
+	{
+		Buffer.Initialize( Data, Count, false );
+	}
 	
 	void Draw( FRenderData& RenderDataIn, const CRenderable* PreviousRenderable, EDrawMode DrawModeOverride ) override
 	{
@@ -266,7 +271,7 @@ void ParticleEmitter::Tick()
 	SetCameraUniform( Program );
 	SetBoundsUniform( Program, Renderable );
 	
-	glDispatchCompute( Count / WorkSize + 1, 1, 1 );
+	glDispatchCompute( Math::Max( 1, Count / WorkSize ), 1, 1 );
 }
 
 void ParticleEmitter::Frame()
@@ -292,4 +297,23 @@ void ParticleEmitter::SetBounds( const BoundingBox& Bounds )
 		return;
 
 	Renderable->GetRenderData().WorldBounds = Bounds;
+}
+
+BoundingBox ParticleEmitter::GetBounds() const
+{
+	if( !Renderable )
+		return {};
+
+	return Renderable->GetRenderData().WorldBounds;
+}
+
+void ParticleEmitter::SetParticle( size_t Index, const Particle& Particle )
+{
+	auto* Real = Cast<ParticleRenderable>( Renderable );
+	Real->Buffer.Set( Index, &Particle );
+}
+
+CRenderable* ParticleEmitter::GetRenderable() const
+{
+	return Renderable;
 }

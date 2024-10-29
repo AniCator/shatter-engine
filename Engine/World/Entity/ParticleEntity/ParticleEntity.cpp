@@ -3,6 +3,7 @@
 
 #include <Engine/Display/UserInterface.h>
 #include <Engine/Resource/Assets.h>
+#include <Engine/Display/Window.h>
 
 static CEntityFactory<ParticleEntity> Factory( "particle" );
 
@@ -10,7 +11,7 @@ void ParticleEntity::Construct()
 {
 	Emitter.Location = Transform.GetPosition();
 
-	if( !Asset )
+	if( !Asset || CWindow::Get().IsWindowless() )
 		return;
 
 	Emitter.Initialize( Asset->System );

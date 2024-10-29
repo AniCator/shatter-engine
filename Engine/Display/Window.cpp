@@ -213,6 +213,13 @@ void CWindow::Create( const char* Title )
 	}
 
 	glfwSetInputMode( WindowHandle, GLFW_CURSOR, GLFW_CURSOR_DISABLED );
+
+	// If it's supported, enable raw unscaled input.
+	if( glfwRawMouseMotionSupported() )
+	{
+		glfwSetInputMode( WindowHandle, GLFW_RAW_MOUSE_MOTION, GLFW_TRUE );
+	}
+
 	glfwMakeContextCurrent( WindowHandle );
 	gladLoadGLLoader( (GLADloadproc) glfwGetProcAddress );
 

@@ -30,7 +30,7 @@ Color Color::Cyan = Color( 0, 255, 255 );
 
 extern ConfigurationVariable<bool> FlipHorizontal;
 
-std::mutex LineMutex;
+std::mutex StandardMutex;
 
 namespace UI
 {
@@ -433,7 +433,7 @@ namespace UI
 		if( CApplication::IsPaused() )
 			return;
 
-		std::unique_lock<std::mutex> Lock( LineMutex );
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 
 		DrawLineScreen Line( Start, End, Color );
 		LinesScreen.emplace_back( Line );
@@ -443,6 +443,8 @@ namespace UI
 	{
 		if( CApplication::IsPaused() )
 			return;
+
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 		
 		DrawLine Line( Start, End, Color, Duration );
 		Lines.emplace_back( Line );
@@ -453,7 +455,7 @@ namespace UI
 		if( CApplication::IsPaused() )
 			return;
 
-		std::unique_lock<std::mutex> Lock( LineMutex );
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 
 		DrawLine Line( Origin, Origin + Vector, Color, Duration );
 		Lines.emplace_back( Line );
@@ -507,6 +509,8 @@ namespace UI
 	{
 		if( CApplication::IsPaused() )
 			return;
+
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 		
 		DrawCircleScreen Circle( Position, Radius, Color );
 		CirclesScreen.emplace_back( Circle );
@@ -516,6 +520,8 @@ namespace UI
 	{
 		if( CApplication::IsPaused() )
 			return;
+
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 		
 		DrawCircle Circle( Position, Radius, Color );
 		Circles.emplace_back( Circle );
@@ -538,6 +544,8 @@ namespace UI
 	{
 		if( CApplication::IsPaused() )
 			return;
+
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 		
 		DrawTextScreen Text( Position, Start, End, Color, Size );
 		TextsScreen.emplace_back( Text );
@@ -558,6 +566,8 @@ namespace UI
 	{
 		if( CApplication::IsPaused() )
 			return;
+
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 		
 		DrawText Text( Position, Start, End, Color, Offset );
 		Texts.emplace_back( Text );
@@ -589,6 +599,8 @@ namespace UI
 
 	void AddText( const char* Start, const char* End, const Color& Color )
 	{
+		std::unique_lock<std::mutex> Lock( StandardMutex );
+
 		FixedText Text( Start, End, Color );
 		FixedTextOutput.emplace_back( Text );
 	}
@@ -654,6 +666,8 @@ namespace UI
 
 		if( CApplication::IsPaused() )
 			return;
+
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 		
 		DrawImage Image( Position, Size, Texture, Color );
 		Images.emplace_back( Image );
@@ -780,7 +794,7 @@ namespace UI
 
 	void Refresh()
 	{
-		std::unique_lock<std::mutex> Lock( LineMutex );
+		std::unique_lock<std::mutex> Lock( StandardMutex );
 
 		// Lines can have durations so they have to be removed based whether they have expired.
 		const auto CurrentTime = GameLayersInstance->GetCurrentTime();
@@ -794,7 +808,7 @@ namespace UI
 				const auto Offset = LineIterator - Lines.begin();
 				std::swap( *LineIterator, Lines.back() );
 				Lines.pop_back();
-				LineIterator = Lines.begin() + Offset;
+				LineIterator = Lines.begin();// +Offset;
 			}
 			else
 			{
@@ -911,7 +925,7 @@ namespace UI
 			if( !LineShader )
 				return Calls;
 
-			std::unique_lock<std::mutex> Lock( LineMutex );
+			std::unique_lock<std::mutex> Lock( StandardMutex );
 
 			const size_t LineCount = Lines.size();
 			const size_t Points = LineCount * 2;
@@ -998,6 +1012,8 @@ namespace UI
 
 	void Frame()
 	{
+		std::unique_lock<std::mutex> Lock( StandardMutex );
+
 		if( DrawList )
 		{
 			DrawList->Clear();

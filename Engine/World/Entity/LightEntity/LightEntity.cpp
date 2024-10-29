@@ -256,6 +256,9 @@ void LightEntity::ConfigureLight(
 
 void LightEntity::UploadToGPU()
 {
+	if( CWindow::Get().IsWindowless() )
+		return;
+
 	// Create a new light buffer which destroys the previous one.
 	// LightBuffer = ShaderStorageBuffer<Light>();
 
@@ -265,6 +268,9 @@ void LightEntity::UploadToGPU()
 
 void LightEntity::Bind()
 {
+	if( CWindow::Get().IsWindowless() )
+		return;
+
 	LightBuffer.Bind();
 }
 

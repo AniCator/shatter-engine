@@ -7,16 +7,18 @@ using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/World/World.h>
 #include <Engine/Utility/Chunk.h>
+#include <Engine/Utility/Container.h>
 #include <Engine/Utility/Data.h>
 #include <Engine/Utility/File.h>
 #include <Engine/Utility/Math.h>
 #include <Engine/Utility/RunLengthEncoding.h>
+#include <Engine/Utility/LoftyMeshInterface.h>
 #include <string>
 #include <vector>
 
 #include <direct.h>
 
-namespace EngineTest
+namespace General
 {
 	std::wstring ToString( const Vector3D& In )
 	{
@@ -40,7 +42,7 @@ namespace EngineTest
 	public:
 		TEST_METHOD( GenerateTriangle )
 		{
-			Logger::WriteMessage( "Generating a triangle primitive." );
+			// Logger::WriteMessage( "Generating a triangle primitive." );
 			FPrimitive Primitive;
 			MeshBuilder::Triangle( Primitive, 1.0f );
 
@@ -50,7 +52,7 @@ namespace EngineTest
 
 		TEST_METHOD( GeneratePlane )
 		{
-			Logger::WriteMessage( "Generating a plane primitive." );
+			// Logger::WriteMessage( "Generating a plane primitive." );
 			FPrimitive Primitive;
 			MeshBuilder::Plane( Primitive, 1.0f );
 
@@ -60,7 +62,7 @@ namespace EngineTest
 
 		TEST_METHOD( GenerateCube )
 		{
-			Logger::WriteMessage( "Generating a cube primitive." );
+			// Logger::WriteMessage( "Generating a cube primitive." );
 			FPrimitive Primitive;
 			MeshBuilder::Cube( Primitive, 1.0f );
 
@@ -90,12 +92,12 @@ namespace EngineTest
 			// Logger::WriteMessage( ObjectKey.c_str() );
 
 			const std::wstring ObjectValue = ObjectKey + L" : " + std::wstring( Object->Value.begin(), Object->Value.end() ) + ObjectType;
-			Logger::WriteMessage( ObjectValue.c_str() );
+			// Logger::WriteMessage( ObjectValue.c_str() );
 		}
 		else
 		{
 			const std::wstring ObjectKey = TabString + std::wstring( Object->Key.begin(), Object->Key.end() ) + L" (" + std::to_wstring( Object->Objects.size() ) + L")" + ObjectType;
-			Logger::WriteMessage( ObjectKey.c_str() );
+			// Logger::WriteMessage( ObjectKey.c_str() );
 
 			TabOffset++;
 			for(const auto& SubObject: Object->Objects )
@@ -130,7 +132,7 @@ namespace EngineTest
 		
 		TEST_METHOD( ParseLevelJSON )
 		{
-			Logger::WriteMessage( "Parsing level JSON." );
+			// Logger::WriteMessage( "Parsing level JSON." );
 			bool Success = false;
 
 			CFile LevelFile( "../TestModels/Island.sls" );
@@ -139,9 +141,10 @@ namespace EngineTest
 				LevelFile.Load();
 				CLevel Test;
 				Test.Load( LevelFile );
+				Test.Construct();
 				Success = Test.GetEntities().size() == 3;
 				const auto EntityString = L"Found " + std::to_wstring( Test.GetEntities().size() ) + L" entities.";
-				Logger::WriteMessage( EntityString.c_str() );
+				// Logger::WriteMessage( EntityString.c_str() );
 			}
 
 			Assert::AreEqual( 1, Success ? 1 : 0 );
@@ -149,7 +152,7 @@ namespace EngineTest
 
 		TEST_METHOD( ParseJSONFile_Dialogue )
 		{
-			Logger::WriteMessage( "Parsing dialogue JSON." );
+			// Logger::WriteMessage( "Parsing dialogue JSON." );
 
 			const auto Tree = GetJSON( "GrocerTest.sdscript" );
 			Assert::IsTrue( JSON::Find( Tree.Tree, "session" ), L"session key not found" );
@@ -157,7 +160,7 @@ namespace EngineTest
 
 		TEST_METHOD( ParseJSONContainerObjects )
 		{
-			Logger::WriteMessage( "Checking JSON container objects." );
+			// Logger::WriteMessage( "Checking JSON container objects." );
 			const auto& Tree = GetTestJSON();
 
 			Assert::IsFalse( Tree.Objects.empty(), L"Object array is empty." );
@@ -165,7 +168,7 @@ namespace EngineTest
 
 		TEST_METHOD( ParseJSONTree )
 		{
-			Logger::WriteMessage( "Checking JSON Tree size." );
+			// Logger::WriteMessage( "Checking JSON Tree size." );
 			const auto& Tree = GetTestJSON();
 
 			// Output tree debug information.
@@ -290,7 +293,7 @@ namespace EngineTest
 	public:
 		TEST_METHOD( ParseStringTokens )
 		{
-			Logger::WriteMessage( "Parsing line of tokens." );
+			// Logger::WriteMessage( "Parsing line of tokens." );
 			bool Success = false;
 
 			std::string String = "-0.173 0.251 -0.704\r\n";
@@ -306,7 +309,7 @@ namespace EngineTest
 
 			for( auto& Token : Tokens )
 			{
-				Logger::WriteMessage( Token.c_str() );
+				// Logger::WriteMessage( Token.c_str() );
 			}
 
 			Assert::AreEqual( 1, Success ? 1 : 0 );
@@ -314,12 +317,12 @@ namespace EngineTest
 
 		TEST_METHOD( ParseOBJ )
 		{
-			Logger::WriteMessage( "Parsing OBJ." );
+			// Logger::WriteMessage( "Parsing OBJ." );
 			bool Success = false;
 
 			char Path[FILENAME_MAX];
 			_getcwd( Path, sizeof( Path ) );
-			Logger::WriteMessage( Path );
+			// Logger::WriteMessage( Path );
 			CFile File( "../TestModels/LoftyLagoonTestModel.obj" );
 			if( File.Exists() )
 			{
@@ -346,7 +349,7 @@ namespace EngineTest
 
 				char buffer[256];
 				int ret = snprintf( buffer, sizeof buffer, "Parse time: %llims", Timer.GetElapsedTimeMilliseconds() );
-				Logger::WriteMessage( buffer );
+				// Logger::WriteMessage( buffer );
 			}
 
 			Assert::AreEqual( 1, Success ? 1 : 0 );
@@ -610,9 +613,9 @@ namespace EngineTest
 			{
 				const auto Source = std::string( Encoded.begin(), Encoded.end() );
 
-				Logger::WriteMessage( Test.c_str() );
-				Logger::WriteMessage( Source.c_str() );
-				Logger::WriteMessage( Result.c_str() );
+				// Logger::WriteMessage( Test.c_str() );
+				// Logger::WriteMessage( Source.c_str() );
+				// Logger::WriteMessage( Result.c_str() );
 				Assert::Fail( L"Decoded data differs." );
 			}
 		}
@@ -654,6 +657,42 @@ namespace EngineTest
 				Result.second == ExpectedRight,
 				L"Failed to split string." );
 		}
+
+		TEST_METHOD( ImportLMI_Mesh )
+		{
+			CFile File( "../TestModels/cube.lmi" );
+			File.Load( true );
+
+			// Target data structures.
+			FPrimitive Primitive;
+			AnimationSet Set;
+
+			LoftyMeshInterface Interface;
+			Assert::IsTrue( Interface.Import( File, &Primitive, Set ), L"Failed to import LMI header." );
+
+			Assert::IsTrue( Primitive.VertexCount == 24, L"Incorrect LMI vertex count." );
+			Assert::IsTrue( Primitive.IndexCount == 36, L"Incorrect LMI index count." );
+		}
+
+		TEST_METHOD( ImportLMI_MeshRigged )
+		{
+			CFile File( "../TestModels/icosphere.lmi" );
+			File.Load( true );
+
+			// Target data structures.
+			FPrimitive Primitive;
+			AnimationSet Set;
+
+			LoftyMeshInterface Interface;
+			Assert::IsTrue( Interface.Import( File, &Primitive, Set ), L"Failed to import LMI header." );
+
+			// Do it be an icosphere with the triangle-ey bits.
+			Assert::IsTrue( Primitive.VertexCount == 88, L"Incorrect LMI vertex count." );
+			Assert::IsTrue( Primitive.IndexCount == 240, L"Incorrect LMI index count." );
+
+			// Check if we have allocated the expected amount of bones.
+			Assert::IsTrue( Set.Skeleton.Bones.size() == 3, L"Incorrect LMI bone count." );
+		}
 	};
 
 	TEST_CLASS( Mathematics )
@@ -691,7 +730,7 @@ namespace EngineTest
 				"New Y: " + std::to_string( ConvertedOrientation.Y ) + "\n"
 				"New Z: " + std::to_string( ConvertedOrientation.Z ) + "\n"
 			;
-			Logger::WriteMessage( String.c_str() );
+			// Logger::WriteMessage( String.c_str() );
 
 			return Equal;
 		}
@@ -763,6 +802,209 @@ namespace EngineTest
 			TestTransform( { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -45.0f }, { 1.0f, 1.0f, 1.0f } );
 			TestTransform( { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -180.0f }, { 1.0f, 1.0f, 1.0f } );
 			TestTransform( { 1.0f, 0.0f, 0.0f }, { 0.0f, 0.0f, -90.0f }, { 1.0f, 1.0f, 1.0f } );
+		}
+	};
+}
+
+namespace Containers
+{
+	TEST_CLASS( FixedVector )
+	{
+	public:
+		TEST_METHOD( Test )
+		{
+			::FixedVector<int> Vector( 2 );
+			Vector[0] = 5;
+			Vector[1] = 7;
+
+			Assert::IsTrue( Vector[0] == 5, L"First entry incorrect." );
+			Assert::IsTrue( Vector[1] == 7, L"Second entry incorrect." );
+			Assert::IsTrue( Vector.size() == 2, L"Size incorrect." );
+			Assert::IsTrue( !Vector.empty(), L"Vector is considered empty." );
+		}
+	};
+
+	TEST_CLASS( GreedyVector )
+	{
+	public:
+		TEST_METHOD( Initialization )
+		{
+			::GreedyVector<int> Vector( 2 );
+			Vector[0] = 5;
+			Vector[1] = 7;
+
+			Assert::IsTrue( Vector[0] == 5, L"First entry incorrect." );
+			Assert::IsTrue( Vector[1] == 7, L"Second entry incorrect." );
+		}
+
+		TEST_METHOD( AddToExisting )
+		{
+			::GreedyVector<int> Vector( 2 );
+			Vector[0] = 5;
+			Vector[1] = 7;
+
+			Vector.add( 3 );
+
+			Assert::IsTrue( Vector[0] == 5, L"First entry incorrect." );
+			Assert::IsTrue( Vector[1] == 7, L"Second entry incorrect." );
+			Assert::IsTrue( Vector[2] == 3, L"Third entry incorrect." );
+			Assert::IsTrue( Vector.size() == 3, L"Size incorrect." );
+			Assert::IsTrue( Vector.capacity() == 4, L"Capacity incorrect." );
+		}
+
+		TEST_METHOD( AddToEmpty )
+		{
+			::GreedyVector<int> Vector( 0 );
+			Vector.add( 3 );
+
+			Assert::IsTrue( Vector[0] == 3, L"First entry incorrect." );
+			Assert::IsTrue( Vector.size() == 1, L"Size incorrect." );
+			Assert::IsTrue( Vector.capacity() == 1, L"Capacity incorrect." );
+		}
+
+		TEST_METHOD( AddMany )
+		{
+			::GreedyVector<int> Vector( 0 );
+
+			for( size_t Index = 0; Index < 10000; Index++ )
+			{
+				Vector.add( 75 );
+			}
+
+			Assert::IsTrue( Vector[0] == 75, L"First entry incorrect." );
+			Assert::IsTrue( Vector.size() == 10000, L"Size incorrect." );
+			Assert::IsTrue( Vector.capacity() == 16384, L"Capacity incorrect." );
+		}
+
+		TEST_METHOD( Remove )
+		{
+			::GreedyVector<int> Vector( 0 );
+			Vector.add( 1 );
+			Vector.add( 2 );
+			Vector.add( 3 );
+
+			// Remove the entry at index 1.
+			Vector.remove( 1 );
+
+			Assert::IsTrue( Vector[1] == 3, L"Unexpected value after removal." );
+			Assert::IsTrue( Vector.size() == 2, L"Unexpected size.");
+			Assert::IsTrue( Vector.capacity() == 4, L"Unexpected capacity.");
+		}
+
+		TEST_METHOD( Clear )
+		{
+			::GreedyVector<int> Vector( 2 );
+			Vector[0] = 5;
+			Vector[1] = 7;
+
+			Vector.add( 3 );
+
+			Assert::IsTrue( Vector.size() == 3, L"Size incorrect." );
+			Assert::IsTrue( Vector.capacity() == 4, L"Capacity incorrect." );
+			Assert::IsTrue( !Vector.empty(), L"Vector is considered empty." );
+
+			Vector.clear();
+
+			Assert::IsTrue( Vector.size() == 0, L"Size changed unexpectedly." );
+			Assert::IsTrue( Vector.capacity() == 4, L"Capacity changed unexpectedly." );
+		}
+
+		TEST_METHOD( Reserve )
+		{
+			::GreedyVector<int> Vector( 0 );
+			Vector.reserve( 2048 );
+
+			Assert::IsTrue( Vector.size() == 0, L"Size incorrect." );
+			Assert::IsTrue( Vector.capacity() == 2048, L"Capacity incorrect." );
+		}
+
+		TEST_METHOD( Grow )
+		{
+			::GreedyVector<int> Vector( 2 );
+			Vector.grow();
+
+			Assert::IsTrue( Vector.size() == 0, L"Size incorrect." );
+			Assert::IsTrue( Vector.capacity() == 4, L"Capacity incorrect." );
+		}
+
+		TEST_METHOD( Swap )
+		{
+			::GreedyVector<int> Vector( 2 );
+			Vector[0] = 5;
+			Vector[1] = 7;
+
+			Vector.swap( 0, 1 );
+
+			Assert::IsTrue( Vector[0] == 7, L"Swap failed (0)." );
+			Assert::IsTrue( Vector[1] == 5, L"Swap failed (1)." );
+		}
+
+		TEST_METHOD( Pop )
+		{
+			::GreedyVector<int> Vector( 2 );
+			Vector[0] = 5;
+			Vector[1] = 7;
+
+			Vector.pop();
+
+			Assert::IsTrue( Vector.size() == 1, L"Pop failed.");
+		}
+
+		TEST_METHOD( Front )
+		{
+			::GreedyVector<int> Vector( 3 );
+			Vector[0] = 5;
+			Vector[1] = 3;
+			Vector[2] = 7;
+
+			Assert::IsTrue( Vector.front() == 5 );
+		}
+
+		TEST_METHOD( Back )
+		{
+			::GreedyVector<int> Vector( 3 );
+			Vector[0] = 5;
+			Vector[1] = 3;
+			Vector[2] = 7;
+
+			Assert::IsTrue( Vector.back() == 7 );
+		}
+
+		TEST_METHOD( SwapAndPop )
+		{
+			::GreedyVector<int> Vector( 0 );
+			Vector.add( 5 );
+			Vector.add( 7 );
+
+			// Remove the entry at index 1.
+			Vector.remove_unordered( 0 );
+
+			Assert::IsTrue( Vector[0] == 7, L"Unexpected value after removal." );
+			Assert::IsTrue( Vector.size() == 1, L"Unexpected size." );
+			Assert::IsTrue( Vector.capacity() == 2, L"Unexpected capacity." );
+		}
+
+		TEST_METHOD( RangeBasedForLoop )
+		{
+			::GreedyVector<int> Vector( 10 );
+			int Array[10] = { 0, 2, 4, 6, 8, 1, 3, 5, 7, 9 };
+
+			// Copy the array into the vector.
+			for( size_t Index = 0; Index < 10; Index++ )
+			{
+				Vector[Index] = Array[Index];
+			}
+
+			// Compare the vector data to the array using a ranged-based for loop.
+			size_t Index = 0;
+			for( auto& Entry : Vector )
+			{
+				Assert::IsTrue( Entry == Array[Index], L"For loop comparison failed." );
+				++Index;
+			}
+
+			Assert::IsTrue( Vector.size() == 10, L"Size incorrect." );
+			Assert::IsTrue( Vector.capacity() == 10, L"Capacity incorrect." );
 		}
 	};
 }

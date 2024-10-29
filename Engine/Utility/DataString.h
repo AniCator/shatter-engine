@@ -114,7 +114,7 @@ struct DataVector
 	template<typename T>
 	static void Encode( CData& Data, const std::vector<T>& Vector )
 	{
-		const uint32_t Count = Vector.size();
+		const uint32_t Count = static_cast<uint32_t>( Vector.size() );
 		Data << Count;
 
 		for( uint32_t Index = 0; Index < Count; Index++ )

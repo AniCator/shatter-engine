@@ -1,9 +1,13 @@
 // Copyright © 2017, Christiaan Bakker, All rights reserved.
 #include "Shader.h"
+#include <Engine/Configuration/Configuration.h>
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Utility/Math.h>
 
 #include <sstream>
+
+// Depth pre-pass.
+ConRef<bool> UsePrePass( "render.PrePass" );
 
 #define EnableAutoReload 0
 
@@ -108,6 +112,7 @@ bool CShader::Load( const char* FileLocation, const bool& ShouldLink, const ESha
 bool CShader::Load( const char* VertexLocationIn, const char* FragmentLocationIn, const bool& ShouldLink )
 {
 	// Append the required file extensions.
+	Location = FragmentLocationIn; // for debugging.
 	VertexLocation = VertexLocationIn;
 	VertexLocation += ".vs";
 	FragmentLocation = FragmentLocationIn;
@@ -264,50 +269,6 @@ void CShader::AutoReload( const bool& Enable )
 	ShouldAutoReload = Enable;
 }
 
-bool LogShaderCompilationErrors( GLuint v )
-{
-	GLint ByteLength = 0;
-	GLsizei StringLength = 0;
-
-	glGetShaderiv( v, GL_INFO_LOG_LENGTH, &ByteLength );
-
-	if( ByteLength > 1 )
-	{
-		GLchar* CompileLog = new GLchar[ByteLength];
-		glGetShaderInfoLog( v, ByteLength, &StringLength, CompileLog );
-
-		Log::Event( Log::Error, "---Shader Compilation Log---\n%s\n", CompileLog );
-
-		delete[] CompileLog;
-
-		return true;
-	}
-
-	return false;
-}
-
-bool LogProgramCompilationErrors( GLuint v )
-{
-	GLint ByteLength = 0;
-	GLsizei StringLength = 0;
-
-	glGetProgramiv( v, GL_INFO_LOG_LENGTH, &ByteLength );
-
-	if( ByteLength > 1 )
-	{
-		GLchar* CompileLog = new GLchar[ByteLength];
-		glGetProgramInfoLog( v, ByteLength, &StringLength, CompileLog );
-
-		Log::Event( Log::Error, "---Program Compilation Log---\n%s\n", CompileLog );
-
-		delete[] CompileLog;
-
-		return true;
-	}
-
-	return false;
-}
-
 const std::vector<std::pair<std::string, Uniform>>& CShader::GetDefaults() const
 {
 	return Defaults;
@@ -335,6 +296,18 @@ std::string CShader::Process( const std::string& Data )
 
 std::string CShader::Process( std::stringstream& Stream )
 {
+	if( UsePrePass )
+	{
+		// Default to equal, if we're running a pre-pass.
+		DepthTest = EDepthTest::LessEqual;
+		DepthMask = EDepthMask::Ignore;
+	}
+	else
+	{
+		DepthTest = EDepthTest::Less;
+		DepthMask = EDepthMask::Write;
+	}
+
 	std::stringstream OutputStream;
 	std::string Line;
 	while( std::getline( Stream, Line ) )
@@ -504,7 +477,7 @@ GLuint CShader::Link()
 		if( NeedsGeometryShader )
 		{
 			glCompileShader( Handles.GeometryShader );
-			if( LogShaderCompilationErrors( Handles.GeometryShader ) )
+			if( LogErrorsShader( Handles.GeometryShader, EShaderType::Geometry, "GeometryShader" ) )
 			{
 				HasNoErrors = false;
 			}
@@ -513,7 +486,7 @@ GLuint CShader::Link()
 		if( NeedsVertexShader )
 		{
 			glCompileShader( Handles.VertexShader );
-			if( LogShaderCompilationErrors( Handles.VertexShader ) )
+			if( LogErrorsShader( Handles.VertexShader, EShaderType::Vertex, "VertexShader" ) )
 			{
 				HasNoErrors = false;
 			}
@@ -522,7 +495,7 @@ GLuint CShader::Link()
 		if( NeedsFragmentShader )
 		{
 			glCompileShader( Handles.FragmentShader );
-			if( LogShaderCompilationErrors( Handles.FragmentShader ) )
+			if( LogErrorsShader( Handles.FragmentShader, EShaderType::Fragment, "FragmentShader" ) )
 			{
 				HasNoErrors = false;
 			}
@@ -531,7 +504,7 @@ GLuint CShader::Link()
 		if( NeedsComputeShader )
 		{
 			glCompileShader( Handles.ComputeShader );
-			if( LogShaderCompilationErrors( Handles.ComputeShader ) )
+			if( LogErrorsShader( Handles.ComputeShader, EShaderType::Compute, "ComputeShader" ) )
 			{
 				HasNoErrors = false;
 			}
@@ -574,7 +547,7 @@ GLuint CShader::Link()
 	// Link and set program to use
 	glLinkProgram( ProgramHandle );
 
-	const bool HasErrorsProgram = LogProgramCompilationErrors( ProgramHandle );
+	const bool HasErrorsProgram = LogErrorsProgram( ProgramHandle );
 
 	if( NeedsVertexShader )
 	{
@@ -635,7 +608,7 @@ void CShader::GatherDefaults()
 	{
 		glGetActiveUniform( Handles.Program, Index, BufferSize, &Length, &Size, &Type, Name );
 
-		Log::Event( "Uniform: %s ", Name );
+		// Log::Event( "Uniform: %s ", Name );
 
 		bool Handled = true;
 
@@ -647,7 +620,7 @@ void CShader::GatherDefaults()
 			glGetUniformfv( Handles.Program, Index, &Uniform.Uniform4.X );
 			Uniform.Set( Uniform.Uniform4 );
 
-			Log::Event( "Value: %.3f %.3f %.3f %.3f\n", Uniform.Uniform4.X, Uniform.Uniform4.Y, Uniform.Uniform4.Z, Uniform.Uniform4.W );
+			// Log::Event( "Value: %.3f %.3f %.3f %.3f\n", Uniform.Uniform4.X, Uniform.Uniform4.Y, Uniform.Uniform4.Z, Uniform.Uniform4.W );
 			break;
 		}
 		case GL_FLOAT_VEC3:
@@ -655,7 +628,7 @@ void CShader::GatherDefaults()
 			// glUniform3fv
 			glGetUniformfv( Handles.Program, Index, &Uniform.Uniform3.X );
 			Uniform.Set( Uniform.Uniform3 );
-			Log::Event( "Value: %.3f %.3f %.3f\n", Uniform.Uniform3.X, Uniform.Uniform3.Y, Uniform.Uniform3.Z );
+			// Log::Event( "Value: %.3f %.3f %.3f\n", Uniform.Uniform3.X, Uniform.Uniform3.Y, Uniform.Uniform3.Z );
 			break;
 		}
 		case GL_FLOAT_VEC2:
@@ -663,7 +636,7 @@ void CShader::GatherDefaults()
 			// glUniform2fv
 			glGetUniformfv( Handles.Program, Index, &Uniform.Uniform2.X );
 			Uniform.Set( Uniform.Uniform2 );
-			Log::Event( "Value: %.3f %.3f\n", Uniform.Uniform2.X, Uniform.Uniform2.Y );
+			// Log::Event( "Value: %.3f %.3f\n", Uniform.Uniform2.X, Uniform.Uniform2.Y );
 			break;
 		}
 		// case GL_FLOAT_MAT4:
@@ -677,7 +650,7 @@ void CShader::GatherDefaults()
 			// glUniform1ui
 			glGetUniformuiv( Handles.Program, Index, &Uniform.UniformUnsigned );
 			Uniform.Set( Uniform.UniformUnsigned );
-			Log::Event( "Value: %u\n", Uniform.UniformUnsigned );
+			// Log::Event( "Value: %u\n", Uniform.UniformUnsigned );
 			break;
 		}
 		case GL_BOOL:
@@ -686,7 +659,7 @@ void CShader::GatherDefaults()
 			// glUniform1i
 			glGetUniformiv( Handles.Program, Index, &Uniform.UniformSigned4[0] );
 			Uniform.Set( Uniform.UniformSigned4[0] );
-			Log::Event( "Value: %i\n", Uniform.UniformSigned4[0] );
+			// Log::Event( "Value: %i\n", Uniform.UniformSigned4[0] );
 			break;
 		}
 		case GL_INT_VEC4:
@@ -694,7 +667,7 @@ void CShader::GatherDefaults()
 			// glUniform4iv
 			glGetUniformiv( Handles.Program, Index, Uniform.UniformSigned4 );
 			Uniform.Set( Uniform.UniformSigned4 );
-			Log::Event( "Value: %i %i %i %i\n", Uniform.UniformSigned4[0], Uniform.UniformSigned4[1], Uniform.UniformSigned4[2], Uniform.UniformSigned4[3] );
+			// Log::Event( "Value: %i %i %i %i\n", Uniform.UniformSigned4[0], Uniform.UniformSigned4[1], Uniform.UniformSigned4[2], Uniform.UniformSigned4[3] );
 			break;
 		}
 		case GL_FLOAT:
@@ -702,12 +675,12 @@ void CShader::GatherDefaults()
 			// glUniform1f
 			glGetUniformfv( Handles.Program, Index, &Uniform.UniformFloat );
 			Uniform.Set( Uniform.UniformFloat );
-			Log::Event( "Value: %f\n", Uniform.UniformFloat );
+			// Log::Event( "Value: %f\n", Uniform.UniformFloat );
 			break;
 		}
 		default:
 		{
-			Log::Event( "\n" );
+			// Log::Event( "\n" );
 			Handled = false;
 			break;
 		}
@@ -721,4 +694,149 @@ void CShader::GatherDefaults()
 			Default.second = Uniform;
 		}
 	}
+}
+
+void PrintLine( const std::string& Data, const int LineNumber )
+{
+	int Line = 1;
+	size_t PreviousOffset = std::string::npos;
+	size_t Offset = 0;
+	while( Line < LineNumber && Offset < Data.length() && Offset != std::string::npos )
+	{
+		PreviousOffset = Offset;
+		auto LineResetDetect = Data.find( "#line ", Offset + 1 );
+		Offset = Data.find( '\n', Offset + 1 );
+		Line++;
+
+		if( LineResetDetect < Offset && LineResetDetect != std::string::npos )
+		{
+			auto LineEnd = Data.find( '\n', LineResetDetect + 6 );
+			if( LineResetDetect < LineEnd )
+			{
+				Line = Math::Integer( Data.substr( LineResetDetect + 6, LineEnd - LineResetDetect ) );
+				Line = Math::Max( Line - 1, 0 );
+			}
+		}
+	}
+
+	if( PreviousOffset == std::string::npos )
+	{
+		Log::Event( "Unable to find line.\n" );
+		return;
+	}
+
+	const auto Bias = Math::Min( PreviousOffset, 50 );
+	auto Start = Data.rfind( '\n', PreviousOffset - Bias );
+	auto End = Data.rfind( '\n', Offset + Math::Min( Data.length() - Offset, 50 ) );
+	auto Count = End - Start;
+	/*if( ( Start + Count + Bias ) < Data.length() )
+	{
+		Count += Bias;
+	}*/
+
+	const auto String = Data.substr( Start, Count );
+	Log::Event( Log::Warning, "...\n%s\n", String.c_str() );
+
+	size_t Next = Data.find( "#line ", Start + Count );
+	if( Next != std::string::npos )
+	{
+		PrintLine( Data.substr( Next - 1 ), LineNumber );
+	}
+}
+
+bool CShader::LogErrorsShader( GLuint Handle, const EShaderType Type, const char* Label )
+{
+	GLint ByteLength = 0;
+	GLsizei StringLength = 0;
+
+	glGetShaderiv( Handle, GL_INFO_LOG_LENGTH, &ByteLength );
+
+	if( ByteLength > 1 )
+	{
+		GLchar* CompileLog = new GLchar[ByteLength];
+		glGetShaderInfoLog( Handle, ByteLength, &StringLength, CompileLog );
+
+		std::string Log = CompileLog;
+		delete[] CompileLog;
+
+		Log::Event( Log::Warning, "---Shader Compilation Log--- (%s)\n", Label ? Label : "anonymous" );
+
+		auto LineEnd = Log.find( '(' ) - 1;
+		auto LineStart = Log.find( ':' );
+		if( LineEnd < LineStart )
+		{
+			// Assume NVIDIA.
+			LineStart = Log.find( '(' );
+			LineEnd = Log.find( ')' ) - 1;
+		}
+
+		const auto Line = Log.substr( LineStart + 1, LineEnd - LineStart );
+		Log::Event( "Line number: %s\n", Line.c_str() );
+		const int LineNumber = Math::Integer( Line );
+
+		if( Type == EShaderType::TesselationEvaluation || Type == EShaderType::TesselationControl )
+			return true; // Ignore tesselation.
+
+		std::string FileLocation;
+		switch( Type )
+		{
+		case EShaderType::Vertex:
+			FileLocation = VertexLocation;
+			break;
+		case EShaderType::Geometry:
+			FileLocation = GeometryLocation;
+			break;
+		case EShaderType::Compute:
+			FileLocation = ComputeLocation;
+			break;
+		default:
+			FileLocation = FragmentLocation;
+			break;
+		}
+		CFile ShaderSource( FileLocation );
+		if( ShaderSource.Exists() )
+		{
+			if( ShaderSource.Load() )
+			{
+				const std::string Data = Process( ShaderSource );
+				PrintLine( Data, LineNumber );
+			}
+			else
+			{
+				Log::Event( Log::Warning, "Could not load shader file %s.\n", FileLocation.c_str() );
+			}
+		}
+		else
+		{
+			Log::Event( Log::Warning, "Shader file %s does not exist.\n", FileLocation.c_str() );
+		}
+
+		Log::Event( Log::Error, "%s\n", Log.c_str() );
+
+		return true;
+	}
+
+	return false;
+}
+
+bool CShader::LogErrorsProgram( GLuint Handle )
+{
+	GLint ByteLength = 0;
+	GLsizei StringLength = 0;
+
+	glGetProgramiv( Handle, GL_INFO_LOG_LENGTH, &ByteLength );
+
+	if( ByteLength > 1 )
+	{
+		GLchar* CompileLog = new GLchar[ByteLength];
+		glGetProgramInfoLog( Handle, ByteLength, &StringLength, CompileLog );
+
+		Log::Event( Log::Error, "---Program Compilation Log---\n%s\n", CompileLog );
+
+		delete[] CompileLog;
+
+		return true;
+	}
+
+	return false;
 }

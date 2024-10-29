@@ -431,6 +431,12 @@ void TraverseNodeTree( const aiMatrix4x4& Transform, const aiScene* Scene, const
 		MeshData.Parent = Node->mParent;
 	}
 
+	// TODO: Fix multi-mesh transformations with root scene transformation rotations not working as intended.
+	// Used to be Transform * Node->mTransformation:
+	//	AddMesh( Transform * Node->mTransformation, Scene, Mesh, Node, MeshData );
+	//	UpdateSkeleton( Transform, Scene, Mesh, Node, MeshData );
+	//	TraverseNodeTree( Transform, Scene, Child, MeshData );
+
 	const auto NodeTransform = Node->mTransformation * Transform;
 
 	// Animation Only assumes the skeleton has already been defined.
@@ -707,27 +713,28 @@ void MeshBuilder::ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile&
 	// Don't remove empty bones.
 	Importer.SetPropertyBool( "AI_CONFIG_IMPORT_REMOVE_EMPTY_BONES", false );
 
-    const aiScene* Scene = Importer.ReadFile( File.Location().c_str(), 
+	constexpr unsigned int Flags = 
 		aiProcess_CalcTangentSpace			| // Calculate tangents and bitangents if possible.
 		aiProcess_JoinIdenticalVertices		| // Join identical vertices/ optimize indexing.
-		// aiProcess_ValidateDataStructure		| // Perform a full validation of the loader's output.
+		// aiProcess_ValidateDataStructure	| // Perform a full validation of the loader's output.
 		aiProcess_ImproveCacheLocality		| // Improve the cache locality of the output vertices.
 		aiProcess_RemoveRedundantMaterials	| // Remove redundant materials.
 		aiProcess_FindDegenerates			| // Remove degenerated polygons from the import.
-		// aiProcess_FindInvalidData			| // Detect invalid model data, such as invalid normal vectors.
+		// aiProcess_FindInvalidData		| // Detect invalid model data, such as invalid normal vectors.
 		aiProcess_GenUVCoords				| // Convert spherical, cylindrical, box and planar mapping to proper UVs.
 		aiProcess_TransformUVCoords			| // Preprocess UV transformations (scaling, translation ...).
-		// aiProcess_FindInstances				| // Search for instanced meshes and remove them by references to one master.
-		// aiProcess_LimitBoneWeights			| // Limit bone weights to 4 per vertex.
+		// aiProcess_FindInstances			| // Search for instanced meshes and remove them by references to one master.
+		// aiProcess_LimitBoneWeights		| // Limit bone weights to 4 per vertex.
 		aiProcess_OptimizeMeshes			| // Join small meshes, if possible.
-		// aiProcess_SplitByBoneCount			| // Split meshes with too many bones.
+		// aiProcess_SplitByBoneCount		| // Split meshes with too many bones.
 
 		aiProcess_GenSmoothNormals			| // Generate smooth normal vectors if not existing.
-		// aiProcess_SplitLargeMeshes			| // Split large, unrenderable meshes into submeshes.
+		// aiProcess_SplitLargeMeshes		| // Split large, unrenderable meshes into submeshes.
 		aiProcess_Triangulate				| // Triangulate polygons with more than 3 edges.
 		aiProcess_SortByPType				| // Make 'clean' meshes which consist of a single typ of primitives.
-		0
-	);
+		0;
+
+    const aiScene* Scene = Importer.ReadFile( File.Location().c_str(), Flags );
 
 	const char* ErrorString = Importer.GetErrorString();
 	if( ErrorString[0] != '\0' )

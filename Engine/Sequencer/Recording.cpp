@@ -26,21 +26,13 @@ void Recording::Apply( CMeshEntity* Entity, const double Time )
 	}
 
 	auto& Sample = Samples[Index];
-	Entity->SetTransform( Sample.Transform );
 
-	// Update the physics data.
-	if( auto* Body = Entity->GetBody() )
-	{
-		Body->PreviousTransform = Sample.Transform;
-		Body->Acceleration = Vector3D::Zero;
-		Body->Velocity = Vector3D::Zero;
-	}
-
+	// Allocate space for the sample's animations.
 	auto& Instance = Entity->GetAnimationInstance();
 	Instance.Stack.resize( Sample.Entries );
-	for( size_t Index = 0; Index < Sample.Entries; Index++ )
+	for( size_t EntryIndex = 0; EntryIndex < Sample.Entries; EntryIndex++ )
 	{
-		auto& Entry = Sample.Stack[Index];
+		auto& Entry = Sample.Stack[EntryIndex];
 		if( Entry.Animation.PositionKeys.empty() && Entry.Animation.RotationKeys.empty() && Entry.Animation.ScalingKeys.empty() )
 		{
 			// Animation hasn't been copied yet.
@@ -51,8 +43,39 @@ void Recording::Apply( CMeshEntity* Entity, const double Time )
 				Entry.Animation = Iterator->second;
 			}
 		}
+	}
 
-		Instance.Stack[Index] = Sample.Stack[Index];
+	size_t PreviousIndex = Index > 0 ? Index - 1 : 0;
+	Recording::Sample Interpolated = Sample;
+	if( PreviousIndex > 0 )
+	{
+		const auto& PreviousSample = Samples[PreviousIndex];
+		const auto ReplayTimeA = PreviousSample.Time - ReplayStart;
+		const auto ReplayTimeB = Sample.Time - ReplayStart;
+		float Alpha = Math::MapClamp( Time, ReplayTimeA, ReplayTimeB, 0.0, 1.0 );
+		Interpolated.Transform.SetPosition( Math::Lerp( PreviousSample.Transform.GetPosition(), Sample.Transform.GetPosition(), Alpha ) );
+
+		for( size_t Index = 0; Index < Interpolated.Entries; Index++ )
+		{
+			Interpolated.Stack[Index].Time = Math::Lerp( PreviousSample.Stack[Index].Time, Interpolated.Stack[Index].Time, Alpha );
+			Interpolated.Stack[Index].Weight = Math::Lerp( PreviousSample.Stack[Index].Weight, Interpolated.Stack[Index].Weight, Alpha );
+		}
+	}
+
+	// Apply the sample transform.
+	Entity->SetTransform( Interpolated.Transform );
+
+	// Update the physics data.
+	if( auto* Body = Entity->GetBody() )
+	{
+		Body->PreviousTransform = Interpolated.Transform;
+		Body->Acceleration = Vector3D::Zero;
+		Body->Velocity = Vector3D::Zero;
+	}
+
+	for( size_t Index = 0; Index < Interpolated.Entries; Index++ )
+	{
+		Instance.Stack[Index] = Interpolated.Stack[Index];
 	}
 }
 

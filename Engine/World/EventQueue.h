@@ -13,9 +13,6 @@ typedef uint16_t EventType;
 constexpr EventType MaximumTypes = -1;
 constexpr EventType NoneEventType = 0;
 
-template<typename T>
-using VerifyEnum = std::enable_if_t<std::is_enum<T>::value>;
-
 namespace Event
 {
 	using PayloadType = std::unordered_map<std::string, Property>;

@@ -14,6 +14,8 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Utility/Structures/JSON.h>
 
+#include "Connection.h"
+
 bool Success( const asio::error_code& Code )
 {
 	if( !Code )
@@ -23,7 +25,7 @@ bool Success( const asio::error_code& Code )
 	return false;
 }
 
-void Network::HTTPRequest::Execute()
+void Networking::HTTPRequest::Execute()
 {
 	asio::error_code ErrorCode;
 
@@ -90,5 +92,12 @@ void Network::HTTPRequest::Execute()
 	for( auto Character : Buffer )
 	{
 		Data += Character;
+	}
+
+	// Extract the HTTP code.
+	auto Segments = String::Segment( Data, ' ' );
+	if( Segments.size() >= 2 )
+	{
+		Code = atoi( Segments[1].c_str() );
 	}
 }

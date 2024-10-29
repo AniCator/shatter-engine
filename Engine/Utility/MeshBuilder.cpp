@@ -4,6 +4,7 @@
 #include <Engine/Profiling/Logging.h>
 #include <Engine/Profiling/Profiling.h>
 #include <Engine/Display/Rendering/Mesh.h>
+#include <Engine/Utility/LoftyMeshInterface.h>
 
 static const float Pi = static_cast<float>( acos( -1 ) );
 
@@ -649,6 +650,11 @@ void MeshBuilder::LM( FPrimitive& Primitive, const CFile& File )
 		Primitive.VertexCount = 0;
 		Primitive.IndexCount = 0;
 	}
+}
+
+void MeshBuilder::LMI( FPrimitive& Primitive, AnimationSet& Set, const CFile& File, const ImportOptions& Options )
+{
+	LoftyMeshInterface::Import( File, &Primitive, Set );
 }
 
 void MeshBuilder::Mesh( FPrimitive& Primitive, CMesh* MeshInstance )
