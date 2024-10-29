@@ -227,6 +227,7 @@
     <ClCompile Include="Engine\Utility\Chunk.cpp" />
     <ClCompile Include="Engine\Utility\File.cpp" />
     <ClCompile Include="Engine\Utility\Gizmo.cpp" />
+    <ClCompile Include="Engine\Utility\LoftyMeshInterface.cpp" />
     <ClCompile Include="Engine\Utility\Math\BoundingBox.cpp" />
     <ClCompile Include="Engine\Utility\Math\Matrix.cpp" />
     <ClCompile Include="Engine\Utility\Math\Transform.cpp" />
@@ -276,6 +277,14 @@
     <ClCompile Include="ThirdParty\imgui-1.70\imgui_demo.cpp" />
     <ClCompile Include="ThirdParty\imgui-1.70\imgui_draw.cpp" />
     <ClCompile Include="ThirdParty\imgui-1.70\imgui_widgets.cpp" />
+    <ClCompile Include="ThirdParty\oscpack\FaceOSC.cpp" />
+    <ClCompile Include="ThirdParty\oscpack\ip\IpEndpointName.cpp" />
+    <ClCompile Include="ThirdParty\oscpack\ip\win32\NetworkingUtils.cpp" />
+    <ClCompile Include="ThirdParty\oscpack\ip\win32\UdpSocket.cpp" />
+    <ClCompile Include="ThirdParty\oscpack\osc\OscOutboundPacketStream.cpp" />
+    <ClCompile Include="ThirdParty\oscpack\osc\OscPrintReceivedElements.cpp" />
+    <ClCompile Include="ThirdParty\oscpack\osc\OscReceivedElements.cpp" />
+    <ClCompile Include="ThirdParty\oscpack\osc\OscTypes.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine\Animation\AnimationSet.h" />
@@ -337,6 +346,7 @@
     <ClInclude Include="Engine\Input\InputMap.h" />
     <ClInclude Include="Engine\Input\InputMapGLFW.h" />
     <ClInclude Include="Engine\Input\NullInput.h" />
+    <ClInclude Include="Engine\Network\Connection.h" />
     <ClInclude Include="Engine\Network\Network.h" />
     <ClInclude Include="Engine\Physics\Body\Body.h" />
     <ClInclude Include="Engine\Physics\Body\Plane.h" />
@@ -362,6 +372,7 @@
     <ClInclude Include="Engine\Sequencer\Timeline.h" />
     <ClInclude Include="Engine\Utility\BuildTime.h" />
     <ClInclude Include="Engine\Utility\Chunk.h" />
+    <ClInclude Include="Engine\Utility\Container.h" />
     <ClInclude Include="Engine\Utility\Data.h" />
     <ClInclude Include="Engine\Utility\DataString.h" />
     <ClInclude Include="Engine\Utility\Defer.h" />
@@ -369,11 +380,13 @@
     <ClInclude Include="Engine\Utility\File.h" />
     <ClInclude Include="Engine\Utility\Flag.h" />
     <ClInclude Include="Engine\Utility\Gizmo.h" />
+    <ClInclude Include="Engine\Utility\Graph.h" />
     <ClInclude Include="Engine\Utility\HandlePool.h" />
     <ClInclude Include="Engine\Utility\Identifier.h" />
     <ClInclude Include="Engine\Utility\Iterate.h" />
     <ClInclude Include="Engine\Utility\Locator\InputLocator.h" />
     <ClInclude Include="Engine\Utility\Locator\Locator.h" />
+    <ClInclude Include="Engine\Utility\LoftyMeshInterface.h" />
     <ClInclude Include="Engine\Utility\Macro.h" />
     <ClInclude Include="Engine\Utility\Math.h" />
     <ClInclude Include="Engine\Utility\Math\BoundingBox.h" />
@@ -450,6 +463,7 @@
     <ClInclude Include="ThirdParty\imgui-1.70\stb_rect_pack.h" />
     <ClInclude Include="ThirdParty\imgui-1.70\stb_textedit.h" />
     <ClInclude Include="ThirdParty\imgui-1.70\stb_truetype.h" />
+    <ClInclude Include="ThirdParty\oscpack\FaceOSC.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Output\ShatterEngine.default.ini" />
