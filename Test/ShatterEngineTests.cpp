@@ -4,6 +4,7 @@
 using namespace Microsoft::VisualStudio::CppUnitTestFramework;
 
 #include <Engine/Display/UserInterface.h>
+#include <Engine/Resource/AssetPool.h>
 #include <Engine/Utility/MeshBuilder.h>
 #include <Engine/World/World.h>
 #include <Engine/Utility/Chunk.h>
@@ -666,10 +667,7 @@ namespace General
 			// Target data structures.
 			FPrimitive Primitive;
 			AnimationSet Set;
-
-			LoftyMeshInterface Interface;
-			Assert::IsTrue( Interface.Import( File, &Primitive, Set ), L"Failed to import LMI header." );
-
+			Assert::IsTrue( LoftyMeshInterface::Import( File, &Primitive, Set ), L"Failed to import LMI header." );
 			Assert::IsTrue( Primitive.VertexCount == 24, L"Incorrect LMI vertex count." );
 			Assert::IsTrue( Primitive.IndexCount == 36, L"Incorrect LMI index count." );
 		}
@@ -682,9 +680,7 @@ namespace General
 			// Target data structures.
 			FPrimitive Primitive;
 			AnimationSet Set;
-
-			LoftyMeshInterface Interface;
-			Assert::IsTrue( Interface.Import( File, &Primitive, Set ), L"Failed to import LMI header." );
+			Assert::IsTrue( LoftyMeshInterface::Import( File, &Primitive, Set ), L"Failed to import LMI header." );
 
 			// Do it be an icosphere with the triangle-ey bits.
 			Assert::IsTrue( Primitive.VertexCount == 88, L"Incorrect LMI vertex count." );
@@ -692,6 +688,50 @@ namespace General
 
 			// Check if we have allocated the expected amount of bones.
 			Assert::IsTrue( Set.Skeleton.Bones.size() == 3, L"Incorrect LMI bone count." );
+		}
+	};
+
+	TEST_CLASS( Assets )
+	{
+	public:
+		TEST_METHOD( AddAndRemoveReferenceFromAssetPool )
+		{
+			AssetPool<int> Pool;
+			Pool.Create( "test", 1 );
+			Assert::IsTrue( Pool.GetAssets().size() == 1, L"Unexpected pool size after addition." );
+			Pool.Remove( "test" );
+			Assert::IsTrue( Pool.GetAssets().empty(), L"Unexpected pool size after removal.");
+		}
+
+		TEST_METHOD( AddAndRemovePointerFromAssetPool )
+		{
+			AssetPool<int*> Pool;
+			int* Data = new int( 1 );
+			Pool.Create( "test", Data );
+			Assert::IsTrue( Pool.GetAssets().size() == 1, L"Unexpected pool size after addition." );
+			Pool.Remove( "test" ); // Should handle the deletion of the pointer data itself as well.
+			Assert::IsTrue( Pool.GetAssets().empty(), L"Unexpected pool size after removal." );
+		}
+
+		TEST_METHOD( DestroyReferenceAssetPool )
+		{
+			AssetPool<int> Pool;
+			Pool.Create( "test", 1 );
+			Assert::IsTrue( Pool.GetAssets().size() == 1, L"Unexpected pool size after addition." );
+			Pool.Destroy();
+			Assert::IsTrue( Pool.GetAssets().empty(), L"Unexpected pool size after removal." );
+			Assert::IsTrue( Pool.Get().empty(), L"Unexpected pool size after removal." );
+		}
+
+		TEST_METHOD( DestroyPointerAssetPool )
+		{
+			AssetPool<int*> Pool;
+			int* Data = new int( 1 );
+			Pool.Create( "test", Data );
+			Assert::IsTrue( Pool.GetAssets().size() == 1, L"Unexpected pool size after addition." );
+			Pool.Destroy();
+			Assert::IsTrue( Pool.GetAssets().empty(), L"Unexpected pool size after removal." );
+			Assert::IsTrue( Pool.Get().empty(), L"Unexpected pool size after removal." );
 		}
 	};
 
