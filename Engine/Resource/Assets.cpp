@@ -215,7 +215,7 @@ void LoadAnimationSet( AnimationSet& Set, CFile& File, JSON::Container& SetData 
 	const auto& MeshLocation = JSON::Find( SetData.Tree, "path" );
 	if( MeshLocation && CFile::Exists( MeshLocation->Value ) )
 	{
-		// Update the accessed file so that ASSIMP can load it.
+		// Update the accessed file so that we can load it.
 		File = CFile( MeshLocation->Value );
 
 		// Load the animation set lookup table.
@@ -234,7 +234,14 @@ void LoadASSIMPMesh( PrimitivePayload* Payload, AnimationSet& Set, CFile& File )
 		LoadAnimationSet( Set, File, SetData );
 	}
 	
-	MeshBuilder::ASSIMP( Payload->Primitive, Set, File );
+	if( File.Extension() == "lmi" )
+	{
+		MeshBuilder::LMI( Payload->Primitive, Set, File );
+	}
+	else
+	{
+		MeshBuilder::ASSIMP( Payload->Primitive, Set, File );
+	}
 
 	if( IsAnimationSet )
 	{
@@ -625,37 +632,45 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			bool LoadASSIMP = true;
 			JSON::Container SetData;
 			
-			if( Extension == "lm" )
+			static std::string ExtensionLoftyModel = "lm";
+			static std::string ExtensionLoftyMeshInterface = "lmi";
+			static std::string ExtensionAnimationSet = "ses";
+
+			// Legacy .lm format, deprecated.
+			if( Extension == ExtensionLoftyModel )
 			{
 				LoadASSIMP = false;
 				File.Load( true );
 				MeshBuilder::LM( Primitive, File );
 			}
-			else if ( Extension == "ses" ) // Animation set
+
+			// We're loading an animation set.
+			if ( Extension == ExtensionAnimationSet )
 			{
+				// Loading the animation set will change the file we're targetting to the underlying model.
 				LoadAnimationSet( Set, File, SetData );
 			}
 
-			if( Extension == "lmi" )
+			// Check the underlying model's extension.
+			if( File.Extension() == ExtensionLoftyMeshInterface )
 			{
 				LoadASSIMP = false;
 				File.Load( true );
 				MeshBuilder::LMI( Primitive, Set, File );
 			}
-
-			if( LoadASSIMP )
+			else if( LoadASSIMP )
 			{
 				MeshBuilder::ASSIMP( Primitive, Set, File );
+			}
 
-				if( Extension == "ses" )
-				{
-					LoadAnimationMetaData( Set, SetData );
-				}
+			if( Extension == ExtensionAnimationSet )
+			{
+				LoadAnimationMetaData( Set, SetData );
+			}
 
-				if( Primitive.VertexCount == 0 )
-				{
-					Log::Event( Log::Warning, "Unknown mesh extension \"%s\".\n", Extension.c_str() );
-				}
+			if( Primitive.VertexCount == 0 )
+			{
+				Log::Event( Log::Warning, "Unknown mesh extension \"%s\".\n", Extension.c_str() );
 			}
 		}
 
