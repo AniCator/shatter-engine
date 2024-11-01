@@ -683,24 +683,6 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			{
 				Mesh->SetAnimationSet( Set );
 			}
-
-			// Automatically export an LM file if the extension was not LM.
-			const auto ExportToNative = CConfiguration::Get().IsEnabled( "ExportOBJToLM" );
-			if( ExportToNative && Mesh && Extension != "lm" )
-			{
-				Log::Event( "Exporting Lofty Model mesh \"%s\".", Name );
-
-				FPrimitive ExportPrimitive;
-				MeshBuilder::Mesh( ExportPrimitive, Mesh );
-
-				CData Data;
-				Data << ExportPrimitive;
-				Data << Mesh->GetSkeleton();
-
-				CFile File( ExportPath );
-				File.Load( Data );
-				File.Save();
-			}
 		}
 	}
 	else
