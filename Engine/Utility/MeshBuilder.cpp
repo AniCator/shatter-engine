@@ -650,23 +650,23 @@ void MeshBuilder::LMI( FPrimitive& Primitive, AnimationSet& Set, const CFile& Fi
 
 void MeshBuilder::Mesh( FPrimitive& Primitive, CMesh* MeshInstance )
 {
-	if( MeshInstance )
-	{
-		const FVertexData& VertexData = MeshInstance->GetVertexData();
-		const FIndexData& IndexData = MeshInstance->GetIndexData();
-		const FVertexBufferData& VertexBufferData = MeshInstance->GetVertexBufferData();
+	if( !MeshInstance )
+		return;
+	
+	const FVertexData& VertexData = MeshInstance->GetVertexData();
+	const FIndexData& IndexData = MeshInstance->GetIndexData();
+	const FVertexBufferData& VertexBufferData = MeshInstance->GetVertexBufferData();
 
-		Primitive.VertexCount = VertexBufferData.VertexCount;
-		Primitive.IndexCount = VertexBufferData.IndexCount;
+	Primitive.VertexCount = VertexBufferData.VertexCount;
+	Primitive.IndexCount = VertexBufferData.IndexCount;
 
-		Primitive.Vertices = new ComplexVertex[Primitive.VertexCount];
-		Primitive.Indices = new glm::uint[Primitive.IndexCount];
+	Primitive.Vertices = new ComplexVertex[Primitive.VertexCount];
+	Primitive.Indices = new glm::uint[Primitive.IndexCount];
 
-		memcpy( Primitive.Vertices, VertexData.Vertices, Primitive.VertexCount * sizeof( ComplexVertex ) );
-		memcpy( Primitive.Indices, IndexData.Indices, Primitive.IndexCount * sizeof( glm::uint ) );
+	memcpy( Primitive.Vertices, VertexData.Vertices, Primitive.VertexCount * sizeof( ComplexVertex ) );
+	memcpy( Primitive.Indices, IndexData.Indices, Primitive.IndexCount * sizeof( glm::uint ) );
 
-		Primitive.HasNormals = true;
-	}
+	Primitive.HasNormals = true;
 }
 
 struct VectorComparator {
