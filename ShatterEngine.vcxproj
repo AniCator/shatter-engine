@@ -190,6 +190,7 @@
     <ClCompile Include="Engine\Display\Rendering\Noise.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Particle\Particle.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Particle\ParticleEmitter.cpp" />
+    <ClCompile Include="Engine\Display\Rendering\Pass\AntiAliasingPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\BloomPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\CopyPass.cpp" />
     <ClCompile Include="Engine\Display\Rendering\Pass\DownsamplePass.cpp" />
@@ -321,6 +322,7 @@
     <ClInclude Include="Engine\Display\Rendering\Noise.h" />
     <ClInclude Include="Engine\Display\Rendering\Particle\Particle.h" />
     <ClInclude Include="Engine\Display\Rendering\Particle\ParticleEmitter.h" />
+    <ClInclude Include="Engine\Display\Rendering\Pass\AntiAliasingPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\BloomPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\CopyPass.h" />
     <ClInclude Include="Engine\Display\Rendering\Pass\DownsamplePass.h" />

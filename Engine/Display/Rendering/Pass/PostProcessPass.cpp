@@ -25,7 +25,7 @@ uint32_t CRenderPassPostProcess::Render( UniformMap& Uniforms )
 	Renderable.SetShader( Shader );
 	Renderable.SetTexture( Texture, ETextureSlot::Slot0 );
 
-	auto Calls = RenderRenderable( &Renderable, Uniforms );
+	RenderRenderable( &Renderable, Uniforms );
 	SetPreviousCamera( Camera );
 	return Calls;
 }

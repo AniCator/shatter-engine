@@ -91,6 +91,10 @@ public:
 	void SetCameraDirection( const Vector3D& CameraDirection );
 	void SetCameraOrientation( const Vector3D& CameraOrientation );
 	void SetCameraUpVector( const Vector3D& CameraUpVector );
+	void SetOffset( const int Index );
+	int GetOffset() const;
+	glm::mat4 GetOffsetMatrix() const;
+	Vector2D GetOffsetVector() const;
 
 	const Vector3D& GetCameraPosition() const;
 
@@ -116,6 +120,7 @@ public:
 private:
 	FCameraSetup CameraSetup;
 
+	int OffsetIndex = -1;
 	glm::mat4 ProjectionMatrix;
 	glm::mat4 ViewMatrix;
 

@@ -204,6 +204,12 @@ void CCamera::Update()
 		ProjectionMatrix = glm::ortho( -CameraSetup.OrthographicScale * CameraSetup.AspectRatio, CameraSetup.OrthographicScale * CameraSetup.AspectRatio, -CameraSetup.OrthographicScale, CameraSetup.OrthographicScale, CameraSetup.NearPlaneDistance, CameraSetup.FarPlaneDistance );
 	}
 
+	if( OffsetIndex > -1 )
+	{
+		// Offset the projection matrix.
+		ProjectionMatrix = GetOffsetMatrix() * ProjectionMatrix;
+	}
+
 	const glm::vec3 CameraPosition = Math::ToGLM( CameraSetup.CameraPosition );
 
 	CameraSetup.CameraRightVector = WorldUp.Cross( CameraSetup.CameraDirection ).Normalized();
@@ -342,6 +348,52 @@ void CCamera::SetCameraUpVector( const Vector3D& Vector )
 	CameraSetup.CameraUpVector = Vector;
 
 	Update();
+}
+
+void CCamera::SetOffset( const int Index )
+{
+	OffsetIndex = Index;
+	Update();
+}
+
+int CCamera::GetOffset() const
+{
+	return OffsetIndex;
+}
+
+glm::mat4 CCamera::GetOffsetMatrix() const
+{
+	// Diagonal offsets.
+	constexpr float OffsetTable[] = {
+		-0.5f,
+		0.5f
+	};
+
+	int IndexA = OffsetIndex;
+	int IndexB = 1 + OffsetIndex;
+
+	glm::mat4 OffsetMatrix;
+	OffsetMatrix[2][0] = OffsetTable[IndexA % 2] * ( 1.0f / 2560.0f );
+	OffsetMatrix[2][1] = OffsetTable[IndexB % 2] * ( 1.0f / 1440.0f );
+
+	return OffsetMatrix;
+}
+
+Vector2D CCamera::GetOffsetVector() const
+{
+	// Diagonal offsets.
+	constexpr float OffsetTable[] = {
+		-1.0f,
+		1.0f
+	};
+
+	int IndexA = OffsetIndex;
+	int IndexB = 1 + OffsetIndex;
+
+	Vector2D Vector;
+	Vector.X = OffsetTable[IndexA % 2];
+	Vector.Y = OffsetTable[IndexA % 2];
+	return Vector;
 }
 
 const Vector3D& CCamera::GetCameraPosition() const

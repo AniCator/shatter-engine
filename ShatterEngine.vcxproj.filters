@@ -548,6 +548,9 @@
     <ClCompile Include="Engine\Utility\LoftyMeshInterface.cpp">
       <Filter>Source Files\Engine\Utility</Filter>
     </ClCompile>
+    <ClCompile Include="Engine\Display\Rendering\Pass\AntiAliasingPass.cpp">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Game\Game.h">
@@ -1080,6 +1083,9 @@
     </ClInclude>
     <ClInclude Include="Engine\Utility\Container.h">
       <Filter>Source Files\Engine\Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Display\Rendering\Pass\AntiAliasingPass.h">
+      <Filter>Source Files\Engine\Display\Rendering\Pass</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>

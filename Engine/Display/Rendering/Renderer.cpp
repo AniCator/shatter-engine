@@ -69,6 +69,8 @@ ConfigurationVariable<bool> FlipHorizontal( "render.FlipHorizontal", false );
 // Depth pre-pass.
 ConfigurationVariable<bool> UsePrePass( "render.PrePass", true );
 
+ConfigurationVariable<bool> UseJitter( "render.Jitter", false );
+
 int MaximumSamples = -1;
 int GetSampleCount()
 {
@@ -416,6 +418,27 @@ void CRenderer::DrawQueuedRenderables()
 	MainPass.ClearTarget();
 	DrawCalls = 0;
 
+	if( UseJitter )
+	{
+		Vector4D Jitter;
+		static int OffsetIndex = -1;
+		Camera.SetOffset( OffsetIndex );
+
+		// Fetch the previous offset.
+		Jitter.X = Camera.GetOffsetVector().X;
+		Jitter.Y = Camera.GetOffsetVector().Y;
+
+		// Update to the current offset.
+		Camera.SetOffset( ++OffsetIndex );
+
+		// Fetch the current offset.
+		Jitter.Z = Camera.GetOffsetVector().X;
+		Jitter.W = Camera.GetOffsetVector().Y;
+		SetUniform( "JitterOffset", Jitter );
+	}
+
+	MainPass.SetCamera( Camera );
+
 	if( UsePrePass )
 	{
 		DrawDepthPrepass();
@@ -452,6 +475,11 @@ void CRenderer::DrawQueuedRenderables()
 
 	// Resolve the translucent stage.
 	Framebuffer.Resolve();
+
+	if( UseJitter )
+	{
+		Camera.SetOffset( -1 );
+	}
 
 	if( !RenderOnlyMainPass )
 	{
@@ -508,6 +536,7 @@ void CRenderer::DrawQueuedRenderables()
 				CopyTexture( MainPass.Target, &BufferA, GlobalUniformBuffers );
 			}
 
+#if 0
 			{
 				FramebufferRenderable.SetShader( ImageProcessingShader );
 				
@@ -519,6 +548,7 @@ void CRenderer::DrawQueuedRenderables()
 
 				CopyTexture( &BufferA, MainPass.Target, GlobalUniformBuffers );
 			}
+#endif
 			
 			if( BufferA.Ready() && BufferB.Ready() )
 			{			
@@ -532,6 +562,8 @@ void CRenderer::DrawQueuedRenderables()
 				{
 					BufferPrevious = CRenderTexture( "BufferPrevious", ViewportWidth, ViewportHeight );
 					BufferPrevious.Initialize();
+
+					CAssets::Get().CreateNamedTexture( "rt_BufferPrevious", &BufferPrevious );
 				}
 			}
 

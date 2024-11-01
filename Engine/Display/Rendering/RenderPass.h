@@ -62,6 +62,10 @@ public:
 	void BindUniforms( CRenderable* Renderable, UniformMap& AdditionalUniforms );
 
 	static void FrustumCull( const CCamera& Camera, const std::vector<CRenderable*>& Renderables );
+	
+	CRenderTexture* GetRenderTexture( const std::string& Name );
+	void CreateRenderTexture( CRenderTexture*& Texture, const std::string& Name, float Factor, bool Anamorphic );
+	static void CreateRenderTexture( CRenderTexture*& Texture, const std::string& Name, int Width, int Height );
 
 	CRenderTexture* Target;
 	CCamera Camera;

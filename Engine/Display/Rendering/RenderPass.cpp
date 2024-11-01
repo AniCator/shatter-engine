@@ -540,6 +540,39 @@ void CRenderPass::FrustumCull( const CCamera& Camera, const std::vector<CRendera
 	CRenderable::FrustumCull( Camera, Renderables );
 }
 
+CRenderTexture* CRenderPass::GetRenderTexture( const std::string& Name )
+{
+	return dynamic_cast<CRenderTexture*>( CAssets::Get().Textures.Find( "rt_" + Name ) );
+}
+
+void CRenderPass::CreateRenderTexture( CRenderTexture*& Texture, const std::string& Name, float Factor, bool Anamorphic )
+{
+	int Width, Height;
+	if( Anamorphic )
+	{
+		Width = ViewportHeight * Factor;
+		Height = ViewportHeight * Factor;
+	}
+	else
+	{
+		Width = ViewportWidth * Factor;
+		Height = ViewportHeight * Factor;
+	}
+
+	CreateRenderTexture( Texture, Name, Width, Height );
+}
+
+void CRenderPass::CreateRenderTexture( CRenderTexture*& Texture, const std::string& Name, int Width, int Height )
+{
+	const bool CreateTexture = !Texture || Texture->GetWidth() != Width || Texture->GetHeight() != Height;
+	if( !CreateTexture )
+		return;
+
+	delete Texture;
+	Texture = new CRenderTexture( Name, Width, Height );
+	CAssets::Get().CreateNamedTexture( ( "rt_" + Name ).c_str(), Texture );
+}
+
 uint32_t CopyTexture( CRenderTexture* Source, CRenderTexture* Target, UniformMap& Uniforms )
 {
 	static CRenderPassCopy Copy( 1280, 720, {}, false );

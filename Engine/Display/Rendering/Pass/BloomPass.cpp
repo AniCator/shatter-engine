@@ -35,32 +35,17 @@ uint32_t CRenderPassBloom::Render( UniformMap& Uniforms )
 		return 0;
 
 	CRenderTexture* Framebuffer = Target;
-	auto CreateRenderTexture = [this] ( CRenderTexture*& Texture, const std::string& Name, float Factor, bool Anamorphic )
+
+	if( !BloomB )
 	{
-		int Width, Height;
-		if( Anamorphic )
+		BloomB = GetRenderTexture( "Scratch" );
+		if( !BloomB )
 		{
-			Width = ViewportHeight * Factor;
-			Height = ViewportHeight * Factor;
+			CreateRenderTexture( BloomB, "Scratch", 1.0f, false ); // Final composite image should never be anamorphic.
 		}
-		else
-		{
-			Width = ViewportWidth * Factor;
-			Height = ViewportHeight * Factor;
-		}
-
-		const bool CreateTexture = !Texture || Texture->GetWidth() != Width || Texture->GetHeight() != Height;
-		if( CreateTexture )
-		{
-			delete Texture;
-			Texture = new CRenderTexture( Name, Width, Height );
-
-			CAssets::Get().CreateNamedTexture( ( "rt_" + Name ).c_str(), Texture );
-		}
-	};
+	}
 
 	CreateRenderTexture( BloomA, "BloomA", 1.0f, Anamorphic );
-	CreateRenderTexture( BloomB, "BloomB", 1.0f, false ); // Final composite image should never be anamorphic.
 	CreateRenderTexture( HalfSizeX, "HalfSizeX", 0.5f, Anamorphic );
 	CreateRenderTexture( HalfSizeY, "HalfSizeY", 0.5f, Anamorphic );
 	CreateRenderTexture( QuarterSizeX, "QuarterSizeX", 0.25f, Anamorphic );
