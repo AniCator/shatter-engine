@@ -66,7 +66,7 @@ public:
 
 		ClearTarget();
 
-		auto Calls = RenderRenderable( &Model, Uniforms );
+		RenderRenderable( &Model, Uniforms );
 
 		// Resolve the texture if it was using MSAA.
 		if( Target->GetSampleCount() > 1 )
@@ -80,7 +80,7 @@ public:
 			ResolveRenderable.SetMesh( nullptr );
 			ResolveRenderable.SetShader( Assets.Shaders.Find( "resolve" ) );
 			ResolveRenderable.SetTexture( Target, ETextureSlot::Slot0 );
-			Calls += RenderRenderable( &ResolveRenderable, Uniforms );
+			RenderRenderable( &ResolveRenderable, Uniforms );
 
 			// Resolve the texture again if it was using MSAA.
 			if( Target->GetSampleCount() > 1 )
@@ -436,7 +436,7 @@ void ContentBrowserUI()
 			if( !Thumbnail )
 			{
 				ShouldGenerateThumbnail = true;
-				GenerateThumbnail( Pair.first, Mesh );
+				// GenerateThumbnail( Pair.first, Mesh );
 			}
 
 			if( !Thumbnail )
@@ -509,6 +509,11 @@ void ContentBrowserUI()
 
 				ImGui::EndTooltip();
 
+				GenerateThumbnail( Pair.first, Mesh );
+			}
+
+			if( ImGui::IsItemVisible() && ShouldGenerateThumbnail )
+			{
 				GenerateThumbnail( Pair.first, Mesh );
 			}
 
