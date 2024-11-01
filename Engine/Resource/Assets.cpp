@@ -564,7 +564,7 @@ void CAssets::CreateNamedAssets( std::vector<PrimitivePayload>& MeshPayloads, st
 		auto* Mesh = Meshes.Find( Payload.Name );
 		if( !Mesh )
 		{
-			Log::Event( Log::Error, "Unable to append animation.\n\tCheck if the mesh you're trying to append to exists.\n\tIt's also possible you've forgotten to include the mesh with this set of animations." );
+			Log::Event( Log::Error, "Unable to append animation.\n\tCheck if the mesh you're trying to append to exists.\n\tIt's also possible you've forgotten to include the mesh with this set of animations.\n" );
 			continue;
 		}
 
