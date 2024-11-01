@@ -35,6 +35,25 @@ struct AssetPool
 	template<typename T>
 	using Reference = typename std::enable_if_t<!std::is_pointer_v<T>, T>;
 
+	template<typename T = AssetType, std::enable_if_t<std::is_pointer<typename T>::value, bool> = true>
+	void Destroy()
+	{
+		for( T Asset : Assets )
+		{
+			delete Asset;
+		}
+
+		Assets.clear();
+		NameToHandle.clear();
+	}
+
+	template<typename T = AssetType, std::enable_if_t<!std::is_pointer<typename T>::value, bool> = true>
+	void Destroy()
+	{
+		Assets.clear();
+		NameToHandle.clear();
+	};
+
 	/// <summary>
 	/// Adds an asset to the pool, if it doesn't exist yet.
 	/// </summary>
@@ -241,6 +260,45 @@ struct AssetPool
 
 		// Assign the new name.
 		NameToHandle[Name] = Handle;
+
+		return true;
+	}
+
+	/// <param name="Name">The name of the asset we want to delete.</param>
+	/// <returns>False, if the asset name could not be found.</returns>
+	template<typename T = AssetType, std::enable_if_t<std::is_pointer<typename T>::value, bool> = true>
+	bool Remove( const std::string& Name )
+	{
+		const auto Iterator = NameToHandle.find( Name );
+		if( Iterator == NameToHandle.end() )
+			return false; // The asset could not be found.
+
+		// Copy the handle.
+		const auto Handle = Iterator->second;
+
+		// Delete the asset.
+		NameToHandle.erase( Iterator );
+		delete Assets[Handle];
+		Assets.erase( Assets.begin() + Handle );
+
+		return true;
+	}
+
+	/// <param name="Name">The name of the asset we want to delete.</param>
+	/// <returns>False, if the asset name could not be found.</returns>
+	template<typename T = AssetType, std::enable_if_t<!std::is_pointer<typename T>::value, bool> = true>
+	bool Remove( const std::string& Name )
+	{
+		const auto Iterator = NameToHandle.find( Name );
+		if( Iterator == NameToHandle.end() )
+			return false; // The asset could not be found.
+
+		// Copy the handle.
+		const auto Handle = Iterator->second;
+
+		// Delete the asset.
+		NameToHandle.erase( Iterator );
+		Assets.erase( Assets.begin() + Handle );
 
 		return true;
 	}
