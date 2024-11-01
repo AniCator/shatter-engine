@@ -282,13 +282,7 @@ void LoadPrimitive( CompoundPayload* CompoundPayload )
 		// We're asynchronously loading these meshes.
 		Payload->Asynchronous = true;
 
-		// Shatter does not support parsing of OBJ files on multiple threads.
-		if( File.Extension() == "lm" )
-		{
-			File.Load( true );
-			MeshBuilder::LM( Payload->Primitive, File );
-		}
-		else if( File.Extension() == "lmi" )
+		if( File.Extension() == "lmi" )
 		{
 			File.Load( true );
 			MeshBuilder::LMI( Payload->Primitive, CompoundPayload->Set, File );
@@ -632,17 +626,8 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 			bool LoadASSIMP = true;
 			JSON::Container SetData;
 			
-			static std::string ExtensionLoftyModel = "lm";
 			static std::string ExtensionLoftyMeshInterface = "lmi";
 			static std::string ExtensionAnimationSet = "ses";
-
-			// Legacy .lm format, deprecated.
-			if( Extension == ExtensionLoftyModel )
-			{
-				LoadASSIMP = false;
-				File.Load( true );
-				MeshBuilder::LM( Primitive, File );
-			}
 
 			// We're loading an animation set.
 			if ( Extension == ExtensionAnimationSet )

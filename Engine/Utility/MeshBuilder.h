@@ -40,7 +40,7 @@ public:
 
 	static void ASSIMP( FPrimitive& Primitive, AnimationSet& Set, const CFile& File, const ImportOptions& Options = Standard );
 	static void OBJ( FPrimitive& Primitive, const CFile& File );
-	static void LM( FPrimitive& Primitive, const CFile& File );
+
 	static void LMI( FPrimitive& Primitive, AnimationSet& Set, const CFile& File, const ImportOptions& Options = Standard );
 
 	static void Mesh( FPrimitive& Primitive, CMesh* MeshInstance );

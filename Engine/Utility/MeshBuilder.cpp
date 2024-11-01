@@ -643,15 +643,6 @@ void MeshBuilder::OBJ( FPrimitive& Primitive, const CFile& File )
 	}
 }
 
-void MeshBuilder::LM( FPrimitive& Primitive, const CFile& File )
-{
-	if( !File.Extract( Primitive ) )
-	{
-		Primitive.VertexCount = 0;
-		Primitive.IndexCount = 0;
-	}
-}
-
 void MeshBuilder::LMI( FPrimitive& Primitive, AnimationSet& Set, const CFile& File, const ImportOptions& Options )
 {
 	LoftyMeshInterface::Import( File, &Primitive, Set );
