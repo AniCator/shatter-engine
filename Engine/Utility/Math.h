@@ -379,7 +379,7 @@ namespace Math
 	}
 
 	template<typename T>
-	inline float Double( const T& X )
+	inline double Double( const T& X )
 	{
 		return StaticCast<double>( X );
 	}
@@ -400,12 +400,12 @@ namespace Math
 		return Float( String.c_str() );
 	}
 
-	inline float Double( const char* X )
+	inline double Double( const char* X )
 	{
 		return Double( std::strtod( X, nullptr ) );
 	}
 
-	inline float Double( const std::string& String )
+	inline double Double( const std::string& String )
 	{
 		return Double( String.c_str() );
 	}
