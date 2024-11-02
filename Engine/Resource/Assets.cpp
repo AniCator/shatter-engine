@@ -223,24 +223,32 @@ void LoadAnimationSet( AnimationSet& Set, CFile& File, JSON::Container& SetData 
 	}
 }
 
-void LoadASSIMPMesh( PrimitivePayload* Payload, AnimationSet& Set, CFile& File )
+static std::string ExtensionLoftyModel = "lm";
+static std::string ExtensionLoftyMeshInterface = "lmi";
+static std::string ExtensionAnimationSet = "ses";
+void LoadMeshAsset( FPrimitive& Primitive, AnimationSet& Set, CFile& File )
 {
 	// Animation set data, if loaded.
 	JSON::Container SetData;
 
-	const auto IsAnimationSet = File.Extension() == "ses";
+	const auto IsAnimationSet = File.Extension() == ExtensionAnimationSet;
 	if( IsAnimationSet ) // Animation set
 	{
 		LoadAnimationSet( Set, File, SetData );
 	}
 	
-	if( File.Extension() == "lmi" )
+	if( File.Extension() == ExtensionLoftyMeshInterface )
 	{
-		MeshBuilder::LMI( Payload->Primitive, Set, File );
+		File.Load( true );
+		MeshBuilder::LMI( Primitive, Set, File );
+	}
+	else if( File.Extension() == ExtensionLoftyModel )
+	{
+		Log::Event( Log::Error, "The LoftyModel (.lm) format has been deprecated and removed.\n\tThe asset will have to be exported using the Lofty Mesh Interface (.lmi) format.\n\tLM files relied on the old structure of primitives which has changed.\n" );
 	}
 	else
 	{
-		MeshBuilder::ASSIMP( Payload->Primitive, Set, File );
+		MeshBuilder::ASSIMP( Primitive, Set, File );
 	}
 
 	if( IsAnimationSet )
@@ -282,15 +290,7 @@ void LoadPrimitive( CompoundPayload* CompoundPayload )
 		// We're asynchronously loading these meshes.
 		Payload->Asynchronous = true;
 
-		if( File.Extension() == "lmi" )
-		{
-			File.Load( true );
-			MeshBuilder::LMI( Payload->Primitive, CompoundPayload->Set, File );
-		}
-		else
-		{
-			LoadASSIMPMesh( Payload, CompoundPayload->Set, File );
-		}		
+		LoadMeshAsset( Payload->Primitive, CompoundPayload->Set, File );	
 	}
 }
 
@@ -623,35 +623,7 @@ CMesh* CAssets::CreateNamedMesh( const char* Name, const char* FileLocation, con
 
 		if( ShouldLoad )
 		{
-			bool LoadASSIMP = true;
-			JSON::Container SetData;
-			
-			static std::string ExtensionLoftyMeshInterface = "lmi";
-			static std::string ExtensionAnimationSet = "ses";
-
-			// We're loading an animation set.
-			if ( Extension == ExtensionAnimationSet )
-			{
-				// Loading the animation set will change the file we're targetting to the underlying model.
-				LoadAnimationSet( Set, File, SetData );
-			}
-
-			// Check the underlying model's extension.
-			if( File.Extension() == ExtensionLoftyMeshInterface )
-			{
-				LoadASSIMP = false;
-				File.Load( true );
-				MeshBuilder::LMI( Primitive, Set, File );
-			}
-			else if( LoadASSIMP )
-			{
-				MeshBuilder::ASSIMP( Primitive, Set, File );
-			}
-
-			if( Extension == ExtensionAnimationSet )
-			{
-				LoadAnimationMetaData( Set, SetData );
-			}
+			LoadMeshAsset( Primitive, Set, File );
 
 			if( Primitive.VertexCount == 0 )
 			{
